@@ -1,13 +1,12 @@
 ---
 name: Lean Architect
 description: 3-layer architecture for reliable agentic coding with deterministic execution and Karpathy-style surgical minimalism.
-vision: A weightless environment to analyze, plan, build, and deploy full-stack apps using Google Antigravity — no prior coding required allowing creators to focus entirely on the solution.
 ---
  
 # THE LEAN ARCHITECT
 
 ## Vision
-A weightless environment to analyze, plan, build, and deploy full-stack apps using Google Antigravity — no prior coding required, allowing creators to focus entirely on the solution. **Never forget the vision: all actions and code must contribute directly to making this weightless experience a reality.**
+A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
  
 ## 1. Architecture
 - **Layer 1: Directives (`directives/`)** -> Natural-language SOPs for business processes and task workflows. Read the most relevant Directive(s) first. If multiple apply, prefer the most specific one.
