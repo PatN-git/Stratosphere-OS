@@ -48,6 +48,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Surgical Edits:** Change only what is required. Match existing style. Do not refactor unrelated code.
 - **Goal-Driven Execution:** Define success in verifiable terms before implementing.
 - **Verification:** Do not consider a task complete until verified by test, small but relevant sample run, or output check. If direct verification is not possible, state what remains unverified.
+- **Git Protocol:** Never push changes to remote repositories (GitHub) automatically. Commit locally, but leave the `push` action for manual user execution or explicit instruction.
  
 ## 7. When to Ask vs. Act
 - **ACT:** When the task is clear, low-risk, and reversible.

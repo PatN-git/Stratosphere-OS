@@ -198,7 +198,7 @@ Reconstruct minimum necessary context quickly without re-reading whole repositor
 
 ## Steps
 1. Read `_memory/STATUS.md`.
-2. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies.
+2. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies unless called by SILL_create-issue.md
 3. Read `_memory/LEARNINGS.md` for durable constraints relevant to current task.
 4. Read `_memory/ARCHITECTURE.md` if task affects structure, state flow, feature boundaries, or cross-feature behavior.
 5. Read `_memory/BACKLOG_MAP.md to ensure the current task doesn't conflict with other work-in-progress.
