@@ -6,27 +6,27 @@ description: Fetch third-party skill packs on demand from external-skills.json i
 
 # Sync Skills
 
-Third-party skills are **not bundled** with the plugin. They are fetched on demand from their upstream GitHub repos, driven by the registry at the plugin's `external-skills.json` (the single source of truth). This command wraps the deterministic `scripts/sync_skills.py` fetcher.
+Third-party skills are **not bundled** with the plugin. They are fetched on demand from their upstream GitHub repos, driven by the registry at the plugin's `external-skills.json` (the single source of truth). This command wraps the deterministic `sync_skills.py` fetcher.
 
 ## Usage
 
-Run from the project root. The script reads the bundled `external-skills.json` automatically.
+Run from the **project root**. `sync_skills.py` lives in the installed plugin (not the project) and reads the plugin's `external-skills.json` automatically; invoke it with the plugin path — `<plugin>` is `${CLAUDE_PLUGIN_ROOT}` on Claude Code, or the staged plugin dir on Antigravity.
 
 ```bash
 # See what's available (asterisk = installed by default)
-python scripts/sync_skills.py --list
+python <plugin>/scripts/sync_skills.py --list
 
 # System skills (code-simplifier, skill-creator)
-python scripts/sync_skills.py --default
+python <plugin>/scripts/sync_skills.py --default
 
 # By category: database | web | mobile | design | system
-python scripts/sync_skills.py --category database web
+python <plugin>/scripts/sync_skills.py --category database web
 
 # By exact name
-python scripts/sync_skills.py --only supabase impeccable
+python <plugin>/scripts/sync_skills.py --only supabase impeccable
 
 # Everything, or preview first
-python scripts/sync_skills.py --all --dry-run
+python <plugin>/scripts/sync_skills.py --all --dry-run
 ```
 
 Each skill lands at its registry `targetPath` (e.g. `.agents/skills/supabase`).

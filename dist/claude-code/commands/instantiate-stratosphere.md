@@ -27,7 +27,7 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 - `assets/templates/personas/` → `_persona-template.md`, `designer.md`, persona drafts (optional, Step 1b)
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-The lifecycle workflows (`0a`–`4b`) and skills are **provided by the plugin itself** and invoked as slash commands; this installer does not copy them into the project.
+The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Step 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Step 8.
 
 ## Path detection
 
@@ -36,55 +36,40 @@ Before any file operations, decide and state the path in one line:
 - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
 - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
-## Step 0: Preparation (both paths)
+## Step 0: Scaffold (deterministic — both paths)
 
-Create files **only if missing**. DO NOT overwrite. If a file already exists, check for **structural differences** against the template and explicitly ask the user if changes should be implemented before proceeding. Re-running this skill must be safe.
+Run the bundled scaffolder from the **project root**. It creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 
-**Structural differences to check for:**
-- Missing required top-level sections (e.g., `## Active Entries`, `## Superseded`, `## Commands`)
-- Missing required metadata blocks (e.g., Trust Tags reference, Label Registry, Immortal Components)
+```bash
+python <plugin>/scripts/scaffold.py          # add --personas to include the persona layer (Step 1b)
+python <plugin>/scripts/scaffold.py --dry-run   # preview without writing
+```
+
+`<plugin>` is the installed plugin root — Claude Code: `${CLAUDE_PLUGIN_ROOT}`; Antigravity: the staged plugin directory (e.g. under `~/.gemini/antigravity-cli/plugins/stratosphere-os/`).
+
+**What it creates** (skips anything already present):
+- Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
+- Constitution → project root: `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
+- Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
+- Rules: `.agents/rules/{output-mode,memory-protocol,persona-protocol}.md`
+- Lifecycle workflows (`0a`–`4b`, `sync-skills`) + their `.reference/` templates → `.agents/workflows/`
+- `.agents/scripts/validate_memory.py` (memory lint, run by `/0b_stop-session`)
+- `.gitignore` (only if missing)
+
+**Drift check (re-runs / brownfield):** the script leaves existing files untouched and lists them under `LEFT AS-IS`. For each, compare against its template and **ask the user before changing** — never overwrite silently. Look for:
+- Missing required top-level sections (e.g., `## Active Entries`, `## Superseded`)
+- Missing required metadata blocks (Trust Tags reference, Label Registry, Immortal Components)
 - Renamed or removed required headers
 
-Report differences as a list and await user confirmation per file.
+Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references,personas}/` if you need to read one for comparison.
 
-**Folders to create if missing:**
-- `.memory/`
-- `.agents/rules/`
+## Step 1: Workspace rules in effect (both paths)
 
-**Files to create if missing:**
+Step 0 has placed the rule/protocol files; they govern everything that follows:
+- `.agents/rules/output-mode.md`, `memory-protocol.md`, `persona-protocol.md`
+- `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
-All template sources below are relative to the installed plugin's `assets/templates/` directory.
-
-| File to create | Template source (in `assets/templates/`) |
-|:---|:---|
-| `AGENT.md` (project root) | `constitution/AGENT.md` |
-| `CLAUDE.md` (project root) | `constitution/CLAUDE.md` |
-| `GEMINI.md` (project root) | `constitution/GEMINI.md` |
-| `.memory/STATUS.md` | `memory/STATUS.md` |
-| `.memory/BACKLOG_MAP.md` | `memory/BACKLOG_MAP.md` |
-| `.memory/LEARNINGS.md` | `memory/LEARNINGS.md` |
-| `.memory/GLOSSARY.md` | `memory/GLOSSARY.md` |
-| `.memory/ARCHITECTURE.md` | `memory/ARCHITECTURE.md` |
-| `.memory/DATABASE_SCHEMA.md` | `memory/DATABASE_SCHEMA.md` |
-| `.memory/DESIGN.md` | `memory/DESIGN.md` |
-| `.memory/DESIGN_RULES.md` | `memory/DESIGN_RULES.md` |
-| `.agents/rules/output-mode.md` | `rules/output-mode.md` |
-| `.agents/rules/memory-protocol.md` | `rules/memory-protocol.md` |
-| `.agents/rules/persona-protocol.md` | `rules/persona-protocol.md` |
-
-The **constitution files** (`AGENT.md`/`CLAUDE.md`/`GEMINI.md`) are copied verbatim from the bundled templates — they are how both Claude Code and Antigravity read the StratosphereOS rules in this project. Persona scaffolding is **optional** and handled separately in Step 1b.
-
-> [!IMPORTANT]
-> Read the template files before creation — do not reconstruct from memory.
-
-## Step 1: Establish workspace rules (both paths)
-
-Create the four rule/protocol files first. They govern everything that follows:
-- `.agents/rules/output-mode.md`
-- `.agents/rules/memory-protocol.md`
-- `.agents/rules/persona-protocol.md`
-- `.memory/DESIGN.md` (spec-compliant brand tokens — external spec, not trust-tagged)
-- `.memory/DESIGN_RULES.md` (project structural rules — trust-tagged with `[[DR-xxx]]` IDs)
+Confirm they exist. If Step 0 reported any as `LEFT AS-IS`, run the drift check before relying on them.
 
 ## Step 1b: Personas (optional)
 
@@ -92,8 +77,8 @@ The persona layer is **opt-in**. Ask the user once:
 
 > "Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)? [y/N]"
 
-- **If no (default):** skip entirely. Do not create `persona-protocol.md` persona files or `.agents/workflows/designer.md`. The system works without personas.
-- **If yes:** create `.agents/workflows/` if missing, then scaffold the persona files from `assets/templates/personas/` — including `designer.md` → `.agents/workflows/designer.md`, using `_persona-template.md` for any new persona. The persona protocol itself (`rules/persona-protocol.md`) is already written in Step 1. Read the templates before writing; create only if missing.
+- **If no (default):** skip. No persona files are created. The system works without personas. (`persona-protocol.md` still exists from Step 0; it is inert until a persona is added.)
+- **If yes:** re-run the scaffolder with the persona flag — `python <plugin>/scripts/scaffold.py --personas` — which copies `designer.md` and `_persona-template.md` into `.agents/workflows/`. Use `_persona-template.md` to author any additional persona.
 
 ## Step 2: Database audit
 
@@ -208,13 +193,13 @@ GitHub labels already exist and may differ from the registry.
 
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync-skills` script. Select only what this project needs.
 
-1. **System skills (default on):** install with `python scripts/sync_skills.py --default` (`code-simplifier`, `skill-creator`). Confirm first.
+1. **System skills (default on):** install with `python <plugin>/scripts/sync_skills.py --default` (`code-simplifier`, `skill-creator`). Confirm first. (`<plugin>` as in Step 0; `sync_skills.py` reads the plugin's `external-skills.json`.)
 2. **Ask targeted questions**, mapping each "yes" to a registry `category`:
    - "Does this project use a database?" → `--category database` (`supabase`, `supabase-postgres-best-practices`)
    - "React or web frontend?" → `--category web` (`react-best-practices`, `composition-patterns`, `vercel-web-design`)
    - "React Native / mobile?" → `--category mobile` (`react-native-skills`)
    - "Do you want design-polish tooling?" → `--category design` (`impeccable`)
-3. **Fetch the selected packs** in one call, e.g. `python scripts/sync_skills.py --default --category database web`. The script reads `external-skills.json` and reports any entry it skips (invalid `repoZipUrl`) or where `0 files matched`.
+3. **Fetch the selected packs** in one call, e.g. `python <plugin>/scripts/sync_skills.py --default --category database web`. The script reads the plugin's `external-skills.json` and reports any entry it skips (invalid `repoZipUrl`) or where `0 files matched`.
 4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
 5. Re-runnable: re-invoke this command anytime to add packs later.
 
