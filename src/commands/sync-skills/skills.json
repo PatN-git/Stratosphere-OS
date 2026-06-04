@@ -1,0 +1,46 @@
+[
+    {
+        "name": "skill-creator",
+        "repoZipUrl": "https://github.com/anthropics/skills/archive/refs/heads/main.zip",
+        "subPath": "skills-main/skills/skill-creator/",
+        "targetPath": ".agents/workflows/skill-creator",
+        "lastSeen": "2026-05-04T17:36:51.296957",
+        "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy."
+    },
+    {
+        "name": "code-simplifier",
+        "repoZipUrl": "https://github.com/anthropics/claude-plugins-official/blob/main/plugins/code-simplifier/agents/code-simplifier.md",
+        "subPath": "N/A",
+        "targetPath": ".agents/skills/code-simplifier/",
+        "lastSeen": "N/A",
+        "status": "local",
+        "description": ""
+    },
+    {
+        "name": "sync-skills",
+        "repoZipUrl": "N/A",
+        "subPath": "N/A",
+        "targetPath": ".agents/workflows/sync-skills",
+        "lastSeen": "2026-05-04T17:36:56.965266",
+        "status": "local",
+        "description": "|"
+    },
+    {
+        "name": "ui-ux-pro-max",
+        "repoZipUrl": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/archive/refs/heads/main.zip",
+        "subPath": "ui-ux-pro-max-skill-main/src/ui-ux-pro-max/",
+        "targetPath": ".agents/skills/2-plan&design/ui-ux-pro-max",
+        "lastSeen": "2026-04-30T05:04:18",
+        "description": "Comprehensive design guide for web and mobile applications. Contains 67 styles, 161 color palettes, 57 font pairings, 99 UX guidelines, and 25 chart types across 16 technology stacks.",
+        "status": "missing_locally"
+    },
+    {
+        "name": "impeccable",
+        "repoZipUrl": "https://github.com/pbakaus/impeccable/archive/refs/heads/main.zip",
+        "subPath": "impeccable-main/agents/skill/2-plan&design/impeccable/",
+        "targetPath": ".agents/skills/2-plan&design/impeccable",
+        "lastSeen": "2026-05-04T17:35:00",
+        "description": "Comprehensive design skill with 23 commands and 7 domain-specific references (typography, color, motion, etc.) to improve UI/UX design output.",
+        "status": "missing_locally"
+    }
+]
