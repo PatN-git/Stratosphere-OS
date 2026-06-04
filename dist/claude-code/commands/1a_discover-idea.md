@@ -1,10 +1,11 @@
 ---
 name: 1a_discover-idea
-type: workflow
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before write-prd. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
 
-# SKILL: Discover idea
+# Discover Idea
 
 **Hand-off contract:** The `/Write PRD` workflow reads the brief's Vocabulary, Actor, Problem, Chosen Framing, and Non-Goals to seed PRD §1, §2, §4, §6, §7. The `/Write PRD` workflow warns if no brief exists and its §10 Open Questions are high.
 

@@ -1,10 +1,11 @@
 ---
 name: 3a_create-issue
-type: workflow
 description: Standardize feature ideas into "Implementation-Ready" vertical slices.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
 
-# SKILL: Create issue
+# Create Issue
 
 **Purpose:** Convert (raw) ideas into deterministic, "Implementation-Ready" vertical slices while maintaining absolute sync with the project's memory layer.
 

@@ -1,10 +1,11 @@
 ---
 name: 2a_write-prd
-type: workflow
 description: Turn project ideas into impactful PRDs.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
 
-# SKILL: Write PRD
+# Write PRD
 
 **Hand-off contract:** `create-issue` reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
 

@@ -1,7 +1,8 @@
 ---
 name: 0b_stop-session
-type: workflow
 description: Concludes session by codifying progress, updating memory artifacts, and performing linting to ensure a seamless, state-aware resumption of work.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
 
 # STOP SESSION

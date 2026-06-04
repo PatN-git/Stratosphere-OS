@@ -156,8 +156,9 @@ def build_platform(kind: str):
 
     # 5. Project-instance templates (written into a project by the installer)
     assets = out / "assets" / "templates"
-    copytree(SRC / "commands" / "instantiate" / "references", assets / "instantiate-references")
     copytree(SRC / "constitution", assets / "constitution")
+    copytree(SRC / "rules", assets / "rules")
+    copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "references", assets / "references")
     copytree(SRC / "personas", assets / "personas")
     copytree(SRC / "scripts", out / "scripts")

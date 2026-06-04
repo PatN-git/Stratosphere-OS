@@ -2,10 +2,10 @@
 name: 0c_handoff
 description: Compact the current conversation into a handoff document for another agent to pick up.
 type: workflow HITL
-trigger: user
+trigger: User. Do not run autonomously.
 ---
 
-Write handoff document summarising the current conversation so it can be continued in fresh session. Save to `.tmp` name like this handoff_date_name.
+Write a handoff document summarizing the current conversation so it can continue in a fresh session. Save to `.tmp/` using the naming convention `handoff_<date>_<name>.md`.
 
 Include a "suggested skills/workflow" section, which suggests skills should be used in new session.
 

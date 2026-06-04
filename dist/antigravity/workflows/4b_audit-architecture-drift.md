@@ -1,10 +1,9 @@
 ---
 name: 4b_audit-architecture-drift
-type: workflow
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates Foam-linked refactor proposals.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
-
-TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 
 # PHASE 1: SCOPE
 
@@ -51,7 +50,7 @@ Assign a confidence score from 0–100 using these anchors:
   - Do not report in final output. Use internally only.
 - **80–89: Report**
   - Strong evidence of structural drift, domain boundary violation, repeated anti-pattern, ignored documented rule, or unmanaged debt likely to block maintainability/scalability.
-  - Include in final out
+  - Include in final output.
 - **90–100: Critical / Confirmed**
   - Directly proven violation of documented architecture rules or repeated historical failure pattern with clear downstream impact.
   - The issue materially increases implementation risk, feature delivery cost, or system coupling.

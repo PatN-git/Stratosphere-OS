@@ -1,65 +1,3 @@
----
-description: Verbatim templates for the core .agents/rules/* files
----
-
-# Agent Layer Templates — Rules
-
-Verbatim templates for the two rule files in `.agents/rules/`.
-
-## Table of contents
-
-1. `.agents/rules/output-mode.md`
-2. `.agents/rules/memory-protocol.md`
-
----
-
-## 1. `.agents/rules/output-mode.md`
-
-```markdown
-# Output Mode Protocol
-
-## 1. Goal
-Maximize information density while minimizing token waste. Focus on *what was done* and *what changed* rather than narrating the process.
-
-## 2. Decision Matrix
-
-| Mode | Task Type | Output Structure |
-| :--- | :--- | :--- |
-| **Routine** | Trivial, cosmetic, or repetitive mechanical tasks. | Skip plan. Execute immediately. Max 1 line of keyword-only status. |
-| **Standard** | Any non-trivial functional change. | 5-point brief: Assumptions, Plan, Execution, Verification, Updates. |
-| **Complex** | Impacts `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, or `DESIGN_RULES.md`. | **Trade-off Brief** (Choice/Consequence) + Standard structure. |
-
-## 3. Mode Specifications
-
-### Routine Mode
-- No preamble. No "I will now...".
-- Response: optional 1-line status if tool feedback is insufficient.
-- Example: `[DONE] Created /scratch. Moved verify_fix.py.`
-
-### Complex Mode (Trade-off Brief)
-- **Choice:** [1-sentence technical description]
-- **Consequence:** [Direct impact on future build/logic]
-
-### Standard Mode
-1. **Assumptions**: [Short context]
-2. **Plan**: [Surgical steps]
-3. **Execution**: [The work]
-4. **Verification**: [Results]
-5. **Updates**: [Changes to docs/scripts]
-
-## 4. General Constraints
-- **No fillers:** avoid "I understand," "Sure," "Great," or "I'll get right on that."
-- **Surgical narrative:** explain the *why*, not the *how*.
-- **Direct verification:** show results, not process.
-- **Memory discipline:** follow `.agents/rules/memory-protocol.md` for all memory operations.
-- **Persona discipline:** follow `.agents/rules/persona-protocol.md` when a persona is active.
-```
-
----
-
-## 2. `.agents/rules/memory-protocol.md`
-
-```markdown
 # Memory Protocol
 
 Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
@@ -121,12 +59,11 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 
 - Never self-promotes to `[LAW]`.
 - Never deletes to supersede — moves to `## Superseded` with tag.
-- Never silently rewrites memory during crystallization or lint.##
+- Never silently rewrites memory during crystallization or lint.
 - Never reads `## Superseded` unless explicitly asked.
 - Never writes to any `.memory/` file without proposing and awaiting user confirmation.
 - Never write secrets, API keys, tokens, or PII to any `.memory/*` file. Redact before recording a learning.
 
-## 6 Retrieval & Scale
+## 6. Retrieval & Scale
 - Never read `## Superseded` unless the task explicitly needs history.
-- Resolve refs by ID, not by file - e.g. to follow a `[[L-xxx]]` reference, grep for that exact ID — do not read the whole memory file.
-```
+- Resolve refs by ID, not by file — e.g. to follow a `[[L-xxx]]` reference, grep for that exact ID; do not read the whole memory file.

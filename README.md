@@ -9,21 +9,27 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 ## What you get
 
 - **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "Lean Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
-- **Lifecycle workflows** — slash commands for the whole dev lifecycle:
 
-  | Stage | Command | When to use |
-  |---|---|---|
-  | 0 | `/0a_start-session` | Begin a session (rebuild context from memory) |
-  | 0 | `/0b_stop-session` | End a session (update memory, handoff) |
-  | 0 | `/0c_handoff` | Hand off to a fresh session |
-  | 0 | `/0d_nightly-consolidation` | End-of-day maintenance (AFK) |
-  | 1 | `/1a_discover-idea` | Frame a fuzzy idea |
-  | 2 | `/2a_write-prd` | Turn a brief into a PRD |
-  | 3 | `/3a_create-issue` | Slice a PRD into vertical-slice issues |
-  | 3 | `/3b_sprint-planning` | Sequence a sprint |
-  | 3 | `/3c_implement-issue` | Build a slice (TDD) |
-  | 4 | `/4a_audit_test_gaps` | Verify AC ↔ test coverage |
-  | 4 | `/4b_audit-architecture-drift` | Find structural drift |
+- **🚀 The Agentic Workflow** - slash commands for the whole dev lifecycle:
+  - Stage 0: Workflows to manage the environment and workflow.
+  - Stage 1: Workflows to deconstruct the problem and customer needs.
+  - Stage 2: Workflows for automated architectural blueprints and logic mapping.
+  - Stage 3: Workflows for full-stack implementation via "vibe coding"
+  - Stage 4: Workflows for continuous feedback loops to ensure production-ready quality.
+
+  | Stage | Command | File | When to use | Reads | Produces |
+  |---|---|---|---|---|---|
+  | 0 | `/0a_start-session` | `0a_start-session.md` | Begin any session | `STATUS`, relevant memory | synced context |
+  | 0 | `/0b_stop-session` | `0b_stop-session.md` | End any session | session work | updated memory, lint, handoff |
+  | 0 | `/0c_handoff` | `0c_handoff.md` | Hand to a fresh session | conversation | `.tmp/handoff_*` |
+  | 0 | `/0d_nightly-consolidation` | `0d_nightly-consolidation.md` | End-of-day maintenance (AFK) | sessions, `.memory/*` | consolidation plan |
+  | 1 | `/1a_discover-idea` | `1a_discover-idea.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
+  | 2 | `/2a_write-prd` | `2a_write-prd.md` | Turn a brief into a PRD | brief, memory | PRD doc + parent issue |
+  | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
+  | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
+  | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE` | code + tests |
+  | 4 | `/4a_audit-test-gaps` | `4a_audit_test_gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
+  | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
 - **Installer** — `/instantiate-stratosphere` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
 - **First-party skill** — `micro-tdd` (autonomous, token-efficient TDD).

@@ -1,10 +1,9 @@
 ---
-name: 4a_audit-test-gaps
+name: 4a_audit_test_gaps
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries.
 type: workflow HITL
-trigger: user
+trigger: User. Do not run autonomously.
 ---
-TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 
 # PHASE 1: VALUE-ADD GATE
 _INPUT:_ GitHub Issue/PRD. ACTION: Evaluate risk profile of target issue before spending execution tokens.

@@ -22,8 +22,9 @@ Cold starts are expensive. A small, durable memory layer eliminates re-derivatio
 
 All templates ship **bundled with the plugin** under its `assets/templates/` directory. Locate the installed plugin's `assets/templates/` and read the relevant template file before creating any project file — never reconstruct templates from memory:
 - `assets/templates/constitution/` → `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
-- `assets/templates/instantiate-references/` → `templates-memory-core.md`, `templates-agents-rules.md`, `templates-agents-design.md`, `templates-agents-personas.md`
-- `assets/templates/personas/` → persona drafts (optional, Step 1b)
+- `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`, `persona-protocol.md`
+- `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
+- `assets/templates/personas/` → `_persona-template.md`, `designer.md`, persona drafts (optional, Step 1b)
 - `assets/templates/references/` → PRD and discovery-brief templates
 
 The lifecycle workflows (`0a`–`4b`) and skills are **provided by the plugin itself** and invoked as slash commands; this installer does not copy them into the project.
@@ -57,17 +58,17 @@ Report differences as a list and await user confirmation per file.
 | `AGENT.md` (project root) | `constitution/AGENT.md` |
 | `CLAUDE.md` (project root) | `constitution/CLAUDE.md` |
 | `GEMINI.md` (project root) | `constitution/GEMINI.md` |
-| `.memory/STATUS.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/BACKLOG_MAP.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/LEARNINGS.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/GLOSSARY.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/ARCHITECTURE.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/DATABASE_SCHEMA.md` | `instantiate-references/templates-memory-core.md` |
-| `.memory/DESIGN.md` | `instantiate-references/templates-agents-design.md` |
-| `.memory/DESIGN_RULES.md` | `instantiate-references/templates-agents-design.md` |
-| `.agents/rules/output-mode.md` | `instantiate-references/templates-agents-rules.md` |
-| `.agents/rules/memory-protocol.md` | `instantiate-references/templates-agents-rules.md` |
-| `.agents/rules/persona-protocol.md` | `instantiate-references/templates-agents-personas.md` |
+| `.memory/STATUS.md` | `memory/STATUS.md` |
+| `.memory/BACKLOG_MAP.md` | `memory/BACKLOG_MAP.md` |
+| `.memory/LEARNINGS.md` | `memory/LEARNINGS.md` |
+| `.memory/GLOSSARY.md` | `memory/GLOSSARY.md` |
+| `.memory/ARCHITECTURE.md` | `memory/ARCHITECTURE.md` |
+| `.memory/DATABASE_SCHEMA.md` | `memory/DATABASE_SCHEMA.md` |
+| `.memory/DESIGN.md` | `memory/DESIGN.md` |
+| `.memory/DESIGN_RULES.md` | `memory/DESIGN_RULES.md` |
+| `.agents/rules/output-mode.md` | `rules/output-mode.md` |
+| `.agents/rules/memory-protocol.md` | `rules/memory-protocol.md` |
+| `.agents/rules/persona-protocol.md` | `rules/persona-protocol.md` |
 
 The **constitution files** (`AGENT.md`/`CLAUDE.md`/`GEMINI.md`) are copied verbatim from the bundled templates — they are how both Claude Code and Antigravity read the StratosphereOS rules in this project. Persona scaffolding is **optional** and handled separately in Step 1b.
 
@@ -90,7 +91,7 @@ The persona layer is **opt-in**. Ask the user once:
 > "Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)? [y/N]"
 
 - **If no (default):** skip entirely. Do not create `persona-protocol.md` persona files or `.agents/workflows/designer.md`. The system works without personas.
-- **If yes:** create `.agents/workflows/` if missing, then scaffold the persona files from `assets/templates/personas/` and `assets/templates/instantiate-references/templates-agents-personas.md` (including `.agents/workflows/designer.md`). Read the templates before writing; create only if missing.
+- **If yes:** create `.agents/workflows/` if missing, then scaffold the persona files from `assets/templates/personas/` — including `designer.md` → `.agents/workflows/designer.md`, using `_persona-template.md` for any new persona. The persona protocol itself (`rules/persona-protocol.md`) is already written in Step 1. Read the templates before writing; create only if missing.
 
 ## Step 2: Database audit
 

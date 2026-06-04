@@ -1,7 +1,8 @@
 ---
 name: 0d_nightly-consolidation
-type: workflow
 description: End-of-day maintenance routine to reconcile multi-session learnings and purge intermediate scratchpads.
+type: workflow HITL
+trigger: User. Do not run autonomously.
 ---
 
 # Nightly Consolidation
@@ -12,15 +13,15 @@ Do not modify any files without explicit user approval.
 
 ## Procedure
 ### Phase 1: Review sessions
--  Look thoroughly through all my last sessions with all models from the last 24 hours.
-- Look for any problems that I encountered, things that weren't working efficiently, and unnecessary tool calling. Look for common mistakes main and sub-agents were doing and other things that can be optimized.
+- Review all sessions across all models from the last 24 hours.
+- Identify problems, inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes worth optimizing.
 
 ### Phase 2: Distill plan
-- Output a high-density, bulleted proposal in `/.tmp` for how sessions can be  optimized or which skills/workflows should be moodified. 
-- Use this naming convention for the plan markdown file `nightly_[date].md`
+- Output a high-density, bulleted proposal in `.tmp/` for how sessions can be optimized or which skills/workflows to modify.
+- Name the plan file `nightly_[date].md`.
 
 ### Phase 3: Crystallize memory
-- Scan all entires in `.memory/*` except `DESIGN.md` as it follows **Google Labs DESIGN.md spec** for:
+- Scan all entries in `.memory/*` except `DESIGN.md` (external Google Labs DESIGN.md spec) for:
 
     | Trigger | Proposal |
     |:---|:---|
