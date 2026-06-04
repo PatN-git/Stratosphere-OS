@@ -1,5 +1,6 @@
 ---
 name: 3b_sprint-planning
+type: workflow
 description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, sequences a 10-day capacity block into GitHub phases.
 ---
 

@@ -29,6 +29,8 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 - **First-party skill** — `micro-tdd` (autonomous, token-efficient TDD).
 - **On-demand skills** — database, React/web, React Native, and design packs are fetched only when a project needs them (see `src/external-skills.json`).
 
+> **Design tooling:** Google Stitch is the default design tool — brand tokens live in `.memory/DESIGN.md` (Google Labs `DESIGN.md` spec) and structural rules in `.memory/DESIGN_RULES.md`. The optional `design` skill pack (`impeccable`) is polish on top, not a replacement.
+
 ---
 
 ## Install

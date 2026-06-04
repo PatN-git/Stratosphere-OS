@@ -1,4 +1,6 @@
 ---
+name: 1a_discover-idea
+type: workflow
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before write-prd. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 ---
 

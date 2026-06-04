@@ -1,4 +1,6 @@
 ---
+name: 2a_write-prd
+type: workflow
 description: Turn project ideas into impactful PRDs.
 ---
 

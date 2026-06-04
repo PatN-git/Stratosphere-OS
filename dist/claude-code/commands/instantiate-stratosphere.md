@@ -1,11 +1,12 @@
 ---
 name: instantiate-stratosphere
+type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, optional personas, and the right skill packs. Run once per project; safe to re-run.
 ---
 
 # Instantiate StratosphereOS
 
-Instantiate the minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
+Instantiate minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
 
 This command is a **one-time setup** (safe to re-run for upgrades). The ongoing protocols live in:
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
@@ -204,14 +205,15 @@ GitHub labels already exist and may differ from the registry.
 
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync-skills` script. Select only what this project needs.
 
-1. **System skills (default on):** offer `code-simplifier` and `skill-creator` (registry entries with `"default": true`). Confirm, then fetch.
-2. **Ask targeted questions**, mapping each "yes" to its registry `category`:
-   - "Does this project use a database?" → `category: database` (`supabase`, `supabase-postgres-best-practices`)
-   - "React or web frontend?" → `category: web` (`react-best-practices`, `composition-patterns`, `vercel-web-design`)
-   - "React Native / mobile?" → `category: mobile` (`react-native-skills`)
-   - "Do you want design-polish tooling?" → `category: design` (`impeccable`, `ui-ux-pro-max`)
-3. **Fetch the selected packs** by running the bundled `sync-skills` script with `--pull`, sourcing entries from `external-skills.json`. Skip any entry whose `repoZipUrl` is `TODO` and report it.
-4. Re-runnable: re-invoke this command anytime to add packs later.
+1. **System skills (default on):** install with `python scripts/sync_skills.py --default` (`code-simplifier`, `skill-creator`). Confirm first.
+2. **Ask targeted questions**, mapping each "yes" to a registry `category`:
+   - "Does this project use a database?" → `--category database` (`supabase`, `supabase-postgres-best-practices`)
+   - "React or web frontend?" → `--category web` (`react-best-practices`, `composition-patterns`, `vercel-web-design`)
+   - "React Native / mobile?" → `--category mobile` (`react-native-skills`)
+   - "Do you want design-polish tooling?" → `--category design` (`impeccable`)
+3. **Fetch the selected packs** in one call, e.g. `python scripts/sync_skills.py --default --category database web`. The script reads `external-skills.json` and reports any entry it skips (invalid `repoZipUrl`) or where `0 files matched`.
+4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
+5. Re-runnable: re-invoke this command anytime to add packs later.
 
 ## Constraints
 

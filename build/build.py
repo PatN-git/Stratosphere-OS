@@ -147,7 +147,6 @@ def build_platform(kind: str):
     sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"
     copy_md_with_frontmatter(sync_md, invoke_dir / "sync-skills.md", name="sync-skills")
     copytree(SRC / "commands" / "sync-skills" / "scripts", out / "scripts")
-    shutil.copy2(SRC / "commands" / "sync-skills" / "skills.json", out / "scripts" / "skills.json")
     shutil.copy2(SRC / "external-skills.json", out / "external-skills.json")
 
     # 5. Project-instance templates (written into a project by the installer)

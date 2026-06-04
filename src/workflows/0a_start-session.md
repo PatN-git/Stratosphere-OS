@@ -1,4 +1,6 @@
 ---
+name: 0a_start-session
+type: workflow
 description: Initializes session to avoid cold start by reviewing necessary project context from memory layer/protocol.
 ---
 

@@ -1,45 +1,43 @@
 ---
-description: This skill ensures that the project's skill inventory is accurate, synchronized, and well-documented.
+name: sync-skills
+type: workflow
+description: Fetch third-party skill packs on demand from external-skills.json into the project's .agents/skills/.
 ---
 
-# Sync Skills Workflow
+# Sync Skills
 
-## Core Operations: Plan & Confirm
+Third-party skills are **not bundled** with the plugin. They are fetched on demand from their upstream GitHub repos, driven by the registry at the plugin's `external-skills.json` (the single source of truth). This command wraps the deterministic `scripts/sync_skills.py` fetcher.
 
-The skill's state is managed internally in [skills.json](./skills.json). **The user should not need to interact with this file directly.**
+## Usage
 
-### Step 1: Generate Update Plan
-Run the script with `--dry-run` to audit the repository state and generate a proposed plan.
-
-```bash
-python .agents\workflows\0-system\sync-skills\scripts\sync_skills.py --dry-run
-```
-
-### Step 2: Review and Resolve Ambiguities
-Present the **Reconciliation Summary** to the user.
-- **Orphans**: If the script flags orphans, ask the user: "I found new skills on disk. What are their GitHub URLs?"
-- **Missing**: If skills are missing locally, ask: "Some skills in my config aren't on disk. Should I download them with --pull?"
-- **Flagged**: Explain any local/remote conflicts (e.g., local changes since last sync).
-
-**Interactive Management**: As the user provides information, you (the agent) are responsible for running the sync script to update the internal `skills.json` state.
-
-### Step 3: Execute
-Once the user confirms the plan or provides missing data, run the script to commit changes.
+Run from the project root. The script reads the bundled `external-skills.json` automatically.
 
 ```bash
-python .agents/workflows/sync-skills/scripts/sync_skills.py
+# See what's available (asterisk = installed by default)
+python scripts/sync_skills.py --list
+
+# System skills (code-simplifier, skill-creator)
+python scripts/sync_skills.py --default
+
+# By category: database | web | mobile | design | system
+python scripts/sync_skills.py --category database web
+
+# By exact name
+python scripts/sync_skills.py --only supabase impeccable
+
+# Everything, or preview first
+python scripts/sync_skills.py --all --dry-run
 ```
 
-## Configuration Flags
-- `--dry-run`: Show what WOULD change without writing to disk.
-- `--pull`: Download external skills from GitHub based on the config.
-- `--local`: List of skills to treat as local-only (default: sync-skills, instantiation-memory).
-- `--llm`: Enable this only if you need to refresh descriptions from SKILL.md files.
+Each skill lands at its registry `targetPath` (e.g. `.agents/skills/supabase`).
 
-## LLM / Token Efficiency Rules
-- **Prefer Deterministic Logic**: Always run the `sync_skills.py` script first to handle the heavy lifting.
-- **Minimal Prompts**: Provide only the names and snippets of the flagged skills to the user.
-- **Batch Decisions**: If multiple orphans are found, ask for all their URLs in a single turn.
+## Behaviour
 
-## Greenfield Bootstrapping
-If the project structure is missing, the script will automatically offer to create `.agents/workflows/` and the internal `skills.json`.
+- **Read-only registry.** The script never edits `external-skills.json`; update sources there by hand.
+- **Surgical extract.** Only the `subPath` inside each upstream repo zip is extracted.
+- **Safe skips.** Entries whose `repoZipUrl` is empty/`TODO`/`PENDING`/`N/A` are reported and skipped. A `0 files matched` warning means the `subPath` is wrong.
+- **Exit code.** Non-zero only on a hard download/extract failure, so the installer can detect problems.
+
+## When the installer calls this
+
+`/instantiate-stratosphere` Step 8 maps the user's "yes" answers to categories and invokes this with `--default` plus the chosen `--category` flags.

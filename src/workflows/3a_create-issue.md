@@ -1,4 +1,6 @@
 ---
+name: 3a_create-issue
+type: workflow
 description: Standardize feature ideas into "Implementation-Ready" vertical slices.
 ---
 

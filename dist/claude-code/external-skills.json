@@ -1,5 +1,5 @@
 {
-  "_note": "Third-party skills fetched on demand by sync-skills, NOT bundled. Sources tracked in .tmp/Skill-links. 'default: true' = system skills offered on by default during install; others are opt-in by category.",
+  "_note": "Single source of truth for third-party skills, fetched on demand by sync-skills (NOT bundled). 'default: true' = system skills installed by default; others are opt-in by category.",
   "skills": [
     {
       "name": "skill-creator",
@@ -74,23 +74,13 @@
       "description": "Design craft, polish, motion, and UX writing reference library."
     },
     {
-      "name": "ui-ux-pro-max",
-      "category": "design",
-      "default": false,
-      "repoZipUrl": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/archive/refs/heads/main.zip",
-      "subPath": "ui-ux-pro-max-skill-main/src/ui-ux-pro-max/",
-      "targetPath": ".agents/skills/ui-ux-pro-max",
-      "description": "Design system guide: 67 styles, 161 palettes, 57 font pairings, 25 chart types across 16 stacks."
-    },
-    {
       "name": "vercel-web-design",
       "category": "web",
       "default": false,
-      "repoZipUrl": "TODO",
-      "subPath": "TODO",
+      "repoZipUrl": "https://github.com/vercel-labs/agent-skills/archive/refs/heads/main.zip",
+      "subPath": "agent-skills-main/skills/web-design-guidelines/",
       "targetPath": ".agents/skills/vercel-web-design",
-      "note": "Source URL not present in .tmp/Skill-links — confirm origin before enabling.",
-      "description": "Vercel-style web design guidance."
+      "description": "Vercel web design guidelines."
     }
   ]
 }

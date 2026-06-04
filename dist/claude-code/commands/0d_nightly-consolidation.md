@@ -1,5 +1,6 @@
 ---
 name: 0d_nightly-consolidation
+type: workflow
 description: End-of-day maintenance routine to reconcile multi-session learnings and purge intermediate scratchpads.
 ---
 
