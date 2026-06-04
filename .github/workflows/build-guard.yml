@@ -1,0 +1,36 @@
+name: build-guard
+
+# Option A: dist/ is committed. This guard rebuilds the plugins from src/ and
+# fails if the committed dist/ (or marketplace.json) is out of sync — i.e. if
+# someone edited src/ without running `python build/build.py`.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verify-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rebuild plugins from src/
+        run: python build/build.py
+
+      - name: Validate plugin structure
+        run: python build/validate.py .
+
+      - name: Fail if dist/ drifted from src/
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::dist/ is out of sync with src/. Run 'python build/build.py' and commit the result."
+            git --no-pager status --porcelain
+            git --no-pager diff
+            exit 1
+          fi
+          echo "dist/ is in sync with src/."
