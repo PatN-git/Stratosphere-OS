@@ -53,7 +53,9 @@ Report differences as a list and await user confirmation per file.
 
 **Files to create if missing:**
 
-| File | Template Source |
+All template sources below are relative to the installed plugin's `assets/templates/` directory.
+
+| File to create | Template source (in `assets/templates/`) |
 |:---|:---|
 | `AGENT.md` (project root) | `constitution/AGENT.md` |
 | `CLAUDE.md` (project root) | `constitution/CLAUDE.md` |
