@@ -1,5 +1,5 @@
 ---
-name: 4a_audit_test_gaps
+name: 4a_audit-test-gaps
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
