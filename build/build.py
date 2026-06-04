@@ -80,7 +80,12 @@ def copy_md_with_frontmatter(srcfile: Path, dstfile: Path, name=None):
         desc = first_heading(text) or srcfile.stem.replace("_", " ").replace("-", " ")
     out = ensure_frontmatter(text, name=name, description=desc)
     dstfile.parent.mkdir(parents=True, exist_ok=True)
-    dstfile.write_text(out, encoding="utf-8")
+    write_lf(dstfile, out)
+
+
+def write_lf(path: Path, text: str):
+    """Write text with deterministic LF newlines so build output is identical on any OS."""
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def force_rmtree(path: Path):
@@ -167,8 +172,7 @@ def build_platform(kind: str):
             "description": DESCRIPTION,
             "author": {"name": AUTHOR},
         }
-        (manifest_dir / "plugin.json").write_text(
-            json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        write_lf(manifest_dir / "plugin.json", json.dumps(manifest, indent=2) + "\n")
     else:
         manifest = {
             "name": "stratosphere-os",
@@ -176,8 +180,7 @@ def build_platform(kind: str):
             "description": DESCRIPTION,
             "author": AUTHOR,
         }
-        (out / "plugin.json").write_text(
-            json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
     return out
 
@@ -196,8 +199,7 @@ def write_marketplace():
             }
         ],
     }
-    (mk_dir / "marketplace.json").write_text(
-        json.dumps(marketplace, indent=2) + "\n", encoding="utf-8")
+    write_lf(mk_dir / "marketplace.json", json.dumps(marketplace, indent=2) + "\n")
 
 
 def main():
