@@ -20,9 +20,9 @@ Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, 
 
 ## Active Entries
 
-- **[[G-001]] [GUESS] [YYYY-MM-DD]** Term: definition. Source: docs/discovery/<slug>.md or [[BT-xx]].
+- **[[G-001]] [GUESS] [YYYY-MM-DD]** Example Term: definition. Source: docs/discovery/<slug>.md or [[BT-xx]].
 
 ## Superseded
 > Read only when explicitly asked.
 
-- **[[G-XXX]] [SUPERSEDED BY [[G-YYY]]] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.
+- **[[G-XXX]] [SUPERSEDED BY [[G-YYY]]] [YYYY-MM-DD]** Example: Original entry preserved. Reason: one line. Version: v0.X → v0.Y.

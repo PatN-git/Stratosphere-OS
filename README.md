@@ -28,7 +28,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
   | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
   | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE` | code + tests |
-  | 4 | `/4a_audit-test-gaps` | `4a_audit_test_gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
+  | 4 | `/4a_audit-test-gaps` | `4a_audit-test-gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
 - **Installer** — `/instantiate-stratosphere` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
@@ -65,18 +65,21 @@ Update: re-pull the plugin.
 This repo is a **single source of truth** that compiles into both plugin formats.
 
 ```
-src/                         ← edit here
+src/                         ← edit here (single source of truth)
 ├─ constitution/             AGENT.md, CLAUDE.md, GEMINI.md
 ├─ skills/                   first-party skills (micro-tdd)
 ├─ workflows/                lifecycle commands (0a–4b)
 ├─ commands/                 instantiate + sync-skills
-├─ references/  personas/  scripts/
+├─ rules/                    output-mode, memory-protocol, persona-protocol
+├─ memory-templates/         .memory/* scaffolding (STATUS, ARCHITECTURE, DESIGN, …)
+├─ personas/                 persona drafts + designer + _persona-template
+├─ references/  scripts/     PRD/discovery templates; validate_memory.py
 └─ external-skills.json      on-demand skill registry
 
-build/build.py               ← single build step
-dist/
-├─ claude-code/              .claude-plugin/plugin.json + commands/ + skills/
-└─ antigravity/              plugin.json + workflows/ + skills/
+build/build.py               ← single build step (build/validate.py checks output)
+dist/                        ← generated, committed (installable plugins)
+├─ claude-code/              .claude-plugin/plugin.json + commands/ + skills/ + assets/
+└─ antigravity/              plugin.json + workflows/ + skills/ + assets/
 .claude-plugin/marketplace.json   ← lets `/plugin marketplace add` work from GitHub
 ```
 
