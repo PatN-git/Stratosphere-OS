@@ -143,10 +143,19 @@ def build_platform(kind: str):
     for wf in sorted((SRC / "workflows").glob("*.md")):
         copy_md_with_frontmatter(wf, invoke_dir / wf.name, name=command_name(wf.stem))
 
-    # 3. Installer command (instantiate)
+    # 3. Installer entry point. Claude registers plugin commands globally, so ship
+    #    it as a /command. Antigravity only surfaces skills (not plugin workflows),
+    #    so ship it there as a discoverable skill instead.
     inst = SRC / "commands" / "instantiate" / "Instantiate-StratosphereOS.md"
-    copy_md_with_frontmatter(inst, invoke_dir / "instantiate-stratosphere.md",
-                             name="instantiate-stratosphere")
+    if kind == "claude":
+        copy_md_with_frontmatter(inst, invoke_dir / "instantiate-stratosphere.md",
+                                 name="instantiate-stratosphere")
+    else:
+        text = re.sub(r"(?m)^name:.*$", "name: stratosphere-setup",
+                      inst.read_text(encoding="utf-8"), count=1)
+        sk = out / "skills" / "stratosphere-setup" / "SKILL.md"
+        sk.parent.mkdir(parents=True, exist_ok=True)
+        write_lf(sk, text)
 
     # 4. sync-skills command + script + registry
     sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"
