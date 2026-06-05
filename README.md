@@ -33,7 +33,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
 - **Installer** — `/instantiate-stratosphere` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
-- **First-party skill** — `micro-tdd` (autonomous, token-efficient TDD).
+- **First-party skills** — `micro-tdd` (autonomous, token-efficient TDD) and `plan-html` (interactive HTML plans/matrices/micro-apps).
 - **On-demand skills** — database, React/web, React Native, and design packs are fetched only when a project needs them (see `src/external-skills.json`).
 
 > **Design tooling:** Google Stitch is the default design tool — brand tokens live in `.memory/DESIGN.md` (Google Labs `DESIGN.md` spec) and structural rules in `.memory/DESIGN_RULES.md`. The optional `design` skill pack (`impeccable`) is polish on top, not a replacement.
@@ -68,7 +68,7 @@ This repo is a **single source of truth** that compiles into both plugin formats
 ```
 src/                         ← edit here (single source of truth)
 ├─ constitution/             AGENT.md, CLAUDE.md, GEMINI.md
-├─ skills/                   first-party skills (micro-tdd)
+├─ skills/                   first-party skills (micro-tdd, plan-html)
 ├─ workflows/                lifecycle commands (0a–4b)
 ├─ commands/                 instantiate + sync-skills
 ├─ rules/                    output-mode, memory-protocol, persona-protocol

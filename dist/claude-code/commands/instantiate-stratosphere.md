@@ -10,13 +10,13 @@ Instantiate minimum durable context an AI agent needs to resume work on a reposi
 
 This command is a **one-time setup** (safe to re-run for upgrades). The ongoing protocols live in:
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
-- `.agents/rules/persona-protocol.md` — persona activation, autonomy, handoff
+- `.agents/rules/persona-protocol.md` — persona activation, autonomy, handoff (optional)
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, Stitch harmonization, immortal components
 
 ## Why this exists
 
-Cold starts are expensive. A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales. The persona system lets you navigate complex multi-role work (Analyst, PM, Designer, Dev, Reviewer) without memorizing commands.
+Cold starts are expensive! A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales. The persona system lets you navigate complex multi-role work (Analyst, PM, Designer, Dev, Reviewer) without memorizing commands.
 
 ## Template source (read before any file creation)
 

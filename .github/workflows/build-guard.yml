@@ -1,6 +1,6 @@
 name: build-guard
 
-# Option A: dist/ is committed. This guard rebuilds the plugins from src/ and
+# dist/ is committed. This guard rebuilds the plugins from src/ and
 # fails if the committed dist/ (or marketplace.json) is out of sync — i.e. if
 # someone edited src/ without running `python build/build.py`.
 
