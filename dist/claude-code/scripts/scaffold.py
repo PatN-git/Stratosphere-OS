@@ -25,9 +25,45 @@ project copies are inert there.
 import argparse
 import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+
+def prompt_personas():
+    while True:
+        try:
+            val = input("Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)? [y/N]: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            print()
+            return False
+        if not val or val in ("n", "no"):
+            return False
+        if val in ("y", "yes"):
+            return True
+        print("Please enter 'y' or 'n'.")
+
+
+def prompt_categories():
+    valid_categories = {"system", "database", "web", "mobile", "design"}
+    print("\nWhich Third-Party Skill Categories would you like to sync?")
+    print("Available categories: system, database, web, mobile, design")
+    print("Press Enter to skip/none, or enter a space/comma-separated list.")
+    while True:
+        try:
+            val = input("Categories to sync: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print()
+            return []
+        if not val:
+            return []
+        parts = [p.strip().lower() for p in re.split(r"[\s,]+", val) if p.strip()]
+        invalid = [p for p in parts if p not in valid_categories]
+        if invalid:
+            print(f"Invalid categories: {', '.join(invalid)}. Please choose from: {', '.join(sorted(valid_categories))}")
+            continue
+        return parts
 ASSETS = PLUGIN_ROOT / "assets" / "templates"
 # Lifecycle workflows live in workflows/ (Antigravity build) or commands/ (Claude build)
 WF_SRC = PLUGIN_ROOT / "workflows" if (PLUGIN_ROOT / "workflows").exists() else PLUGIN_ROOT / "commands"
@@ -66,10 +102,26 @@ def place(src: Path, dst: Path, res, dry):
 
 
 def main():
+    plugin_root = Path(__file__).resolve().parent.parent
+    scope = "unknown"
+    if ".gemini" in plugin_root.parts or "config" in plugin_root.parts:
+        scope = "global"
+    elif ".agents" in plugin_root.parts:
+        scope = "local"
+    print(f"Resolved plugin root: {plugin_root} ({scope} scope)")
+
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")
     ap.add_argument("--personas", action="store_true", help="also scaffold the optional persona layer")
+    ap.add_argument("--categories", "--category", nargs="*", help="Third-party skill categories to sync (system database web mobile design)")
     ap.add_argument("--dry-run", action="store_true", help="report what would happen without writing")
     args = ap.parse_args()
+
+    # Interactive prompt if run without configuration flags in a TTY
+    if not args.personas and not args.categories and sys.stdin.isatty():
+        args.personas = prompt_personas()
+        selected_cats = prompt_categories()
+        if selected_cats:
+            args.categories = selected_cats
 
     project = Path.cwd()
     dry = args.dry_run
@@ -151,6 +203,30 @@ def main():
     if gi_existed:
         # existing .gitignore: remind agent to verify secret-hygiene entries
         print("NOTE: .gitignore already exists — verify it contains: " + ", ".join(GITIGNORE_ENTRIES))
+
+    # 9. Invoke sync_skills.py automatically if categories selected
+    if args.categories:
+        sync_script = Path(__file__).resolve().parent / "sync_skills.py"
+        if not sync_script.exists():
+            sync_script = Path(__file__).resolve().parent.parent / "commands" / "sync-skills" / "scripts" / "sync_skills.py"
+        
+        if not sync_script.exists():
+            print(f"Error: sync_skills.py not found at {sync_script}")
+            sys.exit(1)
+            
+        print("\n=== Syncing selected skill categories ===")
+        cmd = [sys.executable, str(sync_script), "--category"] + args.categories
+        if dry:
+            cmd.append("--dry-run")
+        
+        print(f"Running command: {' '.join(cmd)}")
+        # Flush outputs before running child process to guarantee correct output order
+        sys.stdout.flush()
+        sys.stderr.flush()
+        res_sync = subprocess.run(cmd, check=False)
+        if res_sync.returncode != 0:
+            print(f"Error: sync_skills.py failed with exit code {res_sync.returncode}")
+            sys.exit(res_sync.returncode)
 
 
 if __name__ == "__main__":

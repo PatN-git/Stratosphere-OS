@@ -51,11 +51,15 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 Update: `/plugin marketplace update` then reinstall.
 
 ### Google Antigravity
-Install the plugin from this GitHub repo (it stages under `~/.gemini/antigravity-cli/plugins/`), or drop `dist/antigravity/` into your workspace's `.agents/plugins/`. Then in the agent:
+Choose whether you want to install/stage the plugin **globally** (for use across multiple projects) or **locally** (only for the current project):
+- **Globally**: Copy/stage `dist/antigravity/` under `~/.gemini/config/plugins/stratosphere-os/`.
+- **Locally**: Copy/stage `dist/antigravity/` under `.agents/plugins/stratosphere-os/`.
+
+Then in the agent, run the setup skill:
 ```
 /instantiate-stratosphere
 ```
-Update: re-pull the plugin.
+Update: Re-pull the repository, run the build script, and copy/stage the updated `dist/antigravity/` folder to your chosen scope directory.
 
 > **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/instantiate-stratosphere` is what writes the constitution and memory layer into *your* project.
 
