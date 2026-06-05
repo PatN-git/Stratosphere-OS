@@ -1,7 +1,12 @@
 .tmp/
+.memory/
+.agents/
+.claude/
 node_modules/
 .DS_Store
 Thumbs.db
 *.log
 .env
 .agents/.env
+__pycache__/
+*.pyc

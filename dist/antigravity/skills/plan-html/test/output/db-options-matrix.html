@@ -1,0 +1,114 @@
+<!-- plan-html | md-equivalent: ~35 lines | html: ~110 lines | ratio: 3.1x | justified: 3 options × 5 criteria side-by-side with color-coded ratings impossible in linear markdown -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Database Hosting Options — Trade-off Matrix</title>
+<style>
+:root{--bg:#fff;--text:#171717;--border:#e5e5e5;--card:#f8fafc;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#090d16;--text:#f3f4f6;--border:#1f2937;--card:#111827}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);padding:2rem 1.5rem;line-height:1.5}
+.wrap{max-width:1050px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+h1{font-size:1.75rem;font-weight:700}.meta{font-size:.875rem;opacity:.6;margin-top:.25rem}
+.toolbar{display:flex;gap:.5rem}
+button{font-family:var(--font);font-size:.8rem;font-weight:500;padding:.4rem .875rem;border-radius:.375rem;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s}
+button:hover{background:var(--card)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;text-align:left}
+th,td{padding:.75rem 1rem;border:1px solid var(--border);vertical-align:top}
+thead th{background:var(--card);font-weight:700;font-size:.875rem}
+.option-header{font-weight:700;font-size:.9rem}
+.option-sub{font-size:.78rem;opacity:.6;margin-top:.2rem;font-weight:400}
+.cell{display:flex;flex-direction:column;gap:.35rem}
+.score{display:inline-flex;gap:3px;margin-bottom:.1rem}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--border)}
+.dot.on{background:currentColor}
+.s5,.s4{color:#16a34a}.s3{color:#d97706}.s2,.s1{color:#dc2626}
+@media(prefers-color-scheme:dark){.s5,.s4{color:#4ade80}.s3{color:#fbbf24}.s2,.s1{color:#f87171}}
+.chip{display:inline-block;font-size:.72rem;font-weight:600;padding:.15rem .4rem;border-radius:.25rem}
+.chip-high{background:#dcfce7;color:#15803d}.chip-mid{background:#fef9c3;color:#854d0e}.chip-low{background:#fee2e2;color:#b91c1c}
+@media(prefers-color-scheme:dark){.chip-high{background:#14532d;color:#86efac}.chip-mid{background:#713f12;color:#fde68a}.chip-low{background:#7f1d1d;color:#fca5a5}}
+.note{font-size:.78rem;opacity:.7;line-height:1.3}
+.winner-col{position:relative}.winner-col thead th:last-child::after{content:"★ Recommended";display:block;font-size:.65rem;font-weight:700;color:#2563eb;margin-top:.25rem}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:var(--bg);padding:.6rem 1.25rem;border-radius:.375rem;transform:translateY(150%);transition:transform .3s cubic-bezier(.16,1,.3,1);z-index:100;font-size:.875rem}
+.toast.show{transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Database Hosting Options</h1>
+      <div class="meta">Trade-off Matrix · plan-html · 3 options × 5 criteria</div>
+    </div>
+    <div class="toolbar">
+      <button onclick="copyState()">Copy State</button>
+      <button onclick="exportMd()">Export MD</button>
+    </div>
+  </header>
+  <div class="table-wrap winner-col">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:150px">Criterion</th>
+          <th><div class="option-header">Supabase</div><div class="option-sub">Managed Postgres + Auth</div></th>
+          <th><div class="option-header">PlanetScale</div><div class="option-sub">Serverless MySQL</div></th>
+          <th><div class="option-header">Self-hosted Postgres</div><div class="option-sub">Fly.io / Render</div></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cost (free tier)</strong></td>
+          <td><div class="cell"><div class="score s4"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div><span class="chip chip-high">Generous</span><div class="note">500MB DB + Auth + Storage included</div></div></td>
+          <td><div class="cell"><div class="score s4"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div><span class="chip chip-high">Generous</span><div class="note">1B row reads/mo free</div></div></td>
+          <td><div class="cell"><div class="score s2"><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-low">Limited</span><div class="note">Instance cost $7+/mo min</div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Operational burden</strong></td>
+          <td><div class="cell"><div class="score s5"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><span class="chip chip-high">Minimal</span><div class="note">Fully managed, auto-backups</div></div></td>
+          <td><div class="cell"><div class="score s4"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div><span class="chip chip-high">Low</span><div class="note">Serverless, no connection pooling needed</div></div></td>
+          <td><div class="cell"><div class="score s1"><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-low">High</span><div class="note">Manual backups, upgrades, pooling</div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Auth integration</strong></td>
+          <td><div class="cell"><div class="score s5"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><span class="chip chip-high">Native</span><div class="note">Built-in Auth + RLS = zero glue code</div></div></td>
+          <td><div class="cell"><div class="score s2"><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-low">None</span><div class="note">Must add separate auth layer</div></div></td>
+          <td><div class="cell"><div class="score s3"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-mid">Manual</span><div class="note">Full control, significant setup cost</div></div></td>
+        </tr>
+        <tr>
+          <td><strong>SQL compatibility</strong></td>
+          <td><div class="cell"><div class="score s5"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><span class="chip chip-high">Full Postgres</span><div class="note">Extensions, RLS, full SQL standard</div></div></td>
+          <td><div class="cell"><div class="score s3"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-mid">MySQL</span><div class="note">No native JSON ops, no JSONB</div></div></td>
+          <td><div class="cell"><div class="score s5"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><span class="chip chip-high">Full Postgres</span><div class="note">Full control over extensions</div></div></td>
+        </tr>
+        <tr>
+          <td><strong>Scalability</strong></td>
+          <td><div class="cell"><div class="score s3"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div><span class="chip chip-mid">Good</span><div class="note">Read replicas on Pro plan</div></div></td>
+          <td><div class="cell"><div class="score s5"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div><span class="chip chip-high">Excellent</span><div class="note">Auto-sharding, horizontal scale</div></div></td>
+          <td><div class="cell"><div class="score s4"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div><span class="chip chip-high">High</span><div class="note">Scale vertically/horizontally, full control</div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script id="plan-data" type="application/json">{"recommended":"supabase","generatedAt":"2026-06-05"}</script>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function copyState(){navigator.clipboard.writeText(document.getElementById('plan-data').textContent.trim()).then(()=>toast('State copied!'))}
+function exportMd(){
+  let md='# Database Hosting Options\n\n| Criterion | Supabase | PlanetScale | Self-hosted |\n|---|---|---|---|\n';
+  document.querySelectorAll('tbody tr').forEach(row=>{
+    const cells=[...row.querySelectorAll('td')].map(td=>{
+      const chip=td.querySelector('.chip');const note=td.querySelector('.note');
+      return (chip?chip.textContent.trim():'')+(note?' — '+note.textContent.trim():'');
+    });
+    md+='| '+cells.join(' | ')+' |\n';
+  });
+  navigator.clipboard.writeText(md.trim()).then(()=>toast('MD copied!'))
+}
+</script>
+</body>
+</html>

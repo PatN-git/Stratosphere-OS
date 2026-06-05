@@ -1,0 +1,13 @@
+{
+  "name": "stratosphere-os",
+  "owner": {
+    "name": "PatN-git"
+  },
+  "plugins": [
+    {
+      "name": "stratosphere-os",
+      "source": "./dist/claude-code",
+      "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a first-party skill, on-demand external skills, and a one-command project installer."
+    }
+  ]
+}

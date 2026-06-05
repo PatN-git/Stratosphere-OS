@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "Stop": {
+      "description": "Triggered when the agent finishes execution to prompt verification and serialization of the interactive plan.",
+      "command": "echo \"[plan-html] Session stopping. Ensure plan.html state is updated and committed.\""
+    }
+  }
+}

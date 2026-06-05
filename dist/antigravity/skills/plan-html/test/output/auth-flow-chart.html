@@ -1,0 +1,158 @@
+<!-- plan-html | md-equivalent: ~25 lines | html: ~95 lines | ratio: 3.8x | justified: interactive step annotation + branch visualization structurally impossible in linear markdown -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>User Authentication Flow — Annotated Flowchart</title>
+<style>
+:root{--bg:#fff;--text:#171717;--border:#e5e5e5;--card:#f8fafc;--accent:#2563eb;--accent-muted:#dbeafe;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#090d16;--text:#f3f4f6;--border:#1f2937;--card:#111827;--accent:#3b82f6;--accent-muted:#1e3a8a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);padding:2rem 1.5rem;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+h1{font-size:1.75rem;font-weight:700}.meta{font-size:.875rem;opacity:.6;margin-top:.25rem}
+.toolbar{display:flex;gap:.5rem}
+button{font-family:var(--font);font-size:.8rem;font-weight:500;padding:.4rem .875rem;border-radius:.375rem;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s}
+button:hover{background:var(--card)}
+.flow{display:flex;flex-direction:column;align-items:flex-start;padding-left:1.25rem;position:relative}
+.flow::before{content:"";position:absolute;left:calc(1.25rem + 1.1rem);top:1.1rem;bottom:1.1rem;width:2px;background:var(--border)}
+.step{display:flex;align-items:flex-start;gap:1rem;margin-bottom:.25rem;position:relative;z-index:1;cursor:pointer}
+.step-circle{width:2.25rem;height:2.25rem;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0;transition:all .2s;position:relative;z-index:2}
+.step-circle.active{border-color:var(--accent);background:var(--accent-muted);color:var(--accent)}
+.step-content{padding:.5rem 0}
+.step-label{font-weight:600;font-size:.95rem}
+.step-sub{font-size:.8rem;opacity:.6;margin-top:.15rem}
+.connector{width:2px;height:1.25rem;background:var(--border);margin-left:calc(1.25rem + 1.1rem);position:relative;z-index:1}
+.branch{margin-left:calc(1.25rem + 2.25rem + 1rem);margin:.35rem 0;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.branch-label{font-size:.75rem;opacity:.5}
+.branch-chip{font-size:.75rem;font-weight:600;padding:.2rem .55rem;border-radius:.25rem;border:1px dashed var(--border);cursor:pointer;transition:all .15s;background:var(--bg)}
+.branch-chip:hover,.branch-chip.active{border-color:var(--accent);color:var(--accent);background:var(--accent-muted)}
+.annotation{margin-top:1.25rem;padding:1rem 1.25rem;border:1px solid var(--accent);border-radius:.5rem;background:var(--accent-muted);min-height:80px;display:none}
+.annotation.show{display:block}
+.ann-header{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.6;margin-bottom:.5rem}
+.ann-body{font-size:.9rem}
+.ann-detail{font-size:.825rem;opacity:.75;margin-top:.35rem}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:var(--bg);padding:.6rem 1.25rem;border-radius:.375rem;transform:translateY(150%);transition:transform .3s cubic-bezier(.16,1,.3,1);z-index:100;font-size:.875rem}
+.toast.show{transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>User Authentication Flow</h1>
+      <div class="meta">Annotated Flowchart · plan-html · Click any step to inspect</div>
+    </div>
+    <div class="toolbar">
+      <button onclick="copyState()">Copy State</button>
+      <button onclick="exportMd()">Export MD</button>
+    </div>
+  </header>
+
+  <div class="flow">
+    <div class="step" id="step-1" onclick="select('step-1')">
+      <div class="step-circle active">1</div>
+      <div class="step-content">
+        <div class="step-label">User submits credentials</div>
+        <div class="step-sub">POST /auth/v1/token · email + password</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="step" id="step-2" onclick="select('step-2')">
+      <div class="step-circle">2</div>
+      <div class="step-content">
+        <div class="step-label">Supabase Auth verifies identity</div>
+        <div class="step-sub">bcrypt hash comparison · rate-limit check</div>
+      </div>
+    </div>
+    <div class="branch">
+      <span class="branch-label">Branch:</span>
+      <span class="branch-chip" onclick="event.stopPropagation();select('step-2','fail')">❌ Invalid credentials → 400</span>
+      <span class="branch-chip" onclick="event.stopPropagation();select('step-2','mfa')">🔐 MFA required → Step 2b</span>
+    </div>
+    <div class="connector"></div>
+
+    <div class="step" id="step-3" onclick="select('step-3')">
+      <div class="step-circle">3</div>
+      <div class="step-content">
+        <div class="step-label">Issue access + refresh tokens</div>
+        <div class="step-sub">JWT (1h TTL) · Refresh token (30d) · HttpOnly cookie</div>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="step" id="step-4" onclick="select('step-4')">
+      <div class="step-circle">4</div>
+      <div class="step-content">
+        <div class="step-label">Middleware validates session</div>
+        <div class="step-sub">getUser() on every RSC render · no getSession()</div>
+      </div>
+    </div>
+    <div class="branch">
+      <span class="branch-label">Branch:</span>
+      <span class="branch-chip" onclick="event.stopPropagation();select('step-4','expired')">⏰ Token expired → auto-refresh</span>
+      <span class="branch-chip" onclick="event.stopPropagation();select('step-4','invalid')">🚫 Invalid → redirect /login</span>
+    </div>
+    <div class="connector"></div>
+
+    <div class="step" id="step-5" onclick="select('step-5')">
+      <div class="step-circle">5</div>
+      <div class="step-content">
+        <div class="step-label">RLS enforces data access</div>
+        <div class="step-sub">auth.uid() bound to row-level policies · no server-side filter needed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation show" id="ann">
+    <div class="ann-header">Step 1 — User submits credentials</div>
+    <div class="ann-body" id="ann-body">Credentials are sent over HTTPS as JSON body. Never log or store raw passwords. Rate limiting is enforced at the Supabase edge before this request reaches the auth handler.</div>
+    <div class="ann-detail" id="ann-detail">Implementation: supabase.auth.signInWithPassword({ email, password })</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script id="plan-data" type="application/json">{"activeStep":"step-1","flow":"email-password-mfa"}</script>
+<script>
+const annotations={
+  'step-1':{title:'Step 1 — User submits credentials',body:'Credentials sent over HTTPS as JSON body. Never log raw passwords. Rate limiting enforced at Supabase edge before auth handler.',detail:'supabase.auth.signInWithPassword({ email, password })'},
+  'step-2':{title:'Step 2 — Supabase Auth verifies identity',body:'bcrypt hash comparison server-side. Failed attempts increment rate-limit counter. Lockout triggers after 5 failures.',detail:'Returns 400 {error:"Invalid login credentials"} on failure.'},
+  'step-2-fail':{title:'Branch: Invalid credentials',body:'HTTP 400 returned. Client shows generic "Invalid email or password" — never reveal which field failed (enumeration protection).',detail:'Audit event: auth.audit_log_entries → login_failure'},
+  'step-2-mfa':{title:'Branch: MFA Required',body:'If user has TOTP enrolled, Supabase returns a challenge. Client must call verifyOtp() with TOTP code before a full session is issued.',detail:'supabase.auth.verifyOtp({ factorId, code, challengeId })'},
+  'step-3':{title:'Step 3 — Issue tokens',body:'Access token (JWT, 1h TTL) and refresh token (30d) issued. Stored in HttpOnly cookies via @supabase/ssr. Never expose in localStorage.',detail:'Refresh token stored in auth.refresh_tokens table, linked to session row.'},
+  'step-4':{title:'Step 4 — Middleware validates session',body:'Every RSC render calls getUser() (server-side, validates JWT signature). Do NOT use getSession() — it trusts client-side storage without verification.',detail:'middleware.ts: const { data: { user } } = await supabase.auth.getUser()'},
+  'step-4-expired':{title:'Branch: Token expired',body:'@supabase/ssr auto-refreshes using the refresh token cookie. No user action required. New access token written back to cookie.',detail:'Refresh window: token refreshed when < 60s remaining on TTL.'},
+  'step-4-invalid':{title:'Branch: Invalid / missing session',body:'Middleware redirects to /login. Refresh token may be revoked (logout, admin action, or expiry). User must re-authenticate.',detail:'302 redirect to /login?next={current-path} for post-login redirect.'},
+  'step-5':{title:'Step 5 — RLS enforces data access',body:'auth.uid() is available inside Postgres policies. Rows are filtered at the DB level — application code never needs to add WHERE user_id = :uid.',detail:'Example policy: USING (auth.uid() = user_id)'}
+};
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function copyState(){navigator.clipboard.writeText(document.getElementById('plan-data').textContent.trim()).then(()=>toast('State copied!'))}
+function exportMd(){
+  let md='# User Authentication Flow\n\n';
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    md+=`${i+1}. **${s.querySelector('.step-label').textContent.trim()}** — ${s.querySelector('.step-sub').textContent.trim()}\n`;
+  });
+  navigator.clipboard.writeText(md.trim()).then(()=>toast('MD copied!'))
+}
+function select(id,branch){
+  document.querySelectorAll('.step-circle').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.branch-chip').forEach(c=>c.classList.remove('active'));
+  const circle=document.querySelector('#'+id+' .step-circle');
+  if(circle)circle.classList.add('active');
+  const key=branch?id+'-'+branch:id;
+  const ann=annotations[key]||annotations[id];
+  if(ann){
+    document.getElementById('ann').classList.add('show');
+    document.querySelector('#ann .ann-header').textContent=ann.title;
+    document.getElementById('ann-body').textContent=ann.body;
+    document.getElementById('ann-detail').textContent=ann.detail;
+  }
+  if(branch){
+    const chips=document.querySelectorAll('#'+id+' ~ .branch .branch-chip');
+    chips.forEach(c=>{if(c.textContent.includes(branch==='fail'?'Invalid':branch==='mfa'?'MFA':branch==='expired'?'expired':'Invalid'))c.classList.add('active')});
+  }
+}
+</script>
+</body>
+</html>
