@@ -69,7 +69,7 @@
       "category": "design",
       "default": false,
       "repoZipUrl": "https://github.com/pbakaus/impeccable/archive/refs/heads/main.zip",
-      "subPath": "impeccable-main/agents/skill/2-plan&design/impeccable/",
+      "subPath": "impeccable-main/.agents/skills/impeccable/",
       "targetPath": ".agents/skills/impeccable",
       "description": "Design craft, polish, motion, and UX writing reference library."
     },

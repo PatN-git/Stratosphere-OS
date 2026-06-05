@@ -38,14 +38,32 @@ Before any file operations, decide and state the path in one line:
 
 ## Step 0: Scaffold (deterministic — both paths)
 
+Before scaffolding, choose whether you want to stage/install the plugin **globally** (available to any project on your system) or **locally** (isolated to this project only):
+
+- **Global Scope (Recommended):** Stage the plugin under the global configuration directory:
+  `~/.gemini/config/plugins/stratosphere-os/`
+  Invoke the scaffolder using:
+  ```bash
+  python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py
+  ```
+- **Local Scope:** Stage the plugin under your workspace's plugins directory:
+  `.agents/plugins/stratosphere-os/`
+  Invoke the scaffolder using:
+  ```bash
+  python .agents/plugins/stratosphere-os/scripts/scaffold.py
+  ```
+
 Run the bundled scaffolder from the **project root**. It creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 
 ```bash
-python <plugin>/scripts/scaffold.py          # add --personas to include the persona layer (Step 1b)
-python <plugin>/scripts/scaffold.py --dry-run   # preview without writing
+# Example showing a global staging run:
+python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py
+
+# Add --dry-run to preview what would be created without writing any files:
+python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py --dry-run
 ```
 
-`<plugin>` is the installed plugin root — Claude Code: `${CLAUDE_PLUGIN_ROOT}`; Antigravity: the staged plugin directory (e.g. under `~/.gemini/antigravity-cli/plugins/stratosphere-os/`).
+`<plugin>` is the installed plugin root — Claude Code: `${CLAUDE_PLUGIN_ROOT}`; Antigravity: the global staged plugin directory `~/.gemini/config/plugins/stratosphere-os/` or local `.agents/plugins/stratosphere-os/`.
 
 **What it creates** (skips anything already present):
 - Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
