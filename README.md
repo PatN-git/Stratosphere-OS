@@ -17,6 +17,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   - Stage 3: Workflows for full-stack implementation via "vibe coding"
   - Stage 4: Workflows for continuous feedback loops to ensure production-ready quality.
 
+
   | Stage | Command | File | When to use | Reads | Produces |
   |---|---|---|---|---|---|
   | 0 | `/0a_start-session` | `0a_start-session.md` | Begin any session | `STATUS`, relevant memory | synced context |
