@@ -1,0 +1,13 @@
+# Normalize all text files to LF in the repo and on checkout so the build
+# produces byte-identical output on every OS (keeps the dist staleness-guard honest).
+* text=auto eol=lf
+
+# Binary assets — never apply line-ending conversion.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.woff  binary
+*.woff2 binary
