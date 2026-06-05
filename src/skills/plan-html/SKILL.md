@@ -15,8 +15,8 @@ Generate HTML ONLY if ALL conditions pass:
 If any check fails → generate Markdown, prepend: `<!-- plan-html: bypassed (reason: <reason>) -->`
 
 # Template Selection
-1. Read `references/templates/index.md` (lean — ~20 lines).
-2. Load ONLY the single matching `.html` template file.
+1. Read `assets/templates/index.md` (lean — ~20 lines).
+2. Load ONLY the single matching `.html` template file from `assets/templates/`.
 3. Adapt slots: fill `{{placeholders}}` with actual content; never load unused templates.
 
 If no template fits → **custom-composition mode**: compose using primitives from `references/html-patterns.md` (accordion, tabs, progress bar). Gate still applies.
