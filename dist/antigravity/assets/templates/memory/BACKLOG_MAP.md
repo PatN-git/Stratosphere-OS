@@ -8,7 +8,7 @@ Authoritative, high-density reference for project issues and their status.
 ## Rules
 - When writing the first entry, populate the Label Registry with all labels used in this GitHub project.
 - Update when GitHub issues are created, closed, or change status.
-- Include only ID, Title, Status, Labels, Milestone, Dependencies, Ref — nothing else.
+- Include only ID, Title, Status, Labels, Milestone, Dependencies, ICE, Ref — nothing else.
 - Use the Label Registry; do not invent labels.
 - The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., L-012, A-003, DR-020, G-005).
 - **Label source of truth:** After installation (Step 6a), the Label Registry here reflects the live GitHub label set.
@@ -26,6 +26,6 @@ Authoritative, high-density reference for project issues and their status.
 
 ## Backlog
 
-| ID | Title | Status | Labels | Milestone | Dependencies | Ref |
-|:---|:---|:---|:---|:---|:---|:---|
-| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | v0.8 | — | [[L-002]], [[A-003]], [[DR-012]] |
+| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | v0.8 | — | ICE: 0.27 (I: 2.0, C: 80%) | [[L-002]], [[A-003]], [[DR-012]] |

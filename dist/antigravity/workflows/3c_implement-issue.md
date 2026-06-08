@@ -5,13 +5,18 @@ type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
 
-# Implement Issues
+# Implement issue
 
 **Purpose:** Implement deterministic vertical slices following a strict Test-Driven Development (TDD) cycle, prioritizing token efficiency and architectural integrity.
 
 ## 1. The Core TDD Protocol
 
 Apply strictly to all backend logic, database operations, hooks, and state functions. Use `.agents\skills\code-simplifier\SKILL.md` at the end.
+
+### Phase 0: Context Intake (UX & Blueprint Check)
+1. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
+2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<n>-ux.md`), load and read it. Keep in mind that a single parent-level UX document may span multiple slices; search it for the section relevant to the current slice.
+3. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 

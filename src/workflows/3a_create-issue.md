@@ -1,11 +1,11 @@
 ---
 name: 3a_create-issue
-description: Standardize feature ideas into "Implementation-Ready" vertical slices.
+description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
 
-# Create Issue
+# Create issue
 
 **Purpose:** Convert (raw) ideas into deterministic, "Implementation-Ready" vertical slices while maintaining absolute sync with the project's memory layer.
 
@@ -16,30 +16,41 @@ trigger: User. Do not run autonomously.
 2.  **Memory Audit:** If not done before in session run `/0a_start-session` first to familiarize with the project state and architecture.
 3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<n>-<name>.md`, or user cites `BT-<n>`) → load it; §6 + §8 are the scope to cover. Else the raw idea / MVI is the scope.
 
-## Phase 2: The Vertical Slice Quiz
+## Phase 2: The Vertical Slice Quiz & Prioritization
 Before creating the task, propose the breakdown to the user:
 1.  **Numbered List of Slices:**
     -   **Title:** [Short name]
     -   **Logic/user story:** Why is this a vertical slice? (Briefly explain the end-to-end path).
     -   **Blocked by:** [IDs of prerequisite slices]
-2.  **Coverage Check** (Template A spikes: skip):
+2.  **Prioritization Metrics (Template A spikes: skip):**
+    -   Prompt for **Impact** and **Confidence** based on these fixed scales:
+        -   **Impact:** ∈ {0.25 (minimal), 0.5 (low), 1.0 (medium), 2.0 (high), 3.0 (critical)}
+        -   **Confidence:** ∈ {50% (guess/speculative), 80% (high confidence/known implementation), 100% (absolute certainty/trivial)}
+        -   *Note:* **Effort** for the ICE calculation uses normalized weights: `size:large` = 3, `size:medium` = 2, `size:small` = 1. (Raw capacity hours in `3b` planning are: large=12h, med=6h, small=1h).
+3.  **Coverage Check** (Template A spikes: skip):
     -   **PRD-sourced:** map every §6 User Story + §8 Definition-of-Done item to ≥1 slice. Flag gaps:
         -   uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope.
         -   slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`.
         -   slice blocked by an open §10 Question → Template A (spike), not B.
     -   **No PRD:** restate captured intent as a requirement list; map slices to it. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs.
     -   Present the map with the slice list.
-3.  **Approval Request:**
+4.  **Approval Request:**
     -   Is every requirement & end-state covered (no `[UNCOVERED]`)?
     -   Does the granularity feel right? (Too coarse / too fine)
     -   Are the dependency relationships correct?
     -   Are the correct slices marked as `type:HITL` (Human-in-Loop) and `type:AFK` (Autonomous)?
+    -   Are the Impact and Confidence scores accurate?
 
 *Stop and iterate until the user approves the breakdown.*
 
 ## Phase 3: Implementation & Memory Sync
-1.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below.
-2.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format.
+1.  **Calculate ICE Score (Template A spikes: skip):** Compute `ICE = (Impact * Confidence) / Effort weight` (where Confidence is converted to a decimal: 50% = 0.5, 80% = 0.8, 100% = 1.0; Effort weight is small=1, medium=2, large=3).
+2.  **Determine Priority Label (Template A spikes: skip):** Bucket the raw ICE score into a standard controlled label:
+    -   **ICE >= 0.5:** `priority:high`
+    -   **0.15 <= ICE < 0.5:** `priority:medium`
+    -   **ICE < 0.15:** `priority:low`
+3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body.
+4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`) to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column.
 
 ---
 
@@ -74,6 +85,10 @@ Await user choice. Never silently apply a label that doesn't exist in GitHub.
 ## Overview
 - One paragraph: Business value, no jargon.
 - **Mental Model:** 2-3 bullets on core logic or specific question to answer.
+## ICE Priorities
+- **Impact:** [Value]
+- **Confidence:** [Value]
+- **ICE Score:** [Calculated Score]
 ## Current state / Problem
 Reference current `files:lines`. Why it's broken or missing.
 ## The Path (Vertical Slice Flow)

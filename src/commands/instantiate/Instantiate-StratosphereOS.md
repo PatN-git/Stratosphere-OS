@@ -1,7 +1,7 @@
 ---
 name: stratosphere-setup
 type: workflow
-description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, optional personas, and the right skill packs. Run once per project; safe to re-run.
+description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
 ---
 
 # Instantiate StratosphereOS
@@ -10,21 +10,19 @@ Instantiate minimum durable context an AI agent needs to resume work on a reposi
 
 This command is a **one-time setup** (safe to re-run for upgrades). The ongoing protocols live in:
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
-- `.agents/rules/persona-protocol.md` — persona activation, autonomy, handoff (optional)
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, Stitch harmonization, immortal components
 
 ## Why this exists
 
-Cold starts are expensive! A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales. The persona system lets you navigate complex multi-role work (Analyst, PM, Designer, Dev, Reviewer) without memorizing commands.
+Cold starts are expensive! A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales.
 
 ## Template source (read before any file creation)
 
 All templates ship **bundled with the plugin** under its `assets/templates/` directory. Locate the installed plugin's `assets/templates/` and read the relevant template file before creating any project file — never reconstruct templates from memory:
 - `assets/templates/constitution/` → `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
-- `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`, `persona-protocol.md`
+- `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
-- `assets/templates/personas/` → `_persona-template.md`, `designer.md`, persona drafts (optional, Step 1b)
 - `assets/templates/references/` → PRD and discovery-brief templates
 
 The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Step 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Step 8.
@@ -34,6 +32,9 @@ The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the proje
 Before any file operations, decide and state the path in one line:
 
 - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
+  - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
+    `No git repository is initialized in this project. Initialize a git repository? [y/N]`
+  - If they answer yes, initialize it by running `git init` before continuing.
 - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
 ## Step 0: Scaffold (deterministic — both paths)
@@ -69,7 +70,7 @@ python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py --dry-run
 - Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
 - Constitution → project root: `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
-- Rules: `.agents/rules/{output-mode,memory-protocol,persona-protocol}.md`
+- Rules: `.agents/rules/{output-mode,memory-protocol}.md`
 - Lifecycle workflows (`0a`–`4b`, `sync-skills`) + their `.reference/` templates → `.agents/workflows/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b_stop-session`)
 - `.gitignore` (only if missing)
@@ -79,31 +80,15 @@ python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py --dry-run
 - Missing required metadata blocks (Trust Tags reference, Label Registry, Immortal Components)
 - Renamed or removed required headers
 
-Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references,personas}/` if you need to read one for comparison.
+Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references}/` if you need to read one for comparison.
 
 ## Step 1: Workspace rules in effect (both paths)
 
 Step 0 has placed the rule/protocol files; they govern everything that follows:
-- `.agents/rules/output-mode.md`, `memory-protocol.md`, `persona-protocol.md`
+- `.agents/rules/output-mode.md`, `memory-protocol.md`
 - `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
 Confirm they exist. If Step 0 reported any as `LEFT AS-IS`, run the drift check before relying on them.
-
-## Step 1b: Personas (optional)
-
-The persona layer is **opt-in**. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask the user (do not ask in plain prose):
-
-> "Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)?"
-
-- **If no (default):** Re-run the scaffolder passing the `--no-personas` flag:
-  ```bash
-  python <plugin>/scripts/scaffold.py --no-personas
-  ```
-- **If yes:** Re-run the scaffolder passing the `--personas` flag:
-  ```bash
-  python <plugin>/scripts/scaffold.py --personas
-  ```
-  This copies `designer.md` and `_persona-template.md` into `.agents/workflows/`. Use `_persona-template.md` to author any additional persona.
 
 ## Step 2: Database audit
 
@@ -226,15 +211,23 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    - `mobile` (installs `react-native-skills`)
    - `design` (installs `impeccable`)
 
-2. **Sync the selected skill packs:**
-   Invoke the `sync_skills.py` script with the selected categories as arguments. For example:
+2. **Select Scope:**
+   Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask whether to install globally or locally (do not ask in prose):
+   `Install third-party skills globally (system-wide) or locally (just for this project)? [global/local]`
+
+3. **Sync the selected skill packs:**
+   Invoke the `sync_skills.py` script with the selected categories as arguments, adding the `--global` flag if global installation was chosen. For example:
    ```bash
+   # Local install
    python <plugin>/scripts/sync_skills.py --category system database
+   
+   # Global install
+   python <plugin>/scripts/sync_skills.py --category system database --global
    ```
    (Where `<plugin>` is `~/.claude/plugins/stratosphere-os/` globally on Claude Code, `~/.gemini/config/plugins/stratosphere-os/` globally on Antigravity, or `.agents/plugins/stratosphere-os/` / `.claude/plugins/stratosphere-os/` locally).
 
-3. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
-4. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
+4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
+5. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints
 

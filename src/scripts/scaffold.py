@@ -9,8 +9,7 @@ calls this for all mechanical work and keeps only the reasoning steps
 The script lives in the installed plugin at `<plugin>/scripts/scaffold.py`.
 Run it FROM THE PROJECT ROOT (cwd = project), e.g.:
 
-  python <plugin>/scripts/scaffold.py            # core scaffold
-  python <plugin>/scripts/scaffold.py --personas # also scaffold persona layer
+  python <plugin>/scripts/scaffold.py
   python <plugin>/scripts/scaffold.py --dry-run
 
 Plugin assets/templates and lifecycle workflows are resolved relative to the
@@ -31,18 +30,7 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 
-def prompt_personas():
-    while True:
-        try:
-            val = input("Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)? [y/N]: ").strip().lower()
-        except (KeyboardInterrupt, EOFError):
-            print()
-            return False
-        if not val or val in ("n", "no"):
-            return False
-        if val in ("y", "yes"):
-            return True
-        print("Please enter 'y' or 'n'.")
+
 
 ASSETS = PLUGIN_ROOT / "assets" / "templates"
 # Lifecycle workflows live in workflows/ (Antigravity build) or commands/ (Claude build)
@@ -63,9 +51,11 @@ FOLDERS = [
     ".agents/scripts",
     "docs/discovery",
     "docs/prds",
+    "docs/research",
+    "docs/design",
     ".tmp",
 ]
-KEEP_EMPTY = {"docs/discovery", "docs/prds", ".tmp"}  # add .gitkeep so they survive git
+KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", ".tmp"}  # add .gitkeep so they survive git
 
 
 def place(src: Path, dst: Path, res, dry):
@@ -101,18 +91,8 @@ def main():
     print(f"Resolved plugin root: {plugin_root_resolved} ({scope})")
 
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")
-    ap.add_argument("--personas", dest="personas", action="store_true", default=None, help="scaffold the optional persona layer")
-    ap.add_argument("--no-personas", dest="personas", action="store_false", help="do not scaffold the optional persona layer")
     ap.add_argument("--dry-run", action="store_true", help="report what would happen without writing")
     args = ap.parse_args()
-
-    # Interactive prompt if run without configuration flags in a TTY
-    if args.personas is None:
-        if not args.dry_run and sys.stdin.isatty():
-            args.personas = prompt_personas()
-        else:
-            print("Non-interactive context: defaulting to --no-personas")
-            args.personas = False
 
     project = Path.cwd()
     dry = args.dry_run
@@ -163,12 +143,7 @@ def main():
     if vm.exists():
         place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry)
 
-    # 7. Personas (optional)
-    if args.personas and (ASSETS / "personas").exists():
-        for name in ("designer.md", "_persona-template.md"):
-            src = ASSETS / "personas" / name
-            if src.exists():
-                place(src, project / ".agents" / "workflows" / name, res, dry)
+
 
     # 8. .gitignore (create if missing; never edit an existing one)
     gi = project / ".gitignore"

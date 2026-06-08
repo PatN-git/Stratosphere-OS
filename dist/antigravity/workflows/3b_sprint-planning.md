@@ -5,7 +5,7 @@ type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
 
-# Sprint Planning
+# Sprint planning
 
 **Hand-off contract:** Modifies `.memory/BACKLOG_MAP.md` and assigns GitHub issues to a milestone in format `x.yy` (`x` = version, `yy` = sprint).
 
@@ -18,7 +18,9 @@ trigger: User. Do not run autonomously.
 
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependency chains (`Blocked by`). If prerequisites are not `status: done` → tag candidate item `[BLOCKED]`.
-2. **Priority Array:** Sort all remaining unblocked candidate items by priority weighting: `high` → `medium` → `low`.
+2. **ICE Prioritization:** Read the pre-calculated ICE score directly from the `ICE` column in `.memory/BACKLOG_MAP.md`.
+   - *Only recompute* the ICE score if size, impact, or confidence inputs were manually changed since the issue was created (`ICE = (Impact * Confidence) / Effort weight` where Effort weight is small=1, medium=2, large=3).
+   - Sort all remaining unblocked candidate items by their ICE score in descending order.
 3. **Context Grouping:** Cluster sequenced tasks matching identical `area:xxx` tags to compress token burn overhead.
 
 ## Phase 3: Capacity Calculation & Safeguards
@@ -32,17 +34,17 @@ Output a compressed structural readout of items matching capacity thresholds and
 ```markdown
 [TARGET SPRINT MILESTONE: <x.yy>]
 
-- [AFK] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | Priority: <priority>
-- [HITL] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | Priority: <priority>
+- [AFK] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
+- [HITL] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 
 [CRITICAL ALERTS]
 ⚠️ WARNING: BT-<n> is size:large but labeled type:AFK. Confirm auto-execution!
-🗒️ Note: BT-<n> labeled `[NEEDS_SPEC]` must be enriched before inclusion in sprint planning.
+🗒️ Note: BT-<n> labels as `[NEEDS_SPEC]` needs to be enriched to be included in sprint planning.
 ```
 
-## Phase 5: Commit & Synch
+## Phase 5: Commit & Sync
 
 Halt execution. Prompt user for confirmation. When confirmed:
-1. Update issue metadata directly inside GitHub.
+1. Update issue metadata directly inside GitHub. Ensure the label registry's `priority:high|medium|low` bucket is correctly applied based on the ICE score (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low).
 2. Ensure milestone <x.yy> exists, assign matching issues, set status:planned inside .memory/BACKLOG_MAP.md and GitHub.
 3. Output termination note: Sprint <x.yy> locked. Ready for execution.

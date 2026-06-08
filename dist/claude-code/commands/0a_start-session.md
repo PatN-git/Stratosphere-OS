@@ -11,8 +11,8 @@ trigger: User. Do not run autonomously.
 Reconstruct minimum necessary context quickly without re-reading the whole repository. Surface crystallization opportunities before work begins.
 
 ## Procedure
-1. Read `.memory/STATUS.md`. Note any "Suggested Next Persona" — the user may invoke it directly after `/0a_start-session`.
-2. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies — unless invoked by `SKILL_create-issue.md`.
+1. Read `.memory/STATUS.md`.
+2. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies — unless invoked by 3a_create-issue.md.
 3. Read `.memory/LEARNINGS.md` (Active Entries only — skip `## Superseded` unless the task explicitly requires history).
 4. If the task involves a PRD, discovery brief, or domain-heavy feature — read `.memory/GLOSSARY.md` (Active Entries only).
 5. Read `.memory/ARCHITECTURE.md` if the task affects structure, state flow, feature boundaries, or cross-feature behavior.
@@ -26,5 +26,4 @@ Context synced.
 - Objective:
 - Current state:
 - Next step:
-- Suggested persona (from STATUS.md, if any):
 - Needs verification:

@@ -9,7 +9,7 @@ Outputs:
 
 Skills are byte-identical between platforms; only the manifest and the
 workflow-vs-command directory naming differ. Project-instance content
-(constitution, memory templates, rules, personas) ships as assets/templates/
+(constitution, memory templates, rules) ships as assets/templates/
 and is written into a project by the instantiate command, not on install.
 """
 import json
@@ -167,7 +167,6 @@ def build_platform(kind: str):
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "references", assets / "references")
-    copytree(SRC / "personas", assets / "personas")
     copytree(SRC / "scripts", out / "scripts")
 
     # 6. Manifest
