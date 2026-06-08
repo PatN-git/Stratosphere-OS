@@ -6,6 +6,7 @@
       "category": "system",
       "default": true,
       "repoZipUrl": "https://github.com/anthropics/skills/archive/refs/heads/main.zip",
+      "ref": "c30d329f5814647c1e2f071020c1e8c1c9893ef1",
       "subPath": "skills-main/skills/skill-creator/",
       "targetPath": ".agents/skills/skill-creator",
       "description": "Create, edit, evaluate, and benchmark agent skills."
@@ -15,6 +16,7 @@
       "category": "system",
       "default": true,
       "repoZipUrl": "https://github.com/anthropics/claude-plugins-official/archive/refs/heads/main.zip",
+      "ref": "ed3ff7abb352a781c91fb8b99d1ce15ec951c60c",
       "subPath": "claude-plugins-official-main/plugins/code-simplifier/",
       "targetPath": ".agents/skills/code-simplifier",
       "description": "Simplify and refine recently modified code without changing behavior."
@@ -24,6 +26,7 @@
       "category": "database",
       "default": false,
       "repoZipUrl": "https://github.com/supabase/agent-skills/archive/refs/heads/main.zip",
+      "ref": "1356046015476711a769601079262b5635929427",
       "subPath": "agent-skills-main/skills/supabase/",
       "targetPath": ".agents/skills/supabase",
       "description": "Supabase platform usage and best practices."
@@ -33,6 +36,7 @@
       "category": "database",
       "default": false,
       "repoZipUrl": "https://github.com/supabase/agent-skills/archive/refs/heads/main.zip",
+      "ref": "1356046015476711a769601079262b5635929427",
       "subPath": "agent-skills-main/skills/supabase-postgres-best-practices/",
       "targetPath": ".agents/skills/supabase-postgres-best-practices",
       "description": "Postgres schema, indexing, RLS, and query performance best practices."
@@ -42,6 +46,7 @@
       "category": "web",
       "default": false,
       "repoZipUrl": "https://github.com/vercel-labs/agent-skills/archive/refs/heads/main.zip",
+      "ref": "4ec6f84b61cd3c931046c3e6e398f3ae7de372f7",
       "subPath": "agent-skills-main/skills/react-best-practices/",
       "targetPath": ".agents/skills/react-best-practices",
       "description": "React rendering, re-render, async, and bundle performance rules."
@@ -51,6 +56,7 @@
       "category": "web",
       "default": false,
       "repoZipUrl": "https://github.com/vercel-labs/agent-skills/archive/refs/heads/main.zip",
+      "ref": "4ec6f84b61cd3c931046c3e6e398f3ae7de372f7",
       "subPath": "agent-skills-main/skills/composition-patterns/",
       "targetPath": ".agents/skills/composition-patterns",
       "description": "React component composition and state architecture patterns."
@@ -60,6 +66,7 @@
       "category": "mobile",
       "default": false,
       "repoZipUrl": "https://github.com/vercel-labs/agent-skills/archive/refs/heads/main.zip",
+      "ref": "4ec6f84b61cd3c931046c3e6e398f3ae7de372f7",
       "subPath": "agent-skills-main/skills/react-native-skills/",
       "targetPath": ".agents/skills/react-native-skills",
       "description": "React Native list performance, animation, navigation, and UI rules."
@@ -69,6 +76,7 @@
       "category": "design",
       "default": false,
       "repoZipUrl": "https://github.com/pbakaus/impeccable/archive/refs/heads/main.zip",
+      "ref": "1aedbcf538e3fa6694ccbf00294cc18e59ba1f21",
       "subPath": "impeccable-main/.agents/skills/impeccable/",
       "targetPath": ".agents/skills/impeccable",
       "description": "Design craft, polish, motion, and UX writing reference library."
@@ -78,6 +86,7 @@
       "category": "web",
       "default": false,
       "repoZipUrl": "https://github.com/vercel-labs/agent-skills/archive/refs/heads/main.zip",
+      "ref": "4ec6f84b61cd3c931046c3e6e398f3ae7de372f7",
       "subPath": "agent-skills-main/skills/web-design-guidelines/",
       "targetPath": ".agents/skills/vercel-web-design",
       "description": "Vercel web design guidelines."

@@ -63,7 +63,7 @@ python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py
 python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py --dry-run
 ```
 
-`<plugin>` is the installed plugin root — Claude Code: `${CLAUDE_PLUGIN_ROOT}`; Antigravity: the global staged plugin directory `~/.gemini/config/plugins/stratosphere-os/` or local `.agents/plugins/stratosphere-os/`.
+`<plugin>` is the installed plugin root — Claude Code: `~/.claude/plugins/stratosphere-os/` (global) or `.claude/plugins/stratosphere-os/` (local); Antigravity: the global staged plugin directory `~/.gemini/config/plugins/stratosphere-os/` or local `.agents/plugins/stratosphere-os/`.
 
 **What it creates** (skips anything already present):
 - Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
@@ -91,12 +91,19 @@ Confirm they exist. If Step 0 reported any as `LEFT AS-IS`, run the drift check 
 
 ## Step 1b: Personas (optional)
 
-The persona layer is **opt-in**. Ask the user once:
+The persona layer is **opt-in**. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask the user (do not ask in plain prose):
 
-> "Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)? [y/N]"
+> "Scaffold the StratosphereOS persona layer (Analyst, PM, Designer, Dev, Reviewer)?"
 
-- **If no (default):** skip. No persona files are created. The system works without personas. (`persona-protocol.md` still exists from Step 0; it is inert until a persona is added.)
-- **If yes:** re-run the scaffolder with the persona flag — `python <plugin>/scripts/scaffold.py --personas` — which copies `designer.md` and `_persona-template.md` into `.agents/workflows/`. Use `_persona-template.md` to author any additional persona.
+- **If no (default):** Re-run the scaffolder passing the `--no-personas` flag:
+  ```bash
+  python <plugin>/scripts/scaffold.py --no-personas
+  ```
+- **If yes:** Re-run the scaffolder passing the `--personas` flag:
+  ```bash
+  python <plugin>/scripts/scaffold.py --personas
+  ```
+  This copies `designer.md` and `_persona-template.md` into `.agents/workflows/`. Use `_persona-template.md` to author any additional persona.
 
 ## Step 2: Database audit
 
@@ -193,7 +200,7 @@ GitHub labels already exist and may differ from the registry.
 
 3. **Present full table** to the user.
    - `KEEP` and `ADD` are auto-approved.
-   - `MAP` and `DROP` require explicit per-row user confirmation before executing.
+   - `MAP` and `DROP` require explicit per-row user confirmation. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to obtain the user's confirmation — do not ask in prose.
 
 4. **Execute** confirmed changes in GitHub.
 
@@ -205,21 +212,29 @@ GitHub labels already exist and may differ from the registry.
 ## Step 7: Session & Backlog Sync (both paths)
 
 1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
-2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `[[BT-xxx]]` IDs and the Label Registry. **Run Step 6a first** to ensure the registry reflects live GitHub labels.
+2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `[[BT-xxx]]` IDs and the Label Registry.
 
 ## Step 8: Skill setup (interactive)
 
-Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync-skills` script. Select only what this project needs.
+Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
-1. **System skills (default on):** install with `python <plugin>/scripts/sync_skills.py --default` (`code-simplifier`, `skill-creator`). Confirm first. (`<plugin>` as in Step 0; `sync_skills.py` reads the plugin's `external-skills.json`.)
-2. **Ask targeted questions**, mapping each "yes" to a registry `category`:
-   - "Does this project use a database?" → `--category database` (`supabase`, `supabase-postgres-best-practices`)
-   - "React or web frontend?" → `--category web` (`react-best-practices`, `composition-patterns`, `vercel-web-design`)
-   - "React Native / mobile?" → `--category mobile` (`react-native-skills`)
-   - "Do you want design-polish tooling?" → `--category design` (`impeccable`)
-3. **Fetch the selected packs** in one call, e.g. `python <plugin>/scripts/sync_skills.py --default --category database web`. The script reads the plugin's `external-skills.json` and reports any entry it skips (invalid `repoZipUrl`) or where `0 files matched`.
-4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
-5. Re-runnable: re-invoke this command anytime to add packs later.
+1. **Select Skill Categories to sync:**
+   Use the native `AskUserQuestion` tool with `multiSelect: true` (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user (do not ask in prose). Offer the following options:
+   - `system` (installs `code-simplifier`, `skill-creator` - default on)
+   - `database` (installs `supabase`, `supabase-postgres-best-practices`)
+   - `web` (installs `react-best-practices`, `composition-patterns`, `vercel-web-design`)
+   - `mobile` (installs `react-native-skills`)
+   - `design` (installs `impeccable`)
+
+2. **Sync the selected skill packs:**
+   Invoke the `sync_skills.py` script with the selected categories as arguments. For example:
+   ```bash
+   python <plugin>/scripts/sync_skills.py --category system database
+   ```
+   (Where `<plugin>` is `~/.claude/plugins/stratosphere-os/` globally on Claude Code, `~/.gemini/config/plugins/stratosphere-os/` globally on Antigravity, or `.agents/plugins/stratosphere-os/` / `.claude/plugins/stratosphere-os/` locally).
+
+3. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
+4. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints
 
