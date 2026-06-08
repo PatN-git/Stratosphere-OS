@@ -28,6 +28,9 @@ linked-prd: —
 **Rejected framings:**
 - <Framing>: <one-line reason rejected>
 
+**Rejected approaches (brainstorm):**
+- <Approach>: <one-line reason rejected>
+
 ## Prior Art
 <Related BT-<n>, existing code areas, memory refs ([L-xx], [G-xx]), prior attempts.>
 

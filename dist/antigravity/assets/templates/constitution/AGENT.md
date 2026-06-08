@@ -33,6 +33,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Reuse Before Creation:** Check existing code, scripts, or skills before creating new ones, extend an existing when the fit is clean.
 - **Goal-Driven Execution:** Define success in verifiable terms before implementing.
 - **Verification:** Do not consider a task complete until verified by test, small but relevant sample run, or output check. If direct verification is not possible, state what remains unverified.
+- **No fabrication:** Never fabricate facts, data, or sources; mark unknowns explicitly.
  
 ## 5. When to Ask vs. Act
 - **ACT:** Task is clear, low-risk, and reversible.
