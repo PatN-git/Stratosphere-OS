@@ -1,5 +1,5 @@
 ---
-name: instantiate-stratosphere
+name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, optional personas, and the right skill packs. Run once per project; safe to re-run.
 ---
