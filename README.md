@@ -89,7 +89,8 @@ src/                         ← edit here (single source of truth)
 ├─ commands/                 instantiate + sync-skills
 ├─ rules/                    output-mode, memory-protocol
 ├─ memory-templates/         .memory/* scaffolding (STATUS, ARCHITECTURE, DESIGN, …)
-├─ references/  scripts/     PRD/discovery templates; validate_memory.py
+├─ references/               PRD/discovery/competitor templates
+├─ scripts/                  validate_memory.py
 └─ external-skills.json      on-demand skill registry
 
 build/build.py               ← single build step (build/validate.py checks output)

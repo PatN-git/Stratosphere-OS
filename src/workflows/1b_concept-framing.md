@@ -13,9 +13,20 @@ trigger: User. Do not run autonomously.
 
 ## Phase 0: Brainstorm (Optional)
 
-1. Infer the user's intent from their initial prompt:
-   - **Sharpen:** If they already have a concrete concept, skip directly to Phase 1.
-   - **Generate:** If they want to explore or brainstorm options first, engage in a short divergent pass (propose 3+ distinct approaches/ideas, without immediate judgment). Iterate with the user, converge on a single winning approach, and then proceed to Phase 1 with the winner.
+1. Infer intent from initial prompt:
+   - **Sharpen:** concrete concept → skip to Phase 1.
+   - **Generate:** vague/exploratory → run the Phase 0 brainstorm steps below.
+
+2. **Extract constraints** (rapid-fire): target user, timeline, tech constraints, hard boundaries. Confirm. If constraints stay fuzzy, load `.agents/workflows/.reference/brainstorm-techniques.md` and use CHAIN.
+
+3. **Check Backlog:** Scan `.memory/BACKLOG_MAP.md` for matching `BT-<n>`. If found and status is not `done`, surface the item (ICE details or `type:NEEDS_SPEC` spike label) and prompt: *"BT-<n> already covers this. Resume it or brainstorm alternative?"* (If resuming, skip steps 4-6 and proceed directly to Phase 1). If status is `done`, surface as prior art but continue brainstorming.
+
+4. **Diverge:** Default path = Multi-Perspective Ideation (PM / Designer / Engineer lenses), 3-5 ideas per lens, presented in one table. Load `.agents/workflows/.reference/brainstorm-techniques.md` only to pick a situational technique from its Selection Guide when the default pass stalls or the user asks to go deeper. Do not run every technique.
+
+5. **Pre-ICE Triage:** Rank top 5 ideas using Impact (1-5, agent) and Confidence (1-5, user). Do not compute or write a combined ICE score (Effort is not yet sized).
+
+6. **Validate:** Ask: *"Is building this the right approach, or would a simpler solution work?"*
+   Frame winner: Outcome → Opportunity → Solution → Experiments. Do not enter Phase 1 without approval.
 
 ## Phase 1: Precondition & Scope
 
@@ -41,7 +52,11 @@ One question at a time. Where Phase 1 context gives you sufficient signal on a f
 - **Problem shape** — "we need X" is a solution. Push to "what hurts without X, and how often?"
 - **Vocabulary** — every domain term that could mean two things gets pinned once.
 - **Internal Prior Art** — what code already touches this? What has been tried internally?
-- **External Research** — check if a research artifact exists at `docs/research/<topic>.md`. What does the external/competitor landscape show?
+- **External Research** — derive canonical slug from the restated ask using the same rule as `/1a_research` Phase 1 (kebab-case core problem as 2–5 word noun phrase).
+  1. Glob `docs/research/*.md` (filenames only — filenames are slugs). Fuzzy-match against the slug/ask.
+  2. Exact or one strong match → Read ONLY that file's frontmatter (specifically the `updated:` date). Prompt: *"Research at docs/research/<slug>.md (updated <updated>). Still current, or refresh first?"* Read the body only after user confirms; then cite findings and skip the probe.
+  3. Zero matches → Run 2-3 question probe; if signal is weak, suggest `/1a_research`.
+  4. Multiple matches → List filenames, user selects.
 - **Success state** — "better" is not a state. Push to an observable change a sceptic would accept.
 - **Hard constraints** — what is genuinely fixed vs. assumed fixed?
 - **Non-goals (early)** — what is explicitly NOT being asked for?
