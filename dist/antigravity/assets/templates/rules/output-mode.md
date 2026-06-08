@@ -35,4 +35,3 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **Surgical narrative:** explain the *why*, not the *how*.
 - **Direct verification:** show results, not process.
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` for all memory operations.
-- **Persona discipline:** follow `.agents/rules/persona-protocol.md` when a persona is active.

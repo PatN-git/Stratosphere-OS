@@ -24,15 +24,17 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 0 | `/0b_stop-session` | `0b_stop-session.md` | End any session | session work | updated memory, lint, handoff |
   | 0 | `/0c_handoff` | `0c_handoff.md` | Hand to a fresh session | conversation | `.tmp/handoff_*` |
   | 0 | `/0d_nightly-consolidation` | `0d_nightly-consolidation.md` | End-of-day maintenance (AFK) | sessions, `.memory/*` | consolidation plan |
-  | 1 | `/1a_discover-idea` | `1a_discover-idea.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
+  | 1 | `/1a_research` | `1a_research.md` | Research unfamiliar domain | memory | `docs/research/` |
+  | 1 | `/1b_concept-framing` | `1b_concept-framing.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
   | 2 | `/2a_write-prd` | `2a_write-prd.md` | Turn a brief into a PRD | brief, memory | PRD doc + parent issue |
+  | 2 | `/2b_ux-design` | `2b_ux-design.md` | Design UX flows / specs | PRD | design blueprint / Stitch prompt |
   | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
   | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
-  | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE` | code + tests |
+  | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE`, UX | code + tests |
   | 4 | `/4a_audit-test-gaps` | `4a_audit-test-gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
-- **Installer** — `/stratosphere-setup` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
+- **Installer** — `/stratosphere-setup` scaffolds the project: memory layer, workspace rules, constitution, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
 - **First-party skills** — `micro-tdd` (autonomous, token-efficient TDD) and `plan-html` (interactive HTML plans/matrices/micro-apps).
 - **On-demand skills** — database, React/web, React Native, and design packs are fetched only when a project needs them (see `src/external-skills.json`).
 
@@ -85,9 +87,8 @@ src/                         ← edit here (single source of truth)
 ├─ skills/                   first-party skills (micro-tdd, plan-html)
 ├─ workflows/                lifecycle commands (0a–4b)
 ├─ commands/                 instantiate + sync-skills
-├─ rules/                    output-mode, memory-protocol, persona-protocol
+├─ rules/                    output-mode, memory-protocol
 ├─ memory-templates/         .memory/* scaffolding (STATUS, ARCHITECTURE, DESIGN, …)
-├─ personas/                 persona drafts + designer + _persona-template
 ├─ references/  scripts/     PRD/discovery templates; validate_memory.py
 └─ external-skills.json      on-demand skill registry
 
@@ -105,7 +106,7 @@ python build/build.py
 
 Skills are byte-identical across platforms; only the manifest and the
 `commands/` vs `workflows/` directory naming differ. Project-instance files
-(constitution, memory templates, rules, personas) ship under `assets/templates/`
+(constitution, memory templates, rules) ship under `assets/templates/`
 and are written into a project by the installer — not on install.
 
 ---
