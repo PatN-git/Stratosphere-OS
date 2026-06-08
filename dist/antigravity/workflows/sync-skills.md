@@ -10,7 +10,7 @@ Third-party skills are **not bundled** with the plugin. They are fetched on dema
 
 ## Usage
 
-Run from the **project root**. `sync_skills.py` lives in the installed plugin (not the project) and reads the plugin's `external-skills.json` automatically; invoke it with the plugin path — `<plugin>` is `${CLAUDE_PLUGIN_ROOT}` on Claude Code, or the staged plugin dir on Antigravity.
+Run from the **project root**. `sync_skills.py` lives in the installed plugin (not the project) and reads the plugin's `external-skills.json` automatically; invoke it with the plugin path — `<plugin>` is `~/.claude/plugins/stratosphere-os/` on Claude Code, or the global staged plugin dir `~/.gemini/config/plugins/stratosphere-os/` on Antigravity.
 
 ```bash
 # See what's available (asterisk = installed by default)

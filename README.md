@@ -43,12 +43,18 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 ## Install
 
 ### Claude Code
+```bash
+git clone https://github.com/PatN-git/Stratosphere-OS.git
+# then run the install script for your shell:
+
+# On Unix/Bash:
+scripts/install-claude-code.sh
+
+# On Windows/PowerShell:
+powershell -ExecutionPolicy Bypass -File scripts/install-claude-code.ps1
 ```
-/plugin marketplace add PatN-git/Stratosphere-OS
-/plugin install stratosphere-os
-/stratosphere-setup
-```
-Update: `/plugin marketplace update` then reinstall.
+Update: Re-pull the repository, run the build script (`python build/build.py`), and run the installer script again.
+
 
 ### Google Antigravity
 Choose whether you want to install/stage the plugin **globally** (for use across multiple projects) or **locally** (only for the current project):
