@@ -148,14 +148,12 @@ def build_platform(kind: str):
     #    so ship it there as a discoverable skill instead.
     inst = SRC / "commands" / "instantiate" / "Instantiate-StratosphereOS.md"
     if kind == "claude":
-        copy_md_with_frontmatter(inst, invoke_dir / "instantiate-stratosphere.md",
-                                 name="instantiate-stratosphere")
+        copy_md_with_frontmatter(inst, invoke_dir / "stratosphere-setup.md",
+                                 name="stratosphere-setup")
     else:
-        text = re.sub(r"(?m)^name:.*$", "name: stratosphere-setup",
-                      inst.read_text(encoding="utf-8"), count=1)
         sk = out / "skills" / "stratosphere-setup" / "SKILL.md"
         sk.parent.mkdir(parents=True, exist_ok=True)
-        write_lf(sk, text)
+        copy_md_with_frontmatter(inst, sk, name="stratosphere-setup")
 
     # 4. sync-skills command + script + registry
     sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"

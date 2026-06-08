@@ -32,7 +32,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 4 | `/4a_audit-test-gaps` | `4a_audit-test-gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
-- **Installer** — `/instantiate-stratosphere` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
+- **Installer** — `/stratosphere-setup` scaffolds the project: memory layer, workspace rules, constitution, optional personas, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
 - **First-party skills** — `micro-tdd` (autonomous, token-efficient TDD) and `plan-html` (interactive HTML plans/matrices/micro-apps).
 - **On-demand skills** — database, React/web, React Native, and design packs are fetched only when a project needs them (see `src/external-skills.json`).
 
@@ -46,7 +46,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 ```
 /plugin marketplace add PatN-git/Stratosphere-OS
 /plugin install stratosphere-os
-/instantiate-stratosphere
+/stratosphere-setup
 ```
 Update: `/plugin marketplace update` then reinstall.
 
@@ -57,11 +57,11 @@ Choose whether you want to install/stage the plugin **globally** (for use across
 
 Then in the agent, run the setup skill:
 ```
-/instantiate-stratosphere
+/stratosphere-setup
 ```
 Update: Re-pull the repository, run the build script, and copy/stage the updated `dist/antigravity/` folder to your chosen scope directory.
 
-> **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/instantiate-stratosphere` is what writes the constitution and memory layer into *your* project.
+> **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/stratosphere-setup` is what writes the constitution and memory layer into *your* project.
 
 ---
 
