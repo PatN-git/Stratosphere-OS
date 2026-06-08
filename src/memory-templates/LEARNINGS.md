@@ -1,7 +1,7 @@
 # LEARNINGS
 
 ## Purpose
-Episodic memory for project-specific lessons likely to matter again. Each entry carries a unique `[[L-xxx]]` ID, a trust tag, and (where applicable) a `Source: [[BT-xxx]]` cross-reference.
+Episodic memory for project-specific lessons likely to matter again. Each entry carries a unique `L-xxx` ID, a trust tag, and (where applicable) a `Source: BT-xxx` cross-reference.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
 
@@ -21,10 +21,10 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 
 ## Active Entries
 
-- **[[L-001]] [GUESS] [YYYY-MM-DD]** Example placeholder. Source: [[BT-XX]].
-- **[[L-002]] [PATTERN] [YYYY-MM-DD]** Example: Detail drawer state must remain outside map marker components to avoid rerender loop. Source: [[BT-XX]], [[BT-XX]].
+- **[[L-001]] [GUESS] [YYYY-MM-DD]** Example placeholder. Source: BT-XX.
+- **[[L-002]] [PATTERN] [YYYY-MM-DD]** Example: Detail drawer state must remain outside map marker components to avoid rerender loop. Source: [[BT-001]].
 
 ## Superseded
 > Read only when explicitly asked.
 
-- **[[L-XXX]] [SUPERSEDED BY [[L-YYY]]] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.
+- **L-XXX [SUPERSEDED BY L-YYY] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.

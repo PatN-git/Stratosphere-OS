@@ -10,7 +10,7 @@ Authoritative, high-density reference for project issues and their status.
 - Update when GitHub issues are created, closed, or change status.
 - Include only ID, Title, Status, Labels, Milestone, Dependencies, Ref — nothing else.
 - Use the Label Registry; do not invent labels.
-- The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., `[[L-012]], [[A-003]], [[DR-020]], [[G-005]]`).
+- The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., L-012, A-003, DR-020, G-005).
 - **Label source of truth:** After installation (Step 6a), the Label Registry here reflects the live GitHub label set.
   - If a label appears in **GitHub but not the registry** → add it to the registry (with user confirmation).
   - If a label appears in the **registry but not GitHub** → create it in GitHub before using it in any issue.
@@ -28,4 +28,4 @@ Authoritative, high-density reference for project issues and their status.
 
 | ID | Title | Status | Labels | Milestone | Dependencies | Ref |
 |:---|:---|:---|:---|:---|:---|:---|
-| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | v0.8 | — | [[L-002]], [[A-003]], [[DR-020]] |
+| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | v0.8 | — | [[L-002]], [[A-003]], [[DR-012]] |

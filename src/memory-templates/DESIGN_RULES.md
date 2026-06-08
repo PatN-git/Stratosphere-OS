@@ -39,7 +39,7 @@ Structural source of truth. Stitch and other generators MUST conform to these.
 
 ### Active Entries
 
-- **[[DR-012]] [LAW]** Example placeholder — replace during brownfield audit or as components are built.
+- **[[DR-012]] [LAW]** Example placeholder — replace during brownfield audit or as components are built. Source: [[BT-001]].
   - **Component:** `components/layout/Navbar.tsx`
   - **Desktop pattern:** Top-fixed, horizontal links
   - **Mobile pattern:** Hamburger trigger, right-side drawer
@@ -53,4 +53,4 @@ Structural source of truth. Stitch and other generators MUST conform to these.
 ### Superseded
 > Read only when explicitly asked.
 
-- **[[DR-XXX]] [SUPERSEDED BY [[DR-YYY]]] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.
+- **DR-XXX [SUPERSEDED BY DR-YYY] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.

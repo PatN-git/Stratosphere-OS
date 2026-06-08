@@ -42,13 +42,13 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 ## Structural Rules
 - **[[A-001]] [LAW]** Keep page/app files focused on top-level state coordination, data flow, and visual composition.
 - **[[A-002]] [LAW]** Extract non-trivial state/effect and complex UI logic into hooks. Keep constants, static mock data, and helpers out of component files.
-- **[[A-003]] [LAW]** Do not mix unrelated concerns in large component files. If a code file or logic file exceeds 400 lines, contains multiple distinct layout sections, or mixes multiple concerns, perform a clean structural extraction before writing new code.
+- **[[A-003]] [LAW]** Do not mix unrelated concerns in large component files. If a code file or logic file exceeds 400 lines, contains multiple distinct layout sections, or mixes multiple concerns, perform a clean structural extraction before writing new code. Source: [[BT-001]].
 - **[[A-004]] [LAW]** Do not rewrite folder structures wholesale. When dealing with legacy or messy codebases, extract one isolated concern at a time, verify functionality remains green, and preserve established style.
 
 ## Known Architectural Constraints
-- **[[A-XXX]] [LAW]** Constraint:
+- **A-XXX [LAW]** Constraint:
 
 ## Superseded
 > Read only when explicitly asked.
 
-- **[[A-XXX]] [SUPERSEDED BY [[A-YYY]]] [YYYY-MM-DD]** Original rule preserved. Reason: one line. Version: v0.X → v0.Y.
+- **A-XXX [SUPERSEDED BY A-YYY] [YYYY-MM-DD]** Original rule preserved. Reason: one line. Version: v0.X → v0.Y.
