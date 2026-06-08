@@ -34,6 +34,9 @@ The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the proje
 Before any file operations, decide and state the path in one line:
 
 - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
+  - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
+    `No git repository is initialized in this project. Initialize a git repository? [y/N]`
+  - If they answer yes, initialize it by running `git init` before continuing.
 - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
 ## Step 0: Scaffold (deterministic — both paths)
@@ -226,15 +229,23 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    - `mobile` (installs `react-native-skills`)
    - `design` (installs `impeccable`)
 
-2. **Sync the selected skill packs:**
-   Invoke the `sync_skills.py` script with the selected categories as arguments. For example:
+2. **Select Scope:**
+   Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask whether to install globally or locally (do not ask in prose):
+   `Install third-party skills globally (system-wide) or locally (just for this project)? [global/local]`
+
+3. **Sync the selected skill packs:**
+   Invoke the `sync_skills.py` script with the selected categories as arguments, adding the `--global` flag if global installation was chosen. For example:
    ```bash
+   # Local install
    python <plugin>/scripts/sync_skills.py --category system database
+   
+   # Global install
+   python <plugin>/scripts/sync_skills.py --category system database --global
    ```
    (Where `<plugin>` is `~/.claude/plugins/stratosphere-os/` globally on Claude Code, `~/.gemini/config/plugins/stratosphere-os/` globally on Antigravity, or `.agents/plugins/stratosphere-os/` / `.claude/plugins/stratosphere-os/` locally).
 
-3. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
-4. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
+4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
+5. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints
 

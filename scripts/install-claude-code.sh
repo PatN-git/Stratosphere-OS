@@ -71,4 +71,4 @@ fi
 # Stage full plugin to plugins/stratosphere-os/
 cp -rf "$REPO_ROOT/dist/claude-code/"* "$PLUGINS_DIR/"
 
-echo "Successfully installed to $CLAUDE_DIR"
+echo "Successfully installed to $CLAUDE_DIR. Please restart Claude Code for the commands to load."

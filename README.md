@@ -55,6 +55,10 @@ powershell -ExecutionPolicy Bypass -File scripts/install-claude-code.ps1
 ```
 Update: Re-pull the repository, run the build script (`python build/build.py`), and run the installer script again.
 
+> [!IMPORTANT]
+> **Restart Required:** After running the install script, you MUST restart Claude Code for the commands (including `/stratosphere-setup`) to be discovered.
+
+
 
 ### Google Antigravity
 Choose whether you want to install/stage the plugin **globally** (for use across multiple projects) or **locally** (only for the current project):

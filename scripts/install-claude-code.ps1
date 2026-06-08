@@ -61,4 +61,4 @@ if (Test-Path (Join-Path $buildDir "skills")) {
 # Stage full plugin to plugins/stratosphere-os/
 Copy-Item -Path (Join-Path $buildDir "\*") -Destination $pluginsDir -Recurse -Force
 
-Write-Host "Successfully installed to $claudeDir"
+Write-Host "Successfully installed to $claudeDir. Please restart Claude Code for the commands to load."

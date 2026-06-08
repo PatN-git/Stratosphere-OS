@@ -108,7 +108,7 @@ def force_rmtree(path: Path):
     shutil.rmtree(path, onerror=remove_readonly)
 
 
-def check_lockfile(root, chosen_skills, lockfile_path, force):
+def check_lockfile(skills_base, chosen_skills, lockfile_path, force):
     if force or not lockfile_path.exists():
         return True, []
 
@@ -122,11 +122,7 @@ def check_lockfile(root, chosen_skills, lockfile_path, force):
 
     for entry in chosen_skills:
         name = entry.get("name")
-        target = entry.get("targetPath")
-        if not target:
-            continue
-        
-        target_dir = Path(root) / target
+        target_dir = skills_base / name
         if not target_dir.exists():
             continue
         
@@ -137,28 +133,27 @@ def check_lockfile(root, chosen_skills, lockfile_path, force):
             for p in target_dir.rglob("*"):
                 if p.is_file():
                     rel = p.relative_to(target_dir).as_posix()
-                    modified_files.append(f"{target}/{rel} (untracked)")
+                    modified_files.append(f"{name}/{rel} (untracked)")
             continue
 
         lock_files = skill_lock.get("files", {})
         for rel_path, expected_hash in lock_files.items():
             full_path = target_dir / rel_path
             if not full_path.exists():
-                modified_files.append(f"{target}/{rel_path} (deleted)")
+                modified_files.append(f"{name}/{rel_path} (deleted)")
             else:
                 current_hash = get_file_sha256(full_path)
                 if current_hash != expected_hash:
-                    modified_files.append(f"{target}/{rel_path} (modified)")
+                    modified_files.append(f"{name}/{rel_path} (modified)")
 
     if modified_files:
         return False, modified_files
     return True, []
 
 
-def update_lockfile(root, entry, lockfile_path, ref):
+def update_lockfile(skills_base, entry, lockfile_path, ref):
     name = entry.get("name")
-    target = entry.get("targetPath")
-    target_dir = Path(root) / target
+    target_dir = skills_base / name
     
     files_hashes = {}
     if target_dir.exists():
@@ -231,27 +226,24 @@ def get_real_subpath(zip_file_obj, sub_path):
     return real_sub
 
 
-def fetch(entry, root, dry, lockfile_path):
+def fetch(entry, skills_base, dry, lockfile_path):
     name = entry.get("name")
     url = entry.get("repoZipUrl")
     ref = entry.get("ref")
     sub = entry.get("subPath", "")
-    target = entry.get("targetPath")
     
     if not url or url in PLACEHOLDER_URLS:
         return "skip", f"{name}: no valid repoZipUrl ({url!r}) — fix the registry entry"
-    if not target:
-        return "skip", f"{name}: no targetPath in registry"
 
     if ref:
         if "/archive/" in url:
             base = url.split("/archive/")[0]
             url = f"{base}/archive/{ref}.zip"
 
+    target_dir = skills_base / name
     if dry:
-        return "dry", f"{name}: would pull {url} [{sub}] -> {target}"
+        return "dry", f"{name}: would pull {url} [{sub}] -> {target_dir.as_posix()}"
 
-    target_dir = Path(root) / target
     try:
         zip_path = get_cached_zip(url)
         
@@ -290,8 +282,8 @@ def fetch(entry, root, dry, lockfile_path):
                             raise exc
                         time.sleep(0.2)
                 
-        update_lockfile(root, entry, lockfile_path, ref)
-        return "ok", f"{name}: {count} files -> {target}"
+        update_lockfile(skills_base, entry, lockfile_path, ref)
+        return "ok", f"{name}: {count} files -> {target_dir.as_posix()}"
     except Exception as exc:
         return "fail", f"{name}: {exc}"
 
@@ -310,6 +302,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="preview without downloading")
     ap.add_argument("--project-root", default=str(Path.cwd()), help="path to project root directory")
     ap.add_argument("--force", action="store_true", help="force overwrite even if files are modified locally")
+    ap.add_argument("--global", dest="global_scope", action="store_true", help="install skills globally")
     args = ap.parse_args()
 
     skills = load_registry(args.registry)
@@ -327,10 +320,23 @@ def main():
         return
 
     project_root = Path(args.project_root).resolve()
-    skills_base = project_root / ".agents" / "skills"
+    
+    # Determine scope and skills base folder
+    is_claude = (here.parent / ".claude-plugin").exists() or (here.parent.parent / ".claude-plugin").exists()
+    
+    if args.global_scope:
+        if is_claude:
+            skills_base = Path.home() / ".claude" / "skills"
+        else:
+            skills_base = Path.home() / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills"
+    else:
+        if is_claude:
+            skills_base = project_root / ".claude" / "skills"
+        else:
+            skills_base = project_root / ".agents" / "skills"
     
     print(f"Project root: {project_root}")
-    print(f"Skills destination directory: {skills_base}")
+    print(f"Skills destination directory: {skills_base} ({'global' if args.global_scope else 'local'} scope)")
     
     try:
         skills_base.mkdir(parents=True, exist_ok=True)
@@ -343,7 +349,7 @@ def main():
         sys.exit(1)
 
     lockfile_path = skills_base / ".lock.json"
-    ok, modified = check_lockfile(project_root, chosen, lockfile_path, args.force)
+    ok, modified = check_lockfile(skills_base, chosen, lockfile_path, args.force)
     if not ok:
         print("Error: The following files have been modified locally. Use --force to overwrite:")
         for m in modified:
@@ -353,7 +359,7 @@ def main():
     results = {}
     try:
         for entry in chosen:
-            status, msg = fetch(entry, project_root, args.dry_run, lockfile_path)
+            status, msg = fetch(entry, skills_base, args.dry_run, lockfile_path)
             results.setdefault(status, []).append(msg)
             print(f"[{status.upper()}] {msg}")
     finally:
