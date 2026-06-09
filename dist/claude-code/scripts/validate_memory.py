@@ -40,11 +40,69 @@ def scan_file_for_secrets(file_path):
         errors.append(f"Could not read {file_path.name} for secrets: {e}")
     return errors
 
+def apply_autofix(memory_dir, file_name, line_num, cid):
+    fpath = Path(memory_dir) / file_name
+    if not fpath.exists():
+        return False
+    try:
+        with open(fpath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        idx = line_num - 1
+        if idx < 0 or idx >= len(lines):
+            return False
+            
+        line = lines[idx]
+        line_stripped = line.rstrip('\r\n')
+        newline = line[len(line_stripped):]
+        
+        # If it's a markdown table row (typically in BACKLOG_MAP.md)
+        if '|' in line:
+            parts = line.split('|')
+            if len(parts) >= 9:
+                cell = parts[8].strip()
+                if cell == '—' or cell == '-' or cell == '':
+                    parts[8] = f" [[{cid}]] "
+                else:
+                    # If it already has references, check if we need to append
+                    if f"[[{cid}]]" not in cell:
+                        parts[8] = f" {cell}, [[{cid}]] "
+                lines[idx] = '|'.join(parts)
+            else:
+                last_pipe = line.rfind('|')
+                if last_pipe != -1:
+                    if f"[[{cid}]]" not in line:
+                        lines[idx] = line[:last_pipe].rstrip() + f", [[{cid}]] |" + line[last_pipe+1:]
+        else:
+            # Glossary or list item
+            if f"[[{cid}]]" not in line_stripped:
+                if "Refs:" in line_stripped:
+                    # Find last bracket link and append reference after it
+                    match = re.search(r'(\[\[[A-Za-z0-9_-]+\]\])\s*\.?$', line_stripped)
+                    if match:
+                        end = match.end(1)
+                        lines[idx] = line_stripped[:end] + f", [[{cid}]]" + line_stripped[end:] + newline
+                    else:
+                        lines[idx] = line_stripped + f", [[{cid}]]" + newline
+                else:
+                    if line_stripped.endswith('.'):
+                        lines[idx] = line_stripped.rstrip('.') + f". Refs: [[{cid}]]." + newline
+                    else:
+                        lines[idx] = line_stripped + f" Refs: [[{cid}]]" + newline
+                    
+        with open(fpath, 'w', encoding='utf-8', newline='') as f:
+            f.writelines(lines)
+        return True
+    except Exception as e:
+        print(f"Error applying autofix to {file_name}:{line_num}: {e}")
+        return False
+
 def main():
     parser = argparse.ArgumentParser(description="Validate Stratosphere OS memory protocol compliance.")
     parser.add_argument('--path', default='.memory', help='Path to the memory directory')
     parser.add_argument('--quiet', action='store_true', help='Suppress human-readable console output')
     parser.add_argument('--warnings-as-errors', action='store_true', help='Treat warnings as exit-code errors')
+    parser.add_argument('--autofix', action='store_true', help='Automatically attempt to fix one-way reference warnings in place')
     args = parser.parse_args()
 
     memory_dir = Path(args.path)
@@ -283,6 +341,11 @@ def main():
         if c_info and r_info:
             if not c_info['in_superseded'] and not r_info['in_superseded']:
                 if (rid, cid) not in directed_links:
+                    if getattr(args, 'autofix', False):
+                        if apply_autofix(args.path, r_info['file'], r_info['line_num'], cid):
+                            if not args.quiet:
+                                print(f"[AUTO-FIXED] Added reciprocal reference to '{cid}' in {r_info['file']}:{r_info['line_num']}")
+                            continue
                     warnings.append(f"One-way reference: '{cid}' references '{rid}' in {c_info['file']}:{c_info['line_num']}, but '{rid}' does not reference '{cid}' back.")
 
     # Print human-readable report if not quiet
