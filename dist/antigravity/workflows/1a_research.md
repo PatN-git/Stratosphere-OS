@@ -1,6 +1,6 @@
 ---
 name: 1a_research
-description: Optional workflow to conduct market & competitive research for greenfield or domain-heavy features before concept framing. Routes by domain and depth.
+description: Workflow to conduct market & competitive research for greenfield or domain-heavy features before concept framing. Routes by domain and depth.
 type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
@@ -10,14 +10,14 @@ trigger: User. Do not run autonomously.
 > [!NOTE]
 > Optional. Trigger only if problem space is unfamiliar, greenfield, or domain-heavy; otherwise skip to `/1b_concept-framing`.
 
-**Hand-off contract:** Writes findings to `docs/research/<slug>.md`. `/1b_concept-framing` detects and cites this file by slug during the grill.
+**Hand-off contract:** Writes findings to `docs/research/<slug>.md`. `/1b_concept-framing` detects and cites this file by slug.
 
 ---
 
 ## Phase 1: Research Brief & Scope Routing
 
 1. Define topic/problem area in one sentence.
-2. Derive the canonical slug: kebab-case the core problem as a 2–5 word noun phrase (strip articles, filler, and "how to"/"we need"). E.g., "We need AI to help review PRs" → `ai-code-review`.
+2. Derive canonical slug: kebab-case the core problem as 2–5 word noun phrase (strip articles, filler, and "how to"/"we need"). E.g., "We need AI to help review PRs" → `ai-code-review`.
 3. Write 3–5 specific research questions to answer.
 4. **Route by Domain (Primary + Optional Annex):**
    - **Competitive:** Focuses on direct, indirect, and substitute competitors, feature gaps, and positioning.
