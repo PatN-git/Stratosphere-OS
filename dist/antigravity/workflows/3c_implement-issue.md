@@ -67,3 +67,6 @@ To prevent token-burn and protect execution speeds on repetitive or lightweight 
 ### The Bug-Fix Loop (Anti-Regression)
 - **Trigger**: A bug is reported in active code.
 - **Action**: Write an automated regression test reproducing the exact failure state before editing any source code. Follow the standard Red-Green-Refactor loop to execute the fix.
+
+### Standard Library Fallbacks
+- **Preference**: When writing logic or tests for mock environments, simple utilities, or CLI spikes, favor native platform/standard libraries (e.g. `sqlite3` and `argparse`/`sys.argv` in Python, or native built-ins in Node/Go) over third-party packages. This guarantees offline capability, faster test execution, and removes setup dependency friction.
