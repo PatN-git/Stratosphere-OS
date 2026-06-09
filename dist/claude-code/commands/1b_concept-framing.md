@@ -53,7 +53,7 @@ One question at a time. Where Phase 1 context gives you sufficient signal on a f
 - **Vocabulary** — every domain term that could mean two things gets pinned once.
 - **Internal Prior Art** — what code already touches this? What has been tried internally?
 - **External Research** — derive canonical slug from the restated ask using the same rule as `/1a_research` Phase 1 (kebab-case core problem as 2–5 word noun phrase).
-  1. Glob `docs/research/*.md` (filenames only — filenames are slugs). Fuzzy-match against the slug/ask.
+  1. Glob `docs/research/*.md` (filenames only — filenames are slugs, ignoring `*.work.md`). Fuzzy-match against the slug/ask.
   2. Exact or one strong match → Read ONLY that file's frontmatter (specifically the `updated:` date). Prompt: *"Research at docs/research/<slug>.md (updated <updated>). Still current, or refresh first?"* Read the body only after user confirms; then cite findings and skip the probe.
   3. Zero matches → Run 2-3 question probe; if signal is weak, suggest `/1a_research`.
   4. Multiple matches → List filenames, user selects.

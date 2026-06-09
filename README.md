@@ -24,7 +24,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 0 | `/0b_stop-session` | `0b_stop-session.md` | End any session | session work | updated memory, lint, handoff |
   | 0 | `/0c_handoff` | `0c_handoff.md` | Hand to a fresh session | conversation | `.tmp/handoff_*` |
   | 0 | `/0d_nightly-consolidation` | `0d_nightly-consolidation.md` | End-of-day maintenance (AFK) | sessions, `.memory/*` | consolidation plan |
-  | 1 | `/1a_research` | `1a_research.md` | Research unfamiliar domain | memory | `docs/research/` |
+  | 1 | `/1a_research` | `1a_research.md` | Research domain (problem vs. competitive, quick vs. deep) | memory | `docs/research/` |
   | 1 | `/1b_concept-framing` | `1b_concept-framing.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
   | 2 | `/2a_write-prd` | `2a_write-prd.md` | Turn a brief into a PRD | brief, memory | PRD doc + parent issue |
   | 2 | `/2b_ux-design` | `2b_ux-design.md` | Design UX flows / specs | PRD | design blueprint / Stitch prompt |
@@ -75,6 +75,10 @@ Update: Re-pull the repository, run the build script, and copy/stage the updated
 
 > **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/stratosphere-setup` is what writes the constitution and memory layer into *your* project.
 
+> [!IMPORTANT]
+> **Existing Projects gitignore Update:**
+> The `/stratosphere-setup` scaffold script never overwrites or edits an existing `.gitignore` file. If you are upgrading/running in an existing project, you must manually add `*.work.md` to your `.gitignore` to ensure temporary deep-research loop workfiles are ignored by Git.
+
 ---
 
 ## How it's built
@@ -89,7 +93,7 @@ src/                         ← edit here (single source of truth)
 ├─ commands/                 instantiate + sync-skills
 ├─ rules/                    output-mode, memory-protocol
 ├─ memory-templates/         .memory/* scaffolding (STATUS, ARCHITECTURE, DESIGN, …)
-├─ references/               PRD/discovery/competitor templates
+├─ references/               PRD/discovery/competitive/problem-space templates
 ├─ scripts/                  validate_memory.py
 └─ external-skills.json      on-demand skill registry
 

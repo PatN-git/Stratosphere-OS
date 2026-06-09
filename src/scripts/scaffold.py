@@ -41,7 +41,8 @@ EXTRA_WORKFLOWS = {"sync-skills.md"}          # also copy this utility workflow
 
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
-                     ".agents/skills/", "!.agents/skills/.lock.json"]
+                     ".agents/skills/", "!.agents/skills/.lock.json",
+                     "*.work.md"]
 
 FOLDERS = [
     ".memory",
@@ -169,6 +170,7 @@ def main():
     if gi_existed:
         # existing .gitignore: remind agent to verify secret-hygiene entries
         print("NOTE: .gitignore already exists — verify it contains: " + ", ".join(GITIGNORE_ENTRIES))
+        print("NOTE: Existing projects must manually add *.work.md to their .gitignore (scaffold never edits existing ones).")
 
 
 if __name__ == "__main__":
