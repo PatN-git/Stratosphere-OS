@@ -29,7 +29,7 @@ status: active | stale | superseded
 
 ## Feature Comparison Matrix
 
-| Capability / Feature | Us (Candidate) | <Competitor 1> | <Competitor 2> | Notes |
+| Capability / Feature | Us (Candidate) *(If running before concept framing (no defined product), mark as `[To be defined in concept framing]`)* | <Competitor 1> | <Competitor 2> | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | <Capability A> | | | | |
 | <Capability B> | | | | |
@@ -37,7 +37,7 @@ status: active | stale | superseded
 ## Dunford Positioning Lens
 *Strategic evaluation using April Dunford's framework to orient the product framing:*
 - **Competitive Alternatives:** <What would customers do if we didn't exist? (e.g., manual Excel sheets, status quo, specific competitor)>
-- **Our Unique Attributes:** <What capabilities or features do we have that the competitive alternatives lack?>
+- **Our Unique Attributes:** <What capabilities or features do we have that the competitive alternatives lack?> *(If running before concept framing (no defined product), mark as `[To be defined in concept framing]` rather than inventing attributes)*
 - **Value for Customers:** <What business or user value do those unique attributes unlock for customers?>
 - **Target Segment:** <Which sub-segment of customers cares the absolute most about that unique value?>
 - **Market Category:** <What frame of reference/context do we use to make our value obvious? (e.g., CRM for X, Email tool for Y)>

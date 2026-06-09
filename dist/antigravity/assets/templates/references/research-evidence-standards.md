@@ -26,6 +26,7 @@ These standards ensure all research remains high-integrity, verifiable, and free
 All feature, market, and technological claims must be annotated with one of the following levels:
 
 - **`[HIGH]` Confidence:** Corroborated by at least **two independent, different-type** sources after collapsing common origins, AND has survived a skeptical refutation pass.
+  - **Mandatory Pre-Publish Check:** Before labeling any claim `[HIGH]`, list its two supporting sources AND each source's type (academic | industry | doc | repo | blog | review | press). If the two sources share the same type (or the same origin after collapsing), the claim does NOT qualify as `[HIGH]` — downgrade it to `[MEDIUM]`.
   - *Note:* Quick Search mode cannot publish single-sourced `[HIGH]` confidence claims. In Quick Search mode, only load-bearing claims undergo refutation; therefore a non-load-bearing claim in Quick mode cannot be `[HIGH]` — it tops out at `[MEDIUM]`.
 - **`[MEDIUM]` Confidence:** Supported by a single highly credible source (e.g., official marketing page, main developer documentation, or a detailed industry report).
 - **`[LOW]` Confidence:** Inferred from context, derived from a single subjective source (e.g., a forum/Reddit post), or extrapolated from old documents.

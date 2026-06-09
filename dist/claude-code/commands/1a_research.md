@@ -25,7 +25,7 @@ trigger: User. Do not run autonomously.
    - Select a **Primary Domain** (Competitive OR Problem-Space).
    - Add an **Optional Annex** of the other type if research is hybrid.
 5. **Route by Depth:**
-    - **Quick Search:** Linear, fast search. Executes targeted searches to answer Phase 1 questions → applies per-claim citation rules (see Evidence Standards) → runs the **question-coverage gate** (checks that every Phase 1 question is answered or explicitly marked `[Unknown]`) → goes straight to Phase 3. Quick mode explicitly skips the Phase 2 deep loop, the `.work.md` file, and non-load-bearing refutation passes. *Note: Since non-load-bearing claims in Quick mode skip refutation, they cannot be labeled `[HIGH]` confidence and top out at `[MEDIUM]`.*
+    - **Quick Search:** Linear, fast search. Executes targeted searches to answer Phase 1 questions → applies per-claim citation rules (see Evidence Standards) → runs the **question-coverage gate** (checks that every Phase 1 question is answered or explicitly marked `[Unknown]`, emitting a one-line visible coverage map in the published artifact under the Research Brief, e.g. `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown] · …`) → goes straight to Phase 3. Quick mode explicitly skips the Phase 2 deep loop, the `.work.md` file, and non-load-bearing refutation passes. *Note: Since non-load-bearing claims in Quick mode skip refutation, they cannot be labeled `[HIGH]` confidence and top out at `[MEDIUM]`.*
    - **Deep Research:** Execute Phase 2's native procedural loop with a durable working file.
 6. **Propose-and-Confirm Gate (Single Exchange):**
    - **Inference:** The agent infers the Primary Domain (and Annex, if any) + Depth from the invocation prompt and states its default choice with a one-line rationale (e.g., "named competitors → competitive", "understand X → problem-space").
@@ -94,7 +94,9 @@ Terminate the loop only when one of the following occurs:
      status: active
      ---
      ```
-   - **Annex Output Mechanism:** If an **Optional Annex** was specified, render it as a section appended **within** that single output file `docs/research/<slug>.md` (using the structure of the other template), NOT as a second file.
+   - **Question Coverage Map:** Include a one-line visible question-coverage map under the Questions list in the Research Brief (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown] · …`) to demonstrate the gate outcome for both Quick and Deep research paths.
+   - **Annex Output Mechanism:** If an **Optional Annex** was specified, render it as a section appended **within** that single output file `docs/research/<slug>.md` (using the structure of the other template), NOT as a second file. When the annex is Competitive but no candidate product exists yet (research precedes concept framing), OMIT the Dunford Positioning Lens and the 'Us (Candidate)' matrix column from the annex — include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
    - Enforce the evidence rules in `.agents/workflows/.reference/research-evidence-standards.md` (e.g., citation for every claim, high-confidence source triangulation, independence collapsing).
+   - **Synthesis-Time Verification:** For every `[HIGH]` claim in the artifact, confirm its two sources are different types; downgrade any that aren't before writing the file.
 4. **Cleanup:** Delete or archive the temporary `docs/research/.<slug>.work.md` file.
 5. **Handoff:** Notify the user: *"Research compiled at `docs/research/<slug>.md`. Run `/1b_concept-framing` to define the concept."*
