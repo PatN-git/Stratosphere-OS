@@ -49,5 +49,5 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
  
 ## 7. Pointer Directory (Offloaded Logic)
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
-- **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, Foam syntax [[ID]] and the strict usage protocols for all memory files).
+- **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
 ``

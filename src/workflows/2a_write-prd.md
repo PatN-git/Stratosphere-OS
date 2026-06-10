@@ -27,7 +27,7 @@ Create the parent GitHub issue — its number becomes zero-padded to 3 digits (e
 Record issue URL for PRD front matter.
 
 ## Phase 3: Draft
-Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation context, BACKLOG_MAP, LEARNINGS, and ADR-shaped memory entries. Reference [[BT-xx]], [[L-xx]], [[A-xx]], [[DR-xx]] inline where they constrain the work.
+Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation context, BACKLOG_MAP, LEARNINGS, and ADR-shaped memory entries. Reference [[BT-xxx]], [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline where they constrain the work.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files

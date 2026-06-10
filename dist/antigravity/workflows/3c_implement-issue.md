@@ -27,7 +27,7 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
 ### Phase 1: RED (Test Specification)
 1. Draft exactly one minimal test demonstrating the target behavior.
    - **CLI/Subprocess Tests:** If testing a CLI or subprocess, assert explicitly on success path details, `stdout`, or `stderr` contents, rather than merely verifying a non-zero exit code.
-2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using Foam double-brackets (e.g., `[[BT-101]]`).
+2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using double-brackets (e.g., `[[BT-101]]`).
 3. **Execute Test:** Run the test suite natively (e.g., npm test, vitest).  
 4. **Verify Red:** Confirm the test fails. Check that the failure is exactly due to missing functionality, not syntax errors or typos.
    - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
