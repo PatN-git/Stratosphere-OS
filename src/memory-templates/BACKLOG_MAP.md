@@ -12,7 +12,7 @@ Authoritative, high-density reference for project issues and their status.
 - Include only ID, Title, Status, Labels, Milestone, Dependencies, ICE, Ref — nothing else.
 - Use the Label Registry; do not invent labels.
 - The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., L-012, A-003, DR-020, G-005).
-- **Label source of truth:** After installation (Step 6a), the Label Registry here reflects the live GitHub label set.
+- **Label source of truth:** After installation (Checkpoint 6), the Label Registry here reflects the live GitHub label set.
   - If a label appears in **GitHub but not the registry** → add it to the registry (with user confirmation).
   - If a label appears in the **registry but not GitHub** → create it in GitHub before using it in any issue.
   - Never use a label in the Backlog table that is not in both the registry and GitHub.

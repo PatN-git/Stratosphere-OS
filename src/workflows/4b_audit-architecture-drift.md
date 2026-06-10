@@ -4,7 +4,7 @@ description: Macro Audit. Scans a targeted directory for high-confidence structu
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 
-# PHASE 1: SCOPE
+## Phase 1: Scope
 
 _INPUT:_ Human trigger prompt.
 - IF target directory is undefined in the trigger prompt -> HALT.
@@ -17,7 +17,7 @@ _CONSTRAINTS:_
 - Do not modify production code.
 - Do not write refactored code.
 
-# PHASE 2: DEEP SCAN & CONFIDENCE
+## Phase 2: Deep Scan & Confidence
 _INPUT:_ Target directory files and all files in .`memory/`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Focus on architectural drift, domain boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules
 
@@ -72,7 +72,7 @@ When in doubt, lower the score and discard.
 - **Only report issues with confidence ≥ 80.** Focus on issues that truly matter - quality over quantity. IF no architectural issues meet the Confidence >= 80 threshold -> HALT execution.
 - OUTPUT: `[HEALTHY] No high-confidence architectural drift detected in [target directory].` Do not generate any intermediate files.
 
-# PHASE 3: OUTPUT
+## Phase 3: Output
 IF issues >= 80 confidence exist:
 1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents/workflows/3a_create-issue.md`.
    - **Skeleton format:**
@@ -105,7 +105,7 @@ IF issues >= 80 confidence exist:
   - Example: Blocks [[BT-042]] (Backlog Task)
 3. Do not modify any production codebase files. Do not write refactored code.
 
-# PHASE 4: HANDOFF
+## Phase 4: Handoff
 HALT execution. Output a 2-line summary of flagged components and confirm `.tmp/refactor-proposal.md` is ready for review. 
 
 Await human instruction:

@@ -40,4 +40,4 @@ Each skill lands at its registry `targetPath` (e.g. `.agents/skills/supabase`).
 
 ## When the installer calls this
 
-`/stratosphere-setup` Step 8 maps the user's "yes" answers to categories and invokes this with `--default` plus the chosen `--category` flags.
+Checkpoint 8 maps the user's "yes" answers to categories and invokes this with `--default` plus the chosen `--category` flags.

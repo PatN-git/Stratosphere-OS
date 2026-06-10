@@ -113,6 +113,8 @@ Rebuild both plugins:
 python build/build.py
 ```
 
+**Structural vocabulary:** `Stage` = lifecycle level (0–4). `Phase` = a division within a lifecycle workflow (`## Phase N`, 1-indexed; Phase 0 = optional prelude). `Step` = an atomic action (ordered-list item within a phase). `Procedure` = a flat workflow with no phases (0a/0b). `Checkpoint` = a unit of the one-time `/stratosphere-setup` installer. Workflows are invoked as `/Na_name` and referenced conceptually as bare `Na`.
+
 Skills are byte-identical across platforms; only the manifest and the
 `commands/` vs `workflows/` directory naming differ. Project-instance files
 (constitution, memory templates, rules) ship under `assets/templates/`

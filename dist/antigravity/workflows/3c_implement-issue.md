@@ -9,11 +9,9 @@ trigger: User. Do not run autonomously.
 
 **Purpose:** Implement deterministic vertical slices following a strict Test-Driven Development (TDD) cycle, prioritizing token efficiency and architectural integrity.
 
-## 1. The Core TDD Protocol
-
 Apply strictly to all backend logic, database operations, hooks, and state functions. Use `.agents/skills/code-simplifier/SKILL.md` at the end.
 
-### Phase 0: Context Intake (UX & Blueprint Check)
+## Phase 0: Context Intake (UX & Blueprint Check)
 1. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
 2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
    - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
@@ -25,7 +23,7 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 
-### Phase 1: RED (Test Specification)
+## Phase 1: RED (Test Specification)
 1. Draft exactly one minimal test demonstrating the target behavior.
    - **CLI/Subprocess Tests:** If testing a CLI or subprocess, assert explicitly on success path details, `stdout`, or `stderr` contents, rather than merely verifying a non-zero exit code.
 2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using double-brackets (e.g., `[[BT-101]]`).
@@ -34,17 +32,17 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
    - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
    - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
 
-### Phase 2: GREEN (Minimal Implementation)
+## Phase 2: GREEN (Minimal Implementation)
 1. Write the absolute simplest, non-speculative code required to pass the test.
 2. **Execute Test:** Run the test suite again.
 3. **Verify Green:** Confirm the test passes. Ensure all existing tests remain green. If code was written prior to writing the test: Delete it. Start over. No exceptions.
 
-### Phase 3: REFACTOR (Syntactic & Structural Polish)
+## Phase 3: REFACTOR (Syntactic & Structural Polish)
 1. Clean up imports, remove duplication, and optimize variable naming.
 2. Verify architectural structure matches the project's `[[A-xxx]]` architecture rules inside `.memory/ARCHITECTURE.md`.
 3. Re-run tests. Keep code perfectly green.
 
-## 2. The Fast-Track Protocols
+## Fast-Track Protocols
 To prevent token-burn and protect execution speeds on repetitive or lightweight operations.
 
 ### Fast-Track A: Silent Execution
@@ -67,7 +65,7 @@ To prevent token-burn and protect execution speeds on repetitive or lightweight 
         - Check transition/interaction effects under click/tap inputs.
     4. Output a verified manual confirmation log detailing layout compliance.
 
-## 3. Operational Protocols & Guardrails
+## Guardrails
 
 ### The "Stuck" Protocol (Design Alert)
 - **Trigger**: If the test setup exceeds 50 lines of code, requires mocking more than 3 system dependencies, or encounters infinite testing cycles.

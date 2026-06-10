@@ -11,16 +11,15 @@ trigger: User. Do not run autonomously.
 Do not modify any files without explicit user approval.
 
 
-## Procedure
-### Phase 1: Review sessions
+## Phase 1: Review Sessions
 - Review all sessions across all models from the last 24 hours.
 - Identify problems, inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes worth optimizing.
 
-### Phase 2: Distill plan
+## Phase 2: Distill Plan
 - Output a high-density, bulleted proposal in `.tmp/` for how sessions can be optimized or which skills/workflows to modify.
 - Name the plan file `nightly_[date].md`.
 
-### Phase 3: Crystallize memory
+## Phase 3: Crystallize Memory
 - Scan all entries in `.memory/*` except `DESIGN.md` (external Google Labs DESIGN.md spec) for:
 
     | Trigger | Proposal |
@@ -30,5 +29,5 @@ Do not modify any files without explicit user approval.
     | `[GUESS]` older than 5 sessions, never validated | Delete? |
 - If proposals surface adjust the plan created in Phase 2. If nothing qualifies, skip silently.
 
-### Phase 4: Await Execution Direction
+## Phase 4: Await Execution Direction
 Halt execution entirely. Ask the user: *"What aspects of the plan do you want to implement?"*
