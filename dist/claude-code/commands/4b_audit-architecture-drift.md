@@ -1,6 +1,6 @@
 ---
 name: 4b_audit-architecture-drift
-description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates Foam-linked refactor proposals.
+description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -101,7 +101,7 @@ IF issues >= 80 confidence exist:
      ```
 2. CONSTRAINT: 
 - Generate only after confidence filtering and backlog collision checks complete.
-- You MUST use double-bracket Foam syntax to link back to exact system laws violated:
+- You MUST use double-bracket syntax to link back to exact system laws violated:
   - Example: Violates [[A-102]] (Architecture rule)
   - Example: Blocks [[BT-042]] (Backlog Task)
 3. Do not modify any production codebase files. Do not write refactored code.
