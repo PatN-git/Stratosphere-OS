@@ -1,6 +1,6 @@
 ---
-name: 4a_audit-test-gaps
-description: Validates that test suites match business requirements, acceptance criteria, and security boundaries.
+name: 4a_verify-and-ship
+description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
@@ -8,7 +8,7 @@ trigger: User. Do not run autonomously.
 # PHASE 1: VALUE-ADD GATE
 _INPUT:_ GitHub Issue/PRD. ACTION: Evaluate risk profile of target issue before spending execution tokens.
 _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused test-alignment audit.
-1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → HALT immediately.
+1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → proceed to PHASE 5 (cosmetic ship; verified by 3c Fast-Track B).
     - OUTPUT: `[SKIP] Pure UI/cosmetic task with no logical or security invariants. Audit bypassed to save tokens.`
 2. IF the task touches any of the following -> PROCEED to Phase 2:
   - Supabase RLS policies
@@ -57,7 +57,7 @@ Assign a confidence score from 0–100 using these anchors:
   - Include in final output.
 
 ## Clean Exit Rule
-- IF no architectural issues meet the **confidence >= 80** threshold -> HALT execution.
+- IF no architectural issues meet the **confidence >= 80** threshold → proceed to PHASE 5.
 - OUTPUT: `[PASS] No high-confidence logical or security anomalies identified. Slice is verified.` 
 Do not generate additional output.
 
@@ -72,4 +72,19 @@ IF issues **confidence >= 80** exist, output only compact, dense markdown table 
 
 # PHASE 4: HANDOFF
 HALT execution. Await human instruction:
-- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves and proceeds to merge.
+- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves → proceed to PHASE 5. If gaps remain unresolved → back to the TDD loop; NO PR.
+
+# PHASE 5: SHIP (gated, HITL)
+Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
+1. Branch isolation: confirm the current branch is NOT `main`/`master` (`AGENT.md` branch rule). If on main → HALT and instruct the user to branch first.
+2. HALT for explicit user confirmation to ship (outward-facing action).
+3. On confirmation: commit any uncommitted slice code+tests on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`, where `<type>` maps from the issue's `type:` label — `feat`/`fix`/`chore`/`refactor`/etc.), then push the branch.
+4. If a PR already exists for the current branch (`gh pr view` succeeds), UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate. Otherwise open a new PR with `gh pr create` (only if GitHub is connected; else output a local note and skip). The PR body MUST trace what happened:
+   - `Closes #<issue-number>` (and the parent `BT-<padded>`)
+   - One-line slice summary
+   - **Verification:** the AC↔test coverage table (if audited), OR `[PASS] slice verified`, OR `[SKIP] cosmetic — verified via 3c Fast-Track B visual audit`
+   - **Design reference:** `docs/design/BT-<padded>-interface.md` (if UI)
+   - **Tests:** the run command + result
+   - Relevant `[[L-xxx]]`/`[[A-xxx]]` references
+5. Comment the PR link back on the GitHub issue (bi-directional trace); set the issue/`BACKLOG_MAP.md` status appropriately.
+6. Output: `[SHIPPED] PR #<n> opened for BT-<padded>. /4b_audit-architecture-drift is optional next.`
