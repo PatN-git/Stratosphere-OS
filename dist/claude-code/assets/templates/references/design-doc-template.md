@@ -1,0 +1,57 @@
+---
+slug: <slug>
+bt: BT-007
+prd: <path to PRD>
+surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
+status: draft | ready-for-slicing | obsolete
+updated: <YYYY-MM-DD>
+---
+
+# Design: BT-007 - <Feature Name>
+
+## Surface & Scope
+<Describe the overall system impact, scope of changes, and target interface/surface area.>
+
+## Actors & Core Flows
+<Detail the user or system actors involved and trace their core workflows through this component/feature.>
+
+## States / Edge Classes
+- **UI (Path A/B):** <Specify visual states (e.g., loading, empty, active, success, validation error, responsive/break points).>
+- **Non-UI (Path C):** <Specify input edge classes, boundary values, error contexts, failure modes, and retry patterns.>
+
+## Handoff Notes for 3c/4a
+<Provide implementation constraints, verification checks, or specific assertions that 3c must implement and 4a must audit/verify.>
+
+---
+
+<!-- SELECT AND KEEP EXACTLY ONE OF THE FOLLOWING BODY BLOCKS BASED ON THE SURFACE GATE; DELETE THE OTHERS -->
+
+### [Path A · Stitch] Frozen Layout Blueprint
+*Ingested once at design time and frozen here. Do not read live Stitch after this step.*
+
+- **Frozen Layout Hierarchy:**
+  ```
+  [Layout Tree / DOM Hierarchy / Regions / Breakpoints]
+  ```
+- **Tokens Added to DESIGN.md:**
+  - `token-name`: `value`
+- **Immortal-Component Conformance / Registration:**
+  - Governed by: `<Immortal Component Name | None>`
+  - Shielding Behavior: `<Shielded from Stitch changes | Deferring to Immortal structure>`
+  - Net-new Registration: `<Register new components as §3 Immortal Components if this is a net-new page/full-redesign>`
+- **Optional Stitch Provenance Link:**
+  - Link to Stitch snapshot: `<stitch-url-or-ref>` (Provenance only; this file is the SSOT)
+
+### [Path B · Manual UI] Blueprint
+- **Layout & Structure:**
+  - DOM Hierarchy / Component tree.
+- **Visual styling rules & styling tokens:**
+  - Spacing, colors, layout rules, and responsiveness breakpoints.
+
+### [Path C · Non-UI] Interface Contract
+- **Interface/API Signature:**
+  - Method signatures, schemas, REST/RPC paths, data models, or parameter contracts.
+- **Behavioral Invariants:**
+  - Code invariants, preconditions, postconditions, and side effects.
+- **Input Edge-State Matrix:**
+  - Detailed table mapping input boundary values to expected outputs and error responses.

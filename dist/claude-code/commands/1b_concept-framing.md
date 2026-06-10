@@ -54,7 +54,7 @@ One question at a time. Where Phase 1 context gives you sufficient signal on a f
 - **Internal Prior Art** — what code already touches this? What has been tried internally?
 - **External Research** — derive canonical slug from the restated ask using the same rule as `/1a_research` Phase 1 (kebab-case core problem as 2–5 word noun phrase).
   1. Glob `docs/research/*.md` (filenames only — filenames are slugs, ignoring `*.work.md`). Fuzzy-match against the slug/ask.
-  2. Exact or one strong match → Read ONLY that file's frontmatter (specifically the `updated:` date). Prompt: *"Research at docs/research/<slug>.md (updated <updated>). Still current, or refresh first?"* Read the body only after user confirms; then cite findings and skip the probe.
+  2. Exact or one strong match → Read ONLY that file's frontmatter (specifically the `updated:` date). If updated more than 90 days ago, consider it stale and prompt to refresh. Otherwise, prompt: *"Research at docs/research/<slug>.md (updated <updated>). Still current, or refresh first?"* Read the body only after user confirms; then cite findings and skip the probe.
   3. Zero matches → Run 2-3 question probe; if signal is weak, suggest `/1a_research`.
   4. Multiple matches → List filenames, user selects.
 - **Success state** — "better" is not a state. Push to an observable change a sceptic would accept.
@@ -72,7 +72,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Compile agreed definitions from Phase 2 into a 3–8 term list.
 2. Present for explicit user approval — one pass.
-3. Flag reusable terms for `.memory/GLOSSARY.md`: *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term. Assign IDs with [GUESS] tag — do not write without confirmation.
+3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term. Assign IDs with [GUESS] tag — do not write without confirmation.
 
 ## Phase 4: Choose Framing
 
@@ -100,14 +100,14 @@ Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `
 - [ ] Problem contains no solution language
 - [ ] Chosen Framing notes rejected alternatives
 - [ ] Recommended Next Step is explicit
-- [ ] No unfiled `> open:` markers
+- [ ] No unfiled Open Questions markers
 
 Present the brief: *"Review the discovery brief. Any changes before I hand off?"* Wait for approval. Re-review if changes are requested.
 
 ## Phase 7: Hand-off & Memory Sync
 
 1. Write `docs/discovery/<slug>.md`.
-2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3.
+2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder).
 3. If a framing decision is reusable across features, propose [[L-xxx]] for `.memory/LEARNINGS.md`. Rare — only if user signals it's a pattern.
 4. Tell the user the next step:
    - **/2a_write-prd** → *"Discovery brief ready at `docs/discovery/<slug>.md`. Run `/2a_write-prd` to draft the PRD."*

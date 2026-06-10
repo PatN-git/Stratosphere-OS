@@ -8,8 +8,8 @@ trigger: User. Do not run autonomously.
 # PHASE 1: VALUE-ADD GATE
 _INPUT:_ GitHub Issue/PRD. ACTION: Evaluate risk profile of target issue before spending execution tokens.
 _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused test-alignment audit.
-1. IF task is a standard UI layout change, CSS/Tailwind adjustment, basic CRUD view, simple form, copy change, or cosmetic polish -> HALT immediately.
-    - OUTPUT: `[SKIP] Low-risk routine task. Existing TDD coverage is sufficient. Audit bypassed to save tokens.`
+1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → HALT immediately.
+    - OUTPUT: `[SKIP] Pure UI/cosmetic task with no logical or security invariants. Audit bypassed to save tokens.`
 2. IF the task touches any of the following -> PROCEED to Phase 2:
   - Supabase RLS policies
   - User authentication or authorization
@@ -21,7 +21,7 @@ _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused
 
 # PHASE 2: EXECUTION
 _INPUT:_
-- GitHub Issue/PRD
+- GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-ux.md`)
 - New/modified test files
 - relevant implementation files when needed to understand what the tests verify 
 - `.memory/LEARNINGS.md`.
@@ -35,6 +35,8 @@ Confidence is not certainty alone. It is the combined score for:
 2. **Scope relevance** — Is it about stated requirements, acceptance criteria, business logic, security boundaries, Supabase RLS, auth, billing, or specified edge cases?
 3. **Practical impact** — Would this likely allow a requirement gap, security bypass, incorrect business behavior, or false sense of test coverage in normal use?
 4. **Actionability** — Can a developer reasonably add or change a test to close the gap?
+
+- **Implementation-only Divergence Rule:** Any implementation-only divergence (where the code does something different from design/primitives but does NOT violate any stated PRD Acceptance Criteria or Design Contract) MUST cap at [Weak Signal] (confidence < 70) and is withheld from the final report.
 
 Assign a confidence score from 0–100 using these anchors:
 - **0–39: Discard**
@@ -65,6 +67,8 @@ IF issues **confidence >= 80** exist, output only compact, dense markdown table 
 | AC / Requirement | Test Target | Status | Confidence | Gap / Security Risk |
 |---|---|---:|---:|---|
 | [1-line AC or requirement description] | [test_name] or [NONE] | FAIL | [80-100] | [Missing assertion, untested edge case, business logic gap, or security boundary risk] |
+
+*(Optional Footnote)* If sub-threshold findings (40-79) were identified and withheld, append: *"Note: <N> sub-threshold findings were withheld from this report."*
 
 # PHASE 4: HANDOFF
 HALT execution. Await human instruction:

@@ -15,16 +15,23 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
 
 ### Phase 0: Context Intake (UX & Blueprint Check)
 1. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
-2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<n>-ux.md`), load and read it. Keep in mind that a single parent-level UX document may span multiple slices; search it for the section relevant to the current slice.
+2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-ux.md`), you MUST load and read:
+   - The frozen blueprint: `docs/design/BT-<padded>-ux.md` (search for the section relevant to the current slice).
+   - The brand design tokens: `.memory/DESIGN.md`.
+   - The design rules: `.memory/DESIGN_RULES.md` (specifically §3 Immortal Components).
+   - **UI Slices Read Rule:** UI slices must implement design based *only* on these frozen repository artifacts using Fast-Track B (visual audit). Never access or re-read live Stitch.
 3. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 
 ### Phase 1: RED (Test Specification)
 1. Draft exactly one minimal test demonstrating the target behavior.
-2. Link the test to relevant requirement IDs from STATUS.md or BACKLOG_MAP.md using Foam double-brackets (e.g., [[BT-101]]).
+   - **CLI/Subprocess Tests:** If testing a CLI or subprocess, assert explicitly on success path details, `stdout`, or `stderr` contents, rather than merely verifying a non-zero exit code.
+2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using Foam double-brackets (e.g., `[[BT-101]]`).
 3. **Execute Test:** Run the test suite natively (e.g., npm test, vitest).  
-4. **Verify Red:** Confirm the test fails. Check that the failure is exactly due to missing functionality, not syntax errors or typos. If the test passes immediately: The test is invalid. Rewrite it.
+4. **Verify Red:** Confirm the test fails. Check that the failure is exactly due to missing functionality, not syntax errors or typos.
+   - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
+   - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
 
 ### Phase 2: GREEN (Minimal Implementation)
 1. Write the absolute simplest, non-speculative code required to pass the test.
@@ -33,7 +40,7 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
 
 ### Phase 3: REFACTOR (Syntactic & Structural Polish)
 1. Clean up imports, remove duplication, and optimize variable naming.
-2. Verify architectural structure matches [[A-001]] and [[A-002]] inside .memory/ARCHITECTURE.md.
+2. Verify architectural structure matches the project's `[[A-xxx]]` architecture rules inside `.memory/ARCHITECTURE.md`.
 3. Re-run tests. Keep code perfectly green.
 
 ## 2. The Fast-Track Protocols

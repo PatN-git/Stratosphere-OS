@@ -49,5 +49,6 @@ status: active | stale | superseded
 - <Explicitly list any missing info, product trial requirements, or unconfirmed claims.>
 
 ## Sources
-- <Source 1 URL> (Accessed: <Date>)
-- <Source 2 URL> (Accessed: <Date>)
+- <Source URL> (Accessed: <Date>, Source Type: <academic|industry|doc|repo|blog>, Confidence: <HIGH|MEDIUM|LOW>)
+> Note: [HIGH] confidence claims require a one-line source-type justification inline (e.g., "Justification: Triangulated across two independent industry reports").
+> Note: In Quick mode, non-load-bearing claims top out at [MEDIUM] confidence.

@@ -1,8 +1,11 @@
 ---
 description: 
+issue_url: <GitHub Issue URL>
+updated: <YYYY-MM-DD>
+status: ready-for-design | in-progress | complete
 ---
 
-# BT-<n>: <Feature name>
+# BT-007: <Feature name>
 
 ## 1. Problem
 - **Current experience:**

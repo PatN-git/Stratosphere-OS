@@ -13,20 +13,24 @@ trigger: User. Do not run autonomously.
 1. Read `.memory/BACKLOG_MAP.md` if not already loaded.
 2. Extract rows where `status != done`.
 3. **Audit Strategy:**
-   - Map matching active GitHub issues. If a GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels → immediately exclude and print: `[NEEDS_SPEC] BT-<n> - <title>`.
-   - List all existing issues labelled as `[NEEDS_SPEC]` to surface to user.
+   - Map matching active GitHub issues. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
+   - If a leaf/non-parent GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels → immediately exclude and print: `[NEEDS_SPEC] BT-<padded> - <title>`.
+   - List all existing leaf issues labeled as `[NEEDS_SPEC]` to surface to user.
 
 ## Phase 2: Filter & Sort Engine
-1. **Dependency Sorting:** Evaluate dependency chains (`Blocked by`). If prerequisites are not `status: done` → tag candidate item `[BLOCKED]`.
+1. **Dependency Sorting:** Evaluate dependency chains (`Blocked by`).
+   - If prerequisites are not `status: done` AND are NOT being planned/sequenced in this same sprint → tag candidate item `[BLOCKED]`.
+   - If prerequisites are NOT `status: done` BUT they are selected/sequenced in this exact sprint → tag as `[blocked-but-sequenced-in-sprint]`.
 2. **ICE Prioritization:** Read the pre-calculated ICE score directly from the `ICE` column in `.memory/BACKLOG_MAP.md`.
-   - *Only recompute* the ICE score if size, impact, or confidence inputs were manually changed since the issue was created (`ICE = (Impact * Confidence) / Effort weight` where Effort weight is small=1, medium=2, large=3).
-   - Sort all remaining unblocked candidate items by their ICE score in descending order.
+   - Recalculate the ICE score ONLY IF the ICE cell is empty, OR the size label (e.g. `size:medium`) disagrees with the Effort weight used in the table calculation (`ICE = (Impact * Confidence) / Effort weight` where Effort weight is small=1, medium=2, large=3).
+   - Sort all remaining unblocked or `blocked-but-sequenced-in-sprint` candidate items by their ICE score in descending order.
 3. **Context Grouping:** Cluster sequenced tasks matching identical `area:xxx` tags to compress token burn overhead.
 
 ## Phase 3: Capacity Calculation & Safeguards
-*Max Sprint Budget = 10 engineering days (80 hours total).*
+*Max Sprint Budget = 10 engineering days (80 hours total). Exclude parent issues from capacity totals.*
 - **Cost Weights:** `size:large` = 12 hours | `size:medium` = 6 hours | `size:small` = 1 hour.
-- **Guardrail Protocol:** Identify all issues containing BOTH `size:large` and `type:AFK`. Flag these items explicitly asking for confirmation.
+- **Guardrail Protocol:** Identify all leaf issues containing BOTH `size:large` and `type:AFK`. Flag these items explicitly asking for confirmation.
+- **Label Validation:** Just-in-time check that any labels to be applied or synced exist in the `.memory/BACKLOG_MAP.md ## Label Registry`.
 
 ## Phase 4: Sequence Proposal
 Output a compressed structural readout of items matching capacity thresholds and an explicit order if needed:
@@ -34,13 +38,16 @@ Output a compressed structural readout of items matching capacity thresholds and
 ```markdown
 [TARGET SPRINT MILESTONE: <x.yy>]
 
-- [AFK] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [HITL] BT-<n> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
+- [AFK] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
+- [HITL] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 
 [CRITICAL ALERTS]
-⚠️ WARNING: BT-<n> is size:large but labeled type:AFK. Confirm auto-execution!
-🗒️ Note: BT-<n> labels as `[NEEDS_SPEC]` needs to be enriched to be included in sprint planning.
+⚠️ WARNING: BT-<padded> is size:large but labeled type:AFK. Confirm auto-execution!
+🗒️ Note: BT-<padded> labeled as `[NEEDS_SPEC]` needs to be enriched to be included in sprint planning.
 ```
+*Optional Fully-AFK Sprint Advisory:* If the sequenced issues are entirely `type:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
+
+Verify all milestone and priority labels to be set exist in the registry before promoting.
 
 ## Phase 5: Commit & Sync
 

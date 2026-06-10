@@ -22,13 +22,22 @@ _INPUT:_ Target directory files and all files in .`memory/`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Focus on architectural drift, domain boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules
 
 ## Deep Scan Matrix
-1. Inline database queries, complex state/effects inside UI render files (must be extracted to hooks/services).
-2. Passing props down >3 levels or sprawling localized useState arrays that should be consolidated.
-3. Heavy client-side filtering (`.filter()`, `.reduce()`) instead of leveraging Supabase/SQL query structures.
-4. Custom component structure or state-management rules ignored.
-5. High volumes of cross-domain imports violating system boundaries.
-6. Files exceeding 350 lines of code when paired with additional evidence such as mixed responsibilities, inline data access, duplicated logic, complex effects, or ignored extraction rules.
-7. Ignores historical learnings.
+*Note: Best run on settled code; collision check drops findings on in-progress slices.*
+
+### UI-tier Checks (UI projects only; skip for non-UI/headless scopes):
+1. [UI-tier] Inline database queries, complex state/effects inside UI render files (must be extracted to hooks/services).
+2. [UI-tier] Passing props down >3 levels or sprawling localized useState arrays that should be consolidated.
+3. [UI-tier] Heavy client-side filtering (`.filter()`, `.reduce()`) instead of leveraging Supabase/SQL query structures.
+4. [UI-tier] Custom component structure or state-management rules ignored.
+5. [UI-tier] Structural audit vs. §3 Immortal Components: Scan for layout or structural deviations from the governing Immortal Component specifications (violating [[DR-008]] - UI-tier only, non-UI projects have none).
+
+### Universal / Domain-Neutral Checks (All projects):
+6. God-modules and Single Responsibility Principle (SRP) violations: files exceeding 350 lines of code (heuristic trigger escalating toward a potential [[A-003]] 400-line breach) paired with mixed responsibilities, inline data access, duplicated logic, complex side effects, or ignored extraction rules.
+7. Mixed I/O and domain boundary violations: mixing database operations, network requests, file system access, and core business math in the same module.
+8. Leaked side effects: functions or methods mutating global state, mutating parameters, or introducing untracked state mutations.
+9. Dependency inversion violations: high-level modules directly depending on low-level utility implementations rather than abstractions.
+10. High volumes of cross-domain imports violating system boundaries.
+11. Ignores historical learnings in `.memory/LEARNINGS.md`.
 
 ## Confidence scale & reporting threshold
 Confidence is not certainty alone. It is the combined score for:
@@ -65,12 +74,35 @@ When in doubt, lower the score and discard.
 
 # PHASE 3: OUTPUT
 IF issues >= 80 confidence exist:
-1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents\workflows\3a_create-issue.md`
+1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents/workflows/3a_create-issue.md`.
+   - **Skeleton format:**
+     ```markdown
+     ## Overview
+     - One sentence: what and why.
+     - **Mental Model:** 2-3 bullets on core logic or specific question to answer.
+     ## ICE Priorities
+     - **Impact:** [Value]
+     - **Confidence:** [Value]
+     - **ICE Score:** [Calculated Score]
+     ## Current state / Problem
+     Reference current `files:lines`. Why it's broken or missing. Violates [[A-xxx]] or [[DR-xxx]].
+     ## The Path (Vertical Slice Flow)
+     - [ ] **Data Layer:**
+     - [ ] **Logic Layer:**
+     - [ ] **UI Layer:**
+     ## Acceptance Criteria (Verifiable)
+     - [ ] **Verification:** [Specific test/run command]
+     - [ ] Feature is demoable end-to-end.
+     ## Dependencies
+     - **[[ID]] first** (blocks/blocked-by).
+     ## Notes
+     Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.
+     ```
 2. CONSTRAINT: 
 - Generate only after confidence filtering and backlog collision checks complete.
 - You MUST use double-bracket Foam syntax to link back to exact system laws violated:
-- Example: Violates [[A-102]] (Architecture rule)
-- Example: Blocks [[BT-042]] (Backlog Task)
+  - Example: Violates [[A-102]] (Architecture rule)
+  - Example: Blocks [[BT-042]] (Backlog Task)
 3. Do not modify any production codebase files. Do not write refactored code.
 
 # PHASE 4: HANDOFF

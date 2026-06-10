@@ -38,8 +38,8 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 
 ### EXAMPLES Bidirectional linking
 
-- Entry born from a task: `Source: [[BT-42]]`.
-- Task depending on an entry: `Ref: [[L-12]], [[G-005]], [[DR-020]]`.
+- Entry born from a task: `Source: [[BT-042]]`.
+- Task depending on an entry: `Ref: [[L-012]], [[G-005]], [[DR-020]]`.
 - Lint validates all links every `/stop-session`.
 
 ## 3. Supersession (in-file)
@@ -67,3 +67,6 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 ## 6. Retrieval & Scale
 - Never read `## Superseded` unless the task explicitly needs history.
 - Resolve refs by ID, not by file — e.g. to follow a `[[L-xxx]]` reference, grep for that exact ID; do not read the whole memory file.
+
+## 7. Example Scaffolding Rule
+- The first real entry written to any memory file removes that file's shipped example placeholder(s). This deletion applies ONLY to shipped example placeholders, which carry no history. Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.

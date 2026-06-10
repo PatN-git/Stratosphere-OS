@@ -7,7 +7,7 @@ trigger: User. Do not run autonomously.
 
 # Write PRD
 
-**Hand-off contract:** `/3a_create-issue` reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
+**Hand-off contract:** `/2b_ux-design` is the next stage (designs the interface/UX from this PRD). `/3a_create-issue` later reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
 
 ## Phase 1: Precondition & Mode
 1. Confirm `.memory/BACKLOG_MAP.md` is loaded — else stop and prompt `/0a_start-session`.
@@ -17,12 +17,12 @@ trigger: User. Do not run autonomously.
 3. If feature warrants 2+ PRDs, suggest splitting before writing.
 4. One clarifying question only if blocking. Everything else → `> open:` into §10.
 
-## Phase 2: Reserve BT-<n>
-Create the parent GitHub issue — its number becomes `BT-<n>`.
+## Phase 2: Reserve BT-<padded>
+Create the parent GitHub issue — its number becomes zero-padded to 3 digits (e.g., #7 becomes `BT-007`).
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only)
-- **Labels (apply):** `area:<x>` (inferred from registry), `type:feature`, `status:in progress`; `phase:<x>` and `priority:<x>` only if confidently inferable — else `needs-triage`
-- **Labels (never apply):** `size:*`, `type:HITL`, `type:AFK` (slice-level)
-- **Body:** one-line summary + forward link to `docs/prds/BT-<n>-<name>.md`
+- **Labels (apply):** `size:large` (parent features are always large), `area:<x>` (inferred from registry), `type:feature`, `status:in progress`; `phase:<x>` and `priority:<x>` only if confidently inferable — else `needs-triage`
+- **Labels (never apply):** `size:medium`, `size:small`, `type:HITL`, `type:AFK` (slice-level)
+- **Body:** one-line summary + forward link to `docs/prds/BT-<padded>-<name>.md`
 
 Record issue URL for PRD front matter.
 
@@ -49,13 +49,13 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<n>-<feature-name>.md`.
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`.
 2. Update parent issue body: one-paragraph summary + doc link + §10 Open Questions.
-3. Append to `.memory/BACKLOG_MAP.md`:
+3. Append to `.memory/BACKLOG_MAP.md` (if this is the first real entry, delete the shipped example rows):
    ```
-   | BT-<n> | <Feature name> | in progress | area:<x>, type:feature | <phase or —> | — | docs/prds/BT-<n>-<name>.md, [[L-xx]], [[A-xx]] |
+   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | <milestone or —> | — | ICE: — | docs/prds/BT-<padded>-<name>.md |
    ```
-4. Tell user: *"PRD `BT-<n>` ready. Run `/3a_create-issue` to slice."*
+4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_ux-design` to design."*
 
 ---
 

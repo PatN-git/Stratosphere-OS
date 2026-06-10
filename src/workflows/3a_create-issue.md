@@ -14,7 +14,7 @@ trigger: User. Do not run autonomously.
 ## Phase 1: Intake & Memory Audit
 1.  **Intake:** Receive raw idea or "Minimum Viable Issue."
 2.  **Memory Audit:** If not done before in session run `/0a_start-session` first to familiarize with the project state and architecture.
-3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<n>-<name>.md`, or user cites `BT-<n>`) → load it; §6 + §8 are the scope to cover. Else the raw idea / MVI is the scope.
+3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<padded>-<name>.md`, or user cites `BT-<padded>`) → load it along with the frozen design document `docs/design/BT-<padded>-ux.md`. The PRD §6 + §8 and the design blueprint/contract are the scope to cover. Else the raw idea / MVI is the scope.
 
 ## Phase 2: The Vertical Slice Quiz & Prioritization
 Before creating the task, propose the breakdown to the user:
@@ -23,15 +23,15 @@ Before creating the task, propose the breakdown to the user:
     -   **Logic/user story:** Why is this a vertical slice? (Briefly explain the end-to-end path).
     -   **Blocked by:** [IDs of prerequisite slices]
 2.  **Prioritization Metrics (Template A spikes: skip):**
-    -   Prompt for **Impact** and **Confidence** based on these fixed scales:
+    -   Prompt for **Impact**, **Confidence**, and **Size** (Effort) based on these fixed scales:
         -   **Impact:** ∈ {0.25 (minimal), 0.5 (low), 1.0 (medium), 2.0 (high), 3.0 (critical)}
         -   **Confidence:** ∈ {50% (guess/speculative), 80% (high confidence/known implementation), 100% (absolute certainty/trivial)}
-        -   *Note:* **Effort** for the ICE calculation uses normalized weights: `size:large` = 3, `size:medium` = 2, `size:small` = 1. (Raw capacity hours in `3b` planning are: large=12h, med=6h, small=1h).
+        -   **Size:** ∈ {size:small (Effort weight = 1, ~1h capacity), size:medium (Effort weight = 2, ~6h capacity), size:large (Effort weight = 3, ~12h capacity)}
 3.  **Coverage Check** (Template A spikes: skip):
-    -   **PRD-sourced:** map every §6 User Story + §8 Definition-of-Done item to ≥1 slice. Flag gaps:
-        -   uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope.
+    -   **PRD-sourced:** map every §6 User Story + §8 Definition-of-Done item + Design Blueprint elements to ≥1 slice. Flag gaps:
+        -   uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope / mark "covered by construction" (e.g. framework-provided or built into an existing library/primitive).
         -   slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`.
-        -   slice blocked by an open §10 Question → Template A (spike), not B.
+        -   slice blocked by an open §10 Question → Enforce Template A (spike) rather than Template B if the question blocks implementation.
     -   **No PRD:** restate captured intent as a requirement list; map slices to it. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs.
     -   Present the map with the slice list.
 4.  **Approval Request:**
@@ -50,21 +50,17 @@ Before creating the task, propose the breakdown to the user:
     -   **0.15 <= ICE < 0.5:** `priority:medium`
     -   **ICE < 0.15:** `priority:low`
 3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body.
-4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`) to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column.
+4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`) to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders).
 
 ---
 
 ## LABEL REGISTRY
-Use the registry in `.memory/BACKLOG_MAP.md`. Do not invent labels — ask user first if one seems genuinely needed.
+Use the registry in `.memory/BACKLOG_MAP.md` as the single source of truth. Always perform a just-in-time check to ensure any label to be applied is defined in the registry.
 
-**If a required label does not exist in GitHub yet:** STOP before creating the issue. Surface the gap clearly:
-```
-Label gap detected: `<label-name>` is in the registry but not in GitHub.
-Options:
-  a) Create the label in GitHub now, then proceed.
-  b) Use the nearest existing GitHub label with a `// pending` note in the issue body.
-```
-Await user choice. Never silently apply a label that doesn't exist in GitHub.
+**If a label is not in the registry:** STOP and do the following:
+1. Propose adding it to the `.memory/BACKLOG_MAP.md ## Label Registry`.
+2. Await user confirmation.
+3. Once approved, create the label in GitHub first, then write it to the registry, and then apply it to the issue.
 
 ---
 
