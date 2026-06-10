@@ -25,7 +25,7 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Step 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Step 8.
+The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
 
 ## Path detection
 
@@ -37,7 +37,7 @@ Before any file operations, decide and state the path in one line:
   - If they answer yes, initialize it by running `git init` before continuing.
 - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
-## Step 0: Scaffold (deterministic — both paths)
+## Checkpoint 0: Scaffold (deterministic — both paths)
 
 Before scaffolding, choose whether you want to stage/install the plugin **globally** (available to any project on your system) or **locally** (isolated to this project only):
 
@@ -82,15 +82,15 @@ python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py --dry-run
 
 Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references}/` if you need to read one for comparison.
 
-## Step 1: Workspace rules in effect (both paths)
+## Checkpoint 1: Workspace rules in effect (both paths)
 
-Step 0 has placed the rule/protocol files; they govern everything that follows:
+Checkpoint 0 has placed the rule/protocol files; they govern everything that follows:
 - `.agents/rules/output-mode.md`, `memory-protocol.md`
 - `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
-Confirm they exist. If Step 0 reported any as `LEFT AS-IS`, run the drift check before relying on them.
+Confirm they exist. If Checkpoint 0 reported any as `LEFT AS-IS`, run the drift check before relying on them.
 
-## Step 2: Database audit
+## Checkpoint 2: Database audit
 
 - **Greenfield:** skip. Leave `.memory/DATABASE_SCHEMA.md` as the empty template.
 - **Brownfield:** introspect the live schema using the available DB skill or tooling.
@@ -100,7 +100,7 @@ Confirm they exist. If Step 0 reported any as `LEFT AS-IS`, run the drift check 
 
 Why the live DB wins over code: migrations drift, ORMs lie, stale type files mislead. The running database is the only authoritative source.
 
-## Step 3: Architectural mapping
+## Checkpoint 3: Architectural mapping
 
 - **Greenfield:** skip. Leave `.memory/ARCHITECTURE.md` as the empty template.
 - **Brownfield:** analyze `src/`, `components/`, `lib/`, `execution/`.
@@ -109,11 +109,11 @@ Why the live DB wins over code: migrations drift, ORMs lie, stale type files mis
   3. Assign `[[A-xxx]]` IDs to architectural rules. Only `[LAW]`-tier rules belong here.
   4. Add the one-line pointer to `DESIGN.md` and `DESIGN_RULES.md` in the `## Tech Stack` section: `UI/UX standards: see .memory/DESIGN.md (brand tokens) and .memory/DESIGN_RULES.md (structural rules)`.
 
-## Step 4: Design audit
+## Checkpoint 4: Design audit
 
 This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structural rules go to `DESIGN_RULES.md`.
 
-### Step 4a: Brand tokens → `DESIGN.md` (spec-compliant)
+### Checkpoint 4.1: Brand tokens → `DESIGN.md` (spec-compliant)
 
 - **Greenfield:** skip. Leave `DESIGN.md` as the empty template; fill in as the brand develops.
 - **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `.agents/workflows/.reference/stitch-brief-guide.md` §B (propose-only).
@@ -126,7 +126,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 `DESIGN.md` does NOT use trust tags or `[DR-xxx]` IDs — it follows the external spec format.
 
-### Step 4b: Structural rules → `DESIGN_RULES.md`
+### Checkpoint 4.2: Structural rules → `DESIGN_RULES.md`
 
 - **Greenfield:** skip. `DESIGN_RULES.md` keeps the empty Immortal Components registry to fill in as components are built.
 - **Brownfield:** scan `components/layout/*`, `components/ui/*`, and any `Header.tsx` / `Navbar.tsx` / `Sidebar.tsx` / `Footer.tsx` files.
@@ -135,13 +135,13 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   3. Flag any drift candidates the agent notices (e.g., two Navbar variants in the codebase).
   4. The §1 Principles and §2 Stitch Harmonization sections come pre-populated from the template — review and adjust to match the project.
 
-## Step 5: Constraint extraction
+## Checkpoint 5: Constraint extraction
 
 - **Greenfield:** skip. `LEARNINGS.md` accrues entries over time.
 - **Brownfield:** identify "Brownfield Traps" surfaced during the audit. Add as initial entries in `.memory/LEARNINGS.md` with [[L-xxx]] IDs.
 - Apply trust tags per `memory-protocol.md`. Default to `[GUESS]` unless evidence supports a higher tier. Never self-promote to `[LAW]` — propose to user.
 
-### Step 5a: Vocabulary seeding
+### Checkpoint 5.1: Vocabulary seeding
 
 - **Greenfield:** skip. Leave `.memory/GLOSSARY.md` as the empty template.
 - **Brownfield:** scan `docs/prds/`, `docs/discovery/`, READMEs, and DB enum/type definitions for recurring domain terms.
@@ -149,13 +149,13 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [GUESS]` with `Source:` pointing to the originating doc.
   3. Assign sequential IDs starting from `[[G-001]]`.
 
-### Step 5b: Secret hygiene
+### Checkpoint 5.2: Secret hygiene
 
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, and common credential files; if missing, **propose** adding them (don't silently edit).
 
-## Step 6: Label Reconciliation (both paths)
+## Checkpoint 6: Label Reconciliation (both paths)
 
-GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Step 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`) are system-level constants and must always match the registry.
+GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`) are system-level constants and must always match the registry.
 
 ### Greenfield
 No GitHub labels exist yet.
@@ -194,21 +194,21 @@ GitHub labels already exist and may differ from the registry.
 > [!IMPORTANT]
 > **`area:` labels are project-specific.** Adopt project's existing page/domain slugs rather than forcing template placeholders. All other dimensions (`type:`, `priority:`, `size:`, `status:`) are canonical — always propose renaming GitHub's labels to match, never adopt GitHub's non-standard names.
 
-## Step 7: Session & Backlog Sync (both paths)
+## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
 2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `[[BT-xxx]]` IDs and the Label Registry.
 3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
 4. When a step seeds real content into a memory file, delete that file's shipped example rows; leave examples in files with nothing real to seed yet.
 
-## Step 8: Design Context (interactive)
+## Checkpoint 8: Design Context (interactive)
 
 1. **Set Design Context:**
    Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask: `Does this project use Google Stitch for UI design? [yes/no]`. 
    Write the answer into `.memory/DESIGN_RULES.md` §2 `Stitch Status`. 
    If `no`, optionally ask: `Provide any design reference URLs/templates (optional):` and record them in §2 `Design References`.
 
-## Step 9: Skill setup (interactive)
+## Checkpoint 9: Skill setup (interactive)
 
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
@@ -243,5 +243,5 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
 - **Re-running this skill is safe.** Files are created only if missing; existing files are checked for structural drift and user is asked before changes.
 - **Minimalism:** shortest accurate phrasing. No filler.
 - **Live DB wins over code.** Conflicts logged as `[LAW]` entries in `LEARNINGS.md`.
-- **Live GitHub labels win over the template registry (area: only).** After Step 6a, the registry in `.memory/BACKLOG_MAP.md` is authoritative. Do not revert to template defaults.
+- **Live GitHub labels win over the template registry (area: only).** After Checkpoint 6, the registry in `.memory/BACKLOG_MAP.md` is authoritative. Do not revert to template defaults.
 - **Protocols govern ongoing behavior.** This skill instantiates the structure; the rule files in `.agents/rules/` and `.memory/DESIGN_RULES.md` govern all ongoing work. `DESIGN.md` follows an external spec.

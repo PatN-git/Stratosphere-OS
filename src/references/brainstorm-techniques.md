@@ -1,10 +1,10 @@
 # Brainstorm Technique Library
 
-Techniques for Phase 0 concept framing, organized by the brainstorm stage they serve. The orchestrator (`1b_concept-framing.md` Phase 0) sets the default path; consult this file for depth or to pick a situational technique. Pick ONE optional technique per pass — do not run all.
+Techniques for Phase 0 concept framing, organized by the brainstorm pass they serve. The orchestrator (`1b_concept-framing.md` Phase 0) sets the default path; consult this file for depth or to pick a situational technique. Pick ONE optional technique per pass — do not run all.
 
 ## Selection Guide
 
-| When the situation is... | Use | Stage | Skip if... |
+| When the situation is... | Use | Pass | Skip if... |
 |---|---|---|---|
 | Gathering hard limits before ideating | CHAIN | Extract | Constraints already explicit |
 | Every Generate pass (default ideation) | Multi-Perspective | Diverge | — (always run) |
@@ -19,7 +19,7 @@ Techniques for Phase 0 concept framing, organized by the brainstorm stage they s
 
 ---
 
-## Stage 1 — Extract Constraints
+## Pass 1 — Extract Constraints
 
 ### CHAIN Framework
 Purpose: pin hard constraints before diverging, so ideas stay inside the real solution space.
@@ -33,7 +33,7 @@ Output: a confirmed constraints block (Context / Outcomes / Scope boundaries / N
 
 ---
 
-## Stage 2 — Diverge
+## Pass 2 — Diverge
 
 ### Multi-Perspective Ideation (default)
 Purpose: generate breadth fast by viewing the opportunity through three standard roles.
@@ -81,7 +81,7 @@ Output: a paired table — `| Default Assumption | Inversion | Viable Concept |`
 
 ---
 
-## Stage 3 — Converge / Evaluate
+## Pass 3 — Converge / Evaluate
 
 ### Six Thinking Hats — stress-test a candidate
 Purpose: pressure-test one chosen direction from six fixed angles so none is skipped.
@@ -113,7 +113,7 @@ Output: a ranked table — `| Idea | Impact | Confidence | Note |` — highest f
 
 ---
 
-## Stage 4 — Bridge to Grill
+## Pass 4 — Bridge to Grill
 
 ### Opportunity Solution Tree — hand the winner to the grill phase
 Purpose: convert the chosen idea into a testable structure that feeds 1b's grill phase.

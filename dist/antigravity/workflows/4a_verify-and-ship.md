@@ -5,10 +5,10 @@ type: workflow HITL
 trigger: User. Do not run autonomously.
 ---
 
-# PHASE 1: VALUE-ADD GATE
+## Phase 1: Value-Add Gate
 _INPUT:_ GitHub Issue/PRD. ACTION: Evaluate risk profile of target issue before spending execution tokens.
 _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused test-alignment audit.
-1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → proceed to PHASE 5 (cosmetic ship; verified by 3c Fast-Track B).
+1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → proceed to Phase 5 (cosmetic ship; verified by 3c Fast-Track B).
     - OUTPUT: `[SKIP] Pure UI/cosmetic task with no logical or security invariants. Audit bypassed to save tokens.`
 2. IF the task touches any of the following -> PROCEED to Phase 2:
   - Supabase RLS policies
@@ -19,7 +19,7 @@ _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused
   - Explicit PRD acceptance criteria with meaningful edge cases
   - A `[size:large]` `[type:AFK]`
 
-# PHASE 2: EXECUTION
+## Phase 2: Execution
 _INPUT:_
 - GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-interface.md`)
 - New/modified test files
@@ -57,11 +57,11 @@ Assign a confidence score from 0–100 using these anchors:
   - Include in final output.
 
 ## Clean Exit Rule
-- IF no architectural issues meet the **confidence >= 80** threshold → proceed to PHASE 5.
+- IF no architectural issues meet the **confidence >= 80** threshold → proceed to Phase 5.
 - OUTPUT: `[PASS] No high-confidence logical or security anomalies identified. Slice is verified.` 
 Do not generate additional output.
 
-# PHASE 3: Output
+## Phase 3: Output
 IF issues **confidence >= 80** exist, output only compact, dense markdown table mapping PRD Acceptance Criteria (AC) directly to tests:
 
 | AC / Requirement | Test Target | Status | Confidence | Gap / Security Risk |
@@ -70,11 +70,11 @@ IF issues **confidence >= 80** exist, output only compact, dense markdown table 
 
 *(Optional Footnote)* If sub-threshold findings (40-79) were identified and withheld, append: *"Note: <N> sub-threshold findings were withheld from this report."*
 
-# PHASE 4: HANDOFF
+## Phase 4: Handoff
 HALT execution. Await human instruction:
-- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves → proceed to PHASE 5. If gaps remain unresolved → back to the TDD loop; NO PR.
+- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves → proceed to Phase 5. If gaps remain unresolved → back to the TDD loop; NO PR.
 
-# PHASE 5: SHIP (gated, HITL)
+## Phase 5: Ship (gated, HITL)
 Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
 1. Branch isolation: confirm the current branch is NOT `main`/`master` (`AGENT.md` branch rule). If on main → HALT and instruct the user to branch first.
 2. HALT for explicit user confirmation to ship (outward-facing action).
