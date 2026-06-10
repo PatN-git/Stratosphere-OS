@@ -29,6 +29,7 @@ linked-prd: —
 - <Framing>: <one-line reason rejected>
 
 **Rejected approaches (brainstorm):**
+*(May hold research-derived rejections, or be omitted if Phase 0 was skipped)*
 - <Approach>: <one-line reason rejected>
 
 ## Prior Art

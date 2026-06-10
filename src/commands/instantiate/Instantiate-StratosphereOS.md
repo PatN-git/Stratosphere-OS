@@ -198,6 +198,8 @@ GitHub labels already exist and may differ from the registry.
 
 1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
 2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `[[BT-xxx]]` IDs and the Label Registry.
+3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
+4. When a step seeds real content into a memory file, delete that file's shipped example rows; leave examples in files with nothing real to seed yet.
 
 ## Step 8: Skill setup (interactive)
 

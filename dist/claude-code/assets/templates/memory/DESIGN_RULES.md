@@ -27,17 +27,21 @@ All entries are `[LAW]`-tier with `[DR-xxx]` IDs.
 
 Treat Stitch as the **mood board**, not the **source of truth**.
 
-- **[[DR-007]] [LAW]** Extract data, not structure. Pull content and visual styles from Stitch. Discard global structural decisions.
-- **[[DR-008]] [LAW]** Structural Shield: if a Stitch export differs structurally from §3 Immortal Components, DISCARD the Stitch version.
+- **[[DR-007]] [LAW]** Extract data and feature-level layout. Pull content, visual styles, and the feature/page-body layout from Stitch. For GLOBAL structure (chrome: nav/sidebar/footer/page shell), defer to §3 Immortal Components when one exists.
+- **[[DR-008]] [LAW]** Structural Shield applies ONLY where an Immortal Component governs the structure — then discard a conflicting Stitch export. On a net-new page or an explicit full redesign (no governing Immortal Component, or intentional replacement), ADOPT Stitch's layout instead of discarding it.
 - **[[DR-009]] [LAW]** Token Snap: map Stitch hex codes to Tailwind tokens. Map Stitch px to Tailwind scale.
 - **[[DR-010]] [LAW]** When Stitch suggests a structural change to a global component (Navbar, Sidebar, Footer), this is drift, not intent. Do not propagate.
 - **[[DR-011]] [LAW]** Feed Stitch a current `DESIGN.md` as input context whenever possible.
+- **[[DR-014]] [LAW]** Adopt-and-Register: A first-time or full-redesign layout accepted from Stitch is registered/updated as a §3 Immortal Component ([LAW]-tier, propose to user via 0b/setup). Thereafter it shields future feature work (DR-008/010).
+- **[[DR-015]] [LAW]** Freeze-and-Read-from-Repo: Stitch output is ingested once at 2b time (MCP if connected, else export/paste) and frozen into the repo; no lifecycle step reads live Stitch. The MCP is an optional ingest accelerator, never a runtime dependency.
 
 ## 3. Immortal Components
 
 Structural source of truth. Stitch and other generators MUST conform to these.
 
 ### Active Entries
+
+*Note: The first real Immortal Components registered will trigger the removal/purge of the examples below (DR-012/DR-013).*
 
 - **[[DR-012]] [LAW]** Example placeholder — replace during brownfield audit or as components are built. Source: [[BT-001]].
   - **Component:** `components/layout/Navbar.tsx`

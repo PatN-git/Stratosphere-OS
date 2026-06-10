@@ -7,6 +7,7 @@ Authoritative, high-density reference for project issues and their status.
 
 ## Rules
 - When writing the first entry, populate the Label Registry with all labels used in this GitHub project.
+- **BT-id padding:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format.
 - Update when GitHub issues are created, closed, or change status.
 - Include only ID, Title, Status, Labels, Milestone, Dependencies, ICE, Ref — nothing else.
 - Use the Label Registry; do not invent labels.
@@ -28,4 +29,4 @@ Authoritative, high-density reference for project issues and their status.
 
 | ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
 |:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | v0.8 | — | ICE: 0.27 (I: 2.0, C: 80%) | [[L-002]], [[A-003]], [[DR-012]] |
+| BT-001 | Example task title | planned | area:FE-dashboard, type:feature | 0.08 | — | ICE: 0.27 (I: 2.0, C: 80%) | [[L-002]], [[A-003]], [[DR-012]] |
