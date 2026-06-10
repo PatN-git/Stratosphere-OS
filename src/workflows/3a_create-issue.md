@@ -14,7 +14,7 @@ trigger: User. Do not run autonomously.
 ## Phase 1: Intake & Memory Audit
 1.  **Intake:** Receive raw idea or "Minimum Viable Issue."
 2.  **Memory Audit:** If not done before in session run `/0a_start-session` first to familiarize with the project state and architecture.
-3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<padded>-<name>.md`, or user cites `BT-<padded>`) → load it along with the frozen design document `docs/design/BT-<padded>-ux.md`. The PRD §6 + §8 and the design blueprint/contract are the scope to cover. Else the raw idea / MVI is the scope.
+3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<padded>-<name>.md`, or user cites `BT-<padded>`) → load it along with the frozen design document `docs/design/BT-<padded>-interface.md`. The PRD §6 + §8 and the design blueprint/contract are the scope to cover. Else the raw idea / MVI is the scope.
 
 ## Phase 2: The Vertical Slice Quiz & Prioritization
 Before creating the task, propose the breakdown to the user:

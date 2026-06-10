@@ -27,7 +27,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 1 | `/1a_research` | `1a_research.md` | Research domain (problem vs. competitive, quick vs. deep) | memory | `docs/research/` |
   | 1 | `/1b_concept-framing` | `1b_concept-framing.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
   | 2 | `/2a_write-prd` | `2a_write-prd.md` | Turn a brief into a PRD | brief, memory | PRD doc + parent issue |
-  | 2 | `/2b_ux-design` | `2b_ux-design.md` | Design UX flows / specs | PRD | design blueprint / Stitch prompt |
+  | 2 | `/2b_interface-design` | `2b_interface-design.md` | Design interface (UI or non-UI contract) | PRD | design blueprint / contract |
   | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
   | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
   | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE`, UX | code + tests |
@@ -38,7 +38,11 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 - **First-party skills** — `micro-tdd` (autonomous, token-efficient TDD) and `plan-html` (interactive HTML plans/matrices/micro-apps).
 - **On-demand skills** — database, React/web, React Native, and design packs are fetched only when a project needs them (see `src/external-skills.json`).
 
-> **Design tooling:** Google Stitch is the default design tool — brand tokens live in `.memory/DESIGN.md` (Google Labs `DESIGN.md` spec) and structural rules in `.memory/DESIGN_RULES.md`. The optional `design` skill pack (`impeccable`) is polish on top, not a replacement.
+> **Design tooling:** Google Stitch is the default design tool **when enabled** (`Stitch Status: yes`); no-Stitch projects use reference-driven native design (Path B in `2b_interface-design`). Brand tokens live in `.memory/DESIGN.md` (Google Labs `DESIGN.md` spec) and structural rules in `.memory/DESIGN_RULES.md`. The optional `design` skill pack (`impeccable`) is polish on top, not a replacement.
+
+## Assumptions
+
+StratosphereOS assumes a React + Tailwind + shadcn/ui UI stack by default. Non-UI features are handled by the Path C interface contract in `2b_interface-design`. A project can adopt another stack by superseding DR-004/DR-005 (see `memory-protocol.md` §3) with explicit user confirmation.
 
 ---
 

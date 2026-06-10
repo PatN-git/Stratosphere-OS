@@ -11,15 +11,16 @@ trigger: User. Do not run autonomously.
 
 ## 1. The Core TDD Protocol
 
-Apply strictly to all backend logic, database operations, hooks, and state functions. Use `.agents\skills\code-simplifier\SKILL.md` at the end.
+Apply strictly to all backend logic, database operations, hooks, and state functions. Use `.agents/skills/code-simplifier/SKILL.md` at the end.
 
 ### Phase 0: Context Intake (UX & Blueprint Check)
 1. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
-2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-ux.md`), you MUST load and read:
-   - The frozen blueprint: `docs/design/BT-<padded>-ux.md` (search for the section relevant to the current slice).
+2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
+   - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
    - The brand design tokens: `.memory/DESIGN.md`.
    - The design rules: `.memory/DESIGN_RULES.md` (specifically §3 Immortal Components).
    - **UI Slices Read Rule:** UI slices must implement design based *only* on these frozen repository artifacts using Fast-Track B (visual audit). Never access or re-read live Stitch.
+   - **Translation Rule:** the blueprint's layout hierarchy (and any Stitch HTML) is a layout REFERENCE, not copy-source. Re-express it in shadcn/ui ([[DR-004]]) + semantic HTML ([[DR-006]]), binding values to `DESIGN.md` tokens ([[DR-002]]/[[DR-003]]). See `.agents/workflows/.reference/shadcn-build-guide.md`.
 3. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
@@ -61,6 +62,7 @@ To prevent token-burn and protect execution speeds on repetitive or lightweight 
     2. Spin up the local dev server environment. 
     3. Visual Audit Checklist:
         - Validate colors use OKLCH tokens [[DR-002]] and spacing/type use fluid scales [[DR-003]].
+        - Confirm shadcn/ui primitives are used over raw elements ([[DR-004]]); semantic landmarks present, no generator div-soup ([[DR-006]]).
         - Confirm viewport responsiveness under mobile/desktop sizes.
         - Check transition/interaction effects under click/tap inputs.
     4. Output a verified manual confirmation log detailing layout compliance.

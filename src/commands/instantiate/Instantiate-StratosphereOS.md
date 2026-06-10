@@ -116,7 +116,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 ### Step 4a: Brand tokens → `DESIGN.md` (spec-compliant)
 
 - **Greenfield:** skip. Leave `DESIGN.md` as the empty template; fill in as the brand develops.
-- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files.
+- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `.agents/workflows/.reference/stitch-brief-guide.md` §B (propose-only).
   1. Map color variables to the `colors:` YAML block (primary, secondary, tertiary, neutral, etc.).
   2. Map typography to the `typography:` YAML block (one entry per type level).
   3. Map spacing scale to the `spacing:` YAML block.
@@ -201,7 +201,14 @@ GitHub labels already exist and may differ from the registry.
 3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
 4. When a step seeds real content into a memory file, delete that file's shipped example rows; leave examples in files with nothing real to seed yet.
 
-## Step 8: Skill setup (interactive)
+## Step 8: Design Context (interactive)
+
+1. **Set Design Context:**
+   Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask: `Does this project use Google Stitch for UI design? [yes/no]`. 
+   Write the answer into `.memory/DESIGN_RULES.md` §2 `Stitch Status`. 
+   If `no`, optionally ask: `Provide any design reference URLs/templates (optional):` and record them in §2 `Design References`.
+
+## Step 9: Skill setup (interactive)
 
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
@@ -228,7 +235,7 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    ```
    (Where `<plugin>` is `~/.claude/plugins/stratosphere-os/` globally on Claude Code, `~/.gemini/config/plugins/stratosphere-os/` globally on Antigravity, or `.agents/plugins/stratosphere-os/` / `.claude/plugins/stratosphere-os/` locally).
 
-4. **Design note:** Google Stitch is the default design tool (brand tokens live in `.memory/DESIGN.md`); the `design` category skills are optional polish on top.
+4. **Design note:** Google Stitch is OPTIONAL; no-Stitch projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
 5. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints
