@@ -54,4 +54,5 @@ Verify all milestone and priority labels to be set exist in the registry before 
 Halt execution. Prompt user for confirmation. When confirmed:
 1. Update issue metadata directly inside GitHub. Ensure the label registry's `priority:high|medium|low` bucket is correctly applied based on the ICE score (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low).
 2. Ensure milestone <x.yy> exists, assign matching issues, set status:planned inside .memory/BACKLOG_MAP.md and GitHub.
-3. Output termination note: Sprint <x.yy> locked. Ready for execution.
+3. When changing any issue's priority/milestone/status in GitHub, post a comment on that issue documenting the change and its rationale, e.g.: *'Sprint <x.yy> sync: ICE <score> → priority:high; milestone <x.yy>; status:planned.'* (Mirrors 0b's issue-comment pattern so GitHub history explains every label/milestone change.)
+4. Output termination note: Sprint <x.yy> locked. Ready for execution.

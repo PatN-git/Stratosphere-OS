@@ -31,7 +31,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
   | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
   | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
   | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE`, UX | code + tests |
-  | 4 | `/4a_audit-test-gaps` | `4a_audit-test-gaps.md` | Verify AC↔test coverage | issue, tests | gap report |
+  | 4 | `/4a_verify-and-ship` | `4a_verify-and-ship.md` | Verify a slice (AC↔test coverage), then open a traceable PR | issue, tests, design doc | gap report + PR |
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 
 - **Installer** — `/stratosphere-setup` scaffolds the project: memory layer, workspace rules, constitution, and an interactive skill-pack setup. Safe to re-run (diff-aware) as an upgrade path.
