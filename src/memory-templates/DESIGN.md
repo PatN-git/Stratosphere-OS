@@ -9,18 +9,18 @@ colors:
   neutral: "oklch(0.985 0.005 80)"
 typography:
   h1:
-    fontFamily: Inter
+    fontFamily: <font-family>
     fontSize: 48px
     fontWeight: 600
     lineHeight: 1.1
     letterSpacing: -0.02em
   body-md:
-    fontFamily: Inter
+    fontFamily: <font-family>
     fontSize: 16px
     fontWeight: 400
     lineHeight: 1.6
   label-caps:
-    fontFamily: Inter
+    fontFamily: <font-family>
     fontSize: 12px
     fontWeight: 500
     lineHeight: 1
@@ -68,3 +68,4 @@ components:
 ## Do's and Don'ts
 - Do <prescriptive rule>
 - Don't <prohibition>
+- Don't ship the default Inter or any unchosen system default — pick a deliberate, brand-justified font ([[DR-001]]).

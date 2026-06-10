@@ -62,6 +62,25 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         if py.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/scripts/{py.name}")
 
+# 4. Check for broken reference links in workflows/commands
+ref_regex = re.compile(r'\.agents/workflows/\.reference/([a-zA-Z0-9_\-\.]+)')
+src_path = root / "src"
+references_dir = src_path / "references"
+
+# Gather md files to scan (recursively under workflows and commands)
+md_files_to_scan = list(src_path.glob("workflows/**/*.md")) + list(src_path.glob("commands/**/*.md"))
+
+for md_file in md_files_to_scan:
+    try:
+        content = md_file.read_text(encoding="utf-8")
+        for match in ref_regex.finditer(content):
+            ref_name = match.group(1)
+            # Check if there is a matching file in src/references/
+            if not (references_dir / ref_name).exists():
+                errs.append(f"BROKEN REFERENCE in {md_file.relative_to(root)}: '{ref_name}' does not exist in src/references/")
+    except Exception as e:
+        errs.append(f"ERROR reading {md_file} during reference validation: {e}")
+
 # 3. Counts
 for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:
     n = len(list((root / plat / inv).glob('*.md')))

@@ -7,7 +7,7 @@ trigger: User. Do not run autonomously.
 
 # Write PRD
 
-**Hand-off contract:** `/2b_ux-design` is the next stage (designs the interface/UX from this PRD). `/3a_create-issue` later reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
+**Hand-off contract:** `/2b_interface-design` is the next stage (designs the interface from this PRD). `/3a_create-issue` later reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
 
 ## Phase 1: Precondition & Mode
 1. Confirm `.memory/BACKLOG_MAP.md` is loaded — else stop and prompt `/0a_start-session`.
@@ -55,7 +55,7 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
    ```
    | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | <milestone or —> | — | ICE: — | docs/prds/BT-<padded>-<name>.md |
    ```
-4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_ux-design` to design."*
+4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."*
 
 ---
 

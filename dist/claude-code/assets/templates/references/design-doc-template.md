@@ -1,13 +1,13 @@
 ---
 slug: <slug>
-bt: BT-007
+bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
 status: draft | ready-for-slicing | obsolete
 updated: <YYYY-MM-DD>
 ---
 
-# Design: BT-007 - <Feature Name>
+# Design: BT-<padded> - <Feature Name>
 
 ## Surface & Scope
 <Describe the overall system impact, scope of changes, and target interface/surface area.>
@@ -42,7 +42,9 @@ updated: <YYYY-MM-DD>
 - **Optional Stitch Provenance Link:**
   - Link to Stitch snapshot: `<stitch-url-or-ref>` (Provenance only; this file is the SSOT)
 
-### [Path B · Manual UI] Blueprint
+### [Path B · Reference-driven native] Blueprint
+- **Design References / Provenance:**
+  - <reference URLs the layout derives from>
 - **Layout & Structure:**
   - DOM Hierarchy / Component tree.
 - **Visual styling rules & styling tokens:**

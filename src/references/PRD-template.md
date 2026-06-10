@@ -5,7 +5,7 @@ updated: <YYYY-MM-DD>
 status: ready-for-design | in-progress | complete
 ---
 
-# BT-007: <Feature name>
+# BT-<padded>: <Feature name>
 
 ## 1. Problem
 - **Current experience:**

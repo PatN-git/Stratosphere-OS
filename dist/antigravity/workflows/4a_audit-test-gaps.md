@@ -21,7 +21,7 @@ _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused
 
 # PHASE 2: EXECUTION
 _INPUT:_
-- GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-ux.md`)
+- GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-interface.md`)
 - New/modified test files
 - relevant implementation files when needed to understand what the tests verify 
 - `.memory/LEARNINGS.md`.
