@@ -40,6 +40,9 @@ def scan_file_for_secrets(file_path):
         errors.append(f"Could not read {file_path.name} for secrets: {e}")
     return errors
 
+def is_placeholder(cid):
+    return not cid.rsplit('-', 1)[-1].isdigit()
+
 def apply_autofix(memory_dir, file_name, line_num, cid):
     fpath = Path(memory_dir) / file_name
     if not fpath.exists():
@@ -181,30 +184,33 @@ def main():
                         if id_match:
                             def_id = id_match.group(1)
                             # Register definition
-                            if def_id in definitions:
-                                prev = definitions[def_id]
-                                errors.append(f"Duplicate ID definition: '{def_id}' defined in {prev['file']}:{prev['line_num']} and {fname}:{line_idx}")
-                            else:
-                                definitions[def_id] = {
-                                    'id': def_id,
-                                    'file': fname,
-                                    'line_num': line_idx,
-                                    'tag': None,
-                                    'superseded_by': None,
-                                    'in_superseded': in_superseded,
-                                    'content': stripped
-                                }
+                            if not is_placeholder(def_id):
+                                if def_id in definitions:
+                                    prev = definitions[def_id]
+                                    errors.append(f"Duplicate ID definition: '{def_id}' defined in {prev['file']}:{prev['line_num']} and {fname}:{line_idx}")
+                                else:
+                                    definitions[def_id] = {
+                                        'id': def_id,
+                                        'file': fname,
+                                        'line_num': line_idx,
+                                        'tag': None,
+                                        'superseded_by': None,
+                                        'in_superseded': in_superseded,
+                                        'content': stripped
+                                    }
                             
                             # Parse references in the rest of the row
                             ref_ids = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
                             if def_id in ref_ids:
                                 ref_ids.remove(def_id)
                             for rid in ref_ids:
+                                if is_placeholder(rid):
+                                    continue
                                 references.append({
                                     'id': rid,
                                     'file': fname,
                                     'line_num': line_idx,
-                                    'context_id': def_id,
+                                    'context_id': def_id if not is_placeholder(def_id) else None,
                                     'content': stripped
                                 })
                             continue
@@ -215,12 +221,26 @@ def main():
             
             id_matches = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
             
-            if is_list_item or line.startswith('#'):
-                if id_matches:
-                    def_id = id_matches[0]
-                    
+            DEF_RE = re.compile(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\]')
+            def_match = DEF_RE.search(line)
+            is_heading_def = line.startswith('#') and id_matches and line.lstrip('#').strip().startswith('[[')
+
+            if def_match or is_heading_def:
+                def_id = def_match.group(1) if def_match else id_matches[0]
+                
+                if is_placeholder(def_id):
+                    # Placeholder definition is ignored. All valid refs on this line are just references.
+                    ref_ids = [rid for rid in id_matches if not is_placeholder(rid)]
+                    if is_list_item:
+                        indent = len(list_match.group(1))
+                        if current_list_indent is not None and indent > current_list_indent:
+                            pass
+                        else:
+                            current_list_indent = indent
+                            current_context_id = None
+                else:
                     # Parse trust tag
-                    tag_match = re.search(r'\[(LAW|PATTERN|GUESS)\]', line)
+                    tag_match = re.search(r'\[(LAW|PATTERN|ASSUMED)\]', line)
                     tag = tag_match.group(1) if tag_match else None
                     
                     # Parse superseded target
@@ -247,26 +267,25 @@ def main():
                         current_context_id = def_id
                         
                     # Remaining matches are references
-                    ref_ids = id_matches[1:]
-                else:
-                    if is_list_item:
-                        indent = len(list_match.group(1))
-                        if current_list_indent is not None and indent > current_list_indent:
-                            # Sub-item, keep context
-                            pass
-                        else:
-                            current_list_indent = indent
-                            current_context_id = None
-                    ref_ids = []
+                    ref_ids = [rid for rid in id_matches[1:] if not is_placeholder(rid)]
             else:
-                indent = len(line) - len(line.lstrip())
-                if current_list_indent is not None and indent > current_list_indent:
-                    # Indented text block, keep context
-                    pass
+                if is_list_item:
+                    indent = len(list_match.group(1))
+                    if current_list_indent is not None and indent > current_list_indent:
+                        # Sub-item, keep context
+                        pass
+                    else:
+                        current_list_indent = indent
+                        current_context_id = None
                 else:
-                    current_list_indent = None
-                    current_context_id = None
-                ref_ids = id_matches
+                    indent = len(line) - len(line.lstrip())
+                    if current_list_indent is not None and indent > current_list_indent:
+                        # Indented text block, keep context
+                        pass
+                    else:
+                        current_list_indent = None
+                        current_context_id = None
+                ref_ids = [rid for rid in id_matches if not is_placeholder(rid)]
                 
             for rid in ref_ids:
                 references.append({
@@ -336,6 +355,10 @@ def main():
 
     # 4. Bidirectional Consistency (Warning only)
     for cid, rid in directed_links:
+        # Reciprocity is checked ONLY for memory-to-memory links (L/A/DR/G <-> L/A/DR/G)
+        if not (any(cid.startswith(p) for p in ['L-', 'A-', 'DR-', 'G-']) and any(rid.startswith(p) for p in ['L-', 'A-', 'DR-', 'G-'])):
+            continue
+            
         c_info = definitions.get(cid)
         r_info = definitions.get(rid)
         if c_info and r_info:

@@ -22,12 +22,12 @@ Leave next session with enough context to resume immediately. Ensure all new ent
     - If an issue stems from systemic tool/agent failure, flag the specific `.agents/skills/` or `.agents/workflows/` path for optimization rather than logging a standard learning.
 4. If a durable lesson was discovered, add it to `.memory/LEARNINGS.md`:
    - Assign next available `[[L-xxx]]` ID.
-   - Apply trust tag (default `[GUESS]`; see `memory-protocol.md` for promotion rules).
-   - Add `Source: [[BT-xxx]]` cross-reference.
+   - Apply trust tag (default `[ASSUMED]`; see `memory-protocol.md` for promotion rules).
+   - Add `Source: BT-xxx` cross-reference.
    - When writing the first real `[[L-xxx]]` (L-003+), delete the shipped examples (L-001/L-002).
 5. If a domain term was agreed (during a discover session, while writing a PRD, or surfaced during implementation), add it to `.memory/GLOSSARY.md`:
    - Assign next available `[[G-xxx]]` ID.
-   - Apply trust tag (default `[GUESS]`).
+   - Apply trust tag (default `[ASSUMED]`).
    - Add `Source:` pointing to the discovery brief, PRD, or issue where the term was settled.
    - When writing the first real `[[G-xxx]]` (G-002+), delete the shipped example (G-001).
 6. If architecture changed meaningfully:

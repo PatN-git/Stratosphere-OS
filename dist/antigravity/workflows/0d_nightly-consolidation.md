@@ -26,7 +26,7 @@ Do not modify any files without explicit user approval.
     |:---|:---|
     | Duplicate or overlapping entries | Merge? |
     | `[PATTERN]` cited ≥3 times across tasks | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (not applicable to `GLOSSARY.md`) |
-    | `[GUESS]` older than 5 sessions, never validated | Delete? |
+    | `[ASSUMED]` older than 5 sessions, never validated | Delete? |
 - If proposals surface adjust the plan created in Phase 2. If nothing qualifies, skip silently.
 
 ## Phase 4: Await Execution Direction

@@ -20,7 +20,7 @@ Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, 
 
 ## Active Entries
 
-- **[[G-001]] [GUESS] [YYYY-MM-DD]** Example Term: definition. Source: docs/discovery/<slug>.md or BT-xx.
+- **[[G-XXX]] [ASSUMED] [YYYY-MM-DD]** Example Term: definition. Source: docs/discovery/<slug>.md or BT-XXX.
 
 ## Superseded
 > Read only when explicitly asked.

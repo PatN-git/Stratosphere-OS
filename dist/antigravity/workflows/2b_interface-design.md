@@ -18,7 +18,7 @@ trigger: User. Do not run autonomously.
 2. If there is NO external surface/code change (docs-only/process) → skip this workflow; handoff to `/3a_create-issue`.
 3. If the feature has NO UI surface (backend/api/workers/db/library) → Path C.
 4. If it has UI, read "Stitch Status" from `.memory/DESIGN_RULES.md` §2 and branch:
-   - `yes` → Path A (Stitch-assisted). Branch A1 = Whole-page (new page / full redesign); Branch A2 = Feature-on-existing-page.
+   - `yes` → Path A (Stitch-assisted). Branch A1 = Whole-page (new page / full redesign); Branch A2 = Feature-on-existing-page. (Note: Path A ingests via copy/paste when the MCP is absent, so an A1 whole-page stays Path A. For A2 feature-on-existing with no MCP: INTERACTIVE prompt to ask whether to Stitch vs conform natively; if AFK, default to Path B and record the re-route in the design doc).
    - `no`  → Path B (Reference-driven native).
    - *unset / still the placeholder* `<yes | no — set during /stratosphere-setup>` → ask the user once (AskUserQuestion / ask_question), write the answer back to §2, then branch per above.
 
@@ -39,7 +39,7 @@ trigger: User. Do not run autonomously.
 
 ### Path A (Stitch):
 1. Ingest the layout (Stitch MCP if connected, else copy/paste export).
-2. Token Snap — map Stitch hex/px to existing `DESIGN.md` tokens (DR-009).
+2. Token Snap — map Stitch hex/px to existing `DESIGN.md` tokens (DR-009). (Note: px values in DESIGN.md YAML are anchor targets; the Tailwind impl uses fluid clamps per DR-003 — not a conflict).
 3. Immortal Components: A1 → propose the new shell as a §3 Immortal Component to the user; **on confirmation, register it in `.memory/DESIGN_RULES.md` §3 immediately** (the design moment is when structure is decided — do not defer to 0b); A2 → discard any Stitch changes to global shell components (DR-008/DR-010).
 4. Freeze the resolved layout/hierarchy into the Path A body block. `status` → `ready-for-slicing`.
 5. Read Rule: Stitch is read ONCE and frozen. Downstream readers of this doc (`3a`, `3c`, `4a`) read ONLY the frozen doc, `DESIGN.md`, and `DESIGN_RULES.md`; `4b` audits `.memory/`. Never access live Stitch.
@@ -54,13 +54,13 @@ trigger: User. Do not run autonomously.
 
 ### Greenfield Bootstrap Deltas
 *Apply ONLY when Phase 2 classified this run as bootstrap (`.memory/DESIGN.md` empty/skeleton). The first UI feature establishes the design system — override the steady-state steps above:*
-- **Path B input:** before anything else, prompt the user for design references (URLs/templates e.g. variant.com, screenshots, brand cues, explicit style descriptor) and PAUSE — *"Provide your design references, then say resume to continue."* The agent MAY fetch/inspect the URLs. *(Path A's empty-DESIGN.md input behavior is handled inline in Phase 3 step 3.)*
+- **Path B input:** before anything else, prompt the user for design references (URLs/templates e.g. variant.com, screenshots, brand cues, explicit style descriptor) and PAUSE — *"Provide your design references, then say resume to continue."* The agent MAY fetch/inspect the URLs. *(Path A's empty-DESIGN.md input behavior is handled inline in Phase 3 step 2.)*
 - **Token direction inverts (DR-009):** do NOT snap to existing tokens. Instead EXTRACT palette/type/spacing from the Stitch output (Path A), or derive an OKLCH palette (DR-002) + fluid scales (DR-003) + font pairing + layout primitives from the references (Path B, filtered through DR-001), and PROPOSE seeding `DESIGN.md` (propose-only; user confirms). For brownfield (existing code, empty DESIGN.md), derive the initial tokens from the codebase per `.agents/workflows/.reference/stitch-brief-guide.md` §B before proposing DESIGN.md. For Path B, record the reference URLs as provenance in `DESIGN_RULES.md` §2.
 - **Immortal Components:** there are none to conform to yet — propose registering the initial shell as §3 Immortal Components to the user; **on confirmation, register it in `.memory/DESIGN_RULES.md` §3 immediately** (the design moment is when structure is decided — do not defer to 0b).
 
 ## Phase 5: Publish & Sync
 1. Append the design doc link to the parent GitHub Issue body.
-2. Append the design doc ref to the `Ref` column in `.memory/BACKLOG_MAP.md`.
+2. Append relevant memory IDs (e.g. the new DR-xxx) to the `Ref` column in `.memory/BACKLOG_MAP.md` (do NOT put the design doc link in Ref).
 3. Handoff: *"Interface design complete. Run `/3a_create-issue` to slice requirements."*
 
 ---

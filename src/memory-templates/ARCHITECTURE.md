@@ -46,7 +46,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 - **[[A-004]] [LAW]** Do not rewrite folder structures wholesale. When dealing with legacy or messy codebases, extract one isolated concern at a time, verify functionality remains green, and preserve established style.
 
 ## Known Architectural Constraints
-- **A-XXX [LAW]** Constraint:
+- **[[A-XXX]] [LAW]** Example placeholder. Source: BT-XXX.
 
 ## Superseded
 > Read only when explicitly asked.

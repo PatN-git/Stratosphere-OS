@@ -42,16 +42,18 @@ Before any file operations, decide and state the path in one line:
 Before scaffolding, choose whether you want to stage/install the plugin **globally** (available to any project on your system) or **locally** (isolated to this project only):
 
 - **Global Scope (Recommended):** Stage the plugin under the global configuration directory:
-  `~/.gemini/config/plugins/stratosphere-os/`
+  `~/.gemini/config/plugins/stratosphere-os/` (or `~/.claude/plugins/stratosphere-os/` for Claude Code)
   Invoke the scaffolder using:
   ```bash
   python ~/.gemini/config/plugins/stratosphere-os/scripts/scaffold.py
+  # (use ~/.claude/... for Claude Code)
   ```
 - **Local Scope:** Stage the plugin under your workspace's plugins directory:
-  `.agents/plugins/stratosphere-os/`
+  `.agents/plugins/stratosphere-os/` (or `.claude/plugins/stratosphere-os/` for Claude Code)
   Invoke the scaffolder using:
   ```bash
   python .agents/plugins/stratosphere-os/scripts/scaffold.py
+  # (use .claude/... for Claude Code)
   ```
 
 Run the bundled scaffolder from the **project root**. It creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
@@ -139,14 +141,14 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 - **Greenfield:** skip. `LEARNINGS.md` accrues entries over time.
 - **Brownfield:** identify "Brownfield Traps" surfaced during the audit. Add as initial entries in `.memory/LEARNINGS.md` with [[L-xxx]] IDs.
-- Apply trust tags per `memory-protocol.md`. Default to `[GUESS]` unless evidence supports a higher tier. Never self-promote to `[LAW]` — propose to user.
+- Apply trust tags per `memory-protocol.md`. Default to `[ASSUMED]` unless evidence supports a higher tier. Never self-promote to `[LAW]` — propose to user.
 
 ### Checkpoint 5.1: Vocabulary seeding
 
 - **Greenfield:** skip. Leave `.memory/GLOSSARY.md` as the empty template.
 - **Brownfield:** scan `docs/prds/`, `docs/discovery/`, READMEs, and DB enum/type definitions for recurring domain terms.
   1. Propose 5–10 terms with one-line definitions to the user.
-  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [GUESS]` with `Source:` pointing to the originating doc.
+  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc.
   3. Assign sequential IDs starting from `[[G-001]]`.
 
 ### Checkpoint 5.2: Secret hygiene
@@ -172,7 +174,7 @@ GitHub labels already exist and may differ from the registry.
    | GitHub Label (existing) | Registry Equivalent | Action |
    |:---|:---|:---|
    | `bug` | `type:bug` | MAP |
-   | `frontend` | `area:FE-<page_name>` | MAP |
+   | `frontend` | `area:FE-<page_name>` (Note: this is a PATTERN, use literal slug e.g. `area:FE-login`) | MAP |
    | `wontfix` | _(none)_ | DROP |
    | _(missing)_ | `priority:high` | ADD |
    | `type:feature` | `type:feature` | KEEP |
@@ -197,7 +199,7 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
-2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `[[BT-xxx]]` IDs and the Label Registry.
+2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry.
 3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
 4. When a step seeds real content into a memory file, delete that file's shipped example rows; leave examples in files with nothing real to seed yet.
 
