@@ -20,21 +20,21 @@ trigger: User. Do not run autonomously.
 ## Phase 2: Reserve BT-<padded>
 Create the parent GitHub issue — its number becomes zero-padded to 3 digits (e.g., #7 becomes `BT-007`).
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only)
-- **Labels (apply):** `size:large` (parent features are always large), `area:<x>` (inferred from registry), `type:feature`, `status:in progress`; `phase:<x>` and `priority:<x>` only if confidently inferable — else `needs-triage`
+- **Labels (apply):** `size:large` (parent features are always large), `area:<x>` (inferred from registry), `type:feature`, `status:in progress`; `priority:<x>` only if confidently inferable — else default unknown priority to `priority:medium`; never invent a non-registry label
 - **Labels (never apply):** `size:medium`, `size:small`, `type:HITL`, `type:AFK` (slice-level)
 - **Body:** one-line summary + forward link to `docs/prds/BT-<padded>-<name>.md`
 
 Record issue URL for PRD front matter.
 
 ## Phase 3: Draft
-Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation context, BACKLOG_MAP, LEARNINGS, and ADR-shaped memory entries. Reference [[BT-xxx]], [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline where they constrain the work.
+Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation context, BACKLOG_MAP, LEARNINGS, and ADR-shaped memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline where they constrain the work.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files
 - Forbidden everywhere: file paths, code, module/interface designs, slice lists, per-slice AC, Data/Logic/UI breakdowns
 - Unknown → `> open: <question>` inline; rolls to §10 at validation
 
-**§7 ADR flag:** if §7 contains a decision with real alternatives and consequences, ask: *"Flag for memory index?"* Route by trust tier: propose [[A-xxx]] for [LAW]-tier structural decisions; [[L-xxx]] for [PATTERN]- or [GUESS]-tier.
+**§7 ADR flag:** if §7 contains a decision with real alternatives and consequences, ask: *"Flag for memory index?"* Route by trust tier: propose [[A-xxx]] for [LAW]-tier structural decisions; [[L-xxx]] for [PATTERN]- or [ASSUMED]-tier.
 
 ## Phase 4: Validate
 - [ ] §1 answers current experience / who / impact
@@ -49,13 +49,14 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`.
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Set frontmatter status mapping feature-type: UI feature → `ready-for-design` (run `/2b_interface-design`); non-UI/Path C → `ready-for-slicing` (2b optional).
 2. Update parent issue body: one-paragraph summary + doc link + §10 Open Questions.
 3. Append to `.memory/BACKLOG_MAP.md` (if this is the first real entry, delete the shipped example rows):
    ```
-   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | <milestone or —> | — | ICE: — | docs/prds/BT-<padded>-<name>.md |
+   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | <milestone or -> | - | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
-4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."*
+   (Note: Use plain ASCII hyphens `-`, not em-dashes `—` in any BACKLOG row text. Ref column is for memory IDs only; doc paths go in the GitHub issue body.)
+4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip prompting for 2b if feature is non-UI/Path C).
 
 ---
 

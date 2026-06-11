@@ -40,6 +40,9 @@ linked-prd: —
 
 - <item>
 
+## Constraints
+<User-locked technical decisions, e.g. platform, stack. No solution design.>
+
 ## Open Questions
 <Residual ambiguity. write-prd absorbs these into PRD §10.>
 

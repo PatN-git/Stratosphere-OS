@@ -72,19 +72,20 @@ IF issues **confidence >= 80** exist, output only compact, dense markdown table 
 
 ## Phase 4: Handoff
 HALT execution. Await human instruction:
-- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves → proceed to Phase 5. If gaps remain unresolved → back to the TDD loop; NO PR.
+- Human commands agent back to standard TDD loop to implement missing test coverage, OR approves.
+- If the user's response to a gap report authorizes shipping, proceed to Phase 5 on a clean re-audit without a second halt. If gaps remain unresolved → back to the TDD loop; NO PR.
 
 ## Phase 5: Ship (gated, HITL)
 Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
-1. Branch isolation: confirm the current branch is NOT `main`/`master` (`AGENT.md` branch rule). If on main → HALT and instruct the user to branch first.
-2. HALT for explicit user confirmation to ship (outward-facing action).
-3. On confirmation: commit any uncommitted slice code+tests on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`, where `<type>` maps from the issue's `type:` label — `feat`/`fix`/`chore`/`refactor`/etc.), then push the branch.
-4. If a PR already exists for the current branch (`gh pr view` succeeds), UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate. Otherwise open a new PR with `gh pr create` (only if GitHub is connected; else output a local note and skip). The PR body MUST trace what happened:
-   - `Closes #<issue-number>` (and the parent `BT-<padded>`)
+1. Branch isolation: confirm the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
+2. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
+3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3c owns commits). Push the branch.
+4. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
+   - `Closes #<sliceIssue>` (and the parent `BT-<padded>`)
    - One-line slice summary
-   - **Verification:** the AC↔test coverage table (if audited), OR `[PASS] slice verified`, OR `[SKIP] cosmetic — verified via 3c Fast-Track B visual audit`
-   - **Design reference:** `docs/design/BT-<padded>-interface.md` (if UI)
-   - **Tests:** the run command + result
-   - Relevant `[[L-xxx]]`/`[[A-xxx]]` references
+   - Extend the AC↔test coverage table (if audited), OR `[PASS] slice verified`, OR `[SKIP] cosmetic`
+   - Keep design ref `docs/design/BT-<padded>-interface.md` (if UI)
+   - Keep test cmd + result
+   - Keep relevant `[[L-xxx]]`/`[[A-xxx]]` references
 5. Comment the PR link back on the GitHub issue (bi-directional trace); set the issue/`BACKLOG_MAP.md` status appropriately.
-6. Output: `[SHIPPED] PR #<n> opened for BT-<padded>. /4b_audit-architecture-drift is optional next.`
+6. Output: `[SHIPPED] PR #<n> open for BT-<padded>. /4b_audit-architecture-drift is optional next.` Never merge. When all sibling slices under the parent are verified/closed, state: "PR #<n> ready to merge (human)".

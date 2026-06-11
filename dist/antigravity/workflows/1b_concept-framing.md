@@ -72,7 +72,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Compile agreed definitions from Phase 2 into a 3–8 term list.
 2. Present for explicit user approval — one pass.
-3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term. Assign IDs with [GUESS] tag — do not write without confirmation.
+3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term. Assign IDs with [ASSUMED] tag — do not write without confirmation.
 
 ## Phase 4: Choose Framing
 

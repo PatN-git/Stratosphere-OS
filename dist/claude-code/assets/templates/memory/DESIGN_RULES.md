@@ -52,13 +52,13 @@ Structural source of truth. Stitch and other generators MUST conform to these.
 
 *Note: The first real Immortal Components registered will trigger the removal/purge of the examples below (DR-012/DR-013).*
 
-- **[[DR-012]] [LAW]** Example placeholder — replace during brownfield audit or as components are built. Source: [[BT-001]].
+- **[[DR-XXX]] [LAW]** Example placeholder — replace during brownfield audit or as components are built. Source: BT-XXX.
   - **Component:** `components/layout/Navbar.tsx`
   - **Desktop pattern:** Top-fixed, horizontal links
   - **Mobile pattern:** Hamburger trigger, right-side drawer
   - **Drift protection:** If Stitch suggests a sidebar or alternative mobile pattern, ignore it.
 
-- **[[DR-013]] [LAW]** Example: `components/layout/Sidebar.tsx`
+- **[[DR-YYY]] [LAW]** Example: `components/layout/Sidebar.tsx`
   - **Use scope:** Admin dashboard only
   - **Pattern:** Collapsible (64px collapsed, 240px expanded)
   - **Drift protection:** Never appears in user-facing views.

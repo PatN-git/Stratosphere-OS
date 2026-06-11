@@ -21,8 +21,8 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 
 ## Active Entries
 
-- **[[L-001]] [GUESS] [YYYY-MM-DD]** Example placeholder. Source: BT-XX.
-- **[[L-002]] [PATTERN] [YYYY-MM-DD]** Example: Detail drawer state must remain outside map marker components to avoid rerender loop. Source: [[BT-001]].
+- **[[L-XXX]] [ASSUMED] [YYYY-MM-DD]** Example placeholder. Source: BT-XXX.
+- **[[L-YYY]] [PATTERN] [YYYY-MM-DD]** Example: Detail drawer state must remain outside map marker components to avoid rerender loop. Source: BT-XXX.
 
 ## Superseded
 > Read only when explicitly asked.

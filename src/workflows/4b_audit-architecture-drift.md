@@ -102,7 +102,7 @@ IF issues >= 80 confidence exist:
 - Generate only after confidence filtering and backlog collision checks complete.
 - You MUST use double-bracket syntax to link back to exact system laws violated:
   - Example: Violates [[A-102]] (Architecture rule)
-  - Example: Blocks [[BT-042]] (Backlog Task)
+  - Example: Blocks BT-042 (Backlog Task)
 3. Do not modify any production codebase files. Do not write refactored code.
 
 ## Phase 4: Handoff

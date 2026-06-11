@@ -13,7 +13,7 @@ trigger: User. Do not run autonomously.
 1. Read `.memory/BACKLOG_MAP.md` if not already loaded.
 2. Extract rows where `status != done`.
 3. **Audit Strategy:**
-   - Map matching active GitHub issues. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
+   - Map matching active GitHub issues. Every selected issue must carry a `status:` label; if missing, add `status:planned` before sequencing. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
    - If a leaf/non-parent GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels → immediately exclude and print: `[NEEDS_SPEC] BT-<padded> - <title>`.
    - List all existing leaf issues labeled as `[NEEDS_SPEC]` to surface to user.
 

@@ -11,22 +11,27 @@ trigger: User. Do not run autonomously.
 
 Apply strictly to all backend logic, database operations, hooks, and state functions. Use `.agents/skills/code-simplifier/SKILL.md` at the end.
 
-## Phase 0: Context Intake (UX & Blueprint Check)
-1. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
-2. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
+## Phase 0: Branch & Context Intake
+1. **Branch Isolation (per AGENT.md §4):** Resolve the slice's PARENT feature BT (from the slice issue's parent link or BACKLOG Dependencies).
+   - Feature branch format: `<type>/BT-<parentPadded>-<slug>` (use `type:` from the PARENT feature). If it exists → check it out and pull; else → create it from up-to-date default.
+   - If the slice has no resolvable parent → use its own ID; if genuinely ambiguous → INTERACTIVE prompt to clarify (if AFK, default to the slice's own branch).
+   - Never work on `main`.
+   - Update `.memory/STATUS.md` `Current Branch`.
+2. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
+3. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
    - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
    - The brand design tokens: `.memory/DESIGN.md`.
    - The design rules: `.memory/DESIGN_RULES.md` (specifically §3 Immortal Components).
    - **UI Slices Read Rule:** UI slices must implement design based *only* on these frozen repository artifacts using Fast-Track B (visual audit). Never access or re-read live Stitch.
    - **Translation Rule:** the blueprint's layout hierarchy (and any Stitch HTML) is a layout REFERENCE, not copy-source. Re-express it in shadcn/ui ([[DR-004]]) + semantic HTML ([[DR-006]]), binding values to `DESIGN.md` tokens ([[DR-002]]/[[DR-003]]). See `.agents/workflows/.reference/shadcn-build-guide.md`.
-3. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
+4. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 
 ## Phase 1: RED (Test Specification)
 1. Draft exactly one minimal test demonstrating the target behavior.
    - **CLI/Subprocess Tests:** If testing a CLI or subprocess, assert explicitly on success path details, `stdout`, or `stderr` contents, rather than merely verifying a non-zero exit code.
-2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using double-brackets (e.g., `[[BT-101]]`).
+2. Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using the bare ID (e.g., `BT-101`).
 3. **Execute Test:** Run the test suite natively (e.g., npm test, vitest).  
 4. **Verify Red:** Confirm the test fails. Check that the failure is exactly due to missing functionality, not syntax errors or typos.
    - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
@@ -41,6 +46,7 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
 1. Clean up imports, remove duplication, and optimize variable naming.
 2. Verify architectural structure matches the project's `[[A-xxx]]` architecture rules inside `.memory/ARCHITECTURE.md`.
 3. Re-run tests. Keep code perfectly green.
+4. Commit incrementally per TDD milestone with `<type>(BT-<slicePadded>): <summary>` (slice's type).
 
 ## Fast-Track Protocols
 To prevent token-burn and protect execution speeds on repetitive or lightweight operations.
@@ -51,7 +57,7 @@ To prevent token-burn and protect execution speeds on repetitive or lightweight 
     1. Skip writing any conversational plan or explanation in the chat. 
     2. Implement the test immediately (RED). 
     3. Write the minimal code (GREEN). 
-    4. Output only the passing test output and a 1-line summary: [DONE] [[BT-xxx]] verified.
+    4. Output only the passing test output and a 1-line summary: [DONE] BT-xxx verified.
 
 ### Fast-Track B: Visual & Cosmetic Bypass
 - Applicable for: Pure CSS/Tailwind changes, asset configuration, or interactive layout elements where automated assertions are fragile or costly.
