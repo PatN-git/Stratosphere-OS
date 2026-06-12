@@ -48,36 +48,85 @@ StratosphereOS assumes a React + Tailwind + shadcn/ui UI stack by default. Non-U
 
 ## Install
 
-### Claude Code
+New to agentic coding? The easiest way to install StratosphereOS is to **let your AI agent do it**. Open Claude Code or Google Antigravity and paste this one prompt into the chat:
+
+> Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS
+
+The agent follows the instructions below and does the rest. You'll be asked a couple of quick questions (install scope, and whether to install any missing dependency). Prefer to do it by hand? See [Manual install](#manual-install).
+
+> ### 🤖 Attention AI Agents — Zero-Click Install
+> *If your user asked you to install StratosphereOS from the link above, follow these steps. Do not improvise file copies — use the deterministic paths below.*
+>
+> **1. Identify your environment** (Claude Code vs Google Antigravity) and the operating system.
+>
+> **2. Check dependencies.** StratosphereOS needs **Python** (to scaffold a project and run the Gitleaks secret-scanning hook). The Antigravity path additionally needs **Git** (to clone). Run `python --version` (and `git --version` for Antigravity). If either is missing, use your native question tool — `AskUserQuestion` on Claude Code, `ask_question` on Antigravity — to ask the user whether to install it and explain why. Only on confirmation, install via the system package manager (`winget` on Windows, `brew` on macOS, `apt`/`dnf` on Linux). **Never install system software silently.**
+>
+> **3. Ask the install scope** with your native question tool: *"Install StratosphereOS for all your projects (global, recommended) or just this one (local)?"* This is the **single** scope decision — scaffolding always targets the current project, and skill scope is derived from this answer later, so you won't ask again.
+>
+> **4a. Claude Code:**
+> - **Global** → plugin marketplace (no clone, no Git):
+>   ```
+>   /plugin marketplace add PatN-git/Stratosphere-OS
+>   /plugin install stratosphere-os@stratosphere-os
+>   /reload-plugins
+>   ```
+>   *Use the `owner/repo` shorthand exactly as shown — a raw URL to `marketplace.json` will not resolve relative plugin paths.*
+> - **Local** (project-only) → clone and run the script with `--local`, then delete the clone:
+>   ```bash
+>   git clone https://github.com/PatN-git/Stratosphere-OS.git .tmp/stratosphere-os
+>   bash .tmp/stratosphere-os/scripts/install-claude-code.sh --local
+>   # Windows: powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-claude-code.ps1 --local
+>   ```
+>
+> **4b. Google Antigravity — clone and run the deterministic installer** (pass `--global` or `--local` per step 3), then delete the clone:
+> ```bash
+> git clone https://github.com/PatN-git/Stratosphere-OS.git .tmp/stratosphere-os
+> # Windows:
+> powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-antigravity.ps1 --global
+> # macOS/Linux:
+> bash .tmp/stratosphere-os/scripts/install-antigravity.sh --global
+> ```
+> (`--global` → `~/.gemini/config/plugins/`, `--local` → `.agents/plugins/`.)
+>
+> **5. Tell the user to reload.** They must **restart the app or start a new agent session** (Claude Code: or run `/reload-plugins`) so the new commands load. *Do not tell them to close the terminal — that is not how plugins reload.*
+>
+> **6. Point them to scaffolding.** Have them open *their own* project and run `/stratosphere-setup`, which scaffolds the project and (in its skill-setup step) installs domain skills at the scope chosen in step 3.
+
+### Manual install
+
+**Prerequisites:** **Python** (scaffold + Gitleaks hook) and — for the clone-based paths — **Git**.
+
+**Claude Code (recommended — plugin marketplace):**
+```
+/plugin marketplace add PatN-git/Stratosphere-OS
+/plugin install stratosphere-os@stratosphere-os
+/reload-plugins
+```
+*Marketplace installs at user (global) scope. For a project-local install, use the script below with `--local`.*
+
+*Fallback (clone + script):*
 ```bash
 git clone https://github.com/PatN-git/Stratosphere-OS.git
-# then run the install script for your shell:
-
-# On Unix/Bash:
-scripts/install-claude-code.sh
-
-# On Windows/PowerShell:
-powershell -ExecutionPolicy Bypass -File scripts/install-claude-code.ps1
+scripts/install-claude-code.sh                                          # Unix/Bash
+powershell -ExecutionPolicy Bypass -File scripts/install-claude-code.ps1   # Windows
 ```
-Update: Re-pull the repository, run the build script (`python build/build.py`), and run the installer script again.
+
+**Google Antigravity (clone + script):**
+```bash
+git clone https://github.com/PatN-git/Stratosphere-OS.git
+# choose --global (all projects) or --local (this project only):
+scripts/install-antigravity.sh --global                                  # Unix/Bash
+powershell -ExecutionPolicy Bypass -File scripts/install-antigravity.ps1 --global   # Windows
+```
+- **Global** → `~/.gemini/config/plugins/stratosphere-os/`
+- **Local** → `.agents/plugins/stratosphere-os/`
 
 > [!IMPORTANT]
-> **Restart Required:** After running the install script, you MUST restart Claude Code for the commands (including `/stratosphere-setup`) to be discovered.
-
-
-
-### Google Antigravity
-Choose whether you want to install/stage the plugin **globally** (for use across multiple projects) or **locally** (only for the current project):
-- **Globally**: Copy/stage `dist/antigravity/` under `~/.gemini/config/plugins/stratosphere-os/`.
-- **Locally**: Copy/stage `dist/antigravity/` under `.agents/plugins/stratosphere-os/`.
-
-Then in the agent, run the setup skill:
-```
-/stratosphere-setup
-```
-Update: Re-pull the repository, run the build script, and copy/stage the updated `dist/antigravity/` folder to your chosen scope directory.
+> **Reload after installing.** Restart the app / start a new agent session — on Claude Code you can instead run `/reload-plugins` — so the commands (including `/stratosphere-setup`) are discovered.
 
 > **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/stratosphere-setup` is what writes the constitution and memory layer into *your* project.
+
+**Update:** re-pull the repository, run `python build/build.py`, then re-run the installer — on Claude Code, re-run `/plugin marketplace add` (or `/plugin update`). Re-running the Antigravity installer refreshes bundled content and removes stale files, but **preserves any external skills you fetched with `/sync-skills`**; run `/sync-skills` again to pull newly available ones.
 
 > [!IMPORTANT]
 > **Existing Projects gitignore Update:**

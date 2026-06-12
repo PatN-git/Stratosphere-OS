@@ -79,8 +79,11 @@ def main():
     home = Path.home().resolve()
     cwd = Path.cwd().resolve()
 
+    claude_cache = (home / ".claude" / "plugins" / "cache").resolve()
     if plugin_root_resolved == (home / ".claude" / "plugins" / "stratosphere-os").resolve():
         scope = "global Claude Code"
+    elif plugin_root_resolved.is_relative_to(claude_cache):
+        scope = "marketplace Claude Code"
     elif plugin_root_resolved == (cwd / ".claude" / "plugins" / "stratosphere-os").resolve():
         scope = "local Claude Code"
     elif plugin_root_resolved == (home / ".gemini" / "config" / "plugins" / "stratosphere-os").resolve():
