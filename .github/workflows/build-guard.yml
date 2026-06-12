@@ -34,3 +34,20 @@ jobs:
             exit 1
           fi
           echo "dist/ is in sync with src/."
+
+  install-harness-l1:
+    # Deterministic install/scaffold/sync E2E (no agent). L2 + real marketplace
+    # need auth/network, so run those via workflow_dispatch or locally.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build dist/ (installers require it)
+        run: python build/build.py
+
+      - name: L1 install/scaffold/sync E2E
+        run: bash tests/install-harness/run-L1.sh
