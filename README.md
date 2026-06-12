@@ -59,7 +59,7 @@ The agent follows the instructions below and does the rest. You'll be asked a co
 >
 > **1. Identify your environment** (Claude Code vs Google Antigravity) and the operating system.
 >
-> **2. Check dependencies.** StratosphereOS needs **Python** (to scaffold a project and run the Gitleaks secret-scanning hook). The Antigravity path additionally needs **Git** (to clone). Run `python --version` (and `git --version` for Antigravity). If either is missing, use your native question tool — `AskUserQuestion` on Claude Code, `ask_question` on Antigravity — to ask the user whether to install it and explain why. Only on confirmation, install via the system package manager (`winget` on Windows, `brew` on macOS, `apt`/`dnf` on Linux). **Never install system software silently.**
+> **2. Check dependencies.** StratosphereOS needs **Python** (to run the project scaffolder and the skill-sync script). The Antigravity path additionally needs **Git** (to clone). Run `python --version` (and `git --version` for Antigravity). If either is missing, use your native question tool — `AskUserQuestion` on Claude Code, `ask_question` on Antigravity — to ask the user whether to install it and explain why. Only on confirmation, install via the system package manager (`winget` on Windows, `brew` on macOS, `apt`/`dnf` on Linux). **Never install system software silently.**
 >
 > **3. Ask the install scope** with your native question tool: *"Install StratosphereOS for all your projects (global, recommended) or just this one (local)?"* This is the **single** scope decision — scaffolding always targets the current project, and skill scope is derived from this answer later, so you won't ask again.
 >
@@ -94,7 +94,7 @@ The agent follows the instructions below and does the rest. You'll be asked a co
 
 ### Manual install
 
-**Prerequisites:** **Python** (scaffold + Gitleaks hook) and — for the clone-based paths — **Git**.
+**Prerequisites:** **Python** (scaffolder + skill sync) and — for the clone-based paths — **Git**.
 
 **Claude Code (recommended — plugin marketplace):**
 ```

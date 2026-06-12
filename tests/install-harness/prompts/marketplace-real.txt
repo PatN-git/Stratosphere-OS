@@ -1,0 +1,18 @@
+Install StratosphereOS for Claude Code via the plugin marketplace.
+
+All decisions are already made — do NOT ask me anything; proceed fully autonomously.
+
+- Environment: Claude Code. Install scope: GLOBAL.
+- Python is already installed; do NOT install any system software.
+- Run these three slash commands, in order:
+    /plugin marketplace add PatN-git/Stratosphere-OS
+    /plugin install stratosphere-os@stratosphere-os
+    /reload-plugins
+- Then run the StratosphereOS setup to scaffold THIS project: locate the installed
+  plugin's scripts/scaffold.py — for a marketplace install it lives under
+  ~/.claude/plugins/cache/*/stratosphere-os/*/ — and run it with Python from the
+  project root. For setup questions: Stitch = no; skill categories = system only;
+  skill scope = global.
+
+Only valid AFTER the install-onboarding-overhaul PR is merged to main (the marketplace
+pulls the repo's default branch). When everything is done, print exactly: HARNESS_DONE

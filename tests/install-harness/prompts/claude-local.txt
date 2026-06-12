@@ -1,0 +1,18 @@
+Install StratosphereOS from this LOCAL repository checkout at: <REPO>
+
+All decisions are already made — do NOT ask me anything; proceed fully autonomously.
+
+- Environment: Claude Code. OS: Windows (PowerShell available).
+- Install scope: LOCAL (this project only).
+- Python and Git are already installed; do NOT install any system software.
+- Use the clone+script path (the repo is already at <REPO>, so do NOT re-clone):
+  run  <REPO>/scripts/install-claude-code.ps1 --local
+  (the project root / current directory is your install target).
+- Do NOT improvise file copies — run the deterministic script.
+- After install, run the StratosphereOS setup to scaffold THIS project:
+  locate the installed plugin's scripts/scaffold.py (under ./.claude/plugins/stratosphere-os/)
+  and run it with the current Python from the project root.
+- For any setup questions use these answers: Stitch = no; skill categories = system only;
+  skill scope = local (derived from the local install).
+
+When everything is done, print exactly: HARNESS_DONE
