@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Deterministic StratosphereOS project scaffolder — zero LLM tokens.
 
-Creates the project's folder structure and copies bundled templates into place,
-**create-only-if-missing** (never overwrites). The agent's instantiate command
-calls this for all mechanical work and keeps only the reasoning steps
-(brownfield audits, label reconciliation, skill selection).
+Creates the project's folder structure and copies bundled templates into place.
+New files are created if missing; with `--update`, **managed** framework files
+(workflows, rules, references, validate_memory.py) are refreshed in place when
+they differ, while **preserved** files (.memory/, .gitignore) and the
+**constitution** (AGENT.md/CLAUDE.md/GEMINI.md) are never overwritten.
 
 The script lives in the installed plugin at `<plugin>/scripts/scaffold.py`.
 Run it FROM THE PROJECT ROOT (cwd = project), e.g.:
 
   python <plugin>/scripts/scaffold.py
   python <plugin>/scripts/scaffold.py --dry-run
+  python <plugin>/scripts/scaffold.py --update            # refresh managed files
+  python <plugin>/scripts/scaffold.py --update --dry-run  # preview the refresh
 
 Plugin assets/templates and lifecycle workflows are resolved relative to the
 script's own location; the project is resolved from the current directory.
@@ -24,8 +27,6 @@ project copies are inert there.
 import argparse
 import re
 import shutil
-import subprocess
-import sys
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
@@ -59,12 +60,31 @@ FOLDERS = [
 KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", ".tmp"}  # add .gitkeep so they survive git
 
 
-def place(src: Path, dst: Path, res, dry):
-    """Copy src->dst create-only-if-missing; record outcome."""
+def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "preserved"):
+    """Copy src->dst with tier-based update logic; record outcome."""
     rel = dst
     if dst.exists():
-        res["exists"].append(rel)
+        if tier == "preserved":
+            res["exists"].append(rel)
+            return
+
+        src_bytes = src.read_bytes()
+        dst_bytes = dst.read_bytes()
+        if src_bytes == dst_bytes:
+            res["unchanged"].append(rel)
+            return
+
+        if tier == "managed":
+            if update:
+                if not dry:
+                    shutil.copy2(src, dst)
+                res["refreshed"].append(rel)
+            else:
+                res["stale"].append(rel)
+        elif tier == "constitution":
+            res["needs_review"].append(rel)
         return
+
     if dry:
         res["would"].append(rel)
         return
@@ -96,11 +116,16 @@ def main():
 
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")
     ap.add_argument("--dry-run", action="store_true", help="report what would happen without writing")
+    ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     args = ap.parse_args()
 
     project = Path.cwd()
     dry = args.dry_run
-    res = {"created": [], "exists": [], "would": []}
+    update = args.update
+    res = {
+        "created": [], "would": [], "exists": [],
+        "refreshed": [], "unchanged": [], "stale": [], "needs_review": []
+    }
 
     if not ASSETS.exists():
         raise SystemExit(f"Cannot find bundled templates at {ASSETS}. Run from a project root with the plugin installed.")
@@ -120,32 +145,32 @@ def main():
 
     # 2. Constitution -> project root
     for name in ("AGENT.md", "CLAUDE.md", "GEMINI.md"):
-        place(ASSETS / "constitution" / name, project / name, res, dry)
+        place(ASSETS / "constitution" / name, project / name, res, dry, update=update, tier="constitution")
 
     # 3. Memory templates -> .memory/
     for src in sorted((ASSETS / "memory").glob("*.md")):
-        place(src, project / ".memory" / src.name, res, dry)
+        place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
 
     # 4. Rules -> .agents/rules/
     for src in sorted((ASSETS / "rules").glob("*.md")):
-        place(src, project / ".agents" / "rules" / src.name, res, dry)
+        place(src, project / ".agents" / "rules" / src.name, res, dry, update=update, tier="managed")
 
     # 5. Workflow references -> .agents/workflows/.reference/
     if (ASSETS / "references").exists():
         for src in sorted((ASSETS / "references").glob("*")):
             if src.is_file():
-                place(src, project / ".agents" / "workflows" / ".reference" / src.name, res, dry)
+                place(src, project / ".agents" / "workflows" / ".reference" / src.name, res, dry, update=update, tier="managed")
 
     # 6. Lifecycle workflows -> .agents/workflows/ (discoverable on Antigravity)
     if WF_SRC.exists():
         for src in sorted(WF_SRC.glob("*.md")):
             if LIFECYCLE_RE.match(src.name) or src.name in EXTRA_WORKFLOWS:
-                place(src, project / ".agents" / "workflows" / src.name, res, dry)
+                place(src, project / ".agents" / "workflows" / src.name, res, dry, update=update, tier="managed")
 
     # 6b. Project-local deterministic scripts (memory lint runs from the project)
     vm = PLUGIN_ROOT / "scripts" / "validate_memory.py"
     if vm.exists():
-        place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry)
+        place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry, update=update, tier="managed")
 
 
 
@@ -163,13 +188,37 @@ def main():
     verb = "WOULD CREATE" if dry else "CREATED"
     created = res["would"] if dry else res["created"]
     print(f"=== StratosphereOS scaffold ({'dry-run' if dry else 'applied'}) ===")
-    print(f"{verb}: {len(created)}")
-    for p in created:
-        print(f"  + {p}")
+
+    if created:
+        print(f"{verb}: {len(created)}")
+        for p in created:
+            print(f"  + {p}")
+
+    if res["refreshed"]:
+        r_verb = "WOULD REFRESH" if dry else "REFRESHED"
+        print(f"{r_verb}: {len(res['refreshed'])}")
+        for p in res["refreshed"]:
+            print(f"  ^ {p}")
+
+    if res["unchanged"]:
+        print(f"UNCHANGED: {len(res['unchanged'])}")
+        for p in res["unchanged"]:
+            print(f"  = {p}")
+
+    if res["stale"]:
+        print(f"STALE (run with --update to refresh): {len(res['stale'])}")
+        for p in res["stale"]:
+            print(f"  ~ {p}")
+
+    if res["needs_review"]:
+        print(f"NEEDS-REVIEW (constitution differs): {len(res['needs_review'])}")
+        for p in res["needs_review"]:
+            print(f"  ! {p}")
+
     if res["exists"]:
         print(f"LEFT AS-IS (already present, agent should drift-check): {len(res['exists'])}")
         for p in res["exists"]:
-            print(f"  = {p}")
+            print(f"  - {p}")
     if gi_existed:
         # existing .gitignore: remind agent to verify secret-hygiene entries
         print("NOTE: .gitignore already exists — verify it contains: " + ", ".join(GITIGNORE_ENTRIES))
