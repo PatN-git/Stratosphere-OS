@@ -5,21 +5,30 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Verify build output exists
-if [ ! -d "$REPO_ROOT/dist/antigravity" ]; then
-    echo "Error: dist/antigravity does not exist. Please run 'python build/build.py' first."
+BUILD_DIR="$REPO_ROOT/dist/antigravity"
+if [ ! -d "$BUILD_DIR" ] || [ -z "$(find "$BUILD_DIR" -type f | head -1)" ]; then
+    echo "Error: dist/antigravity is missing or empty. Please run 'python build/build.py' first." >&2
     exit 1
 fi
 
 SCOPE=""
+TARGET=""
 # Parse command line args
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --global)
             SCOPE="global"
             shift
             ;;
         --local)
             SCOPE="local"
+            shift
+            ;;
+        --target)
+            TARGET="$2"
+            shift 2
+            ;;
+        *)
             shift
             ;;
     esac
@@ -41,12 +50,14 @@ if [ -z "$SCOPE" ]; then
     fi
 fi
 
+RESOLVED_TARGET="${TARGET:-$(pwd)}"
+
 if [ "$SCOPE" = "global" ]; then
     # Confirmed against installed Antigravity plugins (android-cli, chrome-devtools, ...).
     PLUGIN_DIR="$HOME/.gemini/config/plugins/stratosphere-os"
     echo "Installing globally under ~/.gemini/config/plugins/stratosphere-os/..."
 else
-    PLUGIN_DIR="$(pwd)/.agents/plugins/stratosphere-os"
+    PLUGIN_DIR="$RESOLVED_TARGET/.agents/plugins/stratosphere-os"
     echo "Installing locally under $PLUGIN_DIR..."
 fi
 

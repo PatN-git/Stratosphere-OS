@@ -1,0 +1,18 @@
+Install StratosphereOS from this LOCAL repository checkout at: <REPO>
+
+All decisions are already made — do NOT ask me anything; proceed fully autonomously.
+
+- Environment: Google Antigravity. OS: Windows (PowerShell available).
+- Install scope: LOCAL (this project only).
+- Python and Git are already installed; do NOT install any system software.
+- IMPORTANT: Do NOT run run-L1.ps1, run-L1.sh, or any other test harness scripts. Do NOT run any verification/leak check scripts. Follow ONLY the instructions below.
+- Do NOT perform any tasks in your default workspace directory. The target project directory (project root) is: <PROJ>
+- Run the installation script targeting <PROJ>:
+  run  <REPO>/scripts/install-antigravity.ps1 --local --target <PROJ>
+- Do NOT improvise file copies — run the deterministic script.
+- Immediately after local installation is complete, run the scaffolding script on <PROJ>:
+  run the command: python <PROJ>/.agents/plugins/stratosphere-os/scripts/scaffold.py
+  (IMPORTANT: make sure to run this command with the working directory set to <PROJ>).
+- For any setup questions use these answers: Stitch = no; skill categories = system only; skill scope = local.
+- Once you have successfully run the scaffold.py script, do NOT perform any further commands, do NOT install Claude Code, and do NOT explore the directory.
+- When everything is done, print exactly: HARNESS_DONE

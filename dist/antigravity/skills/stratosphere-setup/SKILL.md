@@ -207,22 +207,22 @@ GitHub labels already exist and may differ from the registry.
 
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
-1. **Select Skill Categories to sync:**
-   Use the native `AskUserQuestion` tool with `multiSelect: true` (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user (do not ask in prose). Offer the following options:
-   - `system` (installs `code-simplifier`, `skill-creator` - default on)
-   - `database` (installs `supabase`, `supabase-postgres-best-practices`)
-   - `web` (installs `react-best-practices`, `composition-patterns`, `vercel-web-design`)
-   - `mobile` (installs `react-native-skills`)
-   - `design` (installs `impeccable`)
+1. **Always sync `system` pack** without asking — it contains `skill-creator` and `code-simplifier` which every project needs. Do not present it as a choice.
+2. **Ask one question using `AskUserQuestion` (multiSelect: true) on Claude Code, or `ask_question` (is_multi_select: true) on Antigravity:**
+   > "The \`system\` pack (\`skill-creator\`, \`code-simplifier\`) is always installed. Which additional skill packs do you need?"
+   - `database` — Supabase + Postgres best practices
+   - `web` — React, composition patterns, Vercel web design
+   - `mobile` — React Native skills
+   - `design` — Impeccable (design polish + brand tokens)
 
-2. **Determine skill scope — derive it from how StratosphereOS itself is installed; only ask when ambiguous:**
+3. **Determine skill scope — derive it from how StratosphereOS itself is installed; only ask when ambiguous:**
    You already located the plugin root `<plugin>` in Checkpoint 0. Use it:
    - If `<plugin>` is a **project-local** path (`./.claude/plugins/…` or `./.agents/plugins/…`), install skills **locally** too — do **not** ask. A project-scoped install implies project-scoped skills (and on Antigravity, global skills have no coherent home without a global plugin).
    - If `<plugin>` is **global** (`~/.claude/…`, `~/.gemini/config/plugins/…`, or the Claude Code marketplace cache `~/.claude/plugins/cache/…`), the choice is genuine — use the native `AskUserQuestion` (Claude Code) / `ask_question` (Antigravity) tool to ask (do not ask in prose):
      `Install third-party skills globally (system-wide) or locally (just for this project)? [global/local]`
 
-3. **Sync the selected skill packs:**
-   Invoke the `sync_skills.py` script with the selected categories as arguments, adding the `--global` flag if global installation was chosen. For example:
+4. **Sync the selected skill packs:**
+   Combine `system` + selected answers and pass all to `sync_skills.py` with the selected categories as arguments, adding the `--global` flag if global installation was chosen. For example:
    ```bash
    # Local install
    python <plugin>/scripts/sync_skills.py --category system database
@@ -232,8 +232,8 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    ```
    (Where `<plugin>` is the installed plugin root located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/`.)
 
-4. **Design note:** Google Stitch is OPTIONAL; no-Stitch projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
-5. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
+5. **Design note:** Google Stitch is OPTIONAL; no-Stitch projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
+6. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints
 
