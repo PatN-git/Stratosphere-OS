@@ -5,21 +5,30 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Verify build output exists
-if [ ! -d "$REPO_ROOT/dist/claude-code" ]; then
-    echo "Error: dist/claude-code does not exist. Please run 'python build/build.py' first."
+BUILD_DIR="$REPO_ROOT/dist/claude-code"
+if [ ! -d "$BUILD_DIR" ] || [ -z "$(find "$BUILD_DIR" -type f | head -1)" ]; then
+    echo "ERROR: dist/claude-code is missing or empty — run 'python build/build.py' first." >&2
     exit 1
 fi
 
 SCOPE=""
+TARGET=""
 # Parse command line args
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --global)
             SCOPE="global"
             shift
             ;;
         --local)
             SCOPE="local"
+            shift
+            ;;
+        --target)
+            TARGET="$2"
+            shift 2
+            ;;
+        *)
             shift
             ;;
     esac
@@ -41,11 +50,13 @@ if [ -z "$SCOPE" ]; then
     fi
 fi
 
+RESOLVED_TARGET="${TARGET:-$(pwd)}"
+
 if [ "$SCOPE" = "global" ]; then
     CLAUDE_DIR="$HOME/.claude"
     echo "Installing globally under ~/.claude/..."
 else
-    CLAUDE_DIR="$(pwd)/.claude"
+    CLAUDE_DIR="$RESOLVED_TARGET/.claude"
     echo "Installing locally under $CLAUDE_DIR..."
 fi
 
@@ -71,4 +82,4 @@ fi
 # Stage full plugin to plugins/stratosphere-os/
 cp -rf "$REPO_ROOT/dist/claude-code/"* "$PLUGINS_DIR/"
 
-echo "Successfully installed to $CLAUDE_DIR. Run /reload-plugins or restart Claude Code for the commands to load."
+echo "Successfully installed to $CLAUDE_DIR. Restart Claude Code for the commands to load."

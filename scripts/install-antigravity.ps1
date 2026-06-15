@@ -5,16 +5,20 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 
 $buildDir = Join-Path $repoRoot "dist\antigravity"
-if (-not (Test-Path $buildDir)) {
-    Write-Error "Error: dist/antigravity does not exist. Please run 'python build/build.py' first."
+if (-not (Test-Path $buildDir) -or -not (Get-ChildItem $buildDir -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+    Write-Error "Error: dist/antigravity is missing or empty. Please run 'python build/build.py' first."
     exit 1
 }
 
 $scope = $null
+$targetDir = $null
+$nextIsTarget = $false
 # Check command line flags
 foreach ($arg in $args) {
-    if ($arg -eq "--global") { $scope = "global" }
+    if ($nextIsTarget) { $targetDir = $arg; $nextIsTarget = $false }
+    elseif ($arg -eq "--global") { $scope = "global" }
     elseif ($arg -eq "--local") { $scope = "local" }
+    elseif ($arg -eq "--target") { $nextIsTarget = $true }
 }
 
 # Prompt if not specified
@@ -36,7 +40,8 @@ if ($scope -eq "global") {
     $pluginDir = Join-Path $HOME ".gemini\config\plugins\stratosphere-os"
     Write-Host "Installing globally under ~/.gemini/config/plugins/stratosphere-os/..."
 } else {
-    $pluginDir = Join-Path (Get-Location) ".agents\plugins\stratosphere-os"
+    $resolvedTarget = if ($targetDir) { $targetDir } else { (Get-Location).Path }
+    $pluginDir = Join-Path $resolvedTarget ".agents\plugins\stratosphere-os"
     Write-Host "Installing locally under $pluginDir..."
 }
 

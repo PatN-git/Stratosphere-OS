@@ -68,27 +68,37 @@ The agent follows the instructions below and does the rest. You'll be asked a co
 >   ```
 >   /plugin marketplace add PatN-git/Stratosphere-OS
 >   /plugin install stratosphere-os@stratosphere-os
->   /reload-plugins
 >   ```
 >   *Use the `owner/repo` shorthand exactly as shown — a raw URL to `marketplace.json` will not resolve relative plugin paths.*
 > - **Local** (project-only) → clone and run the script with `--local`, then delete the clone:
 >   ```bash
 >   git clone https://github.com/PatN-git/Stratosphere-OS.git .tmp/stratosphere-os
->   bash .tmp/stratosphere-os/scripts/install-claude-code.sh --local
->   # Windows: powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-claude-code.ps1 --local
+>   bash .tmp/stratosphere-os/scripts/install-claude-code.sh --local --target <project-root>
+>   # Windows: powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-claude-code.ps1 --local --target <project-root>
+>   
+>   # Cleanup — remove the temp clone (files are now installed, clone is no longer needed)
+>   rm -rf .tmp/stratosphere-os
+>   # Windows: Remove-Item -Recurse -Force .tmp/stratosphere-os
 >   ```
 >
 > **4b. Google Antigravity — clone and run the deterministic installer** (pass `--global` or `--local` per step 3), then delete the clone:
 > ```bash
 > git clone https://github.com/PatN-git/Stratosphere-OS.git .tmp/stratosphere-os
-> # Windows:
-> powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-antigravity.ps1 --global
-> # macOS/Linux:
+> # Global:
 > bash .tmp/stratosphere-os/scripts/install-antigravity.sh --global
+> # Windows: powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-antigravity.ps1 --global
+> 
+> # Local:
+> bash .tmp/stratosphere-os/scripts/install-antigravity.sh --local --target <project-root>
+> # Windows: powershell -ExecutionPolicy Bypass -File .tmp/stratosphere-os/scripts/install-antigravity.ps1 --local --target <project-root>
+> 
+> # Cleanup — remove the temp clone (files are now installed, clone is no longer needed)
+> rm -rf .tmp/stratosphere-os
+> # Windows: Remove-Item -Recurse -Force .tmp/stratosphere-os
 > ```
-> (`--global` → `~/.gemini/config/plugins/`, `--local` → `.agents/plugins/`.)
+> (`--global` → `~/.gemini/config/plugins/`, `--local --target <project-root>` → `<project-root>/.agents/plugins/`.)
 >
-> **5. Tell the user to reload.** They must **restart the app or start a new agent session** (Claude Code: or run `/reload-plugins`) so the new commands load. *Do not tell them to close the terminal — that is not how plugins reload.*
+> **5. Tell the user to reload.** They must **restart the app** (or start a new agent session for Antigravity) so the new commands load. *Do not tell them to close the terminal — that is not how plugins reload.*
 >
 > **6. Point them to scaffolding.** Have them open *their own* project and run `/stratosphere-setup`, which scaffolds the project and (in its skill-setup step) installs domain skills at the scope chosen in step 3.
 
@@ -100,7 +110,6 @@ The agent follows the instructions below and does the rest. You'll be asked a co
 ```
 /plugin marketplace add PatN-git/Stratosphere-OS
 /plugin install stratosphere-os@stratosphere-os
-/reload-plugins
 ```
 *Marketplace installs at user (global) scope. For a project-local install, use the script below with `--local`.*
 
@@ -122,7 +131,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install-antigravity.ps1 --globa
 - **Local** → `.agents/plugins/stratosphere-os/`
 
 > [!IMPORTANT]
-> **Reload after installing.** Restart the app / start a new agent session — on Claude Code you can instead run `/reload-plugins` — so the commands (including `/stratosphere-setup`) are discovered.
+> **Reload after installing.** Restart the app / start a new agent session so the commands (including `/stratosphere-setup`) are discovered.
 
 > **Install ≠ scaffold.** Installing the plugin makes the commands and skills available. Running `/stratosphere-setup` is what writes the constitution and memory layer into *your* project.
 
