@@ -28,10 +28,13 @@ Before creating the task, propose the breakdown to the user:
         -   **Confidence:** ∈ {50% (guess/speculative), 80% (high confidence/known implementation), 100% (absolute certainty/trivial)}
         -   **Size:** ∈ {size:small (Effort weight = 1, ~1h capacity), size:medium (Effort weight = 2, ~6h capacity), size:large (Effort weight = 3, ~12h capacity)}
 3.  **Coverage Check** (Template A spikes: skip):
-    -   **PRD-sourced:** map every §6 User Story + §8 Definition-of-Done item + Design Blueprint elements to ≥1 slice. Flag gaps:
-        -   uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope / mark "covered by construction" (e.g. framework-provided or built into an existing library/primitive).
-        -   slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`.
-        -   slice blocked by an open §10 Question → Enforce Template A (spike) rather than Template B if the question blocks implementation.
+    -   **PRD-sourced:** Invoke a Coverage Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) to perform the coverage check.
+        -   **Input:** Pass the proposed slice list (titles + Path/layer bullets) *inline* to the prompt.
+        -   **Subagent Reads:** Instruct the subagent to read `docs/prds/BT-<padded>-<name>.md` (§6 + §8) and, if present, `docs/design/BT-<padded>-interface.md` fresh from the file system.
+        -   **Guardrails:** *"Report the coverage map only; do not create issues or edit any file."*
+        -   **Output Contract:** The subagent must return the coverage map only (mapping every §6 story / §8 DoD item / blueprint element to the covering slice or `[UNCOVERED]`).
+        -   **Loop Optimization:** Re-spawn the Coverage Auditor *only* when the slice list materially changes (e.g., slices added/removed/re-scoped), not on cosmetic edits (e.g., renames, ICE tweaks).
+        -   **Resolution:** For flagged gaps: uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope / mark "covered by construction". slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`. slice blocked by an open §10 Question → Enforce Template A.
     -   **No PRD:** restate captured intent as a requirement list; map slices to it. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs.
     -   Present the map with the slice list.
 4.  **Approval Request:**

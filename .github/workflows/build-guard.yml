@@ -25,15 +25,18 @@ jobs:
       - name: Validate plugin structure
         run: python build/validate.py .
 
+      - name: Validate subagent instructions
+        run: python tests/test_subagent_spawning.py
+
       - name: Fail if dist/ drifted from src/
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::dist/ is out of sync with src/. Run 'python build/build.py' and commit the result."
-            git --no-pager status --porcelain
-            git --no-pager diff
+          DRIFT="$(git status --porcelain dist/ .claude-plugin/marketplace.json)"
+          if [ -n "$DRIFT" ]; then
+            echo "::error::dist/ or marketplace.json out of sync. Run 'python build/build.py' and commit."
+            echo "$DRIFT"
             exit 1
           fi
-          echo "dist/ is in sync with src/."
+          echo "dist/ and marketplace.json are in sync with src/."
 
   install-harness-l1:
     # Deterministic install/scaffold/sync E2E (no agent). L2 + real marketplace
