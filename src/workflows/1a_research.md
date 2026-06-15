@@ -49,6 +49,9 @@ To prevent token loss and ensure progress tracking across model runs, maintain a
   ```markdown
   # Research Work File: <slug>
   
+  ## Budget
+  - Queries issued: 0 / 24
+
   ## Plan
   - [ ] Sub-query 1
   - [ ] Sub-query 2
@@ -65,8 +68,12 @@ To prevent token loss and ensure progress tracking across model runs, maintain a
 
 ### 2. The Loop Steps
 1. **Query Decomposition:** Derive 5–8 distinct, targeted sub-queries from the Phase-1 research questions and populate the `## Plan` checklist in the work file. Search each one sequentially.
-2. **Gather & Tag:** For each sub-query, read the returned sources, extract findings, assign a confidence level `[HIGH|MED|LOW]`, and append each to the `## Findings` section of the work file (incremental persistence).
+2. **Gather & Tag:** For each sub-query, read the returned sources, extract findings, assign a confidence level `[HIGH|MED|LOW]`, and append each to the `## Findings` section of the work file (incremental persistence). Increment the "Queries issued" count under `## Budget` each time a sub-query search is run.
 3. **Verify/Refute:** For any findings labeled `[HIGH]` confidence OR identified as decision-driving/load-bearing claims, perform a skeptical pass to actively try to REFUTE the claim.
+   - **Budget Tracking:** Read the work file's issued-query count and compute `remaining = 24 - issued`. If `remaining <= 0` → skip refutation, mark affected claims per the Loop Budget Cap rule, and do not spawn a subagent.
+   - **Invocation & Input:** Invoke a subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) to perform the skeptical pass. Provide the list of `[HIGH]`/load-bearing claims + their current sources, and the strict constraint: *"You may issue at most `remaining` search queries. Return verdicts + queries_used; do not write any file (parent owns the work file)."*
+   - **Output Contract:** The subagent must return a specific format per claim: `{verdict: survived|refuted|downgraded, contradicting/confirming sources, queries_used}`, plus a `total_queries_used`.
+   - **Reconciliation:** Increment the work-file counter by the returned `total_queries_used`, and write the verdicts back to the `## Findings` list (downgrading confidence where refuted).
    - **Definition (Decision-Driving / Load-Bearing Claim):** A claim that, if wrong, would change the research conclusion or the recommended next step.
    - Triangulation requirement: Verify at least 2 independent, different-type sources after collapsing common origins. The compute budget must be spent on surviving this refutation pass rather than raw source count.
 

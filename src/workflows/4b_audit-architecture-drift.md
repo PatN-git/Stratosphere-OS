@@ -18,6 +18,10 @@ _CONSTRAINTS:_
 - Do not write refactored code.
 
 ## Phase 2: Deep Scan & Confidence
+**Context Isolation Rule:** Before running the audit, decide whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code—i.e., you have not authored or modified code within the target directory this session. Otherwise, or if you are at all unsure, isolate: invoke an independent Staff-Level Architect subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2.
+- **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
+- **Output Contract:** The subagent returns the findings and confidence mapping. The main agent handles subsequent logic.
+
 _INPUT:_ Target directory files and all files in .`memory/`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Focus on architectural drift, domain boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules
 
