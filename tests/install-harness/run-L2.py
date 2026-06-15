@@ -38,13 +38,25 @@ def run_agent(prompt, cwd, env):
     """Run `claude -p` and return (text_chunks, tool_uses, is_error)."""
     cmd = ["claude", "-p", prompt, "--output-format", "stream-json",
            "--verbose", "--include-partial-messages", "--dangerously-skip-permissions"]
+           
+    if os.name == 'nt' and shutil.which("claude") is None:
+        if shutil.which("npx.cmd"):
+            print("  [Warn] 'claude' not found natively (likely Windows Store VFS issue). Falling back to npx.cmd...")
+            cmd = ["npx.cmd", "-y", "@anthropic-ai/claude-code@2.1.170"] + cmd[1:]
+        else:
+            print("  [Fail] 'claude' not found and 'npx.cmd' not available. Cannot run headless agent.")
+            sys.exit(1)
+            
     proc = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, text=True, encoding="utf-8")
+                            stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                            text=True, encoding="utf-8")
     tool_uses, text, is_error = [], [], None
+    raw_lines = []
     for line in proc.stdout:
         line = line.strip()
         if not line:
             continue
+        raw_lines.append(line)
         try:
             ev = json.loads(line)
         except json.JSONDecodeError:
@@ -60,7 +72,7 @@ def run_agent(prompt, cwd, env):
         elif t == "result":
             is_error = ev.get("is_error", None)
     proc.wait()
-    return "".join(text), tool_uses, is_error
+    return "".join(text), tool_uses, is_error, raw_lines, proc.returncode
 
 
 def assert_tree(tool, scope, home, proj):
@@ -68,20 +80,20 @@ def assert_tree(tool, scope, home, proj):
     if tool == "claude-code":
         base = Path(home) / ".claude" if scope != "local" else Path(proj) / ".claude"
         plugin = base / "plugins" / "stratosphere-os"
-        check("install: 15 commands", len(list((base / "commands").glob("*.md"))) == 15 if (base / "commands").exists() else False)
+        check("install: 16 commands", len(list((base / "commands").glob("*.md"))) == 16 if (base / "commands").exists() else False)
         check("install: micro-tdd skill", (base / "skills" / "micro-tdd").exists())
     else:
         plugin = (Path(proj) / ".agents" / "plugins" / "stratosphere-os") if scope == "local" \
             else (Path(home) / ".gemini" / "config" / "plugins" / "stratosphere-os")
         check("install: plugin.json", (plugin / "plugin.json").exists())
-        check("install: 14 workflows", len(list((plugin / "workflows").glob("*.md"))) == 14 if (plugin / "workflows").exists() else False)
+        check("install: 11 workflows", len(list((plugin / "workflows").glob("*.md"))) == 11 if (plugin / "workflows").exists() else False)
     check("install: bundled scaffold.py", (plugin / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
     p = Path(proj)
     for f in ("AGENT.md", "CLAUDE.md", "GEMINI.md", ".gitignore"):
         check(f"scaffold: {f}", (p / f).exists())
     check("scaffold: 8 memory files", len(list((p / ".memory").glob("*.md"))) == 8 if (p / ".memory").exists() else False)
-    check("scaffold: 14 workflows", len(list((p / ".agents" / "workflows").glob("*.md"))) == 14 if (p / ".agents" / "workflows").exists() else False)
+    check("scaffold: 11 workflows", len(list((p / ".agents" / "workflows").glob("*.md"))) == 11 if (p / ".agents" / "workflows").exists() else False)
 
 
 def main():
@@ -97,12 +109,16 @@ def main():
     else:
         prompt_file = here / "prompts" / f"claude-{args.scope}.txt"
         scope = args.scope
-    prompt = prompt_file.read_text(encoding="utf-8").replace("<REPO>", str(Path(args.repo).resolve()))
 
     tmp = Path(tempfile.gettempdir())
     home = tmp / f"sos-l2-home-{uuid.uuid4().hex[:8]}"
     proj = tmp / f"sos-l2-proj-{uuid.uuid4().hex[:8]}"
     home.mkdir(parents=True); proj.mkdir(parents=True)
+
+    repo_dest = proj / "stratosphere-os"
+    shutil.copytree(Path(args.repo).resolve(), repo_dest)
+    subprocess.run([sys.executable, "build/build.py"], cwd=repo_dest, check=True)
+    prompt = prompt_file.read_text(encoding="utf-8").replace("<REPO>", str(repo_dest))
 
     env = dict(os.environ)
     env["USERPROFILE"] = str(home)
@@ -111,10 +127,26 @@ def main():
     env["HOMEPATH"] = str(home)[2:]
     env.pop("CLAUDECODE", None)  # avoid nested-session confusion
 
+    # Local dev auth fallback
+    if "ANTHROPIC_API_KEY" not in env:
+        try:
+            real_home = Path(os.path.expanduser("~"))
+            creds_src = real_home / ".claude" / ".credentials.json"
+            if creds_src.exists():
+                (home / ".claude").mkdir(parents=True, exist_ok=True)
+                shutil.copy2(creds_src, home / ".claude" / ".credentials.json")
+        except Exception:
+            pass
+
     print(f"== L2: claude-code / {'marketplace' if args.marketplace else scope} ==")
     print(f"   home={home}\n   proj={proj}")
     try:
-        text, tools, is_error = run_agent(prompt, str(proj), env)
+        text, tools, is_error, raw_lines, proc_rc = run_agent(prompt, str(proj), env)
+        if is_error is not False:
+            print(f"  [Debug] exit={proc_rc}, raw output (first 20 lines):")
+            for l in raw_lines[:20]:
+                print(f"    {l[:200]}".encode('utf-8', errors='replace').decode('cp1252', errors='replace'))
+            print(f"  [Debug] agent text: {text[:500]}")
         blob = " ".join(t["name"] + " " + t["input"] for t in tools)
         check("agent ran scaffold.py", "scaffold.py" in blob)
         if not args.marketplace:
