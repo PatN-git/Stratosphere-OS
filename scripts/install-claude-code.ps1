@@ -38,7 +38,8 @@ if ($null -eq $scope) {
 $resolvedTarget = if ($targetDir) { $targetDir } else { (Get-Location).Path }
 
 if ($scope -eq "global") {
-    $claudeDir = Join-Path $HOME ".claude"
+    $baseHome = if ($env:USERPROFILE) { $env:USERPROFILE } elseif ($env:HOME) { $env:HOME } else { $HOME }
+    $claudeDir = Join-Path $baseHome ".claude"
     Write-Host "Installing globally under ~/.claude/..."
 } else {
     $claudeDir = Join-Path $resolvedTarget ".claude"

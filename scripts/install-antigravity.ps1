@@ -37,7 +37,8 @@ if ($null -eq $scope) {
 
 if ($scope -eq "global") {
     # Confirmed against installed Antigravity plugins (android-cli, chrome-devtools, ...).
-    $pluginDir = Join-Path $HOME ".gemini\config\plugins\stratosphere-os"
+    $baseHome = if ($env:USERPROFILE) { $env:USERPROFILE } elseif ($env:HOME) { $env:HOME } else { $HOME }
+    $pluginDir = Join-Path $baseHome ".gemini\config\plugins\stratosphere-os"
     Write-Host "Installing globally under ~/.gemini/config/plugins/stratosphere-os/..."
 } else {
     $resolvedTarget = if ($targetDir) { $targetDir } else { (Get-Location).Path }
