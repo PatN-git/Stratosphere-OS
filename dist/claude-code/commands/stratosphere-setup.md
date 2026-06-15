@@ -208,8 +208,8 @@ GitHub labels already exist and may differ from the registry.
 Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
 1. **Always sync `system` pack** without asking — it contains `skill-creator` and `code-simplifier` which every project needs. Do not present it as a choice.
-2. **Ask one `AskUserQuestion` (multiSelect: true):**
-   > "The \`system\` including \`skill-creator\` and \`code-simplifier\` pack is always installed. Which additional skill packs do you need?"
+2. **Ask one question using `AskUserQuestion` (multiSelect: true) on Claude Code, or `ask_question` (is_multi_select: true) on Antigravity:**
+   > "The \`system\` pack (\`skill-creator\`, \`code-simplifier\`) is always installed. Which additional skill packs do you need?"
    - `database` — Supabase + Postgres best practices
    - `web` — React, composition patterns, Vercel web design
    - `mobile` — React Native skills

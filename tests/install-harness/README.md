@@ -65,7 +65,7 @@ or locally.
 
 **Real GitHub marketplace** (after the install PR merges to `main`):
 - [ ] `/plugin marketplace add PatN-git/Stratosphere-OS` (owner/repo shorthand) resolves.
-- [ ] `/plugin install stratosphere-os@stratosphere-os` + `/reload-plugins` make the commands appear.
+- [ ] `/plugin install stratosphere-os@stratosphere-os` + restart Claude Code make the commands appear.
 - [ ] `/stratosphere-setup` finds the plugin under `~/.claude/plugins/cache/*/stratosphere-os/*/` (scaffold prints scope `marketplace Claude Code`).
 - [ ] `run-L2.py --marketplace` passes.
 
