@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 # Brainstorm Technique Library
 
 Techniques for Phase 0 concept framing, organized by the brainstorm pass they serve. The orchestrator (`1b_concept-framing.md` Phase 0) sets the default path; consult this file for depth or to pick a situational technique. Pick ONE optional technique per pass — do not run all.

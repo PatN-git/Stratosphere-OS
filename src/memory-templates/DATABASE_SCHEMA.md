@@ -1,3 +1,10 @@
+---
+type: database-schema
+title: Database Schema
+description: Authoritative schema layout, constraints, and relationships.
+timestamp: 2026-06-16
+---
+
 # DATABASE SCHEMA
 
 ## Purpose

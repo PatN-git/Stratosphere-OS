@@ -1,0 +1,19 @@
+StratosphereOS OKF Viewer Extension
+Copyright 2026 Google LLC (original portions)
+Copyright 2026 The StratosphereOS Authors (modified portions)
+
+This product includes software developed by Google LLC as part of the
+knowledge-catalog repository (https://github.com/GoogleCloudPlatform/knowledge-catalog).
+
+Specifically, the following files in this directory:
+- generator.py
+- templates/viz.html
+- static/viz.css
+- static/viz.js
+- document.py
+are derived from enrichment_agent/viewer/ and enrichment_agent/bundle/document.py of
+the knowledge-catalog project, licensed under the Apache License 2.0.
+
+Modifications:
+- Modified generator.py imports for local packaging.
+- Rewrote document.py to use only the Python standard library for frontmatter parsing and serialization instead of depending on PyYAML.

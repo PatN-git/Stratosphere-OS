@@ -1,3 +1,10 @@
+---
+type: backlog
+title: Backlog Map
+description: Authoritative registry and status mapping of all project issues.
+timestamp: 2026-06-16
+---
+
 # BACKLOG MAP
 
 ## Purpose

@@ -55,9 +55,10 @@ FOLDERS = [
     "docs/prds",
     "docs/research",
     "docs/design",
+    "docs/knowledge",
     ".tmp",
 ]
-KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", ".tmp"}  # add .gitkeep so they survive git
+KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", "docs/knowledge", ".tmp"}  # add .gitkeep so they survive git
 
 
 def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "preserved"):
@@ -172,7 +173,18 @@ def main():
     if vm.exists():
         place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry, update=update, tier="managed")
 
+    # Copy OKF viewer files
+    viewer_src_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
+    if viewer_src_dir.exists() and viewer_src_dir.is_dir():
+        for src in sorted(viewer_src_dir.rglob("*")):
+            if src.is_file():
+                rel_parts = src.relative_to(viewer_src_dir)
+                dst = project / ".agents" / "scripts" / "okf_viewer" / rel_parts
+                place(src, dst, res, dry)
 
+    view_script = PLUGIN_ROOT / "scripts" / "okf_view.py"
+    if view_script.exists():
+        place(view_script, project / ".agents" / "scripts" / "okf_view.py", res, dry)
 
     # 8. .gitignore (create if missing; never edit an existing one)
     gi = project / ".gitignore"
@@ -183,6 +195,65 @@ def main():
         else:
             gi.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
             res["created"].append(Path(".gitignore"))
+
+    # 8b. .gitattributes (create if missing; never edit an existing one)
+    ga = project / ".gitattributes"
+    ga_existed = ga.exists()
+    if not ga_existed:
+        if dry:
+            res["would"].append(Path(".gitattributes"))
+        else:
+            ga_content = "docs/okf-view.html linguist-generated=true -diff\n"
+            ga.write_text(ga_content, encoding="utf-8")
+            res["created"].append(Path(".gitattributes"))
+    else:
+        res["exists"].append(Path(".gitattributes"))
+
+    # 9. Root index.md (create if missing; never edit an existing one)
+    root_index = project / "index.md"
+    if not root_index.exists():
+        if dry:
+            res["would"].append(Path("index.md"))
+        else:
+            root_index_content = (
+                "---\n"
+                "okf_version: \"0.1\"\n"
+                "---\n\n"
+                "# StratosphereOS Knowledge Bundle\n\n"
+                "Conforms to Open Knowledge Format (OKF) v0.1.\n\n"
+                "## Sections\n\n"
+                "- [Memory](/.memory/index.md) - Internal memory registries.\n"
+                "- [Product Requirement Documents](/docs/prds/index.md) - Feature specifications.\n"
+                "- [Discovery Briefs](/docs/discovery/index.md) - Early problem exploration briefs.\n"
+                "- [Research Docs](/docs/research/index.md) - Topic and competitive landscape research.\n"
+                "- [Design Blueprints](/docs/design/index.md) - Surface and interface designs.\n"
+                "- [Knowledge Sources](/docs/knowledge/index.md) - External ingested knowledge references.\n"
+            )
+            root_index.write_text(root_index_content, encoding="utf-8")
+            res["created"].append(Path("index.md"))
+    else:
+        res["exists"].append(Path("index.md"))
+
+    # 10. Seed empty index.md in subdirectories (create-only-if-missing)
+    sub_indices = [
+        (".memory", "Memory Index", "Registry of learnings, rules, status, and vocabulary."),
+        ("docs/prds", "Product Requirement Documents", "Feature specifications."),
+        ("docs/discovery", "Discovery Briefs", "Early problem framing and exploration briefs."),
+        ("docs/research", "Research Documents", "Topic and competitive landscape research."),
+        ("docs/design", "Design Blueprints", "Visual layouts and interface contracts."),
+        ("docs/knowledge", "External Knowledge References", "Ingested external OKF bundles.")
+    ]
+    for rel_dir, title, desc in sub_indices:
+        idx_file = project / rel_dir / "index.md"
+        if not idx_file.exists():
+            if dry:
+                res["would"].append(Path(rel_dir) / "index.md")
+            else:
+                idx_content = f"# {title}\n\n{desc}\n\n*No entries yet.*\n"
+                idx_file.write_text(idx_content, encoding="utf-8")
+                res["created"].append(Path(rel_dir) / "index.md")
+        else:
+            res["exists"].append(Path(rel_dir) / "index.md")
 
     # Summary
     verb = "WOULD CREATE" if dry else "CREATED"
@@ -223,6 +294,8 @@ def main():
         # existing .gitignore: remind agent to verify secret-hygiene entries
         print("NOTE: .gitignore already exists — verify it contains: " + ", ".join(GITIGNORE_ENTRIES))
         print("NOTE: Existing projects must manually add *.work.md to their .gitignore (scaffold never edits existing ones).")
+    if ga_existed:
+        print("NOTE: .gitattributes already exists — verify it contains: docs/okf-view.html linguist-generated=true -diff")
 
 
 if __name__ == "__main__":

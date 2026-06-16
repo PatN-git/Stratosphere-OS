@@ -80,6 +80,11 @@ python <plugin>/scripts/scaffold.py --update
 3. On confirmation, re-run with `--update` (no `--dry-run`).
 4. Surface any `NEEDS-REVIEW` constitution diffs separately for per-file confirmation; never auto-overwrite the constitution. The `.memory/` and `.gitignore` files remain fully preserved (`LEFT AS-IS`) and require manual review if they drift from templates under `assets/templates/`.
 
+## Checkpoint 0.5: Project Vision (both paths)
+
+1. Prompt the user using the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to input the project's core vision statement (e.g. "What is the primary vision or goal of this project?").
+2. Write this statement directly into `AGENT.md` under the `## Vision` heading, replacing the placeholder.
+
 ## Checkpoint 1: Workspace rules in effect (both paths)
 
 Checkpoint 0 has placed the rule/protocol files; they govern everything that follows:

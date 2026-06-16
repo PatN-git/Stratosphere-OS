@@ -2,6 +2,7 @@
 name: Micro-TDD Execution
 type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
+version: "1.0.0"
 ---
 
 # SKILL: Micro-TDD Execution

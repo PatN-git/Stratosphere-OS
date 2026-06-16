@@ -1,3 +1,10 @@
+---
+type: design-rules
+title: Design Rules
+description: Project structural rules and operational design governance.
+timestamp: 2026-06-16
+---
+
 # DESIGN RULES
 
 ## Purpose

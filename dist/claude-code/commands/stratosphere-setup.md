@@ -2,6 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
+version: "1.0.0"
 ---
 
 # Instantiate StratosphereOS
@@ -79,6 +80,11 @@ python <plugin>/scripts/scaffold.py --update
 2. If any `STALE` or `NEEDS-REVIEW` files exist, ask the user with the native tool (`AskUserQuestion` on Claude Code, `ask_question` on Antigravity), e.g.: *"Found N updated framework files (workflows + rules). Refresh them? Your `.memory/` and constitution stay untouched."*
 3. On confirmation, re-run with `--update` (no `--dry-run`).
 4. Surface any `NEEDS-REVIEW` constitution diffs separately for per-file confirmation; never auto-overwrite the constitution. The `.memory/` and `.gitignore` files remain fully preserved (`LEFT AS-IS`) and require manual review if they drift from templates under `assets/templates/`.
+
+## Checkpoint 0.5: Project Vision (both paths)
+
+1. Prompt the user using the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to input the project's core vision statement (e.g. "What is the primary vision or goal of this project?").
+2. Write this statement directly into `AGENT.md` under the `## Vision` heading, replacing the placeholder.
 
 ## Checkpoint 1: Workspace rules in effect (both paths)
 

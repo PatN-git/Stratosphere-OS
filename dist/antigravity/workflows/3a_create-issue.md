@@ -3,6 +3,7 @@ name: 3a_create-issue
 description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Create issue

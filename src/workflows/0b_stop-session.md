@@ -37,7 +37,8 @@ Leave next session with enough context to resume immediately. Ensure all new ent
 7. If schema understanding changed or a DB change landed, update `.memory/DATABASE_SCHEMA.md`. Schema changes are `[LAW]` by default.
 8. If a UI structural decision was made (new immortal component, change to a `[[DR-xxx]]` entry), update `.memory/DESIGN_RULES.md`. Propose to user; never self-promote. If brand tokens changed, update `.memory/DESIGN.md` per spec — propose changes to user. When registering the first real Immortal Components, delete the shipped examples (DR-012/DR-013).
 9. **Run lint** by executing `python .agents/scripts/validate_memory.py`. Propose fixes for any reported errors, list any warnings, and await user confirmation.
-10. Ensure `.memory/STATUS.md` lets the next session resume without re-discovery.
+10. **Regenerate OKF Visualizer** by running `python .agents/scripts/okf_view.py` after the memory lint checks pass.
+11. Ensure `.memory/STATUS.md` lets the next session resume without re-discovery.
 
 ## Handoff Note Format (Leave blank if nothing applies)
 Session complete.
