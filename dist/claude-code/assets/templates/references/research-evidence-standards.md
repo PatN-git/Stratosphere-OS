@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 # Evidence Standards for Research Artifacts
 
 These standards ensure all research remains high-integrity, verifiable, and free from hallucinated or speculative claims. They apply to all research domains (Competitive and Problem-Space) and depth modes.

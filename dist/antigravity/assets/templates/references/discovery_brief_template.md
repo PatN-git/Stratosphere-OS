@@ -1,8 +1,12 @@
 ---
-slug: <topic-slug>
+type: discovery-brief
+title: "Discovery: <one-line problem statement>"
+description: ""
+timestamp: <YYYY-MM-DD>
 status: ready-for-prd | exit-bug | exit-spike | dropped
-created: <YYYY-MM-DD>
+slug: <topic-slug>
 linked-prd: —
+version: "1.0.0"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>

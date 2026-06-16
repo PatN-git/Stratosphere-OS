@@ -1,4 +1,5 @@
 ---
+type: design
 version: alpha
 name: <Project Name>
 description: <One-line product description>

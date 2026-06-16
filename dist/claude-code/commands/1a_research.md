@@ -3,6 +3,7 @@ name: 1a_research
 description: Workflow to conduct market & competitive research for greenfield or domain-heavy features before concept framing. Routes by domain and depth.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Research
@@ -93,14 +94,7 @@ Terminate the loop only when one of the following occurs:
    - If Primary Domain is **Competitive**: Use `.agents/workflows/.reference/research-competitive-template.md`.
    - If Primary Domain is **Problem-Space**: Use `.agents/workflows/.reference/research-problem-template.md`.
 3. **Format & Write:** Create the single clean synthesis file at `docs/research/<slug>.md`.
-   - Ensure it includes the shared YAML frontmatter:
-     ```yaml
-     ---
-     slug: <canonical-slug>
-     updated: <YYYY-MM-DD>
-     status: active
-     ---
-     ```
+   - Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: research`.
    - **Question Coverage Map:** Include a one-line visible question-coverage map under the Questions list in the Research Brief (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown] · …`) to demonstrate the gate outcome for both Quick and Deep research paths.
    - **Annex Output Mechanism:** If an **Optional Annex** was specified, render it as a section appended **within** that single output file `docs/research/<slug>.md` (using the structure of the other template), NOT as a second file. When the annex is Competitive but no candidate product exists yet (research precedes concept framing), OMIT the Dunford Positioning Lens and the 'Us (Candidate)' matrix column from the annex — include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
    - Enforce the evidence rules in `.agents/workflows/.reference/research-evidence-standards.md` (e.g., citation for every claim, high-confidence source triangulation, independence collapsing). Paywalled/403 sources: cite at `[MEDIUM]` max from abstract-level access unless the full text is reachable. Quick-mode `[HIGH]` requires a load-bearing claim triangulated across ≥2 distinct source types, justified inline.

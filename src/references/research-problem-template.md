@@ -1,7 +1,10 @@
 ---
-slug: <kebab-case-core-topic>
-updated: <YYYY-MM-DD>
+type: research
+title: "Research: <Problem Space / Topic>"
+description: ""
+timestamp: <YYYY-MM-DD>
 status: active | stale | superseded
+slug: <kebab-case-core-topic>
 ---
 
 # Research: <Problem Space / Topic>

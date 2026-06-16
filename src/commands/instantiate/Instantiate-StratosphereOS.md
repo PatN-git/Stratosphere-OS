@@ -77,6 +77,11 @@ python <plugin>/scripts/scaffold.py --dry-run
 
 Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references}/` if you need to read one for comparison.
 
+## Checkpoint 0.5: Project Vision (both paths)
+
+1. Prompt the user using the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to input the project's core vision statement (e.g. "What is the primary vision or goal of this project?").
+2. Write this statement directly into `AGENT.md` under the `## Vision` heading, replacing the placeholder.
+
 ## Checkpoint 1: Workspace rules in effect (both paths)
 
 Checkpoint 0 has placed the rule/protocol files; they govern everything that follows:

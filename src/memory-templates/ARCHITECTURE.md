@@ -1,3 +1,10 @@
+---
+type: architecture
+title: Architecture
+description: Tech stack, structure, data flow, and architectural laws.
+timestamp: 2026-06-16
+---
+
 # ARCHITECTURE
 
 ## Purpose

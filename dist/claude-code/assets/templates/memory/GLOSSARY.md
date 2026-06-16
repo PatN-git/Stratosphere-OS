@@ -1,3 +1,11 @@
+---
+type: glossary
+title: Glossary
+description: Shared domain vocabulary used across docs and code.
+timestamp: 2026-06-16
+version: "1.0.0"
+---
+
 # GLOSSARY
 
 ## Purpose

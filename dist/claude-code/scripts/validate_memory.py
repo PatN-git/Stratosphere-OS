@@ -318,6 +318,68 @@ def main():
                     except Exception:
                         pass
 
+    # 1.5 OKF Conformance Check (Error tier: a missing/empty type field is a validation error)
+    okf_as_error = True
+    okf_files_to_check = []
+    if memory_dir.exists() and memory_dir.is_dir():
+        for path in memory_dir.glob('**/*.md'):
+            if path.name == "index.md":
+                continue
+            okf_files_to_check.append(path)
+            
+    docs_dir = Path('docs')
+    if docs_dir.exists() and docs_dir.is_dir():
+        for path in docs_dir.glob('**/*.md'):
+            if path.name == "index.md":
+                continue
+            try:
+                rel = path.relative_to(docs_dir)
+                if rel.parts and rel.parts[0] == 'knowledge':
+                    continue
+            except ValueError:
+                pass
+            okf_files_to_check.append(path)
+
+    for path in okf_files_to_check:
+        try:
+            display_path = str(path.relative_to(Path.cwd()))
+        except ValueError:
+            display_path = str(path)
+            
+        try:
+            content = path.read_text(encoding='utf-8')
+            m = re.match(r"^---\r?\n(.*?)\r?\n---", content, re.S)
+            if not m:
+                msg = f"OKF conformance: {display_path} is missing parseable frontmatter."
+                if okf_as_error:
+                    errors.append(msg)
+                else:
+                    warnings.append(msg)
+                continue
+            
+            fm_text = m.group(1)
+            fm = {}
+            for line in fm_text.splitlines():
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    fm[k.strip()] = v.strip()
+            
+            if 'type' not in fm or not fm['type']:
+                msg = f"OKF conformance: {display_path} is missing a non-empty 'type' field in frontmatter."
+                if okf_as_error:
+                    errors.append(msg)
+                else:
+                    warnings.append(msg)
+        except Exception as e:
+            msg = f"OKF conformance: Could not read {display_path} for frontmatter: {e}"
+            if okf_as_error:
+                errors.append(msg)
+            else:
+                warnings.append(msg)
+
     # 2. Trust Tag Rules Validation
     for def_id, info in definitions.items():
         if info['file'] == 'BACKLOG_MAP.md':
