@@ -15,33 +15,25 @@ def split_frontmatter(text):
     return None, text
 
 def read_version(text, path):
-    """Extracts (version, updated) and determines form ('A', 'B', or None)."""
+    """Extracts (version, updated) from YAML frontmatter."""
     text = normalize(text)
-    # Check Form B first
-    m = re.match(r'\A<!-- stratosphere: version=([^\s]+) updated=([^\s]+) -->\n', text)
-    if m:
-        return m.group(1), m.group(2), "B"
     
-    # Check Form A
     fm, _ = split_frontmatter(text)
     if fm is not None:
         v_match = re.search(r'^version:\s*"?([^"\n\s]+)"?', fm, re.M)
         u_match = re.search(r'^updated:\s*"?([^"\n\s]+)"?', fm, re.M)
         if v_match:
-            return v_match.group(1), (u_match.group(1) if u_match else ""), "A"
+            return v_match.group(1), (u_match.group(1) if u_match else "")
             
-    return None, None, None
+    return None, None
 
-def body_hash(text, form):
+def body_hash(text):
     # remove ONLY this file's plugin-version metadata so a version bump alone never changes the hash.
     text = normalize(text)
-    if form == "A":                          # plugin metadata is in frontmatter — strip WITHIN that block only
-        fm, body = split_frontmatter(text)
-        if fm is not None:
-            # Strip version and updated
-            fm = "\n".join(l for l in fm.split("\n")
-                           if l.split(":", 1)[0].strip() not in ("version", "updated"))
-            text = f"---\n{fm}\n---\n{body}" if fm.strip() else f"---\n---\n{body}"
-    elif form == "B":                        # strip a stratosphere comment ONLY if it is the first line
-        text = re.sub(r'\A<!-- stratosphere:[^\n]*-->\n', '', text)
+    fm, body = split_frontmatter(text)
+    if fm is not None:
+        # Strip version and updated
+        fm = "\n".join(l for l in fm.split("\n")
+                       if l.split(":", 1)[0].strip() not in ("version", "updated"))
+        text = f"---\n{fm}\n---\n{body}" if fm.strip() else f"---\n---\n{body}"
     return hashlib.sha256(text.encode("utf-8")).hexdigest()

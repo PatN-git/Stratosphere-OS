@@ -90,18 +90,16 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         filename = p.name
 
         is_index = filename == "index.md"
-        is_design = filename == "DESIGN.md"
         
-        # Check version (all templates except DESIGN.md)
+        # Check version (all templates)
         content = p.read_text(encoding="utf-8")
         d = fm_dict(content)
-        if not is_design:
-            if "version" not in d or not d["version"]:
-                errs.append(f"{plat}/assets/templates/{rel_path} missing version")
+        if "version" not in d or not d["version"]:
+            errs.append(f"{plat}/assets/templates/{rel_path} missing version")
 
         # Check type (only concept templates)
         is_concept = False
-        if parent_dir == "memory" and not is_index and not is_design:
+        if parent_dir == "memory" and not is_index:
             is_concept = True
         elif parent_dir == "rules" and not is_index:
             is_concept = True
