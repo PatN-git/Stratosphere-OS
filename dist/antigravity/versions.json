@@ -201,9 +201,9 @@
       "version": "1.0.0"
     },
     "workflows/4b_audit-architecture-drift.md": {
-      "sha256": "e7485422f1024967478395b29a3e43a4257dc79d5c7769ef210171cb84673406",
+      "sha256": "4121461ab18427ae21ecbf1f195707c2fa03e37a31b1a962f05168be6d4c4aee",
       "updated": "2026-06-17",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "workflows/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",

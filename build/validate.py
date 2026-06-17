@@ -49,16 +49,17 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         if md.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/{inv}/{md.name}")
         k = fm_keys(md.read_text(encoding="utf-8"))
-        if "name" not in k or "description" not in k:
-            errs.append(f"{plat}/{inv}/{md.name} missing {{'name','description'}}-{k}")
-            
+        required = {"name", "description", "version", "updated", "type"}
+        if not required.issubset(k):
+            errs.append(f"{plat}/{inv}/{md.name} missing OKF keys. Found {k}")
     for sk in (root / plat / "skills").glob("*/SKILL.md"):
         # Check BOM
         if sk.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/skills/{sk.parent.name}/SKILL.md")
         k = fm_keys(sk.read_text(encoding="utf-8"))
-        if "name" not in k or "description" not in k:
-            errs.append(f"{plat}/skills/{sk.parent.name} missing name/description -> {k}")
+        required = {"name", "description", "version", "updated"}
+        if not required.issubset(k):
+            errs.append(f"{plat}/skills/{sk.parent.name} missing OKF keys. Found {k}")
 
 # Also check python script files in dist for BOM
 for plat in ["dist/claude-code", "dist/antigravity"]:

@@ -208,6 +208,8 @@ def build_platform(kind: str):
                     "sha256": _versioning.body_hash(text, form),
                     "updated": u
                 }
+            else:
+                raise ValueError(f"Missing versioning marker in {p}. Every .md file in the plugin MUST have a version stamp (Form A or Form B).")
     
     versions_manifest = {
         "plugin_version": VERSION,

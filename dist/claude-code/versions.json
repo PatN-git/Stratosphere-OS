@@ -171,9 +171,9 @@
       "version": "1.0.0"
     },
     "commands/4b_audit-architecture-drift.md": {
-      "sha256": "e7485422f1024967478395b29a3e43a4257dc79d5c7769ef210171cb84673406",
+      "sha256": "4121461ab18427ae21ecbf1f195707c2fa03e37a31b1a962f05168be6d4c4aee",
       "updated": "2026-06-17",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "commands/stratosphere-setup.md": {
       "sha256": "adf0357b84b4cb2870fcaf2ea9b54d63ef076621486d48b287878b36a2b677f2",

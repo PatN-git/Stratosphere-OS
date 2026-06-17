@@ -1,7 +1,8 @@
 ---
 name: 4b_audit-architecture-drift
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
-version: "1.0.0"
+type: workflow
+version: "1.0.1"
 updated: 2026-06-17
 ---
 
