@@ -28,6 +28,9 @@ jobs:
       - name: Validate subagent instructions
         run: python tests/test_subagent_spawning.py
 
+      - name: Validate utility scripts
+        run: python tests/verify_scripts.py
+
       - name: Fail if dist/ drifted from src/
         run: |
           DRIFT="$(git status --porcelain dist/ .claude-plugin/marketplace.json)"
