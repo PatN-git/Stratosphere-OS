@@ -1,7 +1,9 @@
 ---
-description: 
-issue_url: <GitHub Issue URL>
-updated: <YYYY-MM-DD>
+type: prd
+title: "BT-<padded>: <Feature name>"
+description: ""
+timestamp: <YYYY-MM-DD>
+resource: <GitHub Issue URL>
 status: ready-for-design | in-progress | complete
 version: "1.0.0"
 ---

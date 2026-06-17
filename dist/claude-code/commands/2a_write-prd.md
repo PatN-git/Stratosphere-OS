@@ -3,6 +3,7 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Write PRD
@@ -69,7 +70,7 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Set frontmatter status mapping feature-type: UI feature → `ready-for-design` (run `/2b_interface-design`); non-UI/Path C → `ready-for-slicing` (2b optional).
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: prd`. Set frontmatter status mapping feature-type: UI feature → `ready-for-design` (run `/2b_interface-design`); non-UI/Path C → `ready-for-slicing` (2b optional).
 2. Update parent issue body: one-paragraph summary + doc link + §10 Open Questions.
 3. Append to `.memory/BACKLOG_MAP.md` (if this is the first real entry, delete the shipped example rows):
    ```

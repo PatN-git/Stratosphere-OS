@@ -1,3 +1,10 @@
+---
+type: learnings
+title: Learnings
+description: Episodic project-specific lessons and insights.
+timestamp: 2026-06-16
+---
+
 # LEARNINGS
 
 ## Purpose

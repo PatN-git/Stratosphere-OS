@@ -27,14 +27,17 @@ if (-not (Test-Path (Join-Path $repo "dist\claude-code")) -or -not (Test-Path (J
 $realBefore = Get-RealHomeSnapshot
 
 function Assert-ScaffoldTree([string]$proj) {
-    foreach ($f in @("AGENT.md","CLAUDE.md","GEMINI.md",".gitignore")) {
+    foreach ($f in @("AGENT.md","CLAUDE.md","GEMINI.md",".gitignore",".gitattributes","index.md")) {
         AssertPathExists "scaffold: $f" (Join-Path $proj $f)
     }
-    AssertFileCount "scaffold: .memory/*.md == 8" (Join-Path $proj ".memory") "*.md" 8
-    AssertFileCount "scaffold: .agents/rules/*.md == 2" (Join-Path $proj ".agents\rules") "*.md" 2
+    AssertFileCount "scaffold: .memory/*.md == 9" (Join-Path $proj ".memory") "*.md" 9
+    AssertFileCount "scaffold: .agents/rules/*.md == 3" (Join-Path $proj ".agents\rules") "*.md" 3
     AssertFileCount "scaffold: .agents/workflows/*.md == 14" (Join-Path $proj ".agents\workflows") "*.md" 14
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
+    AssertPathExists "scaffold: okf_view.py" (Join-Path $proj ".agents\scripts\okf_view.py")
+    AssertPathExists "scaffold: okf_viewer/generator.py" (Join-Path $proj ".agents\scripts\okf_viewer\generator.py")
     AssertPathExists "scaffold: docs/discovery/.gitkeep" (Join-Path $proj "docs\discovery\.gitkeep")
+    AssertPathExists "scaffold: docs/knowledge/index.md" (Join-Path $proj "docs\knowledge\index.md")
     $gi = Get-Content (Join-Path $proj ".gitignore") -Raw -ErrorAction SilentlyContinue
     Assert "scaffold: .gitignore contains *.work.md" ($gi -match '\*\.work\.md')
 }

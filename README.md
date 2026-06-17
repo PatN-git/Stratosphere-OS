@@ -8,7 +8,7 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 
 ## What you get
 
-- **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "Lean Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
+- **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "StratosphereOS Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
 
 - **🚀 The Agentic Workflow** - slash commands for the whole dev lifecycle:
   - Stage 0: Workflows to manage the environment and workflow.
@@ -43,6 +43,20 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 ## Assumptions
 
 StratosphereOS assumes a React + Tailwind + shadcn/ui UI stack by default. Non-UI features are handled by the Path C interface contract in `2b_interface-design`. A project can adopt another stack by superseding DR-004/DR-005 (see `memory-protocol.md` §3) with explicit user confirmation.
+
+---
+
+## Open Knowledge Format (OKF) Conformance
+
+StratosphereOS natively conforms to the [Open Knowledge Format (OKF) v0.1 Specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf).
+
+- **Bundle Scope:** The `.memory/` directory (registries and rules) and the `docs/` directory (PRDs, discovery briefs, designs, and research) form a conformant OKF Knowledge Bundle.
+- **Concept Typing:** Every markdown file within the bundle scope (excluding reserved index files and foreign knowledge sources) contains structured YAML frontmatter mapping to the project's OKF type registry.
+- **OKF Dashboard:** An interactive visualizer is included in the project. It can be regenerated at session stop, or manually using the command:
+  ```bash
+  python .agents/scripts/okf_view.py
+  ```
+  This creates an interactive HTML graph at `docs/okf-view.html` mapping the bundle's concept relationships. Note that while the file is generated locally, viewing it requires an active internet connection to load graph-rendering libraries (Cytoscape and Marked) from a CDN.
 
 ---
 
@@ -183,3 +197,8 @@ and are written into a project by the installer — not on install.
 ## Third-party skills & attribution
 
 Domain skills are **not bundled**; they are fetched on demand from their upstream repositories via `sync-skills`. Sources are tracked in `src/external-skills.json`. Each retains its own license and attribution from upstream (Anthropic, Supabase, Vercel Labs, and others).
+
+### OKF Bundle Viewer
+StratosphereOS includes a vendored copy of the Open Knowledge Format (OKF) reference HTML visualizer.
+- **Source:** [Google Cloud Platform Knowledge Catalog - OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
+- **License:** Apache License 2.0 (see `src/scripts/okf_viewer/LICENSE` for full details).

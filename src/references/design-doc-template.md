@@ -1,10 +1,13 @@
 ---
+type: interface-design
+title: "Design: BT-<padded> - <Feature Name>"
+description: ""
+timestamp: <YYYY-MM-DD>
+status: draft | ready-for-slicing | obsolete
 slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
-status: draft | ready-for-slicing | obsolete
-updated: <YYYY-MM-DD>
 version: "1.0.0"
 ---
 

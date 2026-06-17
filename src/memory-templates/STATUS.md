@@ -1,3 +1,10 @@
+---
+type: status
+title: Status
+description: Session and active task focus state tracking.
+timestamp: 2026-06-16
+---
+
 # STATUS
 
 - **Last Sync:**

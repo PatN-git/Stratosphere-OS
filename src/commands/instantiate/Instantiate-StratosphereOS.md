@@ -59,6 +59,10 @@ python <plugin>/scripts/scaffold.py
 
 # Add --dry-run to preview what would be created without writing any files:
 python <plugin>/scripts/scaffold.py --dry-run
+
+# Upgrade an existing project: preview, then refresh managed framework files
+python <plugin>/scripts/scaffold.py --update --dry-run
+python <plugin>/scripts/scaffold.py --update
 ```
 
 **What it creates** (skips anything already present):
@@ -70,12 +74,16 @@ python <plugin>/scripts/scaffold.py --dry-run
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b_stop-session`)
 - `.gitignore` (only if missing)
 
-**Drift check (re-runs / brownfield):** the script leaves existing files untouched and lists them under `LEFT AS-IS`. For each, compare against its template and **ask the user before changing** — never overwrite silently. Look for:
-- Missing required top-level sections (e.g., `## Active Entries`, `## Superseded`)
-- Missing required metadata blocks (Trust Tags reference, Label Registry, Immortal Components)
-- Renamed or removed required headers
+**Drift check (re-runs / brownfield):**
+1. Run `python <plugin>/scripts/scaffold.py --update --dry-run` to compute state.
+2. If any `STALE` or `NEEDS-REVIEW` files exist, ask the user with the native tool (`AskUserQuestion` on Claude Code, `ask_question` on Antigravity), e.g.: *"Found N updated framework files (workflows + rules). Refresh them? Your `.memory/` and constitution stay untouched."*
+3. On confirmation, re-run with `--update` (no `--dry-run`).
+4. Surface any `NEEDS-REVIEW` constitution diffs separately for per-file confirmation; never auto-overwrite the constitution. The `.memory/` and `.gitignore` files remain fully preserved (`LEFT AS-IS`) and require manual review if they drift from templates under `assets/templates/`.
 
-Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references}/` if you need to read one for comparison.
+## Checkpoint 0.5: Project Vision (both paths)
+
+1. Prompt the user using the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to input the project's core vision statement (e.g. "What is the primary vision or goal of this project?").
+2. Write this statement directly into `AGENT.md` under the `## Vision` heading, replacing the placeholder.
 
 ## Checkpoint 1: Workspace rules in effect (both paths)
 
@@ -83,7 +91,7 @@ Checkpoint 0 has placed the rule/protocol files; they govern everything that fol
 - `.agents/rules/output-mode.md`, `memory-protocol.md`
 - `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
-Confirm they exist. If Checkpoint 0 reported any as `LEFT AS-IS`, run the drift check before relying on them.
+Confirm they exist. If Checkpoint 0 reported any as `STALE`, `NEEDS-REVIEW`, or `LEFT AS-IS`, ensure you have reviewed the differences before relying on them.
 
 ## Checkpoint 2: Database audit
 

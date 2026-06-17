@@ -116,7 +116,7 @@ This runs **by default** (it is a gate, not an opt-in). The user may decline the
 
 ## Phase 5: Write Discovery Brief
 
-Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`.
+Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: discovery-brief`.
 
 **Rules:**
 - Vocabulary section is mandatory. Every other section may be brief if signal is clear.

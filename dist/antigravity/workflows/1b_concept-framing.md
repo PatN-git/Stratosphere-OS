@@ -3,6 +3,7 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Concept framing
@@ -116,7 +117,7 @@ This runs **by default** (it is a gate, not an opt-in). The user may decline the
 
 ## Phase 5: Write Discovery Brief
 
-Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`.
+Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: discovery-brief`.
 
 **Rules:**
 - Vocabulary section is mandatory. Every other section may be brief if signal is clear.

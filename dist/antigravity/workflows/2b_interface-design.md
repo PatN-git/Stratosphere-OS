@@ -3,6 +3,7 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Interface Design
@@ -24,7 +25,7 @@ trigger: User. Do not run autonomously.
    - *unset / still the placeholder* `<yes | no — set during /stratosphere-setup>` → ask the user once (AskUserQuestion / ask_question), write the answer back to §2, then branch per above.
 
 ## Phase 2: Design Doc Initialization
-1. Instantiate `docs/design/BT-<padded>-interface.md` from the template.
+1. Instantiate `docs/design/BT-<padded>-interface.md` from the template. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: interface-design`.
 2. Populate the metadata shell (`slug`, `bt`, `prd`, `surface` = `ui-stitch-page|ui-stitch-feature|ui-manual|non-ui`, `status`: `draft`, `updated`). Ensure `surface` matches the chosen path (Path A → `ui-stitch-page|ui-stitch-feature`; Path B → `ui-manual`; Path C → `non-ui`).
 3. **Define the Aha Moment & Time-to-Value:** Ask *"What is the single moment the user first feels this was worth it, and how fast can they reach it after signup (aim: first 30 seconds)?"* Design the flow backward from it: strip blockers between entry and aha, no carousels/intro slideshows, drop the user into the core thing. (Path C: aha = "time to first successful API call / first integration").
 4. Fill the narrative sections (Surface & Scope, Actors & Core Flows, Aha Moment & Time-to-Value, States/Edge Classes) from the PRD now — before any pause. Keep exactly ONE body block.

@@ -3,6 +3,7 @@ name: 1a_research
 description: Workflow to conduct market & competitive research for greenfield or domain-heavy features before concept framing. Routes by domain and depth.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
 ---
 
 # Research
@@ -95,14 +96,7 @@ Terminate the loop only when one of the following occurs:
    - If Primary Domain is **Competitive**: Use `.agents/workflows/.reference/research-competitive-template.md`.
    - If Primary Domain is **Problem-Space**: Use `.agents/workflows/.reference/research-problem-template.md`.
 3. **Format & Write:** Create the single clean synthesis file at `docs/research/<slug>.md`.
-   - Ensure it includes the shared YAML frontmatter:
-     ```yaml
-     ---
-     slug: <canonical-slug>
-     updated: <YYYY-MM-DD>
-     status: active
-     ---
-     ```
+   - Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: research`.
    - **Question Coverage Map:** Include a one-line visible question-coverage map under the Questions list in the Research Brief (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown] · …`) to demonstrate the gate outcome for both Quick and Deep research paths.
    - **Opportunity Scoring & Gap Matrix:** When the Primary or Annex domain is Competitive, build the Gap Matrix and the Opportunity table into `docs/research/<slug>.md`. The Problem template supplies Pain; the Competitive template supplies Served. A pure problem-space run records Pain + `Served: [Unknown]`, yielding an Opportunity lower bound. Sourced only from reviews/docs, cited, and confidence-tagged `[HIGH/MED/LOW]` in the work file before synthesis. (Consumer: `2a` lifts Opportunity scores and matrix verdicts onto §6 stories).
    - **Cost & Viability Signals:** If the feature/topic is cost-sensitive, capture per-service pricing / free-tier data and the "is-there-money-here" market signals (paid products exist, freelancers hired, ad spend on keywords) into a `## Cost & Viability Signals` section of `docs/research/<slug>.md` — evidence-backed and cited per the evidence standards. (Consumer: `2a` summarizes/cites this in PRD §12; never generates pricing).
