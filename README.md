@@ -6,6 +6,50 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 
 ---
 
+## 🔁 The Philosophy: Don't Prompt, Build Loops
+
+In modern AI engineering, manual chat-based prompting is being replaced by autonomous, self-correcting execution loops. Rather than having a human constantly prompt, evaluate, copy-paste errors, and re-prompt the AI, developers act as **Loop Engineers**—constructing structured harnesses where the AI is given clear objectives, verification tools (compilers, linters, test suites), and a feedback loop.
+
+Stratosphere-OS is a state-aware agentic environment built specifically around this paradigm. It structures development into three distinct layers to manage the loop lifecycle:
+
+```mermaid
+graph TD
+    %% Layer 1
+    subgraph L1["Layer 1: Workflows (HITL Outer Loop)"]
+        direction TB
+        A["User /1b, /2a, /3a Commands"] --> B["Design & Slicing Checkpoints"]
+        B -->|Human Approval| C["Vertical Slice Issue"]
+    end
+
+    %% Layer 2
+    subgraph L2["Layer 2: Orchestration (Routing & Guardrails)"]
+        direction TB
+        C --> D["Orchestration Brain"]
+        D -->|Checks Precedence & Pre-requisites| E{"Active Rules?"}
+        E -->|No| F["Standard Routine"]
+        E -->|Yes| G["Selects Skill (e.g. Micro-TDD)"]
+    end
+
+    %% Layer 3
+    subgraph L3["Layer 3: Execution (Autonomous Inner Loop)"]
+        direction TB
+        G --> H["Isolate & Specify (Red Test)"]
+        H --> I["Run Test Suite"]
+        I -->|Failure Log| J["Implement Code (Green)"]
+        J --> I
+        I -->|Success (Green)| K["Clean & Refactor"]
+        K -->|/4a Verify & Ship| L["Open Pull Request"]
+    end
+
+    L3 -->|Stuck Protocol Trigger| L1
+```
+
+- **Layer 1: Workflows (HITL Outer Loop)**: Standardizes the development lifecycle (Discover, Design, Implement, Verify). Crucially, these enforce Human-in-the-Loop checkpoints to prevent runaway agent loops or architectural misalignment.
+- **Layer 2: Orchestration (Routing & Guardrails)**: The agent core that routes inputs, checks rules, and governs actions based on strict precedence (Core Rules → User Requests → Workflows → Skills). It acts as the bridge connecting Layer 1 and Layer 3.
+- **Layer 3: Execution (Autonomous Inner Loop)**: Fast-track playbooks (like the first-party `micro-tdd` skill) that run completely autonomously. The agent writes tests, runs the suite, analyzes errors, and iterates automatically until all tests pass, or hits safety conditions (the "Stuck Protocol") to prompt the user.
+
+---
+
 ## What you get
 
 - **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "StratosphereOS Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
