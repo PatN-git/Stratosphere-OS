@@ -3,7 +3,8 @@ name: 0a_start-session
 description: Initializes session to avoid cold start by reviewing necessary project context from memory layer/protocol.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.0"
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 # START SESSION

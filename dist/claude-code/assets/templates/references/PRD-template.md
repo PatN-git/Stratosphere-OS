@@ -1,4 +1,3 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
 type: prd
 title: "BT-<padded>: <Feature name>"
@@ -6,7 +5,7 @@ description: ""
 timestamp: <YYYY-MM-DD>
 resource: <GitHub Issue URL>
 status: ready-for-design | in-progress | complete
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # BT-<padded>: <Feature name>

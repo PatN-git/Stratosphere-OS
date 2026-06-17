@@ -1,4 +1,3 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
 type: research
 title: "Research: <Problem Space / Topic>"
@@ -6,7 +5,7 @@ description: ""
 timestamp: <YYYY-MM-DD>
 status: active | stale | superseded
 slug: <kebab-case-core-topic>
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Research: <Problem Space / Topic>

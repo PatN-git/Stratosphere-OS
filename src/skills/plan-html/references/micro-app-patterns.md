@@ -1,7 +1,7 @@
 ---
 name: micro-app-patterns
 description: micro-app-patterns
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 

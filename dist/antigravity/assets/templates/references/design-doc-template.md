@@ -1,4 +1,3 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
 type: interface-design
 title: "Design: BT-<padded> - <Feature Name>"
@@ -9,7 +8,7 @@ slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Design: BT-<padded> - <Feature Name>

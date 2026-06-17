@@ -1,6 +1,6 @@
 ---
 description: Guide for implementing design blueprints using shadcn/ui primitives.
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 

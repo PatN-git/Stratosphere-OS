@@ -3,7 +3,7 @@ type: design-rules
 title: Design Rules
 description: Project structural rules and operational design governance.
 timestamp: 2026-06-16
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 # DESIGN RULES

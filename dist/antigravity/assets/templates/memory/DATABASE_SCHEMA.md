@@ -3,9 +3,9 @@ type: database-schema
 title: Database Schema
 description: Authoritative schema layout, constraints, and relationships.
 timestamp: 2026-06-16
-version: "1.0.0"
+version: "1.0.1"
+updated: 2026-06-17
 ---
-
 # DATABASE SCHEMA
 
 ## Purpose

@@ -1,6 +1,9 @@
 ---
 type: constitution
-version: "1.0.0"
+name: GEMINI
+description: GEMINI
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 GEMINI.md

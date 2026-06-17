@@ -3,7 +3,7 @@ name: plan-html
 description: Generates interactive single-file HTML plans/matrices/micro-apps ONLY when human-facing and spatial layout/interaction structurally outperforms markdown. Defaults to markdown.
 type: skill
 trigger: AFK
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 

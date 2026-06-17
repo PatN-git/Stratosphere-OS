@@ -1,4 +1,3 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
 type: discovery-brief
 title: "Discovery: <one-line problem statement>"
@@ -7,7 +6,7 @@ timestamp: <YYYY-MM-DD>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 slug: <topic-slug>
 linked-prd: —
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>

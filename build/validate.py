@@ -56,7 +56,7 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         # Check BOM
         if md.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/{inv}/{md.name}")
-        k = fm_keys(md.read_text(encoding="utf-8"))
+        k = set(fm_dict(md.read_text(encoding="utf-8")).keys())
         required = {"name", "description", "version", "updated"}
         if not required.issubset(k):
             errs.append(f"{plat}/{inv}/{md.name} missing OKF keys. Found {k}")
@@ -64,7 +64,7 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         # Check BOM
         if sk.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/skills/{sk.parent.name}/SKILL.md")
-        k = fm_keys(sk.read_text(encoding="utf-8"))
+        k = set(fm_dict(sk.read_text(encoding="utf-8")).keys())
         required = {"name", "description", "version", "updated"}
         if not required.issubset(k):
             errs.append(f"{plat}/skills/{sk.parent.name} missing OKF keys. Found {k}")
@@ -132,7 +132,7 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
             if "version" not in k:
                 errs.append(f"{plat}/assets/templates/references/{ref_file.name} missing version -> {k}")
 
->>>>>>> origin/main
+
 
 # Also check python script files in dist for BOM
 for plat in ["dist/claude-code", "dist/antigravity"]:

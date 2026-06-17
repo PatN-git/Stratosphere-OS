@@ -3,7 +3,7 @@ type: status
 title: Status
 description: Session and active task focus state tracking.
 timestamp: 2026-06-16
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 # STATUS

@@ -2,7 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.2"
+version: "1.0.3"
 updated: 2026-06-17
 ---
 
