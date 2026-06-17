@@ -18,7 +18,11 @@ import re
 import shutil
 import stat
 import time
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "scripts"))
+import _versioning
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -188,6 +192,28 @@ def build_platform(kind: str):
             "author": AUTHOR,
         }
         write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
+
+    # 7. Generate versions.json
+    artifacts = {}
+    for root_dir, _, files in os.walk(out):
+        for f in files:
+            if not f.endswith(".md"): continue
+            p = Path(root_dir) / f
+            rel = p.relative_to(out).as_posix()
+            text = p.read_text(encoding="utf-8")
+            v, u, form = _versioning.read_version(text, p)
+            if v and form:
+                artifacts[rel] = {
+                    "version": v,
+                    "sha256": _versioning.body_hash(text, form),
+                    "updated": u
+                }
+    
+    versions_manifest = {
+        "plugin_version": VERSION,
+        "artifacts": artifacts
+    }
+    write_lf(out / "versions.json", json.dumps(versions_manifest, indent=2, sort_keys=True) + "\n")
 
     return out
 

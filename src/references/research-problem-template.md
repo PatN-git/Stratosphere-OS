@@ -1,3 +1,4 @@
+<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
 slug: <kebab-case-core-topic>
 updated: <YYYY-MM-DD>

@@ -1,3 +1,10 @@
+---
+name: memory-protocol
+description: memory-protocol
+version: "1.0.0"
+updated: 2026-06-17
+---
+
 # Memory Protocol
 
 Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.

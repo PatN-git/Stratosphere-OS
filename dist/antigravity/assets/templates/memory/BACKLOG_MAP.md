@@ -1,3 +1,4 @@
+<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 # BACKLOG MAP
 
 ## Purpose

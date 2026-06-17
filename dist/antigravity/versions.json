@@ -1,0 +1,215 @@
+{
+  "artifacts": {
+    "assets/templates/constitution/AGENT.md": {
+      "sha256": "0b6575f0d9cff3d26658175ea4b8a70c51847e17e658ae6f04248a88b08fc12b",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/constitution/CLAUDE.md": {
+      "sha256": "725f328a934d323b534c6468e768ead493835914089468e74dc755be55f067e1",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/constitution/GEMINI.md": {
+      "sha256": "73a790aace6bd70e9da43b13b7e0ee04ab23e1a6748ff11111b9b358e173e50c",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/ARCHITECTURE.md": {
+      "sha256": "7ecafdc27bd50b499364e80798a7d04eb2844b44ca87c183e1e8b83d816048a4",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/BACKLOG_MAP.md": {
+      "sha256": "06b30accffd533cb8d257609565a48616767ca7ce75d432f02eec78427f73726",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/DATABASE_SCHEMA.md": {
+      "sha256": "47c21b88ac49341c040fb3448e3a837f82dee2784d715187c829a7abc5ba55b6",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/DESIGN.md": {
+      "sha256": "c422ed8760648acb8e280fd7eae753fd900eaa457646f8157a4a7e07cfc07739",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/DESIGN_RULES.md": {
+      "sha256": "0d58d7b2051ff84aa944b793001ae1a767379530dd90033e2bdcfd9354400b08",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/GLOSSARY.md": {
+      "sha256": "c8e249eebd9589042c1ddb0a1d8dd82da0f0c132789d2e07d6fe969652240793",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/LEARNINGS.md": {
+      "sha256": "4ab807194aeb4e17d0cd9994d7a7f7da61533256f25728fd1cc059fd0553310b",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/memory/STATUS.md": {
+      "sha256": "64803993cb25a44cd039c85caad0e5e565383086e93e81d370f61298bd28838a",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/PRD-template.md": {
+      "sha256": "2bb3367efb2500a112df167025874ad07a2253e3f2bf18813755b8128d13ae44",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/brainstorm-techniques.md": {
+      "sha256": "a8555209d385d7dc5070709dfa1d015ed4481f46fa80cef27545dcc8b1fe3915",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/design-doc-template.md": {
+      "sha256": "d5120a3c0c50bb439f62f186c60583f45064f73f0fffe2efccef11aafdda6e21",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/discovery_brief_template.md": {
+      "sha256": "c837ea71437fc9acc4d0e846d401df8805c855d837a632584bbcaf8f3ba640fd",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/research-competitive-template.md": {
+      "sha256": "7793b88e7667db0f5790cc774011280067c60cb878f9e3657529b9a7c7003f7d",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/research-evidence-standards.md": {
+      "sha256": "00ee297c3d653d64c62d84c73efd4361cdefd23d149921da0f42cd6fe394cec5",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/research-problem-template.md": {
+      "sha256": "dd1264a8644e3c6db0691b144e5fdc32fca056cbe8ade6a8c174e964d4018716",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/shadcn-build-guide.md": {
+      "sha256": "1a004d62cf78ac57965ead4b75ad4864bc44ee3e8ce7d0f96ca25cb21562c2b5",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/stitch-brief-guide.md": {
+      "sha256": "4a7fbc77ff8965313f9922e622640e85c9d660fa984c0989889f23cd9d28426e",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/rules/memory-protocol.md": {
+      "sha256": "a5c59495e6a0f001eea2eb7bf274bd326c19f0707b0a86a1078ae7259928110d",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "assets/templates/rules/output-mode.md": {
+      "sha256": "c2f55130e6c43288f6a0863e95c12a7f98f1681f101c5568e9e90a10a38f7b34",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/micro-tdd/SKILL.md": {
+      "sha256": "39a898e1905a3cf86623124b13499512d4615abc8e95d7441aade1e3220b1216",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/plan-html/SKILL.md": {
+      "sha256": "8c6518f70008b3c5d8ae8f6c8d7f95a7ccaa5bc467b9a1f3779de8d5b026b799",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/plan-html/assets/templates/index.md": {
+      "sha256": "ffc74b55ef9b3f568e5ea25456004f0266cfda0713522b1a85ead4e39d61adb8",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/plan-html/references/html-patterns.md": {
+      "sha256": "b2ee8ba16ca7e0e964548e17814c4863c75bcf30ee1b4ebbde46ccf0a22ef5c9",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/plan-html/references/micro-app-patterns.md": {
+      "sha256": "4b94e175d14852168ab1e79b0ddcfbfa068fd63839fab8993ec5eb0c084cdb06",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "skills/stratosphere-setup/SKILL.md": {
+      "sha256": "8a4181740a30c3eb4c23a9dd89f89143ffdb0f6d8da145ddec0a44113571b311",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/0a_start-session.md": {
+      "sha256": "56e93d89ab387b3ee7b91ab1f6f7233c7c0384a35aad9e5cf19a9c01556eb7dc",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/0b_stop-session.md": {
+      "sha256": "635c94686e2e6c7beaa08a62c3757909aa85532a438779f4bdc419867522d061",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/0c_handoff.md": {
+      "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/0d_nightly-consolidation.md": {
+      "sha256": "af4e6813205984efb76e84230bfa078aeadfef284fbb4ad9fb5f4150620eb2f9",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/1a_research.md": {
+      "sha256": "b21264a70172e00424d0de5ca97c64816c21ff52db59ebe6221ef0c38df6eee4",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/1b_concept-framing.md": {
+      "sha256": "b4e128479fbff1ff9d46f0daa644801cb59d2ccbf28fc32295fcecf9da15265f",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/2a_write-prd.md": {
+      "sha256": "e5ba8e913dfd29539f149b517854ee8cea78e5220f971adf2db88d69a75399a3",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/2b_interface-design.md": {
+      "sha256": "b14d26b1b3606fb2dfecfdef8a7a43f78be4eab4aa3bc0ec51fe5b8659f4ec1f",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/3a_create-issue.md": {
+      "sha256": "39952b5f39e104d7266b40ab84e80227a9ce5a582bc0e2b8786ee7193fc4246b",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/3b_sprint-planning.md": {
+      "sha256": "ec27a8e83d332ab399be643ea9a4c3d41727661a6502929c353a140e277c91b5",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/3c_implement-issue.md": {
+      "sha256": "38fd8b3b6a28ef3669e730aba6164967629c4003f6cc6b910b1bdea5c27bd03a",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/4a_verify-and-ship.md": {
+      "sha256": "ca43159fd78e33762161f5cefeac8e738abe868921611dcfbad0735d52e5676b",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/4b_audit-architecture-drift.md": {
+      "sha256": "e7485422f1024967478395b29a3e43a4257dc79d5c7769ef210171cb84673406",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    },
+    "workflows/sync-skills.md": {
+      "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
+      "updated": "2026-06-17",
+      "version": "1.0.0"
+    }
+  },
+  "plugin_version": "1.0.0"
+}

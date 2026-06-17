@@ -1,3 +1,10 @@
+---
+name: micro-app-patterns
+description: micro-app-patterns
+version: "1.0.0"
+updated: 2026-06-17
+---
+
 # Micro-App Protocol & Patterns
 
 Use Micro-Apps when the user needs to configure data, adjust parameters, or perform visual adjustments that produce config schemas/states to be fed back into code.

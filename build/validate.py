@@ -1,7 +1,11 @@
 import json
 import re
 import sys
+import subprocess
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "scripts"))
+import _versioning
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 errs = []
@@ -80,6 +84,34 @@ for md_file in md_files_to_scan:
                 errs.append(f"BROKEN REFERENCE in {md_file.relative_to(root)}: '{ref_name}' does not exist in src/references/")
     except Exception as e:
         errs.append(f"ERROR reading {md_file} during reference validation: {e}")
+
+# 5. Version format and bump-guard validation
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    versions_file = root / plat / "versions.json"
+    if not versions_file.exists():
+        errs.append(f"MISSING {versions_file}")
+        continue
+        
+    try:
+        built_manifest = json.loads(versions_file.read_text(encoding="utf-8")).get("artifacts", {})
+    except Exception as e:
+        errs.append(f"BAD JSON {versions_file}: {e}")
+        continue
+        
+    try:
+        git_path = versions_file.relative_to(root).as_posix()
+        prev_json = subprocess.check_output(["git", "-C", str(root), "show", f"HEAD:{git_path}"], stderr=subprocess.STDOUT).decode("utf-8")
+        prev = json.loads(prev_json).get("artifacts", {})
+    except Exception:
+        prev = {}
+        
+    for path, meta in built_manifest.items():
+        v = meta.get("version", "")
+        if not _versioning.SEMVER.match(v):
+            errs.append(f"{plat}/{path}: version '{v}' is not semver x.y.z")
+            
+        if path in prev and meta["sha256"] != prev[path]["sha256"] and meta["version"] == prev[path]["version"]:
+            errs.append(f"{plat}/{path}: content changed but version not bumped (still {meta['version']})")
 
 # 3. Counts
 for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:

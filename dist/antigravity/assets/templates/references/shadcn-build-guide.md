@@ -1,3 +1,10 @@
+---
+name: shadcn-build-guide
+description: shadcn-build-guide
+version: "1.0.0"
+updated: 2026-06-17
+---
+
 # Shadcn Build Guide
 > Distilled reference for implementing a frozen design blueprint in shadcn/ui. Consumed by `3c`.
 

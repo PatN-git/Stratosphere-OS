@@ -1,3 +1,10 @@
+---
+name: stitch-brief-guide
+description: stitch-brief-guide
+version: "1.0.0"
+updated: 2026-06-17
+---
+
 # Stitch Brief Guide
 > Distilled reference. §A consumed by `2b` Phase 3 (brief assembly); §B by brownfield bootstrap.
 

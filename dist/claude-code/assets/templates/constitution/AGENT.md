@@ -1,6 +1,8 @@
 ---
 name: Lean Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
+version: "1.0.0"
+updated: 2026-06-17
 ---
  
 # THE LEAN ARCHITECT

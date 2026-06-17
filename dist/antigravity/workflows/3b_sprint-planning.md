@@ -3,6 +3,8 @@ name: 3b_sprint-planning
 description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, sequences a 10-day capacity block into GitHub phases.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.0"
+updated: 2026-06-17
 ---
 
 # Sprint planning
