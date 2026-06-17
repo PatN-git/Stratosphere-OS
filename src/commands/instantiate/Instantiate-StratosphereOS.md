@@ -27,15 +27,27 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 
 The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
 
-## Path detection
+## Version Control Setup & Path Detection
 
-Before any file operations, decide and state the path in one line:
+Before any file operations:
 
-- **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
-  - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
-    `No git repository is initialized in this project. Initialize a git repository? [y/N]`
-  - If they answer yes, initialize it by running `git init` before continuing.
-- **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
+1. **Initialize Git (Greenfield only):**
+   - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
+     - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
+       `No git repository is initialized in this project. Initialize a git repository? [y/N]`
+     - If they answer yes, initialize it by running `git init` before continuing.
+   - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
+
+2. **Verify GitHub CLI (Optional):**
+   - Check if the GitHub CLI (`gh`) is installed and authenticated. Run `gh --version` and `gh auth status` (be sure to clear the `GITHUB_TOKEN` environment variable if running tests to verify the user's persistent credentials).
+   - If `gh` is not installed or not authenticated, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
+     `GitHub CLI (gh) is recommended for automating PRs and issue management. It is not set up/authenticated. Would you like to pause to set it up now? [y/N]`
+   - If the user selects **Yes**:
+     - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal.
+     - Wait for the user to complete authentication before proceeding.
+   - If the user selects **No**:
+     - Proceed, but document in `.memory/STATUS.md` that GitHub CLI is unavailable. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6) and fall back to local file-based tracking.
+
 
 ## Checkpoint 0: Scaffold (deterministic — both paths)
 
@@ -157,6 +169,9 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, and common credential files; if missing, **propose** adding them (don't silently edit).
 
 ## Checkpoint 6: Label Reconciliation (both paths)
+
+> [!NOTE]
+> **GitHub CLI Fallback:** If the GitHub CLI (`gh`) is unavailable or unauthenticated (because the user declined setup in the Version Control Setup step), skip all automated remote GitHub operations (Steps 1-4). Instead, skip directly to Step 5 using the template's canonical labels for the local registry, and inform the user they will need to manage remote labels manually on GitHub.
 
 GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`) are system-level constants and must always match the registry.
 
