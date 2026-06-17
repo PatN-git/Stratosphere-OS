@@ -2,7 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.0"
+version: "1.0.1"
 updated: 2026-06-17
 ---
 
@@ -72,12 +72,18 @@ python <plugin>/scripts/scaffold.py --dry-run
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b_stop-session`)
 - `.gitignore` (only if missing)
 
-**Drift check (re-runs / brownfield):** the script leaves existing files untouched and lists them under `LEFT AS-IS`. For each, compare against its template and **ask the user before changing** — never overwrite silently. Look for:
-- Missing required top-level sections (e.g., `## Active Entries`, `## Superseded`)
-- Missing required metadata blocks (Trust Tags reference, Label Registry, Immortal Components)
-- Renamed or removed required headers
+**Update & Drift check (re-runs / brownfield):** The scaffolder script leaves existing files untouched and lists them under `LEFT AS-IS`. It also drops `.agents/.stratosphere-lock.json` containing the baseline hashes of what was installed.
 
-Report differences as a list and await per-file confirmation. Templates live under the plugin's `assets/templates/{constitution,memory,rules,references}/` if you need to read one for comparison.
+If the lockfile exists, compare the current project state against the bundled `versions.json` from the plugin:
+1. Identify **Updates**: Bundled `version` > locked `version`.
+2. Identify **Drift**: Current workspace file hash != locked `sha256_at_install` hash.
+
+For any file that requires an update or has drifted:
+- **Do NOT just tell the user to manually analyze the differences.**
+- **Do NOT overwrite silently or insert raw git conflict markers.**
+- Instead, **you (the agent) must prepare a merge plan**: Analyze the new bundled template, analyze the user's current drifted file, and prepare an intelligent merge plan that applies the new template structure/rules while preserving the user's custom project data (e.g., custom trust tags, immortal components, specific logic).
+- Present this merge plan to the user for **explicit approval**.
+- Once the user approves, execute the merge to update the files.
 
 ## Checkpoint 1: Workspace rules in effect (both paths)
 
