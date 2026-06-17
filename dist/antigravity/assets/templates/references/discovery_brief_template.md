@@ -3,6 +3,7 @@ slug: <topic-slug>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 created: <YYYY-MM-DD>
 linked-prd: —
+version: "1.0.0"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>
@@ -47,6 +48,12 @@ linked-prd: —
 <Residual ambiguity. write-prd absorbs these into PRD §10.>
 
 1. <Question> — owner: <who>, blocking: Y/N
+
+## Riskiest Assumption
+- **Riskiest Assumption:** <The single fatal assumption; e.g., "both sides of marketplace show up">
+- **Why Fatal:** <Why the concept fails if this assumption is wrong>
+- **Cheapest Test:** <cheapest_test ∈ {landing page + waitlist | N DMs | fake-door button | rough mock shown to 5}>
+- **Status:** untested | running | survived | failed
 
 ## Recommended Next Step
 - [ ] `write-prd` — problem is sharp, PRD-worthy

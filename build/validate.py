@@ -56,6 +56,25 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         if "name" not in k or "description" not in k:
             errs.append(f"{plat}/skills/{sk.parent.name} missing name/description -> {k}")
 
+# 2.5. Frontmatter version check on reference files
+for ref_file in (root / "src/references").glob("*.md"):
+    if ref_file.read_bytes().startswith(b'\xef\xbb\xbf'):
+        errs.append(f"BOM DETECTED in src/references/{ref_file.name}")
+    k = fm_keys(ref_file.read_text(encoding="utf-8"))
+    if "version" not in k:
+        errs.append(f"src/references/{ref_file.name} missing version -> {k}")
+
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    ref_dir = root / plat / "assets/templates/references"
+    if ref_dir.exists():
+        for ref_file in ref_dir.glob("*.md"):
+            if ref_file.read_bytes().startswith(b'\xef\xbb\xbf'):
+                errs.append(f"BOM DETECTED in {plat}/assets/templates/references/{ref_file.name}")
+            k = fm_keys(ref_file.read_text(encoding="utf-8"))
+            if "version" not in k:
+                errs.append(f"{plat}/assets/templates/references/{ref_file.name} missing version -> {k}")
+
+
 # Also check python script files in dist for BOM
 for plat in ["dist/claude-code", "dist/antigravity"]:
     for py in (root / plat / "scripts").glob("*.py"):

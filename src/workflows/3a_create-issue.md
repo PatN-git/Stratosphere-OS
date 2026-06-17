@@ -22,19 +22,35 @@ Before creating the task, propose the breakdown to the user:
     -   **Title:** [Short name]
     -   **Logic/user story:** Why is this a vertical slice? (Briefly explain the end-to-end path).
     -   **Blocked by:** [IDs of prerequisite slices]
+    -   **Inheritance:** Each slice inherits the **scope-class** (`scope:baseline` or `scope:differentiator`) and the **ODI score** (if present) of the PRD §6 story it implements. Slices are **not** created for `[DEFERRED]` stories (mirrored in PRD §9).
+
 2.  **Prioritization Metrics (Template A spikes: skip):**
-    -   Prompt for **Impact**, **Confidence**, and **Size** (Effort) based on these fixed scales:
+    -   **Impact from ODI when present:** Map the story's ODI score to the Impact value:
+        -   `ODI < 5` → `0.25`
+        -   `5 <= ODI <= 8` → `0.5`
+        -   `9 <= ODI <= 12` → `1.0`
+        -   `13 <= ODI <= 16` → `2.0`
+        -   `17 <= ODI <= 20` → `3.0`
+        -   *(Note: ODI sets Impact magnitude, but scope-class governs ordering — a high-ODI baseline does not jump ahead of a differentiator on sequencing)*
+    -   **Confidence from ODI when present:** Map the story's ODI confidence tag to the Confidence value:
+        -   `[HIGH]` → `100%`
+        -   `[MEDIUM]` → `80%`
+        -   `[LOW]` → `50%`
+    -   **Fallback (ODI absent):** Prompt the user for both **Impact** and **Confidence** based on these fixed scales:
         -   **Impact:** ∈ {0.25 (minimal), 0.5 (low), 1.0 (medium), 2.0 (high), 3.0 (critical)}
         -   **Confidence:** ∈ {50% (guess/speculative), 80% (high confidence/known implementation), 100% (absolute certainty/trivial)}
+    -   Prompt for **Size** (Effort) based on this fixed scale:
         -   **Size:** ∈ {size:small (Effort weight = 1, ~1h capacity), size:medium (Effort weight = 2, ~6h capacity), size:large (Effort weight = 3, ~12h capacity)}
+
 3.  **Coverage Check** (Template A spikes: skip):
     -   **PRD-sourced:** Invoke a Coverage Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) to perform the coverage check.
         -   **Input:** Pass the proposed slice list (titles + Path/layer bullets) *inline* to the prompt.
         -   **Subagent Reads:** Instruct the subagent to read `docs/prds/BT-<padded>-<name>.md` (§6 + §8) and, if present, `docs/design/BT-<padded>-interface.md` fresh from the file system.
         -   **Guardrails:** *"Report the coverage map only; do not create issues or edit any file."*
-        -   **Output Contract:** The subagent must return the coverage map only (mapping every §6 story / §8 DoD item / blueprint element to the covering slice or `[UNCOVERED]`).
+        -   **Output Contract:** The subagent must return the coverage map only (mapping every `[BASELINE]` and `[DIFFERENTIATOR]` §6 story, §8 DoD item, and design blueprint element to the covering slice or `[UNCOVERED]`). **[DEFERRED] stories / §9 Out of Scope items are intentionally out and must be treated as covered/excluded (not [UNCOVERED]).** The subagent walks the **journey-grouped** §6 stories.
         -   **Loop Optimization:** Re-spawn the Coverage Auditor *only* when the slice list materially changes (e.g., slices added/removed/re-scoped), not on cosmetic edits (e.g., renames, ICE tweaks).
         -   **Resolution:** For flagged gaps: uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope / mark "covered by construction". slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`. slice blocked by an open §10 Question → Enforce Template A.
+
     -   **No PRD:** restate captured intent as a requirement list; map slices to it. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs.
     -   Present the map with the slice list.
 4.  **Approval Request:**
@@ -52,8 +68,9 @@ Before creating the task, propose the breakdown to the user:
     -   **ICE >= 0.5:** `priority:high`
     -   **0.15 <= ICE < 0.5:** `priority:medium`
     -   **ICE < 0.15:** `priority:low`
-3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body.
-4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`) to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders).
+3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body. **Apply the scope label (`scope:baseline` or `scope:differentiator`) based on the slice's inherited scope-class.**
+4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`), size label (e.g. `size:medium`), type label, and **scope label (e.g. `scope:baseline`)** to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders).
+
 
 ---
 
@@ -97,6 +114,9 @@ Reference current `files:lines`. Why it's broken or missing.
 ## Acceptance Criteria (Verifiable)
 - [ ] **Verification:** [Specific test/run command]
 - [ ] Feature is demoable end-to-end.
+- [ ] **Time-to-Value:** Meets the aha-moment time-to-value constraint (from design doc).
+- [ ] **Stress Cases:** Implements the handling for relevant adverse conditions in the Stress Matrix (from design doc).
+
 ## Dependencies
 - **[[ID]] first** (blocks/blocked-by).
 ## Notes

@@ -10,6 +10,7 @@ Load ONLY the single template file matching the scenario. Never load all files.
 | `status-report` | `status-report.html` | KPI dashboard, health indicators, metric cards |
 | `incident-timeline` | `incident-timeline.html` | Chronological events with severity/impact coloring |
 | `decision-record` | `decision-record.html` | ADR-style: context, options considered, final decision, consequences |
+| `wireframe-compare` | `wireframe-compare.html` | 3 lo-fi UI direction sketches side-by-side for a pick |
 
 ## No match?
 If content doesn't fit any template, use `custom-composition` mode:

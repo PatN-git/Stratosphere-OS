@@ -2,6 +2,7 @@
 slug: <kebab-case-core-topic>
 updated: <YYYY-MM-DD>
 status: active | stale | superseded
+version: "1.0.0"
 ---
 
 # Research: <Topic>
@@ -27,7 +28,34 @@ status: active | stale | superseded
 - **Key Weaknesses:** <Sourced gaps, common customer complaints, pricing friction, or architectural limits>
 - **Differentiators vs. Us:** <What they can/cannot do compared to our candidate capabilities>
 
+## Competitor Gap Matrix
+> **Note:** This is a needs×solutions, product-agnostic matrix to identify market gaps. For mapping specific capabilities once a candidate exists, see [Feature Comparison Matrix](#feature-comparison-matrix).
+
+Identify top unmet Needs and evaluate how 3–7 real solutions people use today (including ugly substitutes like spreadsheets or "I don't bother") handle them. Sourced from user reviews (e.g., G2, Capterra, app stores) and evidence-backed; never guess.
+
+| Unmet Need | Solution 1 (e.g., Competitor A) | Solution 2 (e.g., Excel) | Solution 3 (e.g., "Do nothing") | Notes / Evidence |
+| :--- | :--- | :--- | :--- | :--- |
+| <Need 1> | `does it well` / `does it poorly` / `doesn't do it` | | | |
+| <Need 2> | | | | |
+
+**Reading Rule:**
+- If **every** solution is weak in a row (`does it poorly` or `doesn't do it`), it is a **Gap** (Differentiator Candidate).
+- If **any** solution is strong in a row (`does it well`), it is **Table Stakes** (Baseline Candidate).
+
+## Opportunity Scoring
+For each Need listed above, assign a **Served** score (1-10) indicating how well today's tools address the need (bitter reviews = low, "it does that fine" = high). Use the **Pain** score (1-10) from the problem research to calculate the Opportunity score:
+\[\text{Opportunity} = \text{Pain} + \max(0, \text{Pain} - \text{Served})\]
+*(Formula Range: ~5 to 20. Top-ranked items represent the most underserved needs.)*
+
+| Need | Pain (1-10) | Served (1-10) | Opportunity (5-20) | Evidence / Citation | Confidence [HIGH/MEDIUM/LOW] |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| <Need 1> | | | | | |
+| <Need 2> | | | | | |
+
+*Rank by Opportunity score descending.*
+
 ## Feature Comparison Matrix
+> **Note:** This is a capability×competitor positioning view used once a candidate product exists. For identifying broader market gaps and opportunity scoring, see [Competitor Gap Matrix](#competitor-gap-matrix).
 
 | Capability / Feature | Us (Candidate) *(If running before concept framing (no defined product), mark as `[To be defined in concept framing]`)* | <Competitor 1> | <Competitor 2> | Notes |
 | :--- | :--- | :--- | :--- | :--- |

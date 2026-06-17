@@ -1,3 +1,8 @@
+---
+description: Standards and confidence ratings to ensure research is verifiable and evidence-backed.
+version: "1.0.0"
+---
+
 # Evidence Standards for Research Artifacts
 
 These standards ensure all research remains high-integrity, verifiable, and free from hallucinated or speculative claims. They apply to all research domains (Competitive and Problem-Space) and depth modes.
@@ -18,6 +23,8 @@ These standards ensure all research remains high-integrity, verifiable, and free
 - **Decision-Driving / Load-Bearing Claims:**
   - **Definition:** A claim that, if wrong, would change the research conclusion or the recommended next step.
   - **Triangulation Rule:** Regardless of Quick vs. Deep depth mode, any decision-driving/load-bearing claim OR `[HIGH]` confidence claim **requires at least two independent, different-type sources** (e.g., official docs + GitHub issue, or academic paper + industry report) after collapsing common origins. Single-sourced load-bearing claims are strictly prohibited.
+  - **URL Verification Rule:** Every `[HIGH]` and every load-bearing citation must be machine-verified: a subagent fetches the URL and confirms it resolves AND its content supports the claim, returning a short supporting excerpt. Unreachable, redirected, or unsupported citations are removed or downgraded to `[LOW]`/`[Unknown]`; paywalled/403 → `[Requires trial]`. No URL may be published without a fetch confirmation. Mandate the actual fetch (do not use plausibility-only reasoning).
+
 
 ---
 
@@ -38,7 +45,11 @@ All feature, market, and technological claims must be annotated with one of the 
 If information is missing or unverified, do not attempt to guess or infer it. Mark it explicitly:
 - Use `[Not publicly available]` if information cannot be found via open searches.
 - Use `[Requires product trial]` if accessing the information requires signing up for an enterprise account, active payment, or a custom sales demo.
+- Use `[Unknown]` if a value does not yet exist.
+- Use `[unverified estimate — confirm]` if a figure is stated without a cited source, pending user confirmation (used in PRD §12).
+- Use `[unbacked]` if a scope-class tag is assigned by judgment with no research backing, pending user confirmation (used in PRD §6).
 - Suggest explicit follow-up steps (e.g., "Run a trial account using secondary email to verify feature X").
+
 
 ---
 

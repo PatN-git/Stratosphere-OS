@@ -12,7 +12,8 @@ trigger: User. Do not run autonomously.
 ---
 
 ## Phase 1: Surface & Scope Gate
-*Resume check: if `docs/design/BT-<padded>-interface.md` already exists with `status: draft`, do NOT restart. Read it, recover the path/branch from `surface` and the body block, and resume — Path B/C at Phase 4; Path A at Phase 4 if a `## Stitch Brief (issued)` section is present in the doc, else Phase 3.*
+*Resume check: if `docs/design/BT-<padded>-interface.md` already exists with `status: draft`, do NOT restart. Read it, recover the path/branch from `surface` and the body block, and resume — Path B/C at Phase 4 (or Phase 2.5 if direction not yet selected); Path A at Phase 4 if a `## Stitch Brief (issued)` section is present in the doc, else Phase 3 (or Phase 2.5 if direction not yet selected).*
+
 
 1. Load PRD from `docs/prds/BT-<padded>-<feature>.md`.
 2. If there is NO external surface/code change (docs-only/process) → skip this workflow; handoff to `/3a_create-issue`.
@@ -25,12 +26,28 @@ trigger: User. Do not run autonomously.
 ## Phase 2: Design Doc Initialization
 1. Instantiate `docs/design/BT-<padded>-interface.md` from the template.
 2. Populate the metadata shell (`slug`, `bt`, `prd`, `surface` = `ui-stitch-page|ui-stitch-feature|ui-manual|non-ui`, `status`: `draft`, `updated`). Ensure `surface` matches the chosen path (Path A → `ui-stitch-page|ui-stitch-feature`; Path B → `ui-manual`; Path C → `non-ui`).
-3. Fill the narrative sections (Surface & Scope, Actors & Core Flows, States/Edge Classes) from the PRD now — before any pause. Keep exactly ONE body block.
-4. Classify the run: **bootstrap** = `.memory/DESIGN.md` still carries shipped placeholders (`<Project Name>`, `<font-family>`) or no project-specific tokens; **steady-state** = real project tokens populated (name set, fonts chosen). On bootstrap, also apply Phase 4's **Greenfield Bootstrap Deltas** block.
+3. **Define the Aha Moment & Time-to-Value:** Ask *"What is the single moment the user first feels this was worth it, and how fast can they reach it after signup (aim: first 30 seconds)?"* Design the flow backward from it: strip blockers between entry and aha, no carousels/intro slideshows, drop the user into the core thing. (Path C: aha = "time to first successful API call / first integration").
+4. Fill the narrative sections (Surface & Scope, Actors & Core Flows, Aha Moment & Time-to-Value, States/Edge Classes) from the PRD now — before any pause. Keep exactly ONE body block.
+5. Classify the run: **bootstrap** = `.memory/DESIGN.md` still carries shipped placeholders (`<Project Name>`, `<font-family>`) or no project-specific tokens; **steady-state** = real project tokens populated (name set, fonts chosen). On bootstrap, also apply Phase 4's **Greenfield Bootstrap Deltas** block.
+
+## Phase 2.5: Diverge & Select Direction
+*Runs after narrative sections, before the Stitch brief (Path A) or native freeze (Path B/C). This is a surface-openness gate.*
+
+1. **Gate Evaluation:**
+   - **Whole-page / new page / full redesign** (Path A branch A1; Path B new-page) → **Always diverge**: Propose 3 genuinely different lo-fi layout directions.
+   - **Feature-on-existing** (Path A branch A2; Path B feature) → **Default skip** (design space is small and shielded by Immortal Components). Only offer divergence if you detect ≥2 genuinely viable layouts.
+   - **Path C (non-UI/Backend)** → Generate 3 architecture/API alternatives (e.g. synchronous REST vs. RPC vs. asynchronous event-bus). Use the PRD §12 cost warning to inform the choice.
+2. **Generate 3 Directions (Fidelity note: wireframe-level sketches, system fonts, layout/structure only, no pixel comps):**
+   - **UI (Path A/B):** Focus on solving the core flow in the simplest way optimized for the aha moment, using real-ish content. If greenfield (empty `DESIGN.md`), wireframes fix layout/structure only (no tokens); Stitch's visual language exploration is reserved for the winning layout (2-3 visual treatments of the chosen structure, not 3 layouts).
+   - **Invoke `plan-html` skill:** Use the `wireframe-compare` template if available, or compose a custom 3-column CSS-grid board saving to `docs/design/BT-<padded>-directions.html`. Columns show layout regions as labeled boxes (header/nav/content/CTA) + 1-line rationale. Include a `trade-off-matrix` row scoring the 5 lenses.
+3. **5-Lens Gut-Check & Select:** Evaluate each direction against the 5 lenses: desirable, usable, feasible, viable, and ethical. If the chosen direction stumbles on one, tweak it.
+4. **HITL Pick:** Show the user the comparison. The user selects a direction or cherry-picks elements. Combine into a single winner. Record the winning direction and rejected alternatives in the design doc under `## Direction Alternatives (Considered)`.
+
 
 ## Phase 3: Stitch Brief & Pause (PATH A ONLY)
 *(Path B and Path C skip straight to Phase 4)*
-1. Assemble a copy-pastable Stitch brief: scope (A1 whole-page vs A2 feature-region ONLY); the regions/states/breakpoints to design (pull from the States section just written); and the governing §3 Immortal Components stated as HARD layout constraints — shielded for A2; for A1, note net-new layout will be registered as an Immortal Component on resume. Do NOT inline `DESIGN.md` token values into the brief. Follow `.agents/workflows/.reference/stitch-brief-guide.md` §A for brief quality.
+1. Assemble a copy-pastable Stitch brief for the **winning direction only** (do not request 3 variants in one canvas). Specify: scope (A1 whole-page vs A2 feature-region ONLY); the regions/states/breakpoints to design (pull from the States section just written); and the governing §3 Immortal Components stated as HARD layout constraints — shielded for A2; for A1, note net-new layout will be registered as an Immortal Component on resume. Do NOT inline `DESIGN.md` token values into the brief. Follow `.agents/workflows/.reference/stitch-brief-guide.md` §A for brief quality.
+
 2. Instruct the user to set `.memory/DESIGN.md` as the project **Design System** in Stitch (UI → Modify → Design System); Stitch treats it as hard constraints ([[DR-011]]). The Stitch MCP, if connected, is for PULLING the generated design/code back at ingest (Phase 4) — it does not push context ([[DR-015]]). *(Bootstrap exception: if DESIGN.md is empty, skip this; pass any brand intent from the PRD and let Stitch propose the initial visual language — optionally use Stitch's "extract design system from URL" on a reference site to seed it.)*
 3. Write the assembled brief into the design doc under a `## Stitch Brief (issued)` section (so it survives a context reset), then output it and HALT with resume instructions, e.g.: *'Stitch brief ready (saved to the design doc). Design in Stitch, then return and say resume to ingest and freeze.'*
 
@@ -41,16 +58,32 @@ trigger: User. Do not run autonomously.
 1. Ingest the layout (Stitch MCP if connected, else copy/paste export).
 2. Token Snap — map Stitch hex/px to existing `DESIGN.md` tokens (DR-009). (Note: px values in DESIGN.md YAML are anchor targets; the Tailwind impl uses fluid clamps per DR-003 — not a conflict).
 3. Immortal Components: A1 → propose the new shell as a §3 Immortal Component to the user; **on confirmation, register it in `.memory/DESIGN_RULES.md` §3 immediately** (the design moment is when structure is decided — do not defer to 0b); A2 → discard any Stitch changes to global shell components (DR-008/DR-010).
-4. Freeze the resolved layout/hierarchy into the Path A body block. `status` → `ready-for-slicing`.
-5. Read Rule: Stitch is read ONCE and frozen. Downstream readers of this doc (`3a`, `3c`, `4a`) read ONLY the frozen doc, `DESIGN.md`, and `DESIGN_RULES.md`; `4b` audits `.memory/`. Never access live Stitch.
+4. Run the **UX / System Stress Test** (see below).
+5. Freeze the resolved layout/hierarchy into the Path A body block. `status` → `ready-for-slicing`.
+6. Read Rule: Stitch is read ONCE and frozen. Downstream readers of this doc (`3a`, `3c`, `4a`) read ONLY the frozen doc, `DESIGN.md`, and `DESIGN_RULES.md`; `4b` audits `.memory/`. Never access live Stitch.
 
 ### Path B (Reference-driven native):
 1. Conform to the frozen `DESIGN.md` + §3 Immortal Components. References are optional at steady-state — gather them only if the feature intentionally extends the system (the agent MAY fetch/inspect URLs to extract patterns).
 2. Immortal Components: new page / full redesign → propose registering the new shell as a §3 Immortal Component to the user; on confirmation, register it in `.memory/DESIGN_RULES.md` §3 immediately (do not defer to 0b); feature-on-existing → conform to / shield existing components.
-3. Write the blueprint into the Path B body block. `status` → `ready-for-slicing`.
+3. Run the **UX / System Stress Test** (see below).
+4. Write the blueprint into the Path B body block. `status` → `ready-for-slicing`.
 
 ### Path C (Non-UI interface contract):
-1. Define API signatures, schemas, I/O params, behavioral invariants, and the input edge-case matrix; write into the Path C body block. `status` → `ready-for-slicing`.
+1. Define API signatures, schemas, I/O params, behavioral invariants, and the input edge-case matrix; write into the Path C body block.
+2. Run the **UX / System Stress Test** (see below).
+3. Set `status` → `ready-for-slicing`.
+
+### UX / System Stress Test
+Before freezing and setting `status` → `ready-for-slicing` in any path:
+1. **Subagent — "Stress Tester":** Invoke a subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type).
+   - **Input:** Provide the actors/flows/states and the resolved blueprint summary.
+   - **Reads:** The design doc fresh from the filesystem.
+   - **Guardrails:** *"Report the matrix only; do not edit any file."*
+   - **Output Contract:** A path-aware matrix: `adverse condition → failure mode → required handling`.
+     - *UI (Path A/B):* bad signal, low battery, distracted/"rough day".
+     - *Path C (non-UI):* network partition, malformed payload, DB lock, retry storm.
+2. **Extend the design doc:** Write this stress matrix directly into the existing `## States / Edge Classes` section (do not create a duplicate section).
+
 
 ### Greenfield Bootstrap Deltas
 *Apply ONLY when Phase 2 classified this run as bootstrap (`.memory/DESIGN.md` empty/skeleton). The first UI feature establishes the design system — override the steady-state steps above:*

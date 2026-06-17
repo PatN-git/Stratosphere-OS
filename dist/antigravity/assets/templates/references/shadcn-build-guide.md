@@ -1,3 +1,8 @@
+---
+description: Guide for implementing design blueprints using shadcn/ui primitives.
+version: "1.0.0"
+---
+
 # Shadcn Build Guide
 > Distilled reference for implementing a frozen design blueprint in shadcn/ui. Consumed by `3c`.
 
