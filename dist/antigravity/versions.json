@@ -1,0 +1,225 @@
+{
+  "artifacts": {
+    "assets/templates/constitution/AGENT.md": {
+      "sha256": "82d5e798ee1235b159d47e54b676dbdd8aeda362cbf20490442fc3dac3f210dc",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/constitution/CLAUDE.md": {
+      "sha256": "e55fa3202e00763afde8a8ad118ec5d74a74b120485f1f8baf38cecf89a60992",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/constitution/GEMINI.md": {
+      "sha256": "dca914b8255931c3185e3ac7bfaca0d514b82790b57f1f6d266837e60691256e",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/ARCHITECTURE.md": {
+      "sha256": "03b977997f8aec1948fdd94de2c35fa11b3e394adb5a393fca3fd37032701d7e",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/BACKLOG_MAP.md": {
+      "sha256": "152c4b1ccad2172cf27d5c1fb2871dbd7ef3aa59c9e1ab5021f72a81af5a1833",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/DATABASE_SCHEMA.md": {
+      "sha256": "1903c6950b4411c86cfdace3a46b8bc41f9471d62334fcb73987b47394656a59",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/DESIGN.md": {
+      "sha256": "71f0e202c93fecd7a1f49e3ba64372fb78881d67babc1149bc0badc292e6c29d",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/DESIGN_RULES.md": {
+      "sha256": "420723cd2bbdafef764e4cfff62033283687dc770ed2241764b69cf7e3c6bd89",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/GLOSSARY.md": {
+      "sha256": "96b18b4d133900671f8c16dfdc8348f53c2c43f3981f4a465728f9327268ad20",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/LEARNINGS.md": {
+      "sha256": "f450c60b38a3769b988a28adcc3684dc35ec01f183fd90f34b816df204eb89e7",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/memory/STATUS.md": {
+      "sha256": "8278c4e3e8a39bd1ed1bb64831d79de080d016cc4a8b551884657c1e2aff6a28",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/PRD-template.md": {
+      "sha256": "1de061dfcaf1b428aed57708092c4c7a8454b7e4389b8fd95dec73540516ff68",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/brainstorm-techniques.md": {
+      "sha256": "de88c7d299e788f8bd0fa21510b1fd2a7f15fa3ecc705ad5bed27ef8c3852e67",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/design-doc-template.md": {
+      "sha256": "4088575a1637ca624e9ed5e4ecf79561b4e2ee7c59eb014e1b9bbdf771d85bb9",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/discovery_brief_template.md": {
+      "sha256": "ce8f38347989814a09c4e67525acc1c61a08cbffe849d5ac8cde1656467736ec",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/multi-sided-discovery.md": {
+      "sha256": "3353663be806ad8734781a3d99c7c505c9809482bf4759839314eb032d0bd275",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/research-competitive-template.md": {
+      "sha256": "4aacb5f85071e7b19be26b488ffe0afbd0e7a36394dd37fd222986e983f1d5c1",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/research-evidence-standards.md": {
+      "sha256": "6ef0f2eb19a4fa6fd10c93362d2622f62e130b7831aa59c3d4c3749780ecbdc3",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/research-problem-template.md": {
+      "sha256": "aebdc0d6d5c1e1810a792d9350a38bc3b63a647e6e19f33d5f8743c4a233169c",
+      "updated": "",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/shadcn-build-guide.md": {
+      "sha256": "7cd44c95a4d7c36f474e55a4dfe1a8292a96c536ef41cf279bb5dd8be3012a28",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/references/stitch-brief-guide.md": {
+      "sha256": "6e12e77c256f1f68b8e3fe6a989896abd2f5992f122b8565c7ca4aaffb8410bd",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/rules/memory-protocol.md": {
+      "sha256": "e8899e27675a1018e2b84f432434e49778dac1bad8946adfad143fc9902e2197",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "assets/templates/rules/okf-protocol.md": {
+      "sha256": "75b35bf499ea44ab4d4beab7ebab19cbf52a914214efb463fbc0cd359d0ef621",
+      "updated": "",
+      "version": "1.0.0"
+    },
+    "assets/templates/rules/output-mode.md": {
+      "sha256": "047d818d4d8564dbe0a370d68341b6e6e93f32dcc42ea2d2d44aec4705e52094",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/micro-tdd/SKILL.md": {
+      "sha256": "39a898e1905a3cf86623124b13499512d4615abc8e95d7441aade1e3220b1216",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/plan-html/SKILL.md": {
+      "sha256": "8c6518f70008b3c5d8ae8f6c8d7f95a7ccaa5bc467b9a1f3779de8d5b026b799",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/plan-html/assets/templates/index.md": {
+      "sha256": "a0943af674703c86d7dac9cb873dfe1277868c07bf852f437fe3bca664a026f1",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/plan-html/references/html-patterns.md": {
+      "sha256": "b2ee8ba16ca7e0e964548e17814c4863c75bcf30ee1b4ebbde46ccf0a22ef5c9",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/plan-html/references/micro-app-patterns.md": {
+      "sha256": "4b94e175d14852168ab1e79b0ddcfbfa068fd63839fab8993ec5eb0c084cdb06",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "skills/stratosphere-setup/SKILL.md": {
+      "sha256": "7d99de54cda8c211c3bcb5103731c7836bf85403676c1bd63286eb2310f68d6c",
+      "updated": "2026-06-17",
+      "version": "1.0.3"
+    },
+    "workflows/0a_start-session.md": {
+      "sha256": "56e93d89ab387b3ee7b91ab1f6f7233c7c0384a35aad9e5cf19a9c01556eb7dc",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/0b_stop-session.md": {
+      "sha256": "92cef12fb4416aa22bd1f67588550f07ec7db72aa85a696572bb8290b21e39af",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/0c_handoff.md": {
+      "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/0d_nightly-consolidation.md": {
+      "sha256": "0c67be0d0702af4076678c067b72436d0b5532bbc39396ca301a37c7eac5f601",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/1a_research.md": {
+      "sha256": "1726ba54af2978cc3b53b86070f5c5819c982e4633c8b6fc761623e29d2f6362",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/1b_concept-framing.md": {
+      "sha256": "4a13dfa0beb0ded817ff538d4b4bbc8d0979ff386bc0f5e825ac624dce26ade6",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/2a_write-prd.md": {
+      "sha256": "5faef18b92289f9d126a8e41d9d986dbd132effb5bad622c08a9e7563676fd6f",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/2b_interface-design.md": {
+      "sha256": "352a702b7d7ae1db39b6894f54d5462cf8513e0745b301f59d7c921a4bf224ce",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/3a_create-issue.md": {
+      "sha256": "c950feb00ec58bde540379cf485ff20888a41fb0ac2eeace336afe05cad037eb",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/3b_sprint-planning.md": {
+      "sha256": "b70dad55c267a47af16e9483fc3a68c7dde24ed325e1f0c955ea36f706f2d8c7",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/3c_implement-issue.md": {
+      "sha256": "38fd8b3b6a28ef3669e730aba6164967629c4003f6cc6b910b1bdea5c27bd03a",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/4a_verify-and-ship.md": {
+      "sha256": "ca43159fd78e33762161f5cefeac8e738abe868921611dcfbad0735d52e5676b",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    },
+    "workflows/4b_audit-architecture-drift.md": {
+      "sha256": "4121461ab18427ae21ecbf1f195707c2fa03e37a31b1a962f05168be6d4c4aee",
+      "updated": "2026-06-17",
+      "version": "1.0.2"
+    },
+    "workflows/sync-skills.md": {
+      "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
+      "updated": "2026-06-17",
+      "version": "1.0.1"
+    }
+  },
+  "plugin_version": "1.0.0"
+}

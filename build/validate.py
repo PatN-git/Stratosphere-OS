@@ -1,7 +1,11 @@
 import json
 import re
 import sys
+import subprocess
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "scripts"))
+import _versioning
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 errs = []
@@ -52,23 +56,18 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         # Check BOM
         if md.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/{inv}/{md.name}")
-        d = fm_dict(md.read_text(encoding="utf-8"))
-        if "name" not in d or "description" not in d:
-            errs.append(f"{plat}/{inv}/{md.name} missing {{'name','description'}}")
-        # Assert version exists on shipped command/workflow
-        if "version" not in d or not d["version"]:
-            errs.append(f"{plat}/{inv}/{md.name} missing version")
-            
+        k = set(fm_dict(md.read_text(encoding="utf-8")).keys())
+        required = {"name", "description", "version", "updated"}
+        if not required.issubset(k):
+            errs.append(f"{plat}/{inv}/{md.name} missing OKF keys. Found {k}")
     for sk in (root / plat / "skills").glob("*/SKILL.md"):
         # Check BOM
         if sk.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/skills/{sk.parent.name}/SKILL.md")
-        d = fm_dict(sk.read_text(encoding="utf-8"))
-        if "name" not in d or "description" not in d:
-            errs.append(f"{plat}/skills/{sk.parent.name} missing name/description")
-        # Assert version exists on shipped skill
-        if "version" not in d or not d["version"]:
-            errs.append(f"{plat}/skills/{sk.parent.name}/SKILL.md missing version")
+        k = set(fm_dict(sk.read_text(encoding="utf-8")).keys())
+        required = {"name", "description", "version", "updated"}
+        if not required.issubset(k):
+            errs.append(f"{plat}/skills/{sk.parent.name} missing OKF keys. Found {k}")
 
 # 2.5 Asset templates type + version validation
 concept_references = {
@@ -91,18 +90,16 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         filename = p.name
 
         is_index = filename == "index.md"
-        is_design = filename == "DESIGN.md"
         
-        # Check version (all templates except DESIGN.md)
+        # Check version (all templates)
         content = p.read_text(encoding="utf-8")
         d = fm_dict(content)
-        if not is_design:
-            if "version" not in d or not d["version"]:
-                errs.append(f"{plat}/assets/templates/{rel_path} missing version")
+        if "version" not in d or not d["version"]:
+            errs.append(f"{plat}/assets/templates/{rel_path} missing version")
 
         # Check type (only concept templates)
         is_concept = False
-        if parent_dir == "memory" and not is_index and not is_design:
+        if parent_dir == "memory" and not is_index:
             is_concept = True
         elif parent_dir == "rules" and not is_index:
             is_concept = True
@@ -132,6 +129,7 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
             k = fm_dict(ref_file.read_text(encoding="utf-8"))
             if "version" not in k:
                 errs.append(f"{plat}/assets/templates/references/{ref_file.name} missing version -> {k}")
+
 
 
 # Also check python script files in dist for BOM
@@ -168,6 +166,34 @@ for mr in [root/"src", root/"dist/claude-code", root/"dist/antigravity"]:
                 errs.append(f"ABSOLUTE file:// LINK in {md.relative_to(root)}")
         except Exception:
             pass
+
+# 5. Version format and bump-guard validation
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    versions_file = root / plat / "versions.json"
+    if not versions_file.exists():
+        errs.append(f"MISSING {versions_file}")
+        continue
+        
+    try:
+        built_manifest = json.loads(versions_file.read_text(encoding="utf-8")).get("artifacts", {})
+    except Exception as e:
+        errs.append(f"BAD JSON {versions_file}: {e}")
+        continue
+        
+    try:
+        git_path = versions_file.relative_to(root).as_posix()
+        prev_json = subprocess.check_output(["git", "-C", str(root), "show", f"HEAD:{git_path}"], stderr=subprocess.STDOUT).decode("utf-8")
+        prev = json.loads(prev_json).get("artifacts", {})
+    except Exception:
+        prev = {}
+        
+    for path, meta in built_manifest.items():
+        v = meta.get("version", "")
+        if not _versioning.SEMVER.match(v):
+            errs.append(f"{plat}/{path}: version '{v}' is not semver x.y.z")
+            
+        if path in prev and meta["sha256"] != prev[path]["sha256"] and meta["version"] == prev[path]["version"]:
+            errs.append(f"{plat}/{path}: content changed but version not bumped (still {meta['version']})")
 
 # 3. Counts
 for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:

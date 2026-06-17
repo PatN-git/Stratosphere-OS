@@ -208,6 +208,7 @@ def assert_tree(tool, scope, home, proj):
     check("scaffold: 9 memory files", len(list((p / ".memory").glob("*.md"))) == 9 if (p / ".memory").exists() else False)
     check("scaffold: 3 rule files", len(list((p / ".agents" / "rules").glob("*.md"))) == 3 if (p / ".agents" / "rules").exists() else False)
     check("scaffold: 14 workflows", len(list((p / ".agents" / "workflows").glob("*.md"))) == 14 if (p / ".agents" / "workflows").exists() else False)
+    check("scaffold: lockfile", (p / ".agents" / ".stratosphere-lock.json").exists())
     check("scaffold: okf_view.py", (p / ".agents" / "scripts" / "okf_view.py").exists())
     check("scaffold: okf_viewer/generator.py", (p / ".agents" / "scripts" / "okf_viewer" / "generator.py").exists())
     check("scaffold: docs/knowledge/index.md", (p / "docs" / "knowledge" / "index.md").exists())

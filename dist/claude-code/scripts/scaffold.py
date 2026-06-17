@@ -25,11 +25,18 @@ commands. On Claude Code the plugin commands already register globally; the
 project copies are inert there.
 """
 import argparse
+import json
 import re
 import shutil
+import sys
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
+try:
+    import _versioning
+except ImportError:
+    _versioning = None
 
 
 
@@ -43,7 +50,7 @@ EXTRA_WORKFLOWS = {"sync-skills.md"}          # also copy this utility workflow
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
                      ".agents/skills/", "!.agents/skills/.lock.json",
-                     "*.work.md"]
+                     "*.work.md", "*.stratosphere-new"]
 
 FOLDERS = [
     ".memory",
@@ -117,6 +124,7 @@ def main():
 
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")
     ap.add_argument("--dry-run", action="store_true", help="report what would happen without writing")
+    ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     args = ap.parse_args()
 
@@ -130,6 +138,81 @@ def main():
 
     if not ASSETS.exists():
         raise SystemExit(f"Cannot find bundled templates at {ASSETS}. Run from a project root with the plugin installed.")
+
+    def generate_lockfile(dry_run, repair=False):
+        if not _versioning: return False
+        lock_file = project / ".agents" / ".stratosphere-lock.json"
+        
+        # Load existing lockfile if not repairing
+        if not repair and lock_file.exists():
+            try:
+                lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+            except Exception:
+                lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+        else:
+            lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+
+        try:
+            versions = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8"))
+            if repair or lock_data.get("installed_plugin_version") == "unknown":
+                lock_data["installed_plugin_version"] = versions.get("plugin_version", "unknown")
+            bundled_manifest = versions.get("artifacts", {})
+        except Exception:
+            bundled_manifest = {}
+            
+        def map_bundled_to_project(rel_path: str):
+            parts = rel_path.split("/")
+            if parts[0] == "assets" and parts[1] == "templates":
+                sub = parts[2]
+                name = parts[3]
+                if sub == "constitution": return name
+                elif sub == "memory": return f".memory/{name}"
+                elif sub == "rules": return f".agents/rules/{name}"
+                elif sub == "references": return f".agents/workflows/.reference/{name}"
+            elif parts[0] in ("workflows", "commands") and (re.match(r"^[0-4].*\.md$", parts[-1]) or parts[-1] == "sync-skills.md"):
+                return f".agents/workflows/{parts[-1]}"
+            return None
+            
+        count = 0
+        for rel_path, b_meta in bundled_manifest.items():
+            proj_path = map_bundled_to_project(rel_path)
+            if not proj_path: continue
+            
+            p = project / proj_path
+            if repair:
+                # In repair mode, we trust the workspace file and compute its current hash as the new baseline
+                if p.exists():
+                    text = p.read_text(encoding="utf-8")
+                    v, u, form = _versioning.read_version(text, p)
+                    if v and form:
+                        lock_data["artifacts"][proj_path] = {
+                            "version": v,
+                            "sha256_at_install": _versioning.body_hash(text, form)
+                        }
+                        count += 1
+            else:
+                # Normal mode: pull baseline hash from the bundled manifest, but ONLY if missing from lockfile
+                if proj_path not in lock_data.get("artifacts", {}) and p.exists():
+                    lock_data.setdefault("artifacts", {})[proj_path] = {
+                        "version": b_meta.get("version", "unknown"),
+                        "sha256_at_install": b_meta.get("sha256", "unknown")
+                    }
+                    count += 1
+        
+        lock_file.parent.mkdir(parents=True, exist_ok=True)
+        if not dry_run and count > 0:
+            lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return count
+
+    if args.repair_lock:
+        if not _versioning:
+            raise SystemExit("Error: _versioning module not found. Cannot repair lock.")
+        count = generate_lockfile(dry, repair=True)
+        if not dry:
+            print(f"Repaired .stratosphere-lock.json with {count} artifacts.")
+        else:
+            print(f"WOULD REPAIR .stratosphere-lock.json with {count} artifacts.")
+        return
 
     # 1. Folders
     for f in FOLDERS:
@@ -209,6 +292,12 @@ def main():
     else:
         res["exists"].append(Path(".gitattributes"))
 
+    # 8c. Update Lockfile
+    count = generate_lockfile(dry, repair=False)
+    if count and not dry:
+        res["created"].append(Path(".agents/.stratosphere-lock.json"))
+
+
     # 9. Root index.md (create if missing; never edit an existing one)
     root_index = project / "index.md"
     if not root_index.exists():
@@ -254,6 +343,7 @@ def main():
                 res["created"].append(Path(rel_dir) / "index.md")
         else:
             res["exists"].append(Path(rel_dir) / "index.md")
+
 
     # Summary
     verb = "WOULD CREATE" if dry else "CREATED"

@@ -1,5 +1,9 @@
 ---
 type: constitution
+name: CLAUDE
+description: CLAUDE
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 CLAUDE.md

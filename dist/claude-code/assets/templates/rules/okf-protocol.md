@@ -50,7 +50,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
 
 ## 4. Reserved Files
-- **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.1"`.
+- **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
 - **Directory `index.md` files** (e.g. `.memory/index.md`, `docs/prds/index.md`): Used for progressive disclosure. These files must **not** carry frontmatter and are listings only.
 - **`log.md`**: If present, carries change history. It must not contain frontmatter.
 

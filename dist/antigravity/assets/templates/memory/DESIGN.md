@@ -1,6 +1,6 @@
 ---
 type: design
-version: alpha
+version: "1.0.1"
 name: <Project Name>
 description: <One-line product description>
 colors:

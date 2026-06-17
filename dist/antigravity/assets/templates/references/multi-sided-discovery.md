@@ -2,7 +2,7 @@
 type: reference
 title: Multi-Sided Marketplace & Product Discovery
 description: Reference guide for multi-sided marketplace discovery and cold-start tactics.
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Multi-Sided Marketplace & Product Discovery

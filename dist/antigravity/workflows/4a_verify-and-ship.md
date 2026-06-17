@@ -3,7 +3,8 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.0"
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 ## Phase 1: Value-Add Gate

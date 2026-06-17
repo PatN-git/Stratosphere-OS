@@ -5,7 +5,7 @@ description: ""
 timestamp: <YYYY-MM-DD>
 status: active | stale | superseded
 slug: <kebab-case-core-topic>
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Research: <Topic>

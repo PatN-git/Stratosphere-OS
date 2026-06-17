@@ -1,3 +1,10 @@
+---
+name: index
+description: index
+version: "1.0.1"
+updated: 2026-06-17
+---
+
 # Template Index
 
 Load ONLY the single template file matching the scenario. Never load all files.

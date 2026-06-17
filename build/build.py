@@ -18,7 +18,11 @@ import re
 import shutil
 import stat
 import time
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "scripts"))
+import _versioning
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -175,8 +179,6 @@ def build_platform(kind: str):
     # 5.5 Post-copy pass to stamp version into asset templates
     for path in assets.rglob("*.md"):
         if path.is_file():
-            if path.name == "DESIGN.md":
-                continue
             text = path.read_text(encoding="utf-8")
             fm, _ = split_frontmatter(text)
             fm_keys = top_level_keys(fm) if fm is not None else set()
@@ -203,6 +205,30 @@ def build_platform(kind: str):
             "author": AUTHOR,
         }
         write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
+
+    # 7. Generate versions.json
+    artifacts = {}
+    for root_dir, _, files in os.walk(out):
+        for f in files:
+            if not f.endswith(".md"): continue
+            p = Path(root_dir) / f
+            rel = p.relative_to(out).as_posix()
+            text = p.read_text(encoding="utf-8")
+            v, u = _versioning.read_version(text, p)
+            if v:
+                artifacts[rel] = {
+                    "version": v,
+                    "sha256": _versioning.body_hash(text),
+                    "updated": u
+                }
+            else:
+                raise ValueError(f"Missing versioning marker in {p}. Every .md file in the plugin MUST have a version stamp in its YAML frontmatter.")
+    
+    versions_manifest = {
+        "plugin_version": VERSION,
+        "artifacts": artifacts
+    }
+    write_lf(out / "versions.json", json.dumps(versions_manifest, indent=2, sort_keys=True) + "\n")
 
     return out
 

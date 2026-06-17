@@ -3,6 +3,8 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 # Concept framing

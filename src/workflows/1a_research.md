@@ -3,6 +3,8 @@ name: 1a_research
 description: Workflow to conduct market & competitive research for greenfield or domain-heavy features before concept framing. Routes by domain and depth.
 type: workflow HITL
 trigger: User. Do not run autonomously.
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 # Research

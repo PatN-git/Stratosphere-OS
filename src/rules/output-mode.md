@@ -3,6 +3,8 @@ type: rule
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
 timestamp: 2026-06-16
+version: "1.0.1"
+updated: 2026-06-17
 ---
 
 # Output Mode Protocol
