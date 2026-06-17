@@ -2,7 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.1"
+version: "1.0.2"
 updated: 2026-06-17
 ---
 
@@ -84,6 +84,7 @@ For any file that requires an update or has drifted:
 - Instead, **you (the agent) must prepare a merge plan**: Analyze the new bundled template, analyze the user's current drifted file, and prepare an intelligent merge plan that applies the new template structure/rules while preserving the user's custom project data (e.g., custom trust tags, immortal components, specific logic).
 - Present this merge plan to the user for **explicit approval**.
 - Once the user approves, execute the merge to update the files.
+- **CRITICAL**: After successfully merging an updated or drifted file, you MUST run `python <plugin>/scripts/scaffold.py --repair-lock` to register the new merged state as the baseline. This ensures the drift check won't endlessly trigger on subsequent runs.
 
 ## Checkpoint 1: Workspace rules in effect (both paths)
 

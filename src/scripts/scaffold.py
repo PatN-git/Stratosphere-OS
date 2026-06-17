@@ -112,13 +112,23 @@ def main():
     if not ASSETS.exists():
         raise SystemExit(f"Cannot find bundled templates at {ASSETS}. Run from a project root with the plugin installed.")
 
-    def generate_lockfile(dry_run):
+    def generate_lockfile(dry_run, repair=False):
         if not _versioning: return False
         lock_file = project / ".agents" / ".stratosphere-lock.json"
-        lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+        
+        # Load existing lockfile if not repairing
+        if not repair and lock_file.exists():
+            try:
+                lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+            except Exception:
+                lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+        else:
+            lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+
         try:
             versions = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8"))
-            lock_data["installed_plugin_version"] = versions.get("plugin_version", "unknown")
+            if repair or lock_data.get("installed_plugin_version") == "unknown":
+                lock_data["installed_plugin_version"] = versions.get("plugin_version", "unknown")
             bundled_manifest = versions.get("artifacts", {})
         except Exception:
             bundled_manifest = {}
@@ -137,30 +147,40 @@ def main():
             return None
             
         count = 0
-        for rel_path in bundled_manifest:
+        for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
             
             p = project / proj_path
-            if p.exists():
-                text = p.read_text(encoding="utf-8")
-                v, u, form = _versioning.read_version(text, p)
-                if v and form:
-                    lock_data["artifacts"][proj_path] = {
-                        "version": v,
-                        "sha256_at_install": _versioning.body_hash(text, form)
+            if repair:
+                # In repair mode, we trust the workspace file and compute its current hash as the new baseline
+                if p.exists():
+                    text = p.read_text(encoding="utf-8")
+                    v, u, form = _versioning.read_version(text, p)
+                    if v and form:
+                        lock_data["artifacts"][proj_path] = {
+                            "version": v,
+                            "sha256_at_install": _versioning.body_hash(text, form)
+                        }
+                        count += 1
+            else:
+                # Normal mode: pull baseline hash from the bundled manifest, but ONLY if missing from lockfile
+                if proj_path not in lock_data.get("artifacts", {}) and p.exists():
+                    lock_data.setdefault("artifacts", {})[proj_path] = {
+                        "version": b_meta.get("version", "unknown"),
+                        "sha256_at_install": b_meta.get("sha256", "unknown")
                     }
                     count += 1
         
         lock_file.parent.mkdir(parents=True, exist_ok=True)
-        if not dry_run:
+        if not dry_run and count > 0:
             lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return count
 
     if args.repair_lock:
         if not _versioning:
             raise SystemExit("Error: _versioning module not found. Cannot repair lock.")
-        count = generate_lockfile(dry)
+        count = generate_lockfile(dry, repair=True)
         if not dry:
             print(f"Repaired .stratosphere-lock.json with {count} artifacts.")
         else:
@@ -222,7 +242,7 @@ def main():
             res["created"].append(Path(".gitignore"))
 
     # 9. Update Lockfile
-    count = generate_lockfile(dry)
+    count = generate_lockfile(dry, repair=False)
     if count and not dry:
         res["created"].append(Path(".agents/.stratosphere-lock.json"))
 
