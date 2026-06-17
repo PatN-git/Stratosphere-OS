@@ -207,6 +207,7 @@ def assert_tree(tool, scope, home, proj):
         check(f"scaffold: {f}", (p / f).exists())
     check("scaffold: 8 memory files", len(list((p / ".memory").glob("*.md"))) == 8 if (p / ".memory").exists() else False)
     check("scaffold: 14 workflows", len(list((p / ".agents" / "workflows").glob("*.md"))) == 14 if (p / ".agents" / "workflows").exists() else False)
+    check("scaffold: lockfile", (p / ".agents" / ".stratosphere-lock.json").exists())
 
 
 def main():
