@@ -1,5 +1,6 @@
 <!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
+type: design
 version: alpha
 name: <Project Name>
 description: <One-line product description>

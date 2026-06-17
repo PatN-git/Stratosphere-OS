@@ -36,10 +36,25 @@ updated: 2026-06-17
 2. Read `.memory/GLOSSARY.md` — load existing [[G-xxx]] entries to avoid re-defining settled terms.
 3. Capture the raw ask verbatim. Restate in one sentence. If it describes multiple independent problems, flag scope now: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
 4. Scan BACKLOG_MAP for related active PRDs or prior briefs. Surface overlaps before grilling.
+5. **ODI Routing:** Note that opportunity scoring is optional and reserved for large/greenfield topics; small items start here in `1b` without ODI.
+6. **Multi-sided check:** Ask: *"Is this a multi-sided product (e.g. marketplace)?"*
+   - If **yes**, read `.agents/workflows/.reference/multi-sided-discovery.md`, append its focus areas to the grill, and have the RAT test both sides (≈10 DMs each). Note that per-side opportunity *scoring* is a `1a` activity, not `1b` — `1b` has no evidence source; it grills and flags the two sides, it does not assign opportunity numbers.
+   - If **no**, proceed normally (avoids token bloat for standard apps).
+7. **Discovery Work File Scope-Gate:**
+   - Use the work file for longer / interruptible grills (the Generate / greenfield path). A short "sharpen-only" session may skip it.
+   - If utilizing the work file, delete any stale `docs/discovery/.<slug>.work.md` file for this slug at start-of-run.
+   - **Path:** `docs/discovery/.<slug>.work.md` (hidden, ephemeral).
+   - **Structure:**
+     - `## Coverage (grill axes)`: A checklist seeded with standard axes (Actor, Problem shape, Vocabulary, Internal prior art, External research, Success state, Hard constraints, Non-goals), each with status `[ ]` open / `[~]` in-progress (+ partial nugget) / `[x]` covered at minimum depth (+ nugget) / `[skip]` (+ one-line why). Multi-sided branch appends per-side axes.
+     - `## Ask (verbatim)` (captured once), `## Candidate vocabulary (unapproved)`, `## Candidate framings`, `## Chosen framing` (pending until Phase 4).
+   - **Loop & Resume:** The top-ranked open axis by current ambiguity drives "which axis next". On restart, read the checklist and continue from the first open/in-progress item. "All axes covered or skipped" is the stop condition.
+   - **Write Trigger (Convention 9):** Append distilled state (store distilled nuggets, never transcripts; keep it lean) on a checklist status change or a decision lock. The existing ~5-question check-in is the floor.
+
 
 ## Phase 2: Grill
 
-One question at a time. Where Phase 1 context gives you sufficient signal on a focus area, state your synthesis and ask the user to confirm or correct — don't re-ask what you already know. Where signal is insufficient, **lead open-ended** — let the user surface their own framing before you narrow. Follow with MC only to confirm once they've answered freely. Name vagueness explicitly — re-ask until the answer is sharp.
+One question at a time. Where Phase 1 context gives you sufficient signal on a focus area, state your synthesis and ask the user to confirm or correct — don't re-ask what you already know. Where signal is insufficient, **lead open-ended** — let the user surface their own framing before you narrow. Follow with MC only to confirm once they've answered freely. Name vagueness explicitly — re-ask until the answer is sharp. If utilizing the work file, the checklist under `## Coverage (grill axes)` drives the grilling sequence.
+
 
 **Stop conditions (first one hit ends grilling):**
 1. User signals done: "enough", "write it up", or equivalent.
@@ -85,15 +100,33 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
    - Unknown approach → *"Spike needed. Recommend `/3a_create-issue` Template A."*
    - Wrong direction → *"Recommend not building. Closing here."*
 
+## Phase 4.5: Riskiest Assumption Test (RAT)
+This runs **by default** (it is a gate, not an opt-in). The user may decline the test; if so, record the decline + the untested assumption in the brief. If running AFK, log it as a residual risk rather than skipping silently.
+
+1. **Identify Riskiest Assumption:** Ask: *"What is the single riskiest assumption that, if wrong, makes this entire feature/concept fail?"* For multi-sided products, the assumption is usually "both sides show up".
+2. **Determine Cheapest Test:** Propose a test that is extremely fast to set up.
+   - **cheapest_test** ∈ {`landing page + waitlist`, `N DMs`, `fake-door button`, `rough mock shown to 5`}.
+   - **Setup Time Rule:** If the test takes ~2 weeks to set up, it is a project, not a test — find a cheaper one. For multi-sided products, the test is typically 10 DMs to each side.
+3. **Subagent — "Skeptical Challenger":**
+   - **Invoke:** Invoke a subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type).
+   - **Input:** Pass inline the chosen framing, the actor, and the problem statement.
+   - **Reads:** None required.
+   - **Guardrails:** *"Report only; do not write any file."*
+   - **Output Contract:** `{ riskiest_assumption, why_fatal, cheapest_test, est_setup_time }`
+4. **Present verdict:** Present the subagent's challenge and the proposed cheapest test to the user. Record the result in the brief.
+
+
 ## Phase 5: Write Discovery Brief
 
-Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`.
+Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `docs/discovery/<slug>.md`. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: discovery-brief`.
 
 **Rules:**
 - Vocabulary section is mandatory. Every other section may be brief if signal is clear.
 - Problem is 2–3 sentences in agreed vocabulary only. No implementation.
 - Open Questions = residual ambiguity that `/2a_write-prd` absorbs into PRD §10.
 - No solution content, no module/interface hints, no file paths.
+- **Synthesis Contract (Convention 9):** Build the brief from the work file (spine/floor) when used, and enrich from the live transcript (conversation-bound). Approved vocabulary definitions and chosen framings must be captured durably at lock-time, as they cannot be reconstructed after a context loss.
+
 
 ## Phase 6: Self-Review + User Gate
 
@@ -102,7 +135,9 @@ Instantiate from `.agents/workflows/.reference/discovery_brief_template.md` at `
 - [ ] Problem contains no solution language
 - [ ] Chosen Framing notes rejected alternatives
 - [ ] Recommended Next Step is explicit
+- [ ] Riskiest Assumption and cheapest test documented with status (untested | running | survived | failed)
 - [ ] No unfiled Open Questions markers
+
 
 Present the brief: *"Review the discovery brief. Any changes before I hand off?"* Wait for approval. Re-review if changes are requested.
 
@@ -111,11 +146,13 @@ Present the brief: *"Review the discovery brief. Any changes before I hand off?"
 1. Write `docs/discovery/<slug>.md`.
 2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder).
 3. If a framing decision is reusable across features, propose [[L-xxx]] for `.memory/LEARNINGS.md`. Rare — only if user signals it's a pattern.
-4. Tell the user the next step:
+4. Delete the temporary `docs/discovery/.<slug>.work.md` file (if it exists).
+5. Tell the user the next step:
    - **/2a_write-prd** → *"Discovery brief ready at `docs/discovery/<slug>.md`. Run `/2a_write-prd` to draft the PRD."*
    - **/3a_create-issue Template B** → *"This is a bug. Run `/3a_create-issue` with Template B."*
    - **/3a_create-issue Template A** → *"Spike recommended. Run `/3a_create-issue` with Template A."*
    - **Dropped** → *"Closing here. Brief at `docs/discovery/archive/<slug>.md`."*
+
 
 ---
 

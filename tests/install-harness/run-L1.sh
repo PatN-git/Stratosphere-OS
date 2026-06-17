@@ -24,14 +24,17 @@ nmd()     { local n; n=$(find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l)
 
 assert_scaffold_tree() { # $1 proj
   local p="$1"
-  for f in AGENT.md CLAUDE.md GEMINI.md .gitignore; do
+  for f in AGENT.md CLAUDE.md GEMINI.md .gitignore .gitattributes index.md; do
     assert "scaffold: $f" "$(exists "$p/$f")"
   done
-  assert "scaffold: .memory 8 md" "$([ "$(nmd "$p/.memory")" = "8" ] && echo 1 || echo 0)"
-  assert "scaffold: .agents/rules 2 md" "$([ "$(nmd "$p/.agents/rules")" = "2" ] && echo 1 || echo 0)"
+  assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"
+  assert "scaffold: .agents/rules 3 md" "$([ "$(nmd "$p/.agents/rules")" = "3" ] && echo 1 || echo 0)"
   assert "scaffold: .agents/workflows 14 md" "$([ "$(nmd "$p/.agents/workflows")" = "14" ] && echo 1 || echo 0)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"
+  assert "scaffold: okf_view.py" "$(exists "$p/.agents/scripts/okf_view.py")"
+  assert "scaffold: okf_viewer/generator.py" "$(exists "$p/.agents/scripts/okf_viewer/generator.py")"
   assert "scaffold: docs/discovery/.gitkeep" "$(exists "$p/docs/discovery/.gitkeep")"
+  assert "scaffold: docs/knowledge/index.md" "$(exists "$p/docs/knowledge/index.md")"
   grep -q '\*\.work\.md' "$p/.gitignore" 2>/dev/null && assert "scaffold: .gitignore has *.work.md" 1 || assert "scaffold: .gitignore has *.work.md" 0
 }
 

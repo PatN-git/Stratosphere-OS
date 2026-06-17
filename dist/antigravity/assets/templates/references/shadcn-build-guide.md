@@ -1,8 +1,6 @@
 ---
-name: shadcn-build-guide
-description: shadcn-build-guide
+description: Guide for implementing design blueprints using shadcn/ui primitives.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # Shadcn Build Guide

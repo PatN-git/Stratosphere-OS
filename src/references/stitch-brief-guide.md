@@ -1,6 +1,5 @@
 ---
-name: stitch-brief-guide
-description: stitch-brief-guide
+description: Distilled reference for creating effective Stitch briefs and bootstrapping design tokens.
 version: "1.0.0"
 updated: 2026-06-17
 ---

@@ -24,6 +24,14 @@ workflows_to_check = {
         "remaining = 24 - issued",
         "Return verdicts + queries_used"
     ],
+    "src/workflows/1b_concept-framing.md": [
+        "Skeptical Challenger",
+        "Report only; do not write any file."
+    ],
+    "src/workflows/2b_interface-design.md": [
+        "Stress Tester",
+        "Report the matrix only; do not edit any file."
+    ],
     "src/workflows/3a_create-issue.md": [
         "Invoke a Coverage Auditor subagent",
         "Report the coverage map only; do not create issues or edit any file."

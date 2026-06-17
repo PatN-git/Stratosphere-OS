@@ -4,12 +4,12 @@ description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, seque
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # Sprint planning
 
-**Hand-off contract:** Modifies `.memory/BACKLOG_MAP.md` and assigns GitHub issues to a milestone in format `x.yy` (`x` = version, `yy` = sprint).
+**Hand-off contract:** Modifies `.memory/BACKLOG_MAP.md` and assigns GitHub issues to a milestone in format `x.yy` (`x` = version, `yy` = sprint). The sprint digit `yy` is assigned here. The release digit `x` represents the active release version and defaults to `1` unless deliberately set by the parked `3x_version-planning` workflow (i.e. skipping `3x` implies `x = 1`, resulting in `1.yy` milestones).
+
 
 ## Phase 1: Context Intake & Triage Scan
 1. Read `.memory/BACKLOG_MAP.md` if not already loaded.
@@ -25,7 +25,8 @@ updated: 2026-06-17
    - If prerequisites are NOT `status: done` BUT they are selected/sequenced in this exact sprint → tag as `[blocked-but-sequenced-in-sprint]`.
 2. **ICE Prioritization:** Read the pre-calculated ICE score directly from the `ICE` column in `.memory/BACKLOG_MAP.md`.
    - Recalculate the ICE score ONLY IF the ICE cell is empty, OR the size label (e.g. `size:medium`) disagrees with the Effort weight used in the table calculation (`ICE = (Impact * Confidence) / Effort weight` where Effort weight is small=1, medium=2, large=3).
-   - Sort all remaining unblocked or `blocked-but-sequenced-in-sprint` candidate items by their ICE score in descending order.
+   - Sort and sequence candidate items by their `scope:*` label: `scope:baseline` first (for MVP end-to-end), then `scope:differentiator`. Within each scope group, sort items by their ICE score in descending order.
+
 3. **Context Grouping:** Cluster sequenced tasks matching identical `area:xxx` tags to compress token burn overhead.
 
 ## Phase 3: Capacity Calculation & Safeguards

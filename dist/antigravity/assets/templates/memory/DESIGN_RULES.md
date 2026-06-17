@@ -1,4 +1,11 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
+---
+type: design-rules
+title: Design Rules
+description: Project structural rules and operational design governance.
+timestamp: 2026-06-16
+version: "1.0.0"
+---
+
 # DESIGN RULES
 
 ## Purpose

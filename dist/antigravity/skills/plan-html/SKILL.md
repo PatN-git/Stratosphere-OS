@@ -4,7 +4,6 @@ description: Generates interactive single-file HTML plans/matrices/micro-apps ON
 type: skill
 trigger: AFK
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # Decision Gate (Four-Scenario)

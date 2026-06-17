@@ -4,7 +4,6 @@ description: Validates that test suites match business requirements, acceptance 
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 ## Phase 1: Value-Add Gate

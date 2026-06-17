@@ -1,8 +1,12 @@
 <!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
 ---
-slug: <kebab-case-core-topic>
-updated: <YYYY-MM-DD>
+type: research
+title: "Research: <Problem Space / Topic>"
+description: ""
+timestamp: <YYYY-MM-DD>
 status: active | stale | superseded
+slug: <kebab-case-core-topic>
+version: "1.0.0"
 ---
 
 # Research: <Problem Space / Topic>
@@ -20,6 +24,8 @@ status: active | stale | superseded
 
 ## User Pains & Needs
 <Synthesized insights about user pains, challenges, motivations, and unmet needs. What are users trying to accomplish and where do they fail or experience friction?>
+Score each unmet **Need** with a **Pain** value 1-10 ("how much does it hurt?", read from forum signal — recurring complaints/"me too" = high; one-off = low) and a confidence tag using the `[HIGH]/[MEDIUM]/[LOW]` vocabulary (e.g., `Need: <unmet need> | Pain: <1-10> [HIGH|MEDIUM|LOW]`). A lone forum post is `[LOW]`. Do not use "seen it / hunch / guess" tags.
+
 
 ## Current State of the Art
 <Overview of how this problem is solved today by users. Existing workflows, status quo, or manual workarounds.>

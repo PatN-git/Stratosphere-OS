@@ -53,8 +53,8 @@ def top_level_keys(fm):
     return keys
 
 
-def ensure_frontmatter(text, name=None, description=None):
-    """Guarantee name/description exist without stripping existing keys (type, trigger...)."""
+def ensure_frontmatter(text, name=None, description=None, version=None):
+    """Guarantee name/description/version exist without stripping existing keys (type, trigger...)."""
     fm, body = split_frontmatter(text)
     lines = fm.splitlines() if fm is not None else []
     keys = top_level_keys(fm) if fm is not None else set()
@@ -62,6 +62,8 @@ def ensure_frontmatter(text, name=None, description=None):
         lines.insert(0, f"name: {name}")
     if description and "description" not in keys:
         lines.append(f"description: {description}")
+    if version and "version" not in keys:
+        lines.append(f"version: \"{version}\"")
     new_fm = "\n".join(lines)
     if fm is None:
         return f"---\n{new_fm}\n---\n\n{body}"
@@ -82,7 +84,8 @@ def copy_md_with_frontmatter(srcfile: Path, dstfile: Path, name=None):
     fm, _ = split_frontmatter(text)
     if fm is None or "description" not in top_level_keys(fm):
         desc = first_heading(text) or srcfile.stem.replace("_", " ").replace("-", " ")
-    out = ensure_frontmatter(text, name=name, description=desc)
+    version = None if srcfile.name == "DESIGN.md" else VERSION
+    out = ensure_frontmatter(text, name=name, description=desc, version=version)
     dstfile.parent.mkdir(parents=True, exist_ok=True)
     write_lf(dstfile, out)
 
@@ -172,6 +175,18 @@ def build_platform(kind: str):
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "references", assets / "references")
     copytree(SRC / "scripts", out / "scripts")
+
+    # 5.5 Post-copy pass to stamp version into asset templates
+    for path in assets.rglob("*.md"):
+        if path.is_file():
+            if path.name == "DESIGN.md":
+                continue
+            text = path.read_text(encoding="utf-8")
+            fm, _ = split_frontmatter(text)
+            fm_keys = top_level_keys(fm) if fm is not None else set()
+            if "version" not in fm_keys:
+                out_content = ensure_frontmatter(text, version=VERSION)
+                write_lf(path, out_content)
 
     # 6. Manifest
     if kind == "claude":

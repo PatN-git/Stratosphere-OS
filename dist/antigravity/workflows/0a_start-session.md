@@ -4,7 +4,6 @@ description: Initializes session to avoid cold start by reviewing necessary proj
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # START SESSION

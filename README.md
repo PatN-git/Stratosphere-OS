@@ -6,9 +6,53 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 
 ---
 
+## 🔁 The Philosophy: Don't Prompt, Build Loops
+
+In modern AI engineering, manual chat-based prompting is being replaced by autonomous, self-correcting execution loops. Rather than having a human constantly prompt, evaluate, copy-paste errors, and re-prompt the AI, developers act as **Loop Engineers**—constructing structured harnesses where the AI is given clear objectives, verification tools (compilers, linters, test suites), and a feedback loop.
+
+Stratosphere-OS is a state-aware agentic environment built specifically around this paradigm. It structures development into three distinct layers to manage the loop lifecycle:
+
+```mermaid
+graph TD
+    %% Layer 1
+    subgraph L1["Layer 1: Workflows (HITL Outer Loop)"]
+        direction TB
+        A["User /1b, /2a, /3a Commands"] --> B["Design & Slicing Checkpoints"]
+        B -->|Human Approval| C["Vertical Slice Issue"]
+    end
+
+    %% Layer 2
+    subgraph L2["Layer 2: Orchestration (Routing & Guardrails)"]
+        direction TB
+        C --> D["Orchestration Brain"]
+        D -->|Checks Precedence & Pre-requisites| E{"Active Rules?"}
+        E -->|No| F["Standard Routine"]
+        E -->|Yes| G["Selects Skill (e.g. Micro-TDD)"]
+    end
+
+    %% Layer 3
+    subgraph L3["Layer 3: Execution (Autonomous Inner Loop)"]
+        direction TB
+        G --> H["Isolate & Specify (Red Test)"]
+        H --> I["Run Test Suite"]
+        I -->|Failure Log| J["Implement Code (Green)"]
+        J --> I
+        I -->|Success (Green)| K["Clean & Refactor"]
+        K -->|/4a Verify & Ship| L["Open Pull Request"]
+    end
+
+    L3 -->|Stuck Protocol Trigger| L1
+```
+
+- **Layer 1: Workflows (HITL Outer Loop)**: Standardizes the development lifecycle (Discover, Design, Implement, Verify). Crucially, these enforce Human-in-the-Loop checkpoints to prevent runaway agent loops or architectural misalignment.
+- **Layer 2: Orchestration (Routing & Guardrails)**: The agent core that routes inputs, checks rules, and governs actions based on strict precedence (Core Rules → User Requests → Workflows → Skills). It acts as the bridge connecting Layer 1 and Layer 3.
+- **Layer 3: Execution (Autonomous Inner Loop)**: Fast-track playbooks (like the first-party `micro-tdd` skill) that run completely autonomously. The agent writes tests, runs the suite, analyzes errors, and iterates automatically until all tests pass, or hits safety conditions (the "Stuck Protocol") to prompt the user.
+
+---
+
 ## What you get
 
-- **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "Lean Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
+- **Constitution** (`AGENT.md` / `CLAUDE.md` / `GEMINI.md`) — the "StratosphereOS Architect" 3-layer rules: Workflows → Orchestration → Execution, with strict precedence and token-efficient, deterministic behavior.
 
 - **🚀 The Agentic Workflow** - slash commands for the whole dev lifecycle:
   - Stage 0: Workflows to manage the environment and workflow.
@@ -43,6 +87,20 @@ A weightless, 3-layer agentic operating system for building full-stack apps — 
 ## Assumptions
 
 StratosphereOS assumes a React + Tailwind + shadcn/ui UI stack by default. Non-UI features are handled by the Path C interface contract in `2b_interface-design`. A project can adopt another stack by superseding DR-004/DR-005 (see `memory-protocol.md` §3) with explicit user confirmation.
+
+---
+
+## Open Knowledge Format (OKF) Conformance
+
+StratosphereOS natively conforms to the [Open Knowledge Format (OKF) v0.1 Specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf).
+
+- **Bundle Scope:** The `.memory/` directory (registries and rules) and the `docs/` directory (PRDs, discovery briefs, designs, and research) form a conformant OKF Knowledge Bundle.
+- **Concept Typing:** Every markdown file within the bundle scope (excluding reserved index files and foreign knowledge sources) contains structured YAML frontmatter mapping to the project's OKF type registry.
+- **OKF Dashboard:** An interactive visualizer is included in the project. It can be regenerated at session stop, or manually using the command:
+  ```bash
+  python .agents/scripts/okf_view.py
+  ```
+  This creates an interactive HTML graph at `docs/okf-view.html` mapping the bundle's concept relationships. Note that while the file is generated locally, viewing it requires an active internet connection to load graph-rendering libraries (Cytoscape and Marked) from a CDN.
 
 ---
 
@@ -183,3 +241,8 @@ and are written into a project by the installer — not on install.
 ## Third-party skills & attribution
 
 Domain skills are **not bundled**; they are fetched on demand from their upstream repositories via `sync-skills`. Sources are tracked in `src/external-skills.json`. Each retains its own license and attribution from upstream (Anthropic, Supabase, Vercel Labs, and others).
+
+### OKF Bundle Viewer
+StratosphereOS includes a vendored copy of the Open Knowledge Format (OKF) reference HTML visualizer.
+- **Source:** [Google Cloud Platform Knowledge Catalog - OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
+- **License:** Apache License 2.0 (see `src/scripts/okf_viewer/LICENSE` for full details).

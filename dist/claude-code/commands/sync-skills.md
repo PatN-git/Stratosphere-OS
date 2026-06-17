@@ -3,7 +3,6 @@ name: sync-skills
 type: workflow
 description: Fetch third-party skill packs on demand from external-skills.json into the project's .agents/skills/.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # Sync Skills

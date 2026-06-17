@@ -1,4 +1,11 @@
-<!-- stratosphere: version=1.0.0 updated=2026-06-17 -->
+---
+type: backlog
+title: Backlog Map
+description: Authoritative registry and status mapping of all project issues.
+timestamp: 2026-06-16
+version: "1.0.0"
+---
+
 # BACKLOG MAP
 
 ## Purpose
@@ -23,6 +30,7 @@ Authoritative, high-density reference for project issues and their status.
 - **Type (`type:xxx`)**: `type:bug`, `type:content`, `type:feature`, `type:improvement`, `type:maintenance`, `type:research`, `type:HITL`, `type:AFK`, `type:NEEDS_SPEC`
 - **Priority (`priority:xxx`)**: `priority:high` (Must have), `priority:medium` (Important), `priority:low` (Nice to have)
 - **Size (`size:xxx`)**: `size:large` (Architectural: Multi-feature/major schema), `size:medium` (Vertical: Standard Data/Logic/UI slice), `size:small` (Surgical: Local/Single-file)
+- **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)
 - **Status (`status:xxx`)**: `status:planned`, `status:in progress`, `status:done`
 - **Milestone**: `x.yy` (where `x` is the release version, `yy` is the sprint number; `x.00` is targeted but not yet sprinted). Mirrors the GitHub milestone.
 

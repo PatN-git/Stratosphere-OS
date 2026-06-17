@@ -1,6 +1,8 @@
 ---
-name: output-mode
-description: output-mode
+type: rule
+title: Output Mode Protocol
+description: Guidelines to maximize information density and minimize token waste in agent responses.
+timestamp: 2026-06-16
 version: "1.0.0"
 updated: 2026-06-17
 ---
@@ -41,4 +43,4 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **Word economy:** Drop any word whose removal does not change meaning. Prefer the shortest phrasing that preserves intent (e.g. "in order to" → "to"; cut hedges and intensifiers).
 - **Surgical narrative:** explain the *why*, not the *how*.
 - **Direct verification:** show results, not process.
-- **Memory discipline:** follow `.agents/rules/memory-protocol.md` for all memory operations.
+- **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.

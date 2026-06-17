@@ -1,14 +1,15 @@
 ---
-name: Lean Architect
+type: constitution
+name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
 version: "1.0.0"
 updated: 2026-06-17
 ---
  
-# THE LEAN ARCHITECT
+# STRATOSPHEREOS ARCHITECT
 
 ## Vision
-A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
+<project vision — set during stratosphere-setup>
  
 ## 1. Architecture
 - **Layer 1: Workflows** (`.agents/workflows`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle and are triggered only by the user. Do not execute them autonomously.
@@ -61,4 +62,5 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 ## 8. Pointer Directory (Offloaded Logic)
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
+- **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
 ``

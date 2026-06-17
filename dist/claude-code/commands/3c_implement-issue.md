@@ -4,7 +4,6 @@ description: Rigorous Test-Driven Development (TDD) cycle execution with token-e
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.0"
-updated: 2026-06-17
 ---
 
 # Implement issue
