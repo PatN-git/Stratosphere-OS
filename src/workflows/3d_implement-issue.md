@@ -1,10 +1,10 @@
 ---
-name: 3c_implement-issue
+name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "2.0.0"
+updated: 2026-06-18
 ---
 
 # Implement issue

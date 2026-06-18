@@ -3,13 +3,13 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.1.0"
+updated: 2026-06-18
 ---
 
 # Write PRD
 
-**Hand-off contract:** `/2b_interface-design` is the next stage (designs the interface from this PRD). `/3a_create-issue` later reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
+**Hand-off contract:** `/2b_interface-design` is the next stage (designs the interface from this PRD). `/3b_create-issue` later reads §1, §6, §7, §8 to drive its Vertical Slice Quiz.
 
 ## Phase 1: Precondition & Mode
 1. Confirm `.memory/BACKLOG_MAP.md` is loaded — else stop and prompt `/0a_start-session`.
@@ -75,9 +75,9 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 2. Update parent issue body: one-paragraph summary + doc link + §10 Open Questions.
 3. Append to `.memory/BACKLOG_MAP.md` (if this is the first real entry, delete the shipped example rows):
    ```
-   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | 1.00 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
+   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | v1.0.0 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
-   (Note: Use plain ASCII hyphens `-`, not em-dashes `—` in any BACKLOG row text. Milestone defaults to `1.00` instead of `-` for current release. Ref column is for memory IDs only; doc paths go in the GitHub issue body.)
+   (Note: Use plain ASCII hyphens `-`, not em-dashes `—` in any BACKLOG row text. Milestone uses `vMAJOR.MINOR.SPRINT`. A new parent feature defaults to the **provisional current release baseline**: the highest `vX.Y` already present in the BACKLOG_MAP `Milestone` column (ignore the sprint digit), written as `vX.Y.0` (not yet sprinted). If the backlog has no milestone yet, default to `v1.0.0`. This is provisional — `/3a_version-planning` owns `MAJOR.MINOR` and may reassign it; `/3c_sprint-planning` owns the sprint digit. No leading zeros. Ref column is for memory IDs only; doc paths go in the GitHub issue body.)
 4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip prompting for 2b if feature is non-UI/Path C).
 
 

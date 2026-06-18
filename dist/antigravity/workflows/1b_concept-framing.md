@@ -3,8 +3,8 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.0.2"
+updated: 2026-06-18
 ---
 
 # Concept framing
@@ -96,8 +96,8 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 1. Propose 2–3 distinct problem framings (not solutions). Example: *"UX gap (can't find X) vs. data-integrity issue (X is wrong) vs. process gap (X exists but not surfaced to the right person)."* Each framing implies a different PRD shape — say so.
 2. User picks one. Record rejected framings — they show future readers what was considered.
 3. If grilling reveals the problem is not PRD-worthy, name the exit ramp:
-   - Known bug → *"Recommend `/3a_create-issue` Template B directly."*
-   - Unknown approach → *"Spike needed. Recommend `/3a_create-issue` Template A."*
+   - Known bug → *"Recommend `/3b_create-issue` Template B directly."*
+   - Unknown approach → *"Spike needed. Recommend `/3b_create-issue` Template A."*
    - Wrong direction → *"Recommend not building. Closing here."*
 
 ## Phase 4.5: Riskiest Assumption Test (RAT)
@@ -149,8 +149,8 @@ Present the brief: *"Review the discovery brief. Any changes before I hand off?"
 4. Delete the temporary `docs/discovery/.<slug>.work.md` file (if it exists).
 5. Tell the user the next step:
    - **/2a_write-prd** → *"Discovery brief ready at `docs/discovery/<slug>.md`. Run `/2a_write-prd` to draft the PRD."*
-   - **/3a_create-issue Template B** → *"This is a bug. Run `/3a_create-issue` with Template B."*
-   - **/3a_create-issue Template A** → *"Spike recommended. Run `/3a_create-issue` with Template A."*
+   - **/3b_create-issue Template B** → *"This is a bug. Run `/3b_create-issue` with Template B."*
+   - **/3b_create-issue Template A** → *"Spike recommended. Run `/3b_create-issue` with Template A."*
    - **Dropped** → *"Closing here. Brief at `docs/discovery/archive/<slug>.md`."*
 
 

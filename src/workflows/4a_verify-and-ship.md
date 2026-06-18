@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.0.2"
+updated: 2026-06-18
 ---
 
 ## Phase 1: Value-Add Gate
@@ -22,7 +22,7 @@ _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused
   - A `[size:large]` `[type:AFK]`
 
 ## Phase 2: Execution
-**Context Isolation Rule:** Before running the audit, decide whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3c_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
+**Context Isolation Rule:** Before running the audit, decide whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
 - **Guardrails:** *"Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."*
 - **Output Contract:** The subagent returns the AC↔test table only. The main agent then resumes for the Phase 4 HITL halt.
 

@@ -72,9 +72,10 @@ graph TD
   | 1 | `/1b_concept-framing` | `1b_concept-framing.md` | Frame a fuzzy idea | `GLOSSARY`, `BACKLOG_MAP` | discovery brief, `[[G-xxx]]` |
   | 2 | `/2a_write-prd` | `2a_write-prd.md` | Turn a brief into a PRD | brief, memory | PRD doc + parent issue |
   | 2 | `/2b_interface-design` | `2b_interface-design.md` | Design interface (UI or non-UI contract) | PRD | design blueprint / contract |
-  | 3 | `/3a_create-issue` | `3a_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
-  | 3 | `/3b_sprint-planning` | `3b_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
-  | 3 | `/3c_implement-issue` | `3c_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE`, UX | code + tests |
+  | 3 | `/3a_version-planning` | `3a_version-planning.md` | Map features to releases (roadmap) | `BACKLOG_MAP`, PRDs | `docs/ROADMAP.md`, release milestones |
+  | 3 | `/3b_create-issue` | `3b_create-issue.md` | Slice a PRD into work | PRD | vertical-slice issues |
+  | 3 | `/3c_sprint-planning` | `3c_sprint-planning.md` | Sequence a sprint | `BACKLOG_MAP` | sprint plan |
+  | 3 | `/3d_implement-issue` | `3d_implement-issue.md` | Build a slice (TDD) | issue, `ARCHITECTURE`, UX | code + tests |
   | 4 | `/4a_verify-and-ship` | `4a_verify-and-ship.md` | Verify a slice (AC↔test coverage), then open a traceable PR | issue, tests, design doc | gap report + PR |
   | 4 | `/4b_audit-architecture-drift` | `4b_audit-architecture-drift.md` | Find structural drift | target dir, `.memory/*` | `.tmp/refactor-proposal.md` |
 

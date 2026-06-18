@@ -1,7 +1,7 @@
 ---
 description: Library of brainstorming techniques and selection guide for concept framing.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.0.2"
+updated: 2026-06-18
 ---
 
 # Brainstorm Technique Library
@@ -114,7 +114,7 @@ Purpose: rank candidate ideas with coarse ICE vocabulary without over-formalizin
 Steps — score each candidate:
 - **Impact (1–5, agent-scored):** how strongly it moves the target outcomes if it succeeds.
 - **Confidence (1–5, user-scored):** how sure we are the approach works and is buildable.
-Do NOT compute a final ICE score — ideas aren't sized yet (no Effort estimate). The formal ICE score is assigned later when the winner becomes a `BT-<n>` in `/3a_create-issue`.
+Do NOT compute a final ICE score — ideas aren't sized yet (no Effort estimate). The formal ICE score is assigned later when the winner becomes a `BT-<n>` in `/3b_create-issue`.
 Output: a ranked table — `| Idea | Impact | Confidence | Note |` — highest first; user picks the winner.
 
 ---

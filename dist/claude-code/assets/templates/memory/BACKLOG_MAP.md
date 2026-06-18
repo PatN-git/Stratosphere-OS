@@ -3,8 +3,8 @@ type: backlog
 title: Backlog Map
 description: Authoritative registry and status mapping of all project issues.
 timestamp: 2026-06-16
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.1.0"
+updated: 2026-06-18
 ---
 # BACKLOG MAP
 
@@ -32,10 +32,10 @@ Authoritative, high-density reference for project issues and their status.
 - **Size (`size:xxx`)**: `size:large` (Architectural: Multi-feature/major schema), `size:medium` (Vertical: Standard Data/Logic/UI slice), `size:small` (Surgical: Local/Single-file)
 - **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)
 - **Status (`status:xxx`)**: `status:planned`, `status:in progress`, `status:done`
-- **Milestone**: `x.yy` (where `x` is the release version, `yy` is the sprint number; `x.00` is targeted but not yet sprinted). Mirrors the GitHub milestone.
+- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a_version-planning`; `SPRINT` (Z) owned by `/3c_sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version.
 
 ## Backlog
 
 | ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
 |:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-XXX | Example task title | planned | area:FE-dashboard, type:feature | 0.08 | — | ICE: 0.27 (I: 2.0, C: 80%) | [[L-XXX]], [[A-XXX]], [[DR-XXX]] |
+| BT-XXX | Example task title | planned | area:FE-dashboard, type:feature | v1.0.3 | — | ICE: 0.27 (I: 2.0, C: 80%) | [[L-XXX]], [[A-XXX]], [[DR-XXX]] |
