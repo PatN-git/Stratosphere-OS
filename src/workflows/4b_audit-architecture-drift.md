@@ -1,8 +1,8 @@
 ---
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
-version: "1.0.2"
-updated: 2026-06-17
+version: "1.0.3"
+updated: 2026-06-18
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -81,7 +81,7 @@ When in doubt, lower the score and discard.
 
 ## Phase 3: Output
 IF issues >= 80 confidence exist:
-1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents/workflows/3a_create-issue.md`.
+1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents/workflows/3b_create-issue.md`.
    - **Skeleton format:**
      ```markdown
      ## Overview
@@ -117,4 +117,4 @@ HALT execution. Output a 2-line summary of flagged components and confirm `.tmp/
 
 Await human instruction:
 - Human reviews the proposal.
-- IF approved -> Human commands agent to run `/3a_create-issue` workflow to commit issues to the backlog and github.
+- IF approved -> Human commands agent to run `/3b_create-issue` workflow to commit issues to the backlog and github.

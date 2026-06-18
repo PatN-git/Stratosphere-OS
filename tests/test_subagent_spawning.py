@@ -32,7 +32,11 @@ workflows_to_check = {
         "Stress Tester",
         "Report the matrix only; do not edit any file."
     ],
-    "src/workflows/3a_create-issue.md": [
+    "src/workflows/3a_version-planning.md": [
+        "Invoke a Release Auditor subagent",
+        "Report the audit findings only; do not edit any file, create milestones, or modify the roadmap."
+    ],
+    "src/workflows/3b_create-issue.md": [
         "Invoke a Coverage Auditor subagent",
         "Report the coverage map only; do not create issues or edit any file."
     ],

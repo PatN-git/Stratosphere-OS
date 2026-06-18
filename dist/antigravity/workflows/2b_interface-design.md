@@ -3,13 +3,13 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.1.0"
+updated: 2026-06-18
 ---
 
 # Interface Design
 
-**Hand-off contract:** Writes a path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `.agents/workflows/.reference/design-doc-template.md`. Appends the design path to the parent GitHub issue body. Downstream workflows (`3a`, `3c` Phase 0, `4a`) read this document.
+**Hand-off contract:** Writes a path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `.agents/workflows/.reference/design-doc-template.md`. Appends the design path to the parent GitHub issue body. Downstream workflows (`3b`, `3d` Phase 0, `4a`) read this document.
 
 ---
 
@@ -18,7 +18,7 @@ updated: 2026-06-17
 
 
 1. Load PRD from `docs/prds/BT-<padded>-<feature>.md`.
-2. If there is NO external surface/code change (docs-only/process) → skip this workflow; handoff to `/3a_create-issue`.
+2. If there is NO external surface/code change (docs-only/process) → skip this workflow; handoff to `/3b_create-issue`.
 3. If the feature has NO UI surface (backend/api/workers/db/library) → Path C.
 4. If it has UI, read "Stitch Status" from `.memory/DESIGN_RULES.md` §2 and branch:
    - `yes` → Path A (Stitch-assisted). Branch A1 = Whole-page (new page / full redesign); Branch A2 = Feature-on-existing-page. (Note: Path A ingests via copy/paste when the MCP is absent, so an A1 whole-page stays Path A. For A2 feature-on-existing with no MCP: INTERACTIVE prompt to ask whether to Stitch vs conform natively; if AFK, default to Path B and record the re-route in the design doc).
@@ -62,7 +62,7 @@ updated: 2026-06-17
 3. Immortal Components: A1 → propose the new shell as a §3 Immortal Component to the user; **on confirmation, register it in `.memory/DESIGN_RULES.md` §3 immediately** (the design moment is when structure is decided — do not defer to 0b); A2 → discard any Stitch changes to global shell components (DR-008/DR-010).
 4. Run the **UX / System Stress Test** (see below).
 5. Freeze the resolved layout/hierarchy into the Path A body block. `status` → `ready-for-slicing`.
-6. Read Rule: Stitch is read ONCE and frozen. Downstream readers of this doc (`3a`, `3c`, `4a`) read ONLY the frozen doc, `DESIGN.md`, and `DESIGN_RULES.md`; `4b` audits `.memory/`. Never access live Stitch.
+6. Read Rule: Stitch is read ONCE and frozen. Downstream readers of this doc (`3b`, `3d`, `4a`) read ONLY the frozen doc, `DESIGN.md`, and `DESIGN_RULES.md`; `4b` audits `.memory/`. Never access live Stitch.
 
 ### Path B (Reference-driven native):
 1. Conform to the frozen `DESIGN.md` + §3 Immortal Components. References are optional at steady-state — gather them only if the feature intentionally extends the system (the agent MAY fetch/inspect URLs to extract patterns).
@@ -96,7 +96,7 @@ Before freezing and setting `status` → `ready-for-slicing` in any path:
 ## Phase 5: Publish & Sync
 1. Append the design doc link to the parent GitHub Issue body.
 2. Append relevant memory IDs (e.g. the new DR-xxx) to the `Ref` column in `.memory/BACKLOG_MAP.md` (do NOT put the design doc link in Ref).
-3. Handoff: *"Interface design complete. Run `/3a_create-issue` to slice requirements."*
+3. Handoff: *"Interface design complete. If ≥ 2 unassigned `size:large` features (`status != done`) now sit in the backlog, or ≥ 2 features contend for the current release's scope, run `/3a_version-planning` to place this on the roadmap first; otherwise run `/3b_create-issue` to slice."*
 
 ---
 
