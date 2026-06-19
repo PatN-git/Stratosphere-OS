@@ -4,7 +4,7 @@ description: Design the interface (UI layout or non-UI contract) of a feature, p
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.1.0"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 
 # Interface Design

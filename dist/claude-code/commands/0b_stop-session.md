@@ -4,7 +4,7 @@ description: Concludes session by codifying progress, updating memory artifacts,
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.1"
-updated: 2026-06-17
+timestamp: 2026-06-17
 ---
 
 # STOP SESSION

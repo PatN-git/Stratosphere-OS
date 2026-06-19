@@ -5,7 +5,7 @@ description: ""
 timestamp: <YYYY-MM-DD>
 resource: <GitHub Issue URL>
 status: ready-for-design | in-progress | complete
-version: "1.0.1"
+version: "1.0.2"
 ---
 
 # BT-<padded>: <Feature name>

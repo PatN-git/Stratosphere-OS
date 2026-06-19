@@ -3,8 +3,8 @@ name: 0d_nightly-consolidation
 description: End-of-day maintenance routine to reconcile multi-session learnings and purge intermediate scratchpads.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-updated: 2026-06-17
+version: "1.0.2"
+timestamp: 2026-06-18
 ---
 
 # Nightly Consolidation
@@ -36,6 +36,16 @@ Do not modify any files without explicit user approval.
   - Read the frontmatter `title` and `description` from each `.md` file.
   - Rebuild the directory's `index.md` listing as `* [Title](/path.md) - description`, grouped under a `# [Directory Name]` heading.
   - **Special-case `docs/knowledge/`**: Do not scan foreign concept `.md` files; instead, list one entry per source bundle (`docs/knowledge/<source>/` subdirectory).
+
+## Phase 3.6: Version-Planning Detector
+- Scan `.memory/BACKLOG_MAP.md` for parent features: rows where the Labels column contains both `size:large` and `type:feature`, and the Status column is not `status:done`.
+- A parent feature is unroadmapped if:
+  - Its Milestone column is empty, `-`, or `—` (em-dash), OR
+  - `docs/ROADMAP.md` is absent, OR
+  - `docs/ROADMAP.md` exists but does not contain the parent feature's zero-padded ID (e.g., `BT-007`).
+- Count the number of unroadmapped parent features ($N$).
+- If $N > 0$, emit a one-line nudge in the final output: *"N features unroadmapped — consider /3a_version-planning."* If `docs/ROADMAP.md` is missing entirely, also append: *"(Roadmap docs/ROADMAP.md is missing; run /3a_version-planning to initialize)."*
+- This is a passive detector only — never run `3a` autonomously.
 
 ## Phase 4: Await Execution Direction
 Halt execution entirely. Ask the user: *"What aspects of the plan do you want to implement?"*
