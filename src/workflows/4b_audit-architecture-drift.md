@@ -2,7 +2,7 @@
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
 version: "1.0.3"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.

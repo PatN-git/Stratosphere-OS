@@ -8,7 +8,7 @@ slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
-version: "1.0.1"
+version: "1.0.2"
 ---
 
 # Design: BT-<padded> - <Feature Name>

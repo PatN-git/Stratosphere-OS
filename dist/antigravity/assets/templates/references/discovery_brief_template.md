@@ -6,7 +6,7 @@ timestamp: <YYYY-MM-DD>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 slug: <topic-slug>
 linked-prd: —
-version: "1.0.1"
+version: "1.0.2"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>

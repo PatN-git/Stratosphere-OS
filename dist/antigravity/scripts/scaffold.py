@@ -183,13 +183,15 @@ def main():
                 # In repair mode, we trust the workspace file and compute its current hash as the new baseline
                 if p.exists():
                     text = p.read_text(encoding="utf-8")
-                    v, u, form = _versioning.read_version(text, p)
-                    if v and form:
+                    v, ts = _versioning.read_version(text, p)
+                    if v:
                         lock_data["artifacts"][proj_path] = {
                             "version": v,
-                            "sha256_at_install": _versioning.body_hash(text, form)
+                            "sha256_at_install": _versioning.body_hash(text)
                         }
                         count += 1
+                    else:
+                        print(f"Warning: skipped '{proj_path}' during lock repair (missing version stamp).")
             else:
                 # Normal mode: pull baseline hash from the bundled manifest, but ONLY if missing from lockfile
                 if proj_path not in lock_data.get("artifacts", {}) and p.exists():

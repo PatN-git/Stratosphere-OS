@@ -57,7 +57,7 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         if md.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/{inv}/{md.name}")
         k = set(fm_dict(md.read_text(encoding="utf-8")).keys())
-        required = {"name", "description", "version", "updated"}
+        required = {"name", "description", "version", "timestamp"}
         if not required.issubset(k):
             errs.append(f"{plat}/{inv}/{md.name} missing OKF keys. Found {k}")
     for sk in (root / plat / "skills").glob("*/SKILL.md"):
@@ -65,7 +65,7 @@ for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workfl
         if sk.read_bytes().startswith(b'\xef\xbb\xbf'):
             errs.append(f"BOM DETECTED in {plat}/skills/{sk.parent.name}/SKILL.md")
         k = set(fm_dict(sk.read_text(encoding="utf-8")).keys())
-        required = {"name", "description", "version", "updated"}
+        required = {"name", "description", "version", "timestamp"}
         if not required.issubset(k):
             errs.append(f"{plat}/skills/{sk.parent.name} missing OKF keys. Found {k}")
 

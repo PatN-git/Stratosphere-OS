@@ -4,7 +4,7 @@ description: Maps parent features to product releases and generates the roadmap;
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.0"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 
 # Version Planning

@@ -4,7 +4,7 @@ description: Workflow to conduct market & competitive research for greenfield or
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "1.0.1"
-updated: 2026-06-17
+timestamp: 2026-06-17
 ---
 
 # Research

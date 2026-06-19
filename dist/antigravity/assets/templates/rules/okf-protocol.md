@@ -2,8 +2,8 @@
 type: rule
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.1 conformance.
-timestamp: 2026-06-16
-version: "1.0.0"
+version: "1.0.1"
+timestamp: 2026-06-18
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -19,8 +19,8 @@ Every concept document must begin with a YAML frontmatter block containing:
 - `type` (required): A non-empty string from the Type Registry.
 - `title` (recommended): Human-readable display name, matching the file's first `#` heading.
 - `description` (recommended): A single-sentence summary of the concept.
-- `version` (recommended): The StratosphereOS release the file belongs to (quoted string, e.g., `"1.0.0"`).
-- `timestamp` (recommended): ISO 8601 format (YYYY-MM-DD) of the last meaningful change.
+- `timestamp` (required on distributed artifacts): ISO 8601 date of the last meaningful change. OKF's canonical change-date field; used by the build and bump-guard.
+- `version` (required on distributed artifacts; best-effort on generated docs, see §5): StratOS extension; quoted SemVer.
 - `tags` (optional): YAML list of short strings.
 - `resource` (optional): URI to the underlying asset (e.g., issue URL, repo path) where one exists.
 
@@ -50,7 +50,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
 
 ## 4. Reserved Files
-- **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
+- **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.1"`.
 - **Directory `index.md` files** (e.g. `.memory/index.md`, `docs/prds/index.md`): Used for progressive disclosure. These files must **not** carry frontmatter and are listings only.
 - **`log.md`**: If present, carries change history. It must not contain frontmatter.
 

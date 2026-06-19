@@ -1,7 +1,7 @@
 ---
 description: Library of brainstorming techniques and selection guide for concept framing.
 version: "1.0.2"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 
 # Brainstorm Technique Library

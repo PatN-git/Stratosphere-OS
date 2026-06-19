@@ -3,7 +3,7 @@ name: ROADMAP-template
 type: roadmap
 description: Release roadmap mapping product releases to parent features with MVP cut-line rationale and shipped history.
 version: "1.0.0"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 # Product Roadmap
 

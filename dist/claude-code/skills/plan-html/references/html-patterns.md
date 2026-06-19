@@ -2,7 +2,7 @@
 name: html-patterns
 description: html-patterns
 version: "1.0.1"
-updated: 2026-06-17
+timestamp: 2026-06-17
 ---
 
 # Reusable Patterns for plan-html

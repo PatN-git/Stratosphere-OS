@@ -2,232 +2,232 @@
   "artifacts": {
     "assets/templates/constitution/AGENT.md": {
       "sha256": "82d5e798ee1235b159d47e54b676dbdd8aeda362cbf20490442fc3dac3f210dc",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "e55fa3202e00763afde8a8ad118ec5d74a74b120485f1f8baf38cecf89a60992",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/constitution/GEMINI.md": {
       "sha256": "dca914b8255931c3185e3ac7bfaca0d514b82790b57f1f6d266837e60691256e",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "03b977997f8aec1948fdd94de2c35fa11b3e394adb5a393fca3fd37032701d7e",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "b9d190111dcab34da3aa9430509556ac99671b6fc044c069e1c2a47783280279",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "d749bf2bbfe7b73bcd7ee10b832f0d9854fa6ba43d3d4d0b6874fdae09bbba32",
-      "updated": "2026-06-18",
-      "version": "1.1.0"
+      "sha256": "fb0e646139230129c1b4de1ad29c6b88ef7cb25bda87df50685e956f38d2e140",
+      "timestamp": "2026-06-18",
+      "version": "1.1.1"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
-      "sha256": "1903c6950b4411c86cfdace3a46b8bc41f9471d62334fcb73987b47394656a59",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "8c4d5d43f7356c4126b5fa9972d841d33e4d132484a725c198bb63d18f1b5d84",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/memory/DESIGN.md": {
       "sha256": "71f0e202c93fecd7a1f49e3ba64372fb78881d67babc1149bc0badc292e6c29d",
-      "updated": "",
+      "timestamp": "",
       "version": "1.0.1"
     },
     "assets/templates/memory/DESIGN_RULES.md": {
-      "sha256": "420723cd2bbdafef764e4cfff62033283687dc770ed2241764b69cf7e3c6bd89",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "6621984a2204e8988e30208700b105bf143a828fb93c7047fb7689f431c3a5ba",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "96b18b4d133900671f8c16dfdc8348f53c2c43f3981f4a465728f9327268ad20",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "7ba44e6a2b88c70aee9abef3b2cde5baf62158ae572abb80110c5d33c2f4a467",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/memory/LEARNINGS.md": {
-      "sha256": "f450c60b38a3769b988a28adcc3684dc35ec01f183fd90f34b816df204eb89e7",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "6c5b4a0bfe1d4aeb53b7732a681554d7b23c257ca8bf1e8daf9d4860a830ad59",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/memory/STATUS.md": {
-      "sha256": "8278c4e3e8a39bd1ed1bb64831d79de080d016cc4a8b551884657c1e2aff6a28",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "e18e5a5a86302efc355c004306ee94b48a76a37c526bb33bf1c0e6824f8ba1e0",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/references/PRD-template.md": {
-      "sha256": "1de061dfcaf1b428aed57708092c4c7a8454b7e4389b8fd95dec73540516ff68",
-      "updated": "",
-      "version": "1.0.1"
+      "sha256": "e6b92190cbb3f80f3d2ff569a18e57eb3041e187a2b882455914b98198564e70",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.2"
     },
     "assets/templates/references/ROADMAP-template.md": {
       "sha256": "4a8c75f8ae4c305b9ad8a05344eea1c4a5aed2f1820ec5a1ff0292f0c3769ae2",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.0"
     },
     "assets/templates/references/brainstorm-techniques.md": {
       "sha256": "de1e17967dd42383d449517ce34ce7e00217b66a983352a32127c9ed53e6bf4d",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "assets/templates/references/design-doc-template.md": {
-      "sha256": "4088575a1637ca624e9ed5e4ecf79561b4e2ee7c59eb014e1b9bbdf771d85bb9",
-      "updated": "",
-      "version": "1.0.1"
+      "sha256": "97247ca6daf2ae0d154a9b624c9b1d825757df2848579f4a180ebb4c3a6ff516",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.2"
     },
     "assets/templates/references/discovery_brief_template.md": {
-      "sha256": "ce8f38347989814a09c4e67525acc1c61a08cbffe849d5ac8cde1656467736ec",
-      "updated": "",
-      "version": "1.0.1"
+      "sha256": "22080320cb9c8e11044af9f3632c569798faa819d3ffbcd92687de58ada2699c",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.2"
     },
     "assets/templates/references/multi-sided-discovery.md": {
       "sha256": "3353663be806ad8734781a3d99c7c505c9809482bf4759839314eb032d0bd275",
-      "updated": "",
+      "timestamp": "2026-06-18",
       "version": "1.0.1"
     },
     "assets/templates/references/research-competitive-template.md": {
-      "sha256": "4aacb5f85071e7b19be26b488ffe0afbd0e7a36394dd37fd222986e983f1d5c1",
-      "updated": "",
-      "version": "1.0.1"
+      "sha256": "30181387d896625762a4196f59645a24fa55df5792076b1c4583133016c9c462",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.2"
     },
     "assets/templates/references/research-evidence-standards.md": {
       "sha256": "6ef0f2eb19a4fa6fd10c93362d2622f62e130b7831aa59c3d4c3749780ecbdc3",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/references/research-problem-template.md": {
-      "sha256": "aebdc0d6d5c1e1810a792d9350a38bc3b63a647e6e19f33d5f8743c4a233169c",
-      "updated": "",
-      "version": "1.0.1"
+      "sha256": "70e36bf89c9b44417380891b59ed0329d045517fe9d8d51bb1656c903cd66e97",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.2"
     },
     "assets/templates/references/shadcn-build-guide.md": {
       "sha256": "7cd44c95a4d7c36f474e55a4dfe1a8292a96c536ef41cf279bb5dd8be3012a28",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/references/stitch-brief-guide.md": {
       "sha256": "6e12e77c256f1f68b8e3fe6a989896abd2f5992f122b8565c7ca4aaffb8410bd",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "e8899e27675a1018e2b84f432434e49778dac1bad8946adfad143fc9902e2197",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "9fdbc1bed0246872ccec7575a5c239cfb4725725d7fb5732b34c1e1ff6813f7c",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "75b35bf499ea44ab4d4beab7ebab19cbf52a914214efb463fbc0cd359d0ef621",
-      "updated": "",
-      "version": "1.0.0"
+      "sha256": "ed11f63a200e47e8d3d12c9e7dd0105128a26421b2243423a7a4b264a5f4f359",
+      "timestamp": "2026-06-18",
+      "version": "1.0.1"
     },
     "assets/templates/rules/output-mode.md": {
-      "sha256": "047d818d4d8564dbe0a370d68341b6e6e93f32dcc42ea2d2d44aec4705e52094",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "d118d691867470540194c200284849e23e6127156b12f9324145b75d66b85727",
+      "timestamp": "2026-06-17",
+      "version": "1.0.2"
     },
     "commands/0a_start-session.md": {
       "sha256": "2254ad492dccb47548b005369a4d504eec4762acfcea4afb36080d514e26834f",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "commands/0b_stop-session.md": {
       "sha256": "92cef12fb4416aa22bd1f67588550f07ec7db72aa85a696572bb8290b21e39af",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "commands/0c_handoff.md": {
       "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "commands/0d_nightly-consolidation.md": {
-      "sha256": "0c67be0d0702af4076678c067b72436d0b5532bbc39396ca301a37c7eac5f601",
-      "updated": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "67babd6ca7e52077541246057b958a952f246632148d7d639d3faff406a0281b",
+      "timestamp": "2026-06-18",
+      "version": "1.0.2"
     },
     "commands/1a_research.md": {
       "sha256": "1726ba54af2978cc3b53b86070f5c5819c982e4633c8b6fc761623e29d2f6362",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "commands/1b_concept-framing.md": {
       "sha256": "9a09d4fbdcbf4cd8dbf81c55aec70250a542324f1f249bad209e85444c88bad9",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "commands/2a_write-prd.md": {
       "sha256": "bcce2d6315f78538ad038c334c17fe2098addbff17f29565e2fb4e41b48d3aa5",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.1.0"
     },
     "commands/2b_interface-design.md": {
       "sha256": "192ad87869d4f4739932843c88d56d1817e2d841825b63971ff463160c970268",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.1.0"
     },
     "commands/3a_version-planning.md": {
       "sha256": "a27314057102369bfeea586f4440402bb05d4f9832bcbac12a2d939659a7f98f",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.0"
     },
     "commands/3b_create-issue.md": {
       "sha256": "2c967031e296f14b6f23ac0557daeb11c0f98c59a499b39563d5525a1d5c768b",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "2.0.0"
     },
     "commands/3c_sprint-planning.md": {
       "sha256": "759ab056ab9822ad50439ab9e5160ec54284a2a19fc9f5d7efb1db05786916ab",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "2.0.0"
     },
     "commands/3d_implement-issue.md": {
       "sha256": "b07a9f71211b7e05788dd0fc1262ae7c198aea16d25da3c03e1498a1192bdfdf",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "2.0.0"
     },
     "commands/4a_verify-and-ship.md": {
       "sha256": "3ad70614e6bd7d6103353642c4d680e53035bb23ea41e8600528714a31b1a02e",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "43fee051ce271aa8028863e0e5dd25e4b3622895883ce8fa227de9c306b9d5f8",
-      "updated": "2026-06-18",
+      "timestamp": "2026-06-18",
       "version": "1.0.3"
     },
     "commands/stratosphere-setup.md": {
       "sha256": "7d99de54cda8c211c3bcb5103731c7836bf85403676c1bd63286eb2310f68d6c",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.3"
     },
     "commands/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "39a898e1905a3cf86623124b13499512d4615abc8e95d7441aade1e3220b1216",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "skills/plan-html/SKILL.md": {
       "sha256": "8c6518f70008b3c5d8ae8f6c8d7f95a7ccaa5bc467b9a1f3779de8d5b026b799",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "skills/plan-html/assets/templates/index.md": {
       "sha256": "a0943af674703c86d7dac9cb873dfe1277868c07bf852f437fe3bca664a026f1",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "skills/plan-html/references/html-patterns.md": {
       "sha256": "b2ee8ba16ca7e0e964548e17814c4863c75bcf30ee1b4ebbde46ccf0a22ef5c9",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
     "skills/plan-html/references/micro-app-patterns.md": {
       "sha256": "4b94e175d14852168ab1e79b0ddcfbfa068fd63839fab8993ec5eb0c084cdb06",
-      "updated": "2026-06-17",
+      "timestamp": "2026-06-17",
       "version": "1.0.1"
     }
   },

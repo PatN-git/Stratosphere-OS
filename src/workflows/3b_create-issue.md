@@ -4,7 +4,7 @@ description: Standardize feature ideas into "Implementation-Ready" vertical slic
 type: workflow HITL
 trigger: User. Do not run autonomously.
 version: "2.0.0"
-updated: 2026-06-18
+timestamp: 2026-06-18
 ---
 
 # Create issue

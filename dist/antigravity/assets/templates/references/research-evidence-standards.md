@@ -1,7 +1,7 @@
 ---
 description: Standards and confidence ratings to ensure research is verifiable and evidence-backed.
 version: "1.0.1"
-updated: 2026-06-17
+timestamp: 2026-06-17
 ---
 
 # Evidence Standards for Research Artifacts
