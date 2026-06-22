@@ -2,8 +2,8 @@
 type: architecture
 title: Architecture
 description: Tech stack, structure, data flow, and architectural laws.
-timestamp: 2026-06-17
-version: "1.0.2"
+timestamp: 2026-06-22
+version: "1.0.3"
 ---
 # ARCHITECTURE
 
@@ -12,6 +12,16 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
 > If a rule could be debated or overridden, it belongs in `LEARNINGS.md` instead.
+
+## Architectural Vocabulary
+- **Module:** A self-contained code unit (file, folder, component).
+- **Interface:** The contract surface exposed by a module.
+- **Depth (Deep/Shallow):** A deep module has a simple interface that hides significant complexity. A shallow module exposes all its internal details, increasing overall system complexity. We aim for deep modules.
+- **Seam:** An interface boundary separating two parts of the system, allowing them to be developed, tested, or mocked independently.
+- **Adapter:** A layer that maps between distinct domain interfaces, preserving the boundaries of each.
+- **Leverage:** Maximizing reuse of clean primitives to reduce codebase surface area.
+- **Locality:** Ensuring related data and operations stay close together to maximize readability and reasoning.
+- **Deletion Test:** A metric to test coupling: would deleting or replacing this module concentrate complexity elsewhere, or just move it? If it concentrates complexity, the module is not fully decoupled.
 
 ## Tech Stack
 - Frontend:

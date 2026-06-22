@@ -3,7 +3,7 @@ name: 3b_create-issue
 description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.0"
+version: "2.0.1"
 timestamp: 2026-06-18
 ---
 
@@ -84,42 +84,5 @@ Use the registry in `.memory/BACKLOG_MAP.md` as the single source of truth. Alwa
 2. Await user confirmation.
 3. Once approved, create the label in GitHub first, then write it to the registry, and then apply it to the issue.
 
----
-
-### TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. always label as `type:NEEDS_SPEC`*
-## Overview
-- One sentence: what and why.
-- **Mental Model:** 2-3 bullets on core logic or specific question to answer.
-## Dependencies
-- Relation to existing tasks/files.
-## Blockers
-- What must be resolved before this can move to a Vertical Slice (Template B)?
-
----
-
-### TEMPLATE B: Normal Issue (Vertical Slice)
-*Use for: Active builds. Must be deterministic.*
-## Overview
-- One paragraph: Business value, no jargon.
-- **Mental Model:** 2-3 bullets on core logic or specific question to answer.
-## ICE Priorities
-- **Impact:** [Value]
-- **Confidence:** [Value]
-- **ICE Score:** [Calculated Score]
-## Current state / Problem
-Reference current `files:lines`. Why it's broken or missing.
-## The Path (Vertical Slice Flow)
-- [ ] **Data Layer:** (Schema/RLS updates, Validations)
-- [ ] **Logic Layer:** (Hooks/API/Functions/Shared Business Logic)
-- [ ] **UI Layer:** (Components/Loading states/Error handling)
-## Acceptance Criteria (Verifiable)
-- [ ] **Verification:** [Specific test/run command]
-- [ ] Feature is demoable end-to-end.
-- [ ] **Time-to-Value:** Meets the aha-moment time-to-value constraint (from design doc).
-- [ ] **Stress Cases:** Implements the handling for relevant adverse conditions in the Stress Matrix (from design doc).
-
-## Dependencies
-- **[[ID]] first** (blocks/blocked-by).
-## Notes
-Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.
+## Issue Templates
+Refer to the canonical templates (Template A and Template B) defined in `.agents/workflows/.reference/issue-templates.md` when generating backlog tasks.

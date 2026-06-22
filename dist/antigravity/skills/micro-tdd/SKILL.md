@@ -2,7 +2,7 @@
 name: Micro-TDD Execution
 type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
-version: "1.0.1"
+version: "1.0.2"
 timestamp: 2026-06-17
 ---
 
@@ -27,6 +27,8 @@ Apply strictly to all pure logic, state updates, API mutations, hooks, and backe
    - Write exactly one minimal, target-focused unit test asserting the exact change or new capability.   
    - Run the test suite natively (`npm test`, `vitest`, `pytest`, etc.).
    - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos.
+     - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
+     - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
 2. **Implement & Pass (GREEN):**
    - Write the absolute simplest, non-speculative production code required to satisfy the failing test.
    - Re-run the test suite.

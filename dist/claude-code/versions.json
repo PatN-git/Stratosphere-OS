@@ -16,9 +16,9 @@
       "version": "1.0.1"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "b9d190111dcab34da3aa9430509556ac99671b6fc044c069e1c2a47783280279",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "3a2fdf063ab0cc44fb2b5a20940dcc491724b9166ea1a87005e9d87a1e67b4ce",
+      "timestamp": "2026-06-22",
+      "version": "1.0.3"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
       "sha256": "fb0e646139230129c1b4de1ad29c6b88ef7cb25bda87df50685e956f38d2e140",
@@ -70,6 +70,11 @@
       "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
+    "assets/templates/references/confidence-scale.md": {
+      "sha256": "c7faa1290f52c631eb2c4752620e3637038f6af91bfd58d4911892c49a53de1e",
+      "timestamp": "2026-06-22",
+      "version": "1.0.0"
+    },
     "assets/templates/references/design-doc-template.md": {
       "sha256": "97247ca6daf2ae0d154a9b624c9b1d825757df2848579f4a180ebb4c3a6ff516",
       "timestamp": "<YYYY-MM-DD>",
@@ -79,6 +84,11 @@
       "sha256": "22080320cb9c8e11044af9f3632c569798faa819d3ffbcd92687de58ada2699c",
       "timestamp": "<YYYY-MM-DD>",
       "version": "1.0.2"
+    },
+    "assets/templates/references/issue-templates.md": {
+      "sha256": "4e1dedb0739d0eec15673a737c617da0ceffac64d81ddf6ce94a2d94a62665b6",
+      "timestamp": "2026-06-22",
+      "version": "1.0.0"
     },
     "assets/templates/references/multi-sided-discovery.md": {
       "sha256": "3353663be806ad8734781a3d99c7c505c9809482bf4759839314eb032d0bd275",
@@ -146,9 +156,9 @@
       "version": "1.0.2"
     },
     "commands/1a_research.md": {
-      "sha256": "1726ba54af2978cc3b53b86070f5c5819c982e4633c8b6fc761623e29d2f6362",
+      "sha256": "25b326cc6e27cf02239ea178a3bddda93a9bcc2bf0c70be63867d4bc913ef354",
       "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     "commands/1b_concept-framing.md": {
       "sha256": "9a09d4fbdcbf4cd8dbf81c55aec70250a542324f1f249bad209e85444c88bad9",
@@ -161,9 +171,9 @@
       "version": "1.1.0"
     },
     "commands/2b_interface-design.md": {
-      "sha256": "192ad87869d4f4739932843c88d56d1817e2d841825b63971ff463160c970268",
+      "sha256": "615153256aafafdcff56770537fe8171fad7a1168ce168c4a0b20e6b0bf5ccc7",
       "timestamp": "2026-06-18",
-      "version": "1.1.0"
+      "version": "1.1.2"
     },
     "commands/3a_version-planning.md": {
       "sha256": "a27314057102369bfeea586f4440402bb05d4f9832bcbac12a2d939659a7f98f",
@@ -171,9 +181,9 @@
       "version": "1.0.0"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "2c967031e296f14b6f23ac0557daeb11c0f98c59a499b39563d5525a1d5c768b",
+      "sha256": "28d97d49b43d283af2fd3be00ca6d85c9950539108a86a72d62921c834b0beae",
       "timestamp": "2026-06-18",
-      "version": "2.0.0"
+      "version": "2.0.1"
     },
     "commands/3c_sprint-planning.md": {
       "sha256": "759ab056ab9822ad50439ab9e5160ec54284a2a19fc9f5d7efb1db05786916ab",
@@ -181,19 +191,19 @@
       "version": "2.0.0"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "b07a9f71211b7e05788dd0fc1262ae7c198aea16d25da3c03e1498a1192bdfdf",
+      "sha256": "d7cda2aec4c9b340b03656219bb2e1595360cfb658fe82170ddde7de75b20947",
       "timestamp": "2026-06-18",
-      "version": "2.0.0"
+      "version": "2.0.1"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "3ad70614e6bd7d6103353642c4d680e53035bb23ea41e8600528714a31b1a02e",
+      "sha256": "7670aeddb81bfea7af955d73e051e83a074f285f04e9af6d601605d20e2574ae",
       "timestamp": "2026-06-18",
-      "version": "1.0.2"
+      "version": "1.0.4"
     },
     "commands/4b_audit-architecture-drift.md": {
-      "sha256": "43fee051ce271aa8028863e0e5dd25e4b3622895883ce8fa227de9c306b9d5f8",
+      "sha256": "5175c645e281259713d8c0767c4698060813df3ebee171477b7858369ad55abf",
       "timestamp": "2026-06-18",
-      "version": "1.0.3"
+      "version": "1.0.5"
     },
     "commands/stratosphere-setup.md": {
       "sha256": "7d99de54cda8c211c3bcb5103731c7836bf85403676c1bd63286eb2310f68d6c",
@@ -206,9 +216,9 @@
       "version": "1.0.1"
     },
     "skills/micro-tdd/SKILL.md": {
-      "sha256": "39a898e1905a3cf86623124b13499512d4615abc8e95d7441aade1e3220b1216",
+      "sha256": "df4c338ad7076e728c9ee476c6ec7917b55385b4451a99baf88523897fd5b5aa",
       "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     "skills/plan-html/SKILL.md": {
       "sha256": "8c6518f70008b3c5d8ae8f6c8d7f95a7ccaa5bc467b9a1f3779de8d5b026b799",
