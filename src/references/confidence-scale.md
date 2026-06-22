@@ -1,33 +1,25 @@
 ---
-description: Generic confidence scale and scoring dimensions for StratOS audits and findings.
-version: "1.0.0"
+description: Generic confidence scale and scoring rubric shared by StratOS audits (4a verify-and-ship, 4b audit-architecture-drift). The invoking workflow declares its audit scope; this file defines how to score against it.
+version: "1.1.0"
 timestamp: 2026-06-22
 ---
 
 # Confidence Scale
 
+Score every finding 0–100 against the **audit scope declared by the invoking workflow**. Confidence is the combined judgment across four dimensions:
+
 ## Scoring Dimensions
-Score findings from 0–100 based on the following dimensions:
-1. **Evidence strength** — Is the issue directly visible in the files or documented guidance?
-2. **Scope relevance** — Is it structural architectural drift, a domain boundary violation, scalability risk, or repeated violation of documented rules?
-3. **Practical impact** — Would this materially affect maintainability, scalability, domain separation, implementation safety, or future feature delivery?
-4. **Actionability** — Can the issue be converted into a clear action with a specific component, root cause, and remediation direction?
+1. **Evidence strength** — Is the finding directly visible in the inputs (issue/PRD, design doc, tests, code, or `.memory/` guidance), versus inferred?
+2. **Scope relevance** — Does it fall within *this workflow's declared audit scope*? Out-of-scope findings are discarded regardless of merit.
+3. **Practical impact** — Would it cause a real failure, gap, or risk in normal operation if left unaddressed?
+4. **Actionability** — Can it be turned into a specific, verifiable change?
 
 ## Banding Anchors
-- **0–39: Discard**
-  - Speculative, stylistic, linter-level, pre-existing without current impact, already tracked in backlog, or outside the target directory/scope.
-  - Do not mention in output.
-- **40–69: Weak Signal**
-  - Possibly valid, but isolated, low-impact, or lacking connection to documented architectural rules.
-  - Do not report unless explicitly asked for exploratory findings.
-- **70–79: Near Miss**
-  - Likely architectural concern, but missing repeated evidence, explicit rule violation, clear scalability impact, or actionable remediation.
-  - Do not report in final output. Use internally only.
-- **80–89: Report**
-  - Strong evidence of structural drift, domain boundary violation, repeated anti-pattern, ignored documented rule, or unmanaged debt likely to block maintainability/scalability.
-- **90–100: Critical / Confirmed**
-  - Directly proven violation of documented architecture rules or repeated historical failure pattern with clear downstream impact.
-  - The issue materially increases implementation risk, feature delivery cost, or system coupling.
+- **0–39: Discard** — Speculative, stylistic, pre-existing without current impact, already tracked, or out of scope. Do not mention in output.
+- **40–69: Weak Signal** — Possibly valid, but evidence is incomplete, impact is low, or it rests on unstated assumptions. Do not report unless exploratory findings are explicitly requested.
+- **70–79: Near Miss** — Likely valid and in scope, but missing direct evidence, clear impact, or immediate actionability. Use internally only; do not report.
+- **80–89: Report** — Strong, directly-evidenced finding that a stated in-scope rule or criterion is unmet, with clear practical impact. Include in output.
+- **90–100: Critical / Confirmed** — Directly proven violation of a stated in-scope rule or criterion, likely to cause a serious or repeated failure. Include in output.
 
 ## Threshold Rule
 - **Only report findings with confidence ≥ 80.**

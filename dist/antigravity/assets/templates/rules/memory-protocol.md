@@ -2,8 +2,8 @@
 type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-06-17
-version: "1.0.2"
+timestamp: 2026-06-22
+version: "1.0.3"
 ---
 
 # Memory Protocol
@@ -73,7 +73,7 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - Never deletes to supersede — moves to `## Superseded` with tag.
 - Never silently rewrites memory during crystallization or lint.
 - Never reads `## Superseded` unless explicitly asked.
-- Never writes to any `.memory/` file without proposing and awaiting user confirmation. (Note: BACKLOG_MAP Ref/status updates performed by a lifecycle workflow (2a/2b/3a/3b/4a Publish & Sync steps) are pre-authorized and need no per-write confirmation; this confirmation rule applies to content entries in LEARNINGS/ARCHITECTURE/DESIGN_RULES/GLOSSARY).
+- Never writes to any `.memory/` file without proposing and awaiting user confirmation. (Note: BACKLOG_MAP Ref/status updates performed by a lifecycle workflow (2a/2b/3a/3b/3c/4a Publish & Sync steps) are pre-authorized and need no per-write confirmation; this confirmation rule applies to content entries in LEARNINGS/ARCHITECTURE/DESIGN_RULES/GLOSSARY).
 - Never write secrets, API keys, tokens, or PII to any `.memory/*` file. Redact before recording a learning.
 
 ## 6. Retrieval & Scale

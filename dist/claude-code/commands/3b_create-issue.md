@@ -3,8 +3,8 @@ name: 3b_create-issue
 description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.1"
-timestamp: 2026-06-18
+version: "2.0.2"
+timestamp: 2026-06-22
 ---
 
 # Create issue
@@ -72,6 +72,7 @@ Before creating the task, propose the breakdown to the user:
     -   **ICE < 0.15:** `priority:low`
 3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body. **Apply the scope label (`scope:baseline` or `scope:differentiator`) based on the slice's inherited scope-class.**
 4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`), size label (e.g. `size:medium`), type label, and **scope label (e.g. `scope:baseline`)** to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders). Set the new slice's `Milestone` to its parent feature's release `vX.Y.0` (read from the parent's BACKLOG_MAP row / GitHub milestone). If no release is assigned yet, default to `v1.0.0`. The sprint digit is assigned later by `/3c_sprint-planning`.
+5.  **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence them into a sprint, or `/3d_implement-issue` directly for a single ready slice.
 
 
 ---

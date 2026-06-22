@@ -3,8 +3,8 @@ name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.1"
-timestamp: 2026-06-18
+version: "2.0.2"
+timestamp: 2026-06-22
 ---
 
 # Implement issue
@@ -37,11 +37,12 @@ Run the `micro-tdd` skill to execute the RED→GREEN→REFACTOR loop, its Fast-T
 Apply the following slice-specific guidance when designing and writing tests/implementation:
 1. **CLI/Subprocess Tests:** If testing a CLI or subprocess, assert explicitly on success path details, `stdout`, or `stderr` contents, rather than merely verifying a non-zero exit code.
 2. **Requirement-ID Linking:** Link the test to relevant requirement IDs from `BACKLOG_MAP.md` and the GitHub issue (NOT `STATUS.md`) using the bare ID (e.g., `BT-101`).
-3. **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
-4. **Standard Library Fallbacks:** When writing logic or tests for mock environments, simple utilities, or CLI spikes, favor native platform/standard libraries (e.g. `sqlite3` and `argparse`/`sys.argv` in Python, or native built-ins in Node/Go) over third-party packages. This guarantees offline capability, faster test execution, and removes setup dependency friction.
+3. **Standard Library Fallbacks:** When writing logic or tests for mock environments, simple utilities, or CLI spikes, favor native platform/standard libraries (e.g. `sqlite3` and `argparse`/`sys.argv` in Python, or native built-ins in Node/Go) over third-party packages. This guarantees offline capability, faster test execution, and removes setup dependency friction.
 
 ## Phase 2: Refactoring & Architecture Checks
 
 When refactoring in the loop, adhere to:
 1. **Architecture Rules:** Verify architectural structure matches the project's `[[A-xxx]]` architecture rules inside `.memory/ARCHITECTURE.md`.
 2. **Incremental Commits:** Commit incrementally per TDD milestone with the format `<type>(BT-<slicePadded>): <summary>` (where `<type>` is the slice's type label).
+
+**Hand-off:** Slice implemented and committed. Run `/4a_verify-and-ship` to verify against acceptance criteria and open/update the feature PR.

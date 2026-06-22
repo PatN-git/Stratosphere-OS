@@ -2,8 +2,8 @@
 name: 4b_audit-architecture-drift
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
-version: "1.0.5"
-timestamp: 2026-06-18
+version: "1.0.6"
+timestamp: 2026-06-22
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -25,7 +25,7 @@ _CONSTRAINTS:_
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** The subagent returns the findings and confidence mapping. The main agent handles subsequent logic.
 
-_INPUT:_ Target directory files and all files in .`memory/`.
+_INPUT:_ Target directory files, all files in `.memory/`, and `.agents/workflows/.reference/confidence-scale.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules
 
 ## Deep Scan Matrix
@@ -47,7 +47,8 @@ _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgica
 11. Ignores historical learnings in `.memory/LEARNINGS.md`.
 
 ## Confidence scale & reporting threshold
-Score findings 0–100 per `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
+**Audit scope:** structural architectural drift, domain-boundary violations, scalability/maintainability risks, and repeated violations of documented system rules. A Report-grade (≥80) finding looks like structural drift, a leaked seam, or an ignored documented architecture rule (`[[A-xxx]]`/`[[DR-xxx]]`).
+Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
 
 
 ## Clean Exit Rule

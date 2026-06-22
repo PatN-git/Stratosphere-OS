@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, sequences a 10-day capacity block into GitHub phases.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.0"
-timestamp: 2026-06-18
+version: "2.0.1"
+timestamp: 2026-06-22
 ---
 
 # Sprint planning
@@ -60,4 +60,4 @@ Halt execution. Prompt user for confirmation. When confirmed:
 1. Update issue metadata directly inside GitHub. Ensure the label registry's `priority:high|medium|low` bucket is correctly applied based on the ICE score (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low).
 2. Ensure the sprint milestone `vX.Y.Z` exists (create it in GitHub if absent), assign matching leaf slices to it — **moving each off its inherited `vX.Y.0` release bucket** — and update the `Milestone` column in `.memory/BACKLOG_MAP.md` accordingly; set `status:planned` in BACKLOG_MAP and GitHub.
 3. When changing any issue's priority/milestone/status in GitHub, post a comment on that issue documenting the change and its rationale, e.g.: *'Sprint vX.Y.Z sync: ICE <score> → priority:high; milestone vX.Y.Z; status:planned.'* (Mirrors 0b's issue-comment pattern so GitHub history explains every label/milestone change.)
-4. Output termination note: Sprint `vX.Y.Z` locked. Ready for execution.
+4. Output termination note: Sprint `vX.Y.Z` locked. Ready for execution. Run `/3d_implement-issue` to build the first sequenced slice.

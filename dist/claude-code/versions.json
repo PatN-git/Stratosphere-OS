@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENT.md": {
-      "sha256": "82d5e798ee1235b159d47e54b676dbdd8aeda362cbf20490442fc3dac3f210dc",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "dbbb9a4590d35041797bc8b4297f424ca3f162d5a6e5624d11bbbfd732168df0",
+      "timestamp": "2026-06-22",
+      "version": "1.0.2"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "e55fa3202e00763afde8a8ad118ec5d74a74b120485f1f8baf38cecf89a60992",
@@ -71,9 +71,9 @@
       "version": "1.0.2"
     },
     "assets/templates/references/confidence-scale.md": {
-      "sha256": "c7faa1290f52c631eb2c4752620e3637038f6af91bfd58d4911892c49a53de1e",
+      "sha256": "756bf8c4234ac41ca9a410c43454b18682819135289dc3b0de68908db7a1d323",
       "timestamp": "2026-06-22",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "assets/templates/references/design-doc-template.md": {
       "sha256": "97247ca6daf2ae0d154a9b624c9b1d825757df2848579f4a180ebb4c3a6ff516",
@@ -121,9 +121,9 @@
       "version": "1.0.1"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "9fdbc1bed0246872ccec7575a5c239cfb4725725d7fb5732b34c1e1ff6813f7c",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "fb5d6329f2ca31778506d094558e5f9ccdea63f5b04513591a69a71b888d4f4c",
+      "timestamp": "2026-06-22",
+      "version": "1.0.3"
     },
     "assets/templates/rules/okf-protocol.md": {
       "sha256": "ed11f63a200e47e8d3d12c9e7dd0105128a26421b2243423a7a4b264a5f4f359",
@@ -181,29 +181,29 @@
       "version": "1.0.0"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "28d97d49b43d283af2fd3be00ca6d85c9950539108a86a72d62921c834b0beae",
-      "timestamp": "2026-06-18",
-      "version": "2.0.1"
+      "sha256": "32ed8c5050248344be30b0d3a13b96df18b06501b10847b985f53af0de858398",
+      "timestamp": "2026-06-22",
+      "version": "2.0.2"
     },
     "commands/3c_sprint-planning.md": {
-      "sha256": "759ab056ab9822ad50439ab9e5160ec54284a2a19fc9f5d7efb1db05786916ab",
-      "timestamp": "2026-06-18",
-      "version": "2.0.0"
-    },
-    "commands/3d_implement-issue.md": {
-      "sha256": "d7cda2aec4c9b340b03656219bb2e1595360cfb658fe82170ddde7de75b20947",
-      "timestamp": "2026-06-18",
+      "sha256": "17a00f50c3c951fcf981b269394981c2489bca0c49183a5f858a5f04314c9ca2",
+      "timestamp": "2026-06-22",
       "version": "2.0.1"
     },
+    "commands/3d_implement-issue.md": {
+      "sha256": "9318385d83b4a9073243bf65232a99979b323b0d174ad43a5c4df302a96c0ec9",
+      "timestamp": "2026-06-22",
+      "version": "2.0.2"
+    },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "7670aeddb81bfea7af955d73e051e83a074f285f04e9af6d601605d20e2574ae",
-      "timestamp": "2026-06-18",
-      "version": "1.0.4"
+      "sha256": "0bb348ecd74a648aa72b6811de92aac56c736af1b9951454e91ec87e0106298a",
+      "timestamp": "2026-06-22",
+      "version": "1.0.5"
     },
     "commands/4b_audit-architecture-drift.md": {
-      "sha256": "5175c645e281259713d8c0767c4698060813df3ebee171477b7858369ad55abf",
-      "timestamp": "2026-06-18",
-      "version": "1.0.5"
+      "sha256": "463c5777e0e83e6975da3b1e252ace71b4022a3866688870e7bc35e5e47f6ae3",
+      "timestamp": "2026-06-22",
+      "version": "1.0.6"
     },
     "commands/stratosphere-setup.md": {
       "sha256": "7d99de54cda8c211c3bcb5103731c7836bf85403676c1bd63286eb2310f68d6c",

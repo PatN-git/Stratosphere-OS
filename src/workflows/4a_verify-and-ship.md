@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.4"
-timestamp: 2026-06-18
+version: "1.0.5"
+timestamp: 2026-06-22
 ---
 
 ## Phase 1: Value-Add Gate
@@ -30,12 +30,14 @@ _INPUT:_
 - GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-interface.md`)
 - New/modified test files
 - relevant implementation files when needed to understand what the tests verify 
-- `.memory/LEARNINGS.md`.
+- `.memory/LEARNINGS.md`
+- `.agents/workflows/.reference/confidence-scale.md`.
 
 _PERSONA:_ Strict Business Logic Auditor. Relentlessly restrict audit to requirements and security boundaries.
 
 ## Confidence scale & reporting threshold
-Score findings 0–100 per `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
+**Audit scope:** stated requirements, acceptance criteria, business logic, and security boundaries (Supabase RLS, auth/authz, billing/credits/limits). A Report-grade (≥80) finding looks like a missing assertion of a stated requirement, an untested specified edge case, or a security-boundary bypass.
+Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
 
 - **Implementation-only Divergence Rule:** Any implementation-only divergence (where the code does something different from design/primitives but does NOT violate any stated PRD Acceptance Criteria or Design Contract) MUST cap at [Weak Signal] (confidence < 70) and is withheld from the final report.
 
@@ -62,7 +64,7 @@ HALT execution. Await human instruction:
 Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
 1. Branch isolation: Enforce that the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
 2. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
-3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3c owns commits). Push the branch.
+3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3d owns commits). Push the branch.
 4. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
    - `Closes #<sliceIssue>` (and the parent `BT-<padded>`)
    - One-line slice summary
