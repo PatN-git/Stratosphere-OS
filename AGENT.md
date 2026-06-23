@@ -1,9 +1,12 @@
 ---
-name: Lean Architect
+type: constitution
+name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
+version: "1.0.2"
+timestamp: 2026-06-22
 ---
  
-# THE LEAN ARCHITECT
+# STRATOSPHEREOS ARCHITECT
 
 ## Vision
 A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
@@ -30,9 +33,9 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Branch name:** `<type>/BT-<parentPadded>-<slug>`, `<type>` from the PARENT feature's `type:` label (normally `feat`).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label. (Branch is keyed to the feature; each commit is traceable to its slice.)
 - **main/master:** never a work target for code. It is only a base to branch from and a merge target.
-- **Who does what:** 3c is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single feature PR; it never creates the first commit and never merges.
+- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single feature PR; it never creates the first commit and never merges.
 - **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
-- **Push timing:** commits stay local during 3c; the branch is pushed only at 4a ship, behind the HITL confirmation.
+- **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Never push changes to remote repositories (GitHub) automatically. Commit locally, but leave the `push` action for manual user execution or explicit instruction.
  
 ## 5. Operating Principles
@@ -59,4 +62,5 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 ## 8. Pointer Directory (Offloaded Logic)
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
+- **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
 ``
