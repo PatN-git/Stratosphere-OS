@@ -3,8 +3,8 @@ name: 0b_stop-session
 description: Concludes session by codifying progress, updating memory artifacts, and performing linting to ensure a seamless, state-aware resumption of work.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
-timestamp: 2026-06-17
+version: "1.0.2"
+timestamp: 2026-06-23
 ---
 
 # STOP SESSION
@@ -30,6 +30,7 @@ Leave next session with enough context to resume immediately. Ensure all new ent
 5. If a domain term was agreed (during a discover session, while writing a PRD, or surfaced during implementation), add it to `.memory/GLOSSARY.md`:
    - Assign next available `[[G-xxx]]` ID.
    - Apply trust tag (default `[ASSUMED]`).
+   - Capture rejected synonyms as the entry's `Avoid:` list (plain text), same as 1b. If a new `Avoid:` synonym likely already appears in code, offer the same one-time, module-scoped retrofit (propose-only).
    - Add `Source:` pointing to the discovery brief, PRD, or issue where the term was settled.
    - When writing the first real `[[G-xxx]]` (G-002+), delete the shipped example (G-001).
 6. If architecture changed meaningfully:

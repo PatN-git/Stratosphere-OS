@@ -41,9 +41,9 @@
       "version": "1.0.2"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "7ba44e6a2b88c70aee9abef3b2cde5baf62158ae572abb80110c5d33c2f4a467",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "217c86de475bcd78f2de38817daca8415fbe99024e3ddbbdefd75898205a960d",
+      "timestamp": "2026-06-23",
+      "version": "1.0.3"
     },
     "assets/templates/memory/LEARNINGS.md": {
       "sha256": "6c5b4a0bfe1d4aeb53b7732a681554d7b23c257ca8bf1e8daf9d4860a830ad59",
@@ -121,9 +121,9 @@
       "version": "1.0.1"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "fb5d6329f2ca31778506d094558e5f9ccdea63f5b04513591a69a71b888d4f4c",
-      "timestamp": "2026-06-22",
-      "version": "1.0.3"
+      "sha256": "4b97052cd93636f9c22d3093db3fbb84446f261dc1f6728b8c9cb599525469a2",
+      "timestamp": "2026-06-23",
+      "version": "1.0.4"
     },
     "assets/templates/rules/okf-protocol.md": {
       "sha256": "ed11f63a200e47e8d3d12c9e7dd0105128a26421b2243423a7a4b264a5f4f359",
@@ -171,9 +171,9 @@
       "version": "1.0.2"
     },
     "workflows/0b_stop-session.md": {
-      "sha256": "92cef12fb4416aa22bd1f67588550f07ec7db72aa85a696572bb8290b21e39af",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "0c436ace323faa1d7f59056394fd56fdafd32c6b03e9581dad17d93127b1f84d",
+      "timestamp": "2026-06-23",
+      "version": "1.0.2"
     },
     "workflows/0c_handoff.md": {
       "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
@@ -181,9 +181,9 @@
       "version": "1.0.1"
     },
     "workflows/0d_nightly-consolidation.md": {
-      "sha256": "67babd6ca7e52077541246057b958a952f246632148d7d639d3faff406a0281b",
-      "timestamp": "2026-06-18",
-      "version": "1.0.2"
+      "sha256": "00e0aa5b3a17039f353f027f8b4660c9666035aa050cd034fc7cb19c387771e9",
+      "timestamp": "2026-06-23",
+      "version": "1.0.3"
     },
     "workflows/1a_research.md": {
       "sha256": "25b326cc6e27cf02239ea178a3bddda93a9bcc2bf0c70be63867d4bc913ef354",
@@ -191,9 +191,9 @@
       "version": "1.0.2"
     },
     "workflows/1b_concept-framing.md": {
-      "sha256": "9a09d4fbdcbf4cd8dbf81c55aec70250a542324f1f249bad209e85444c88bad9",
-      "timestamp": "2026-06-18",
-      "version": "1.0.2"
+      "sha256": "24fae1d5ec715208dfcfa5469b79448b23c87172c8a4fc16dd45eb36a58a75de",
+      "timestamp": "2026-06-23",
+      "version": "1.0.3"
     },
     "workflows/2a_write-prd.md": {
       "sha256": "bcce2d6315f78538ad038c334c17fe2098addbff17f29565e2fb4e41b48d3aa5",
@@ -221,9 +221,9 @@
       "version": "2.0.1"
     },
     "workflows/3d_implement-issue.md": {
-      "sha256": "9318385d83b4a9073243bf65232a99979b323b0d174ad43a5c4df302a96c0ec9",
-      "timestamp": "2026-06-22",
-      "version": "2.0.2"
+      "sha256": "e67fc22a4fa2ae19b674383e4b3c3bfac6082971c3056af056e4d729cda9660a",
+      "timestamp": "2026-06-23",
+      "version": "2.0.3"
     },
     "workflows/4a_verify-and-ship.md": {
       "sha256": "0bb348ecd74a648aa72b6811de92aac56c736af1b9951454e91ec87e0106298a",

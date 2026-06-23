@@ -2,8 +2,8 @@
 type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-06-22
-version: "1.0.3"
+timestamp: 2026-06-23
+version: "1.0.4"
 ---
 
 # Memory Protocol
@@ -53,6 +53,9 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 - Entry born from a task: `Source: BT-042`.
 - Task depending on an entry: `Ref: [[L-012]], [[G-005]], [[DR-020]]`.
 - Lint validates all links every `/stop-session`.
+
+### Naming Conventions
+- **Ubiquitous language (leading words):** When naming code identifiers (variables, functions, files, types), use the canonical GLOSSARY term verbatim; never introduce a synonym listed in that term's `Avoid:` field. `[[G-xxx]]` is the link handle in docs/memory; in code, the word itself is the identifier. `Avoid:` values are always plain text — never bracketed.
 
 ## 3. Supersession (in-file)
 

@@ -3,8 +3,8 @@ name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.2"
-timestamp: 2026-06-22
+version: "2.0.3"
+timestamp: 2026-06-23
 ---
 
 # Implement issue
@@ -44,5 +44,7 @@ Apply the following slice-specific guidance when designing and writing tests/imp
 When refactoring in the loop, adhere to:
 1. **Architecture Rules:** Verify architectural structure matches the project's `[[A-xxx]]` architecture rules inside `.memory/ARCHITECTURE.md`.
 2. **Incremental Commits:** Commit incrementally per TDD milestone with the format `<type>(BT-<slicePadded>): <summary>` (where `<type>` is the slice's type label).
+3. **Canonical naming (leading word):** name new/changed identifiers after the applicable GLOSSARY term; never introduce a listed `Avoid:` synonym.
+4. **Avoid-drift check (propose-only):** check the identifiers THIS SLICE introduced or modified against GLOSSARY `Avoid:` lists (only terms that have one). Use judgment — flag a match only when the banned word is used as the domain concept the glossary canonicalized; ignore third-party/library names, import paths, string literals, and comments; match on whole-identifier boundaries. Propose any renames (citing the canonical term + `[[G-xxx]]`) at the REFACTOR/HITL gate; never auto-rename. Scope is this slice's diff only — never the whole repo.
 
 **Hand-off:** Slice implemented and committed. Run `/4a_verify-and-ship` to verify against acceptance criteria and open/update the feature PR.
