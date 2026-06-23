@@ -191,9 +191,9 @@
       "version": "2.0.1"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "e67fc22a4fa2ae19b674383e4b3c3bfac6082971c3056af056e4d729cda9660a",
+      "sha256": "9e717502a368ff4b558ba04c9db1423dcf6eae96e5dcee48ee0f628cf4463b72",
       "timestamp": "2026-06-23",
-      "version": "2.0.3"
+      "version": "2.0.6"
     },
     "commands/4a_verify-and-ship.md": {
       "sha256": "0bb348ecd74a648aa72b6811de92aac56c736af1b9951454e91ec87e0106298a",

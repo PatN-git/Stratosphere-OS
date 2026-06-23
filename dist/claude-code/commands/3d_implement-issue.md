@@ -3,7 +3,7 @@ name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.3"
+version: "2.0.6"
 timestamp: 2026-06-23
 ---
 
@@ -46,5 +46,12 @@ When refactoring in the loop, adhere to:
 2. **Incremental Commits:** Commit incrementally per TDD milestone with the format `<type>(BT-<slicePadded>): <summary>` (where `<type>` is the slice's type label).
 3. **Canonical naming (leading word):** name new/changed identifiers after the applicable GLOSSARY term; never introduce a listed `Avoid:` synonym.
 4. **Avoid-drift check (propose-only):** check the identifiers THIS SLICE introduced or modified against GLOSSARY `Avoid:` lists (only terms that have one). Use judgment — flag a match only when the banned word is used as the domain concept the glossary canonicalized; ignore third-party/library names, import paths, string literals, and comments; match on whole-identifier boundaries. Propose any renames (citing the canonical term + `[[G-xxx]]`) at the REFACTOR/HITL gate; never auto-rename. Scope is this slice's diff only — never the whole repo.
+
+## Phase 3: Slice Completion Gate
+Before the `/4a` hand-off, confirm the slice is fully built against its acceptance criteria. Inline self-check, NOT a sub-agent; **ephemeral** — write nothing to the issue or PR.
+1. Read the slice issue's **Acceptance Criteria (Verifiable)**.
+2. Produce an **exhaustive coverage map**: for every AC, name the passing test that covers it or mark it `[UNCOVERED]` — list each by name, never summarize as "looks complete."
+3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g., design blocker) → surface it explicitly, never silently ship.
+4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced.
 
 **Hand-off:** Slice implemented and committed. Run `/4a_verify-and-ship` to verify against acceptance criteria and open/update the feature PR.
