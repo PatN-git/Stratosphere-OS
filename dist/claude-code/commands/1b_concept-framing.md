@@ -3,8 +3,8 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.2"
-timestamp: 2026-06-18
+version: "1.0.3"
+timestamp: 2026-06-23
 ---
 
 # Concept framing
@@ -90,6 +90,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 1. Compile agreed definitions from Phase 2 into a 3–8 term list.
 2. Present for explicit user approval — one pass.
 3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term. Assign IDs with [ASSUMED] tag — do not write without confirmation.
+4. When you canonicalize a term over alternatives, record the rejected synonyms as that entry's `Avoid:` list (plain text).
 
 ## Phase 4: Choose Framing
 
@@ -144,7 +145,7 @@ Present the brief: *"Review the discovery brief. Any changes before I hand off?"
 ## Phase 7: Hand-off & Memory Sync
 
 1. Write `docs/discovery/<slug>.md`.
-2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder).
+2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder). Include each term's `Avoid:` list. If a newly-recorded `Avoid:` synonym is likely already present in existing code, OFFER a one-time, module-scoped search for it in code identifiers and propose renames (propose-only; user confirms). Skip for brand-new vocabulary with no prior code.
 3. If a framing decision is reusable across features, propose [[L-xxx]] for `.memory/LEARNINGS.md`. Rare — only if user signals it's a pattern.
 4. Delete the temporary `docs/discovery/.<slug>.work.md` file (if it exists).
 5. Tell the user the next step:

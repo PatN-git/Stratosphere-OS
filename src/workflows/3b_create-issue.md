@@ -3,8 +3,8 @@ name: 3b_create-issue
 description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.0"
-timestamp: 2026-06-18
+version: "2.0.2"
+timestamp: 2026-06-22
 ---
 
 # Create issue
@@ -72,6 +72,7 @@ Before creating the task, propose the breakdown to the user:
     -   **ICE < 0.15:** `priority:low`
 3.  **Generate:** Create the issue in GitHub (if connected, otherwise in local task list) applying the appropriate template below. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body. **Apply the scope label (`scope:baseline` or `scope:differentiator`) based on the slice's inherited scope-class.**
 4.  **Backlog Sync:** **Immediately** append the entry to `.memory/BACKLOG_MAP.md` using the registry-compliant format. Write the bucketed priority label (e.g. `priority:medium`), size label (e.g. `size:medium`), type label, and **scope label (e.g. `scope:baseline`)** to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders). Set the new slice's `Milestone` to its parent feature's release `vX.Y.0` (read from the parent's BACKLOG_MAP row / GitHub milestone). If no release is assigned yet, default to `v1.0.0`. The sprint digit is assigned later by `/3c_sprint-planning`.
+5.  **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence them into a sprint, or `/3d_implement-issue` directly for a single ready slice.
 
 
 ---
@@ -84,42 +85,5 @@ Use the registry in `.memory/BACKLOG_MAP.md` as the single source of truth. Alwa
 2. Await user confirmation.
 3. Once approved, create the label in GitHub first, then write it to the registry, and then apply it to the issue.
 
----
-
-### TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. always label as `type:NEEDS_SPEC`*
-## Overview
-- One sentence: what and why.
-- **Mental Model:** 2-3 bullets on core logic or specific question to answer.
-## Dependencies
-- Relation to existing tasks/files.
-## Blockers
-- What must be resolved before this can move to a Vertical Slice (Template B)?
-
----
-
-### TEMPLATE B: Normal Issue (Vertical Slice)
-*Use for: Active builds. Must be deterministic.*
-## Overview
-- One paragraph: Business value, no jargon.
-- **Mental Model:** 2-3 bullets on core logic or specific question to answer.
-## ICE Priorities
-- **Impact:** [Value]
-- **Confidence:** [Value]
-- **ICE Score:** [Calculated Score]
-## Current state / Problem
-Reference current `files:lines`. Why it's broken or missing.
-## The Path (Vertical Slice Flow)
-- [ ] **Data Layer:** (Schema/RLS updates, Validations)
-- [ ] **Logic Layer:** (Hooks/API/Functions/Shared Business Logic)
-- [ ] **UI Layer:** (Components/Loading states/Error handling)
-## Acceptance Criteria (Verifiable)
-- [ ] **Verification:** [Specific test/run command]
-- [ ] Feature is demoable end-to-end.
-- [ ] **Time-to-Value:** Meets the aha-moment time-to-value constraint (from design doc).
-- [ ] **Stress Cases:** Implements the handling for relevant adverse conditions in the Stress Matrix (from design doc).
-
-## Dependencies
-- **[[ID]] first** (blocks/blocked-by).
-## Notes
-Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.
+## Issue Templates
+Refer to the canonical templates (Template A and Template B) defined in `.agents/workflows/.reference/issue-templates.md` when generating backlog tasks.

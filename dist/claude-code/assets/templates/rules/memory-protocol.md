@@ -2,8 +2,8 @@
 type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-06-17
-version: "1.0.2"
+timestamp: 2026-06-23
+version: "1.0.4"
 ---
 
 # Memory Protocol
@@ -54,6 +54,9 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 - Task depending on an entry: `Ref: [[L-012]], [[G-005]], [[DR-020]]`.
 - Lint validates all links every `/stop-session`.
 
+### Naming Conventions
+- **Ubiquitous language (leading words):** When naming code identifiers (variables, functions, files, types), use the canonical GLOSSARY term verbatim; never introduce a synonym listed in that term's `Avoid:` field. `[[G-xxx]]` is the link handle in docs/memory; in code, the word itself is the identifier. `Avoid:` values are always plain text — never bracketed.
+
 ## 3. Supersession (in-file)
 
 When a rule changes, move the old entry to `## Superseded` in the **same file**:
@@ -73,7 +76,7 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - Never deletes to supersede — moves to `## Superseded` with tag.
 - Never silently rewrites memory during crystallization or lint.
 - Never reads `## Superseded` unless explicitly asked.
-- Never writes to any `.memory/` file without proposing and awaiting user confirmation. (Note: BACKLOG_MAP Ref/status updates performed by a lifecycle workflow (2a/2b/3a/3b/4a Publish & Sync steps) are pre-authorized and need no per-write confirmation; this confirmation rule applies to content entries in LEARNINGS/ARCHITECTURE/DESIGN_RULES/GLOSSARY).
+- Never writes to any `.memory/` file without proposing and awaiting user confirmation. (Note: BACKLOG_MAP Ref/status updates performed by a lifecycle workflow (2a/2b/3a/3b/3c/4a Publish & Sync steps) are pre-authorized and need no per-write confirmation; this confirmation rule applies to content entries in LEARNINGS/ARCHITECTURE/DESIGN_RULES/GLOSSARY).
 - Never write secrets, API keys, tokens, or PII to any `.memory/*` file. Redact before recording a learning.
 
 ## 6. Retrieval & Scale

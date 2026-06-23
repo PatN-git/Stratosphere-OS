@@ -3,14 +3,14 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.2"
-timestamp: 2026-06-18
+version: "1.0.5"
+timestamp: 2026-06-22
 ---
 
 ## Phase 1: Value-Add Gate
-_INPUT:_ GitHub Issue/PRD. ACTION: Evaluate risk profile of target issue before spending execution tokens.
-_ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused test-alignment audit.
-1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → proceed to Phase 5 (cosmetic ship; verified by 3c Fast-Track B).
+_INPUT:_ GitHub Issue/PRD.
+_ACTION:_ Enforce risk gate on target issue to justify a focused test-alignment audit.
+1. IF the task is a pure UI/cosmetic change, standard layout tweak, CSS/Tailwind adjustment, basic view rendering, copy change, or simple visual polish with no underlying data/logic invariants → proceed to Phase 5 (cosmetic ship; verified by 3d/micro-tdd Fast-Track B).
     - OUTPUT: `[SKIP] Pure UI/cosmetic task with no logical or security invariants. Audit bypassed to save tokens.`
 2. IF the task touches any of the following -> PROCEED to Phase 2:
   - Supabase RLS policies
@@ -22,7 +22,7 @@ _ACTION:_ Evaluate whether target issue is high-risk enough to justify a focused
   - A `[size:large]` `[type:AFK]`
 
 ## Phase 2: Execution
-**Context Isolation Rule:** Before running the audit, decide whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
+**Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
 - **Guardrails:** *"Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."*
 - **Output Contract:** The subagent returns the AC↔test table only. The main agent then resumes for the Phase 4 HITL halt.
 
@@ -30,37 +30,16 @@ _INPUT:_
 - GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-interface.md`)
 - New/modified test files
 - relevant implementation files when needed to understand what the tests verify 
-- `.memory/LEARNINGS.md`.
+- `.memory/LEARNINGS.md`
+- `.agents/workflows/.reference/confidence-scale.md`.
 
-_PERSONA:_ Strict Business Logic Auditor. Focus exclusively on requirements and security boundaries. Ignore syntax, formatting, and stylistic preferences.
+_PERSONA:_ Strict Business Logic Auditor. Relentlessly restrict audit to requirements and security boundaries.
 
 ## Confidence scale & reporting threshold
-Confidence is not certainty alone. It is the combined score for:
-
-1. **Evidence strength** — Is the gap directly visible in the PRD, GitHub Issue, tests, or `.memory/LEARNINGS.md`?
-2. **Scope relevance** — Is it about stated requirements, acceptance criteria, business logic, security boundaries, Supabase RLS, auth, billing, or specified edge cases?
-3. **Practical impact** — Would this likely allow a requirement gap, security bypass, incorrect business behavior, or false sense of test coverage in normal use?
-4. **Actionability** — Can a developer reasonably add or change a test to close the gap?
+**Audit scope:** stated requirements, acceptance criteria, business logic, and security boundaries (Supabase RLS, auth/authz, billing/credits/limits). A Report-grade (≥80) finding looks like a missing assertion of a stated requirement, an untested specified edge case, or a security-boundary bypass.
+Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
 
 - **Implementation-only Divergence Rule:** Any implementation-only divergence (where the code does something different from design/primitives but does NOT violate any stated PRD Acceptance Criteria or Design Contract) MUST cap at [Weak Signal] (confidence < 70) and is withheld from the final report.
-
-Assign a confidence score from 0–100 using these anchors:
-- **0–39: Discard**
-  - Speculative, stylistic, pre-existing, unrelated to requirements/security, or unsupported by direct evidence.
-  - Do not mention in output.
-- **40–69: Weak Signal**
-  - Possibly valid, but evidence is incomplete, impact is low, or it depends on assumptions not stated in the PRD / Issue / tests.
-  - Do not report unless explicitly asked for exploratory findings.
-- **70–79: Near Miss**
-  - Likely valid and relevant, but missing direct evidence, clear impact, or immediate actionability.
-  - Do not report in final output. Use internally only.
-- **80–89: Report**
-  - Strong evidence of a missing assertion, untested stated requirement, unhandled specified edge case, or likely security/business-logic test gap.
-  - Include in final output.
-- **90–100: Critical / Confirmed**
-  - Directly proven mismatch between stated acceptance criteria/security boundary and test coverage.
-  - Likely to cause repeated, serious, or production-impacting failure if left untested.
-  - Include in final output.
 
 ## Clean Exit Rule
 - IF no architectural issues meet the **confidence >= 80** threshold → proceed to Phase 5.
@@ -83,9 +62,9 @@ HALT execution. Await human instruction:
 
 ## Phase 5: Ship (gated, HITL)
 Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
-1. Branch isolation: confirm the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
+1. Branch isolation: Enforce that the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
 2. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
-3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3c owns commits). Push the branch.
+3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3d owns commits). Push the branch.
 4. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
    - `Closes #<sliceIssue>` (and the parent `BT-<padded>`)
    - One-line slice summary

@@ -3,8 +3,8 @@ name: 0d_nightly-consolidation
 description: End-of-day maintenance routine to reconcile multi-session learnings and purge intermediate scratchpads.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.2"
-timestamp: 2026-06-18
+version: "1.0.3"
+timestamp: 2026-06-23
 ---
 
 # Nightly Consolidation
@@ -29,7 +29,9 @@ Do not modify any files without explicit user approval.
     | Duplicate or overlapping entries | Merge? |
     | `[PATTERN]` cited ≥3 times across tasks | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (not applicable to `GLOSSARY.md`) |
     | `[ASSUMED]` older than 5 sessions, never validated | Delete? |
+- **Avoid-list reconciliation:** when a term is superseded, migrate its `Avoid:` synonyms to the superseding term, or retire them.
 - If proposals surface adjust the plan created in Phase 2. If nothing qualifies, skip silently.
+- **Note:** 0d does NOT scan the codebase for `Avoid:` terms (no full-repo lexical sweep) — drift is caught at write-time in 3d and at canonicalization-time in 1b/0b.
 
 ## Phase 3.5: Rebuild Directory Indices
 - Rebuild the `index.md` for `.memory/` and all subdirectories under `docs/` (`prds/`, `discovery/`, `research/`, `design/`, `knowledge/`) by scanning their `.md` concept files:
