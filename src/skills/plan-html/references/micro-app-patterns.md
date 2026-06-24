@@ -1,7 +1,7 @@
 ---
 name: micro-app-patterns
 description: Protocol and patterns for interactive round-trip editing micro-apps.
-version: "1.1.0"
+version: "1.2.0"
 timestamp: 2026-06-24
 ---
 
@@ -87,6 +87,6 @@ A domain-agnostic layout for cards moving between columns. Extremely useful for 
 
 ### 2. Constraints & Seam Rules
 - **Domain Agnostic**: The board template itself must contain zero domain-specific words (like "release", "milestone", "sprint"). It only understands `columns` and `cards`.
-- **Ephemeral Editor**: The HTML board is an editor only, not a datastore. The source of truth remains the codebase files (like BACKLOG_MAP.md or task.md). The agent reads the source files, projects them onto columns/cards, writes the HTML, receives the pasted change payload, and maps the moves back to rewrite the source files.
+- **Ephemeral Editor**: The HTML board is an editor only, not a datastore. The source of truth remains the codebase files (like BACKLOG_MAP.md or task.md). The invoking workflow (e.g. `3a`) reads the source files, projects them onto columns/cards, invokes the skill to write the HTML, receives the pasted change payload, and maps the moves back to rewrite the source files; the skill itself only emits the board and receives the change payload.
 - **Copy-Paste Only**: Works offline/hermetically in both Claude Code and Antigravity.
 - **Robust Parser**: The parser on the agent side must validate each change line, reject malformed rows, and ignore lines with no changes.

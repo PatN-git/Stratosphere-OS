@@ -55,12 +55,7 @@ function getLeafValues(obj, pathList = []) {
 console.log('[1] Lossless Export Validation');
 
 const outputDir = path.join(rootDir, 'src/skills/plan-html/test/output');
-const mockFiles = [
-  'auth-refactor-plan.html',
-  'db-options-matrix.html',
-  'complex-plan-document.html',
-  'triage-board.html'
-];
+const mockFiles = fs.readdirSync(outputDir).filter(file => file.endsWith('.html'));
 
 mockFiles.forEach(file => {
   const filePath = path.join(outputDir, file);
