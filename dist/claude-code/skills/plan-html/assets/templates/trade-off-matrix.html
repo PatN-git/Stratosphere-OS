@@ -58,6 +58,7 @@ thead th:first-child{min-width:160px}
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -104,14 +105,14 @@ function renderBody(data) {
   options.forEach(opt => {
     const isWinner = opt.name === bestOpt && maxAvg > 0;
     html += `<th class="${isWinner ? 'winner' : ''}">
-      <div class="option-header">${opt.name}</div>
-      <div class="option-sub">${opt.desc || ''}</div>
+      <div class="option-header">${esc(opt.name)}</div>
+      <div class="option-sub">${esc(opt.desc)}</div>
     </th>`;
   });
   html += '</tr></thead><tbody>';
   
   criteria.forEach(crit => {
-    html += `<tr><td><strong>${crit.name}</strong><div class="option-sub">${crit.desc || ''}</div></td>`;
+    html += `<tr><td><strong>${esc(crit.name)}</strong><div class="option-sub">${esc(crit.desc)}</div></td>`;
     options.forEach(opt => {
       const rating = (data.ratings && data.ratings[opt.name] && data.ratings[opt.name][crit.name]) || {};
       const score = rating.score || 0;
@@ -121,7 +122,7 @@ function renderBody(data) {
         <div class="cell-score">
           <div class="dots">${renderDots(score)}</div>
           ${score ? `<span class="score-badge ${scoreClass}">Score ${score}/5</span>` : ''}
-          <div class="note">${note}</div>
+          <div class="note">${esc(note)}</div>
         </div>
       </td>`;
     });

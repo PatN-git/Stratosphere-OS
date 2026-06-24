@@ -53,6 +53,7 @@ button:hover{background:var(--card)}
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -70,14 +71,14 @@ function renderBody(data) {
     (data.options || []).forEach(opt => {
       gridHtml += `
         <div class="column">
-          <div class="column-title">${opt.name}</div>
-          <div class="column-desc">${opt.desc}</div>
+          <div class="column-title">${esc(opt.name)}</div>
+          <div class="column-desc">${esc(opt.desc)}</div>
           
           ${opt.wireframe_regions && opt.wireframe_regions.length > 0 ? `
             <div class="wireframe-box">
               ${opt.wireframe_regions.map(reg => `
-                <div class="wf-region" title="${reg.desc || ''}">
-                  [${reg.name}]
+                <div class="wf-region" title="${esc(reg.desc)}">
+                  [${esc(reg.name)}]
                 </div>
               `).join('')}
             </div>
@@ -85,7 +86,7 @@ function renderBody(data) {
           
           ${opt.rationale ? `
             <div class="rationale-header">Rationale</div>
-            <div class="rationale-text">${opt.rationale}</div>
+            <div class="rationale-text">${esc(opt.rationale)}</div>
           ` : ''}
           
           <div class="lens-grid">
@@ -94,8 +95,8 @@ function renderBody(data) {
               const score = rating.score || 0;
               const valClass = score ? `lens-val-${score}` : '';
               return `
-                <div class="lens-badge ${valClass}" title="${rating.note || ''}">
-                  <span class="lens-label">${lens.name}</span>
+                <div class="lens-badge ${valClass}" title="${esc(rating.note)}">
+                  <span class="lens-label">${esc(lens.name)}</span>
                   <span class="lens-score">${score ? `${score}/5` : '—'}</span>
                 </div>
               `;

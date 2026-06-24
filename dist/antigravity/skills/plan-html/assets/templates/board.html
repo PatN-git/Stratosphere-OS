@@ -82,6 +82,7 @@ textarea#change-payload { width: 100%; height: 100px; padding: 0.75rem; border-r
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -119,14 +120,14 @@ function renderBody(data) {
     html += `
       <div class="board-column" id="col-${col.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${col.id}')">
         <div class="column-header">
-          <span>${col.label}</span>
+          <span>${esc(col.label)}</span>
           <span class="column-count">${colCards.length}</span>
         </div>
         <div class="cards-container">
           ${colCards.map(c => `
             <div class="board-card" id="card-${c.id}" draggable="true" ondragstart="dragStart(event, '${c.id}')" ondragend="dragEnd(event)">
-              <div class="card-label">${c.label}</div>
-              ${c.meta && c.meta.priority ? `<div class="card-meta">Priority: ${c.meta.priority}</div>` : ''}
+              <div class="card-label">${esc(c.label)}</div>
+              ${c.meta && c.meta.priority ? `<div class="card-meta">Priority: ${esc(c.meta.priority)}</div>` : ''}
             </div>
           `).join('')}
         </div>

@@ -130,6 +130,7 @@ details.deepdive-box .deepdive-body { padding: 1rem; border-top: 1px solid var(-
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -154,7 +155,7 @@ function renderDiagram(type, title) {
     return `
       <svg viewBox="0 0 400 120" class="svg-diagram">
         <polygon points="200,10 280,60 200,110 120,60" fill="var(--card)" stroke="var(--accent)" stroke-width="2"/>
-        <text x="200" y="65" text-anchor="middle" font-weight="bold" fill="var(--text)">${title || 'Decision?'}</text>
+        <text x="200" y="65" text-anchor="middle" font-weight="bold" fill="var(--text)">${esc(title) || 'Decision?'}</text>
         <path d="M 280 60 L 350 60" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
         <text x="315" y="50" text-anchor="middle" font-size="12" fill="var(--text)">Yes</text>
         <path d="M 120 60 L 50 60" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
@@ -190,7 +191,7 @@ function renderDiagram(type, title) {
     return `
       <svg viewBox="0 0 400 160" class="svg-diagram">
         <rect x="140" y="20" width="120" height="40" rx="5" fill="var(--card)" stroke="var(--accent)" stroke-width="2"/>
-        <text x="200" y="45" text-anchor="middle" fill="var(--text)">${title || 'Work'}</text>
+        <text x="200" y="45" text-anchor="middle" fill="var(--text)">${esc(title) || 'Work'}</text>
         <path d="M 200 60 L 200 100" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
         <polygon points="200,100 240,120 200,140 160,120" fill="var(--card)" stroke="var(--border)" stroke-width="1.5"/>
         <text x="200" y="124" text-anchor="middle" font-size="10" fill="var(--text)">Done?</text>
@@ -220,7 +221,7 @@ function renderBody(data) {
   
   (data.sections || []).forEach(sec => {
     const id = sec.id || sec.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    tocHtml += `<li><a href="#${id}" class="toc-link">${sec.title}</a></li>`;
+    tocHtml += `<li><a href="#${id}" class="toc-link">${esc(sec.title)}</a></li>`;
     
     let innerHtml = '';
     if (sec.kind === 'prose') {
@@ -231,7 +232,7 @@ function renderBody(data) {
           ${(sec.items || []).map(item => `
             <li class="step-item ${item.done ? 'done' : ''}">
               <span class="step-check">${item.done ? '✓' : '○'}</span>
-              <span class="step-text">${item.text}</span>
+              <span class="step-text">${esc(item.text)}</span>
             </li>
           `).join('')}
         </ul>
@@ -241,8 +242,8 @@ function renderBody(data) {
         <div class="compare-grid">
           ${(sec.options || []).map(opt => `
             <div class="compare-card">
-              <div class="compare-title">${opt.name}</div>
-              <div class="compare-desc">${opt.desc}</div>
+              <div class="compare-title">${esc(opt.name)}</div>
+              <div class="compare-desc">${esc(opt.desc)}</div>
             </div>
           `).join('')}
         </div>
@@ -250,15 +251,15 @@ function renderBody(data) {
     } else if (sec.kind === 'callout') {
       const type = sec.type || 'info';
       innerHtml = `
-        <div class="callout-box ${type}">
-          <div class="callout-title">${sec.title}</div>
-          <div class="callout-body">${sec.body}</div>
+        <div class="callout-box ${esc(type)}">
+          <div class="callout-title">${esc(sec.title)}</div>
+          <div class="callout-body">${esc(sec.body)}</div>
         </div>
       `;
     } else if (sec.kind === 'deepdive') {
       innerHtml = `
         <details class="deepdive-box">
-          <summary>${sec.summary || 'Details'}</summary>
+          <summary>${esc(sec.summary || 'Details')}</summary>
           <div class="deepdive-body">${sec.body || ''}</div>
         </details>
       `;
@@ -272,7 +273,7 @@ function renderBody(data) {
     
     contentHtml += `
       <section id="${id}" class="spy-section">
-        <h2>${sec.title}</h2>
+        <h2>${esc(sec.title)}</h2>
         ${innerHtml}
       </section>
     `;

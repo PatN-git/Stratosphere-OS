@@ -53,6 +53,7 @@ button:hover{background:var(--card)}
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -72,13 +73,13 @@ function renderBody(data) {
       phasesHtml += `
         <details ${status === 'progress' || idx === 0 ? 'open' : ''}>
           <summary>
-            <span class="badge ${status}">${status}</span>
-            <span>${phase.name}</span>
+            <span class="badge ${esc(status)}">${esc(status)}</span>
+            <span>${esc(phase.name)}</span>
           </summary>
           <div class="phase-body">
             <ul>
               ${(phase.items || []).map(item => `
-                <li class="${item.done ? 'done' : ''}">${item.text}</li>
+                <li class="${item.done ? 'done' : ''}">${esc(item.text)}</li>
               `).join('')}
             </ul>
           </div>

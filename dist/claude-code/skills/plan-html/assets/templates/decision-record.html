@@ -74,6 +74,7 @@ ul{padding-left:1.1rem;font-size:.875rem}li{margin:.2rem 0}
 <script id="plan-data" type="application/json">{}</script>
 <script>
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
@@ -88,8 +89,8 @@ function renderBody(data) {
   const adrMeta = container.querySelector('.adr-meta');
   if (adrMeta) {
     adrMeta.innerHTML = `
-      <span class="adr-id">${data.id || ''}</span>
-      <span class="status-chip ${data.status || 'proposed'}">${data.status || 'proposed'}</span>
+      <span class="adr-id">${esc(data.id)}</span>
+      <span class="status-chip ${esc(data.status || 'proposed')}">${esc(data.status || 'proposed')}</span>
     `;
   }
   
@@ -103,18 +104,18 @@ function renderBody(data) {
       const isChosen = data.decision && data.decision.includes(opt.name);
       optionsHtml += `
         <div class="option-card ${isChosen ? 'chosen' : ''}">
-          <div class="option-name">${opt.name}</div>
+          <div class="option-name">${esc(opt.name)}</div>
           <div class="pros-cons">
             ${opt.pros && opt.pros.length > 0 ? `
               <div class="pro-label">Pros</div>
               <ul>
-                ${opt.pros.map(pro => `<li>${pro}</li>`).join('')}
+                ${opt.pros.map(pro => `<li>${esc(pro)}</li>`).join('')}
               </ul>
             ` : ''}
             ${opt.cons && opt.cons.length > 0 ? `
               <div class="con-label">Cons</div>
               <ul>
-                ${opt.cons.map(con => `<li>${con}</li>`).join('')}
+                ${opt.cons.map(con => `<li>${esc(con)}</li>`).join('')}
               </ul>
             ` : ''}
           </div>
@@ -129,7 +130,7 @@ function renderBody(data) {
   
   const consequencesUl = document.getElementById('consequences');
   if (consequencesUl) {
-    consequencesUl.innerHTML = (data.consequences || []).map(cons => `<li>${cons}</li>`).join('');
+    consequencesUl.innerHTML = (data.consequences || []).map(cons => `<li>${esc(cons)}</li>`).join('');
   }
 }
 
