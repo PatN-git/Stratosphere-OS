@@ -45,43 +45,118 @@ ul{padding-left:1.1rem;font-size:.875rem}li{margin:.2rem 0}
     <div>
       <h1>{{title}}</h1>
       <div class="adr-meta">
-        <span class="adr-id">{{id}}</span>
-        <span class="status-chip {{status}}">{{status}}</span>
+        <!-- populated from planData() -->
       </div>
     </div>
     <div class="toolbar">
-      <button onclick="copyState()">Copy State</button>
-      <button onclick="exportMd()">Export MD</button>
+      <button onclick="exportMd()">Export Markdown</button>
+      <button onclick="copyState()">Copy JSON State</button>
     </div>
   </header>
   <div class="section">
     <h2>Context</h2>
-    <div id="context"><!-- agent populates --></div>
+    <div id="context"><!-- populated from planData() --></div>
   </div>
   <div class="section">
     <h2>Options Considered</h2>
-    <div class="options-grid" id="options"><!-- agent populates --></div>
+    <div class="options-grid" id="options"><!-- populated from planData() --></div>
   </div>
   <div class="section">
     <h2>Decision</h2>
-    <div class="decision-block" id="decision"><!-- agent populates --></div>
+    <div class="decision-block" id="decision"><!-- populated from planData() --></div>
   </div>
   <div class="section">
     <h2>Consequences</h2>
-    <ul class="consequence-list" id="consequences"><!-- agent populates --></ul>
+    <ul class="consequence-list" id="consequences"><!-- populated from planData() --></ul>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 <script id="plan-data" type="application/json">{}</script>
 <script>
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
-function copyState(){navigator.clipboard.writeText(document.getElementById('plan-data').textContent.trim()).then(()=>toast('State copied!'))}
-function exportMd(){
-  let md='# '+document.querySelector('h1').textContent+'\n\n';
-  md+='**Status:** '+document.querySelector('.status-chip').textContent.trim()+'\n\n';
-  md+='## Context\n'+document.getElementById('context').textContent.trim()+'\n\n';
-  md+='## Decision\n'+document.getElementById('decision').textContent.trim()+'\n';
-  navigator.clipboard.writeText(md.trim()).then(()=>toast('Markdown copied!'))
+function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
+function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
+document.addEventListener('DOMContentLoaded',()=>{renderBody(planData());if(typeof afterRender==='function')afterRender(planData());});
+
+function renderBody(data) {
+  const container = document.querySelector('.wrap');
+  if (!container) return;
+  const h1 = container.querySelector('h1');
+  if (h1) h1.textContent = data.title || 'Decision Record';
+  
+  const adrMeta = container.querySelector('.adr-meta');
+  if (adrMeta) {
+    adrMeta.innerHTML = `
+      <span class="adr-id">${data.id || ''}</span>
+      <span class="status-chip ${data.status || 'proposed'}">${data.status || 'proposed'}</span>
+    `;
+  }
+  
+  const contextDiv = document.getElementById('context');
+  if (contextDiv) contextDiv.textContent = data.context || '';
+  
+  const optionsDiv = document.getElementById('options');
+  if (optionsDiv) {
+    let optionsHtml = '';
+    (data.options || []).forEach(opt => {
+      const isChosen = data.decision && data.decision.includes(opt.name);
+      optionsHtml += `
+        <div class="option-card ${isChosen ? 'chosen' : ''}">
+          <div class="option-name">${opt.name}</div>
+          <div class="pros-cons">
+            ${opt.pros && opt.pros.length > 0 ? `
+              <div class="pro-label">Pros</div>
+              <ul>
+                ${opt.pros.map(pro => `<li>${pro}</li>`).join('')}
+              </ul>
+            ` : ''}
+            ${opt.cons && opt.cons.length > 0 ? `
+              <div class="con-label">Cons</div>
+              <ul>
+                ${opt.cons.map(con => `<li>${con}</li>`).join('')}
+              </ul>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+    optionsDiv.innerHTML = optionsHtml;
+  }
+  
+  const decisionDiv = document.getElementById('decision');
+  if (decisionDiv) decisionDiv.textContent = data.decision || '';
+  
+  const consequencesUl = document.getElementById('consequences');
+  if (consequencesUl) {
+    consequencesUl.innerHTML = (data.consequences || []).map(cons => `<li>${cons}</li>`).join('');
+  }
+}
+
+function toMarkdown(data) {
+  let md = '# ' + (data.title || 'Decision Record') + '\n\n';
+  if (data.id) md += `**ID:** ${data.id}\n`;
+  if (data.status) md += `**Status:** ${data.status.toUpperCase()}\n`;
+  md += '\n## Context\n' + (data.context || '') + '\n\n';
+  md += '## Options Considered\n';
+  (data.options || []).forEach(opt => {
+    md += `### ${opt.name}\n`;
+    if (opt.pros && opt.pros.length > 0) {
+      md += `**Pros:**\n`;
+      opt.pros.forEach(pro => md += `- ${pro}\n`);
+    }
+    if (opt.cons && opt.cons.length > 0) {
+      md += `**Cons:**\n`;
+      opt.cons.forEach(con => md += `- ${con}\n`);
+    }
+    md += '\n';
+  });
+  md += '## Decision\n' + (data.decision || '') + '\n\n';
+  md += '## Consequences\n';
+  (data.consequences || []).forEach(cons => {
+    md += `- ${cons}\n`;
+  });
+  return md.trim();
 }
 </script>
 </body>

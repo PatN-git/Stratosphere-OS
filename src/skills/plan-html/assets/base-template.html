@@ -99,8 +99,8 @@
     <header>
       <h1>{{title}}</h1>
       <div class="toolbar">
-        <button onclick="exportMarkdown()">Export Markdown</button>
-        <button onclick="copyJSONState()">Copy JSON State</button>
+        <button onclick="exportMd()">Export Markdown</button>
+        <button onclick="copyState()">Copy JSON State</button>
       </div>
     </header>
 
@@ -116,39 +116,11 @@
   </script>
 
   <script>
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
-    }
-    function copyJSONState() {
-      const data = document.getElementById('plan-data').textContent;
-      navigator.clipboard.writeText(data.trim())
-        .then(() => showToast('JSON State copied to clipboard!'))
-        .catch(err => console.error('Failed to copy state', err));
-    }
-    function exportMarkdown() {
-      let md = '# ' + document.querySelector('h1').textContent + '\n\n';
-      const sections = document.querySelectorAll('main section, main details');
-      sections.forEach(sec => {
-        const titleEl = sec.querySelector('h2, h3, summary');
-        if (titleEl) {
-          md += '## ' + titleEl.textContent.trim() + '\n';
-        }
-        const items = sec.querySelectorAll('p, li');
-        items.forEach(item => {
-          if (item.tagName === 'LI') {
-            md += '- ' + item.textContent.trim() + '\n';
-          } else {
-            md += item.textContent.trim() + '\n\n';
-          }
-        });
-      });
-      navigator.clipboard.writeText(md.trim())
-        .then(() => showToast('Markdown exported to clipboard!'))
-        .catch(err => console.error('Failed to export', err));
-    }
+    function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+    function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+    function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
+    function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
+    document.addEventListener('DOMContentLoaded',()=>{renderBody(planData());if(typeof afterRender==='function')afterRender(planData());});
   </script>
 </body>
 </html>

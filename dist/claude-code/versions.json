@@ -221,24 +221,24 @@
       "version": "1.0.2"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "8c6518f70008b3c5d8ae8f6c8d7f95a7ccaa5bc467b9a1f3779de8d5b026b799",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "5e74adf469d69fd5e845410047fbd45748fb6da29d683170246118eba824ae11",
+      "timestamp": "2026-06-24",
+      "version": "1.1.0"
     },
     "skills/plan-html/assets/templates/index.md": {
-      "sha256": "a0943af674703c86d7dac9cb873dfe1277868c07bf852f437fe3bca664a026f1",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "3e4df578cc5b16d40922f410d16233bdc78ba057356f969e4028ab81ddbcaf9e",
+      "timestamp": "2026-06-24",
+      "version": "1.3.0"
     },
     "skills/plan-html/references/html-patterns.md": {
-      "sha256": "b2ee8ba16ca7e0e964548e17814c4863c75bcf30ee1b4ebbde46ccf0a22ef5c9",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "64580bfdbb7ed306ffe0b2cb710423936fa8d5c04d4d4c9cd59b3ada811a7a9d",
+      "timestamp": "2026-06-24",
+      "version": "1.1.0"
     },
     "skills/plan-html/references/micro-app-patterns.md": {
-      "sha256": "4b94e175d14852168ab1e79b0ddcfbfa068fd63839fab8993ec5eb0c084cdb06",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "61495c0ac7330121d33aed5a7f15d39b8dddec13fe9ae585e190b0ea48407eef",
+      "timestamp": "2026-06-24",
+      "version": "1.1.0"
     }
   },
   "plugin_version": "1.0.0"

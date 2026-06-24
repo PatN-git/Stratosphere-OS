@@ -1,8 +1,8 @@
 ---
 name: index
-description: index
-version: "1.0.1"
-timestamp: 2026-06-17
+description: index of plan-html templates
+version: "1.3.0"
+timestamp: 2026-06-24
 ---
 
 # Template Index
@@ -13,11 +13,12 @@ Load ONLY the single template file matching the scenario. Never load all files.
 |---|---|---|
 | `implementation-plan` | `implementation-plan.html` | Multi-phase roadmap, progress tracking, collapsible milestones |
 | `trade-off-matrix` | `trade-off-matrix.html` | ≥3 options × ≥3 criteria, color-coded comparison |
-| `annotated-flowchart` | `annotated-flowchart.html` | Process/state machine with clickable step annotations |
 | `status-report` | `status-report.html` | KPI dashboard, health indicators, metric cards |
 | `incident-timeline` | `incident-timeline.html` | Chronological events with severity/impact coloring |
 | `decision-record` | `decision-record.html` | ADR-style: context, options considered, final decision, consequences |
 | `wireframe-compare` | `wireframe-compare.html` | 3 lo-fi UI direction sketches side-by-side for a pick |
+| `plan-document` | `plan-document.html` | Complex plan with sticky TOC, scroll-spy, search filter, and diagrams |
+| `board` | `board.html` | Generic draggable board editor (backlog, sprint, or triage) with change payload emitter |
 
 ## No match?
 If content doesn't fit any template, use `custom-composition` mode:

@@ -31,6 +31,9 @@ jobs:
       - name: Validate utility scripts
         run: python tests/verify_scripts.py
 
+      - name: Verify plan-html behavioral correctness
+        run: node tests/verify_plan_html.mjs
+
       - name: Fail if dist/ drifted from src/
         run: |
           DRIFT="$(git status --porcelain dist/ .claude-plugin/marketplace.json)"
