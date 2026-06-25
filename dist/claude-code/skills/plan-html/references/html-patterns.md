@@ -1,8 +1,8 @@
 ---
 name: html-patterns
 description: Reusable HTML, CSS, and JS patterns for interactive, complex plan documents and spatial components.
-version: "1.1.0"
-timestamp: 2026-06-24
+version: "1.2.0"
+timestamp: 2026-06-25
 ---
 
 # Reusable Patterns for plan-html
@@ -216,4 +216,112 @@ Zero-dependency diagrams representing decision gates, branching options, and loo
   <path d="M 160 120 L 80 120 Q 70 120 70 80 Q 70 40 80 40 L 140 40" fill="none" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
   <text x="100" y="110" text-anchor="middle" font-size="10" fill="var(--text)">No</text>
 </svg>
+```
+
+---
+
+## Interactive Primitives (Binds to `plan-data` + Theme/Escaped)
+
+These snippets demonstrate how to declare self-contained elements that:
+1. Bind directly to the `<script id="plan-data">` state.
+2. Inherit the document's dark/light CSS variables.
+3. Call standard `esc()` helpers to avoid HTML injection/escaping issues.
+
+### 1. Range Slider
+```html
+<div class="control-group">
+  <label for="slider-id">Target Threshold (<span id="slider-id-val">0.8</span>)</label>
+  <input type="range" id="slider-id" min="0" max="1" step="0.05" value="0.8" oninput="document.getElementById('slider-id-val').textContent=this.value; updateState('sliderVal', parseFloat(this.value))">
+</div>
+<style>
+  .control-group { margin-bottom: 1rem; }
+  .control-group label { display: block; font-weight: bold; margin-bottom: 0.25rem; font-size: 0.9rem; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+</style>
+```
+
+### 2. Toggle (Checkbox)
+```html
+<div class="control-group" style="display:flex; align-items:center; gap:0.5rem;">
+  <input type="checkbox" id="toggle-id" onchange="updateState('toggleVal', this.checked)" style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;">
+  <label for="toggle-id" style="margin-bottom:0; cursor:pointer; font-weight:600; font-size:0.9rem;">Enable Feature</label>
+</div>
+```
+
+### 3. Checklist
+```html
+<ul class="checklist" id="checklist-id"></ul>
+<style>
+  .checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .checklist li { display: flex; align-items: center; gap: 0.5rem; }
+  .checklist label { cursor: pointer; font-size: 0.9rem; }
+</style>
+<script>
+  function renderChecklist(items) {
+    const ul = document.getElementById('checklist-id');
+    ul.innerHTML = items.map((item, idx) => `
+      <li>
+        <input type="checkbox" id="item-${idx}" ${item.done ? 'checked' : ''} onchange="updateChecklistItem(${idx}, this.checked)">
+        <label for="item-${idx}">${esc(item.text)}</label>
+      </li>
+    `).join('');
+  }
+  function updateChecklistItem(index, checked) {
+    const data = planData();
+    data.checklist[index].done = checked;
+    updatePlanData(data);
+  }
+</script>
+```
+
+### 4. Mini-Matrix
+```html
+<table class="mini-matrix">
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Cost</th>
+      <th>Speed</th>
+    </tr>
+  </thead>
+  <tbody id="matrix-body"></tbody>
+</table>
+<style>
+  .mini-matrix { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.9rem; }
+  .mini-matrix th, .mini-matrix td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
+  .mini-matrix th { background: var(--card); font-weight: 600; }
+  .mini-matrix tr:hover { background: var(--card); }
+</style>
+<script>
+  function renderMatrix(options) {
+    const tbody = document.getElementById('matrix-body');
+    tbody.innerHTML = options.map(opt => `
+      <tr>
+        <td style="font-weight:600;">${esc(opt.name)}</td>
+        <td>${esc(opt.cost)}</td>
+        <td>${esc(opt.speed)}</td>
+      </tr>
+    `).join('');
+  }
+</script>
+```
+
+### 5. Notes Field
+```html
+<div class="notes-field">
+  <label for="notes-textarea">Notes & Feedback</label>
+  <textarea id="notes-textarea" placeholder="Type notes here..." oninput="syncNotes(this.value)"></textarea>
+</div>
+<style>
+  .notes-field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .notes-field label { font-weight: bold; font-size: 0.9rem; }
+  .notes-field textarea { width: 100%; height: 120px; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: inherit; font-size: 0.875rem; resize: vertical; outline: none; }
+</style>
+<script>
+  function syncNotes(val) {
+    const data = planData();
+    data.notes = val;
+    updatePlanData(data);
+  }
+</script>
 ```
