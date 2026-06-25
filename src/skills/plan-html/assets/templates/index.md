@@ -1,7 +1,7 @@
 ---
 name: index
 description: index of plan-html templates
-version: "1.3.2"
+version: "1.3.3"
 timestamp: 2026-06-25
 ---
 

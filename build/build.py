@@ -116,7 +116,7 @@ def force_rmtree(path: Path):
 
 def copytree(src: Path, dst: Path):
     shutil.copytree(src, dst, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "test"))
 
 
 # --- workflow / command naming --------------------------------------------

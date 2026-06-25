@@ -141,14 +141,14 @@
       "version": "1.0.2"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "d3b18844bdb36e26705632f8c27df30bf2244c2393fcebd101893dd16d8acc3b",
+      "sha256": "70c3aac263e061ec549fe91fecc6caa2298f7a7ac50734ca0b973a5febf8fa2e",
       "timestamp": "2026-06-25",
-      "version": "1.1.3"
+      "version": "1.1.4"
     },
     "skills/plan-html/assets/templates/index.md": {
       "sha256": "25849d50081b1a81bef868c540d2a6cd401ecdb5a9c1cec259f3a60b4dd06351",
       "timestamp": "2026-06-25",
-      "version": "1.3.2"
+      "version": "1.3.3"
     },
     "skills/plan-html/references/html-patterns.md": {
       "sha256": "b269ca899f6013da71c6176b396d0ad1c1e1377ad3a3129c7244c4d02453253f",
