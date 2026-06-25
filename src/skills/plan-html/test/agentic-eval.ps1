@@ -43,9 +43,9 @@ Assert "Tech spec doc (repo, spatial, 2.0x)"        (Gate 'repo'  $true  2.0) 'm
 Write-Host "`n[3] E2E Artifact Validation" -ForegroundColor Yellow
 
 $artifacts = @(
-  @{ file = "auth-refactor-plan.html"; ratio = "3.0x"; template = "implementation-plan" },
   @{ file = "db-options-matrix.html";  ratio = "3.1x"; template = "trade-off-matrix" },
-  @{ file = "auth-flow-chart.html";    ratio = "3.8x"; template = "annotated-flowchart" }
+  @{ file = "complex-plan-document.html"; ratio = "3.0x"; template = "plan-document" },
+  @{ file = "triage-board.html"; ratio = "3.6x"; template = "board" }
 )
 
 foreach ($a in $artifacts) {
@@ -63,16 +63,45 @@ foreach ($a in $artifacts) {
     Assert "  Correct ratio logged"     $hasRatio   $true
     Assert "  State script present"     $hasPlanData $true
     Assert "  Export MD button present" $hasExport  $true
+
+    # Assert plan-data parses to a non-empty object
+    $jsonStart = $content.IndexOf('id="plan-data" type="application/json">')
+    if ($jsonStart -ge 0) {
+      $jsonStart += 'id="plan-data" type="application/json">'.Length
+    } else {
+      $jsonStart = $content.IndexOf('id="plan-data">')
+      if ($jsonStart -ge 0) {
+        $jsonStart += 'id="plan-data">'.Length
+      }
+    }
+    if ($jsonStart -ge 0) {
+      $jsonEnd = $content.IndexOf('</script>', $jsonStart)
+      if ($jsonEnd -ge 0) {
+        $jsonStr = $content.Substring($jsonStart, $jsonEnd - $jsonStart).Trim()
+        try {
+          $parsed = ConvertFrom-Json $jsonStr
+          $isNotEmpty = $null -ne $parsed -and ($parsed.psobject.properties.Count -gt 0 -or $parsed.Length -gt 0)
+          Assert "  State script parses to non-empty object" $isNotEmpty $true
+        } catch {
+          Assert "  State script parses as JSON" $false $true
+        }
+      } else {
+        Assert "  State script closing tag found" $false $true
+      }
+    } else {
+      Assert "  State script id found" $false $true
+    }
   }
 }
 
 # ─── Part 4: Template Index Coverage ──────────────────────────────────────
 Write-Host "`n[4] Template Index Coverage" -ForegroundColor Yellow
 
-$templateDir = Join-Path $root "references\templates"
+$templateDir = Join-Path $root "assets\templates"
 $expectedTemplates = @(
-  "index.md","implementation-plan.html","trade-off-matrix.html",
-  "annotated-flowchart.html","status-report.html","incident-timeline.html","decision-record.html"
+  "index.md","trade-off-matrix.html",
+  "status-report.html","incident-timeline.html","decision-record.html","wireframe-compare.html",
+  "plan-document.html","board.html"
 )
 
 foreach ($t in $expectedTemplates) {

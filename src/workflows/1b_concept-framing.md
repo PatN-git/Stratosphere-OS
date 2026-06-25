@@ -3,8 +3,8 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.3"
-timestamp: 2026-06-23
+version: "1.0.4"
+timestamp: 2026-06-25
 ---
 
 # Concept framing
@@ -147,8 +147,9 @@ Present the brief: *"Review the discovery brief. Any changes before I hand off?"
 1. Write `docs/discovery/<slug>.md`.
 2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder). Include each term's `Avoid:` list. If a newly-recorded `Avoid:` synonym is likely already present in existing code, OFFER a one-time, module-scoped search for it in code identifiers and propose renames (propose-only; user confirms). Skip for brand-new vocabulary with no prior code.
 3. If a framing decision is reusable across features, propose [[L-xxx]] for `.memory/LEARNINGS.md`. Rare — only if user signals it's a pattern.
-4. Delete the temporary `docs/discovery/.<slug>.work.md` file (if it exists).
-5. Tell the user the next step:
+4. **Invoke `plan-html` skill:** If the discovery brief is long or complex (≥ ~100 lines), invoke the `plan-html` skill using the `plan-document` template to render `docs/discovery/<slug>.html` for human review.
+5. Delete the temporary `docs/discovery/.<slug>.work.md` file (if it exists).
+6. Tell the user the next step:
    - **/2a_write-prd** → *"Discovery brief ready at `docs/discovery/<slug>.md`. Run `/2a_write-prd` to draft the PRD."*
    - **/3b_create-issue Template B** → *"This is a bug. Run `/3b_create-issue` with Template B."*
    - **/3b_create-issue Template A** → *"Spike recommended. Run `/3b_create-issue` with Template A."*

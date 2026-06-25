@@ -3,8 +3,8 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.1.0"
-timestamp: 2026-06-18
+version: "1.1.1"
+timestamp: 2026-06-25
 ---
 
 # Write PRD
@@ -78,7 +78,8 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
    | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | v1.0.0 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
    (Note: Use plain ASCII hyphens `-`, not em-dashes `—` in any BACKLOG row text. Milestone uses `vMAJOR.MINOR.SPRINT`. A new parent feature defaults to the **provisional current release baseline**: the highest `vX.Y` already present in the BACKLOG_MAP `Milestone` column (ignore the sprint digit), written as `vX.Y.0` (not yet sprinted). If the backlog has no milestone yet, default to `v1.0.0`. This is provisional — `/3a_version-planning` owns `MAJOR.MINOR` and may reassign it; `/3c_sprint-planning` owns the sprint digit. No leading zeros. Ref column is for memory IDs only; doc paths go in the GitHub issue body.)
-4. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip prompting for 2b if feature is non-UI/Path C).
+4. **Invoke `plan-html` skill:** If the PRD is long or complex (≥ ~100 lines or contains architectural decisions), invoke the `plan-html` skill using the `plan-document` template to render `docs/prds/BT-<padded>-<feature-name>.html` for human review.
+5. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip prompting for 2b if feature is non-UI/Path C).
 
 
 ---

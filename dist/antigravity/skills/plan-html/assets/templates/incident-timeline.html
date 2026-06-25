@@ -5,65 +5,212 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{title}}</title>
 <style>
-:root{--bg:#fff;--text:#171717;--border:#e5e5e5;--card:#f8fafc;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-@media(prefers-color-scheme:dark){:root{--bg:#090d16;--text:#f3f4f6;--border:#1f2937;--card:#111827}}
+:root, :root.theme-light{
+  --bg:#fff;
+  --text:#171717;
+  --border:#e5e5e5;
+  --card:#f8fafc;
+  --accent:#2563eb;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --overlay-bg: rgba(255, 255, 255, 0.85);
+}
+@media(prefers-color-scheme:dark){
+  :root:not(.theme-light){
+    --bg:#090d16;
+    --text:#f3f4f6;
+    --border:#1f2937;
+    --card:#111827;
+    --accent:#3b82f6;
+    --overlay-bg: rgba(17, 24, 39, 0.85);
+  }
+}
+:root.theme-dark{
+  --bg:#090d16;
+  --text:#f3f4f6;
+  --border:#1f2937;
+  --card:#111827;
+  --accent:#3b82f6;
+  --overlay-bg: rgba(17, 24, 39, 0.85);
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);padding:2rem 1.5rem;line-height:1.5}
 .wrap{max-width:800px;margin:0 auto}
-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+header{display:flex;flex-direction:column;gap:0.75rem;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;}
+.header-title-area{display:flex;flex-direction:column;}
 h1{font-size:1.75rem;font-weight:700}
 .meta{font-size:.875rem;opacity:.6;margin-top:.25rem}
-.toolbar{display:flex;gap:.5rem;flex-shrink:0}
-button{font-family:var(--font);font-size:.8rem;font-weight:500;padding:.4rem .875rem;border-radius:.375rem;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s}
-button:hover{background:var(--card)}
+.toolbar{display:flex;gap:.5rem;align-items:center;flex-shrink:0}
+button, select{font-family:var(--font);font-size:.8rem;font-weight:500;padding:.4rem .875rem;border-radius:.375rem;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s;outline:none}
+button:hover, select:hover{background:var(--card)}
 .timeline{position:relative;padding-left:2.5rem}
 .timeline::before{content:"";position:absolute;left:.75rem;top:0;bottom:0;width:2px;background:var(--border)}
 .event{position:relative;margin-bottom:1.25rem}
 .event-dot{position:absolute;left:calc(-2.5rem + .75rem - .5rem);top:.35rem;width:1rem;height:1rem;border-radius:50%;border:2px solid;background:var(--bg)}
 .p1{border-color:#ef4444;box-shadow:0 0 0 3px #fee2e2}.p2{border-color:#f97316}.p3{border-color:#f59e0b}.p4{border-color:#22c55e}
-@media(prefers-color-scheme:dark){.p1{box-shadow:0 0 0 3px #450a0a}}
+@media(prefers-color-scheme:dark){:root:not(.theme-light) .p1{box-shadow:0 0 0 3px #450a0a}}
+:root.theme-dark .p1{box-shadow:0 0 0 3px #450a0a}
 .event-card{background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.875rem 1rem}
 .event-card.milestone{border-color:#2563eb;background:#eff6ff}
-@media(prefers-color-scheme:dark){.event-card.milestone{background:#1e3a8a}}
+@media(prefers-color-scheme:dark){:root:not(.theme-light) .event-card.milestone{background:#1e3a8a}}
+:root.theme-dark .event-card.milestone{background:#1e3a8a}
 .event-header{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
 .event-time{font-size:.8rem;font-family:monospace;opacity:.6;white-space:nowrap}
 .event-title{font-weight:600;font-size:.95rem;flex:1}
 .sev-badge{font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:.25rem;text-transform:uppercase}
 .sev-p1{background:#fee2e2;color:#991b1b}.sev-p2{background:#ffedd5;color:#9a3412}.sev-p3{background:#fef3c7;color:#92400e}.sev-p4{background:#dcfce7;color:#166534}
-@media(prefers-color-scheme:dark){.sev-p1{background:#7f1d1d;color:#fca5a5}.sev-p2{background:#7c2d12;color:#fdba74}.sev-p3{background:#713f12;color:#fde68a}.sev-p4{background:#14532d;color:#86efac}}
+@media(prefers-color-scheme:dark){:root:not(.theme-light) .sev-p1{background:#7f1d1d;color:#fca5a5}:root:not(.theme-light) .sev-p2{background:#7c2d12;color:#fdba74}:root:not(.theme-light) .sev-p3{background:#713f12;color:#fde68a}:root:not(.theme-light) .sev-p4{background:#14532d;color:#86efac}}
+:root.theme-dark .sev-p1{background:#7f1d1d;color:#fca5a5}:root.theme-dark .sev-p2{background:#7c2d12;color:#fdba74}:root.theme-dark .sev-p3{background:#713f12;color:#fde68a}:root.theme-dark .sev-p4{background:#14532d;color:#86efac}
 .event-body{font-size:.875rem;margin-top:.5rem;opacity:.8}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:var(--bg);padding:.6rem 1.25rem;border-radius:.375rem;transform:translateY(150%);transition:transform .3s cubic-bezier(.16,1,.3,1);z-index:100;font-size:.875rem}
 .toast.show{transform:translateY(0)}
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible, [draggable="true"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div>
+    <div class="header-title-area">
       <h1>{{title}}</h1>
       <div class="meta">Incident Timeline · Generated by plan-html</div>
     </div>
     <div class="toolbar">
-      <button onclick="copyState()">Copy State</button>
-      <button onclick="exportMd()">Export MD</button>
+      <select id="theme-select" onchange="changeTheme(this.value)">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <button onclick="exportMd()">Copy Doc for Human (Markdown)</button>
+      <button onclick="copyState()">Copy State for Agent (JSON)</button>
     </div>
   </header>
-  <div class="timeline" id="timeline"><!-- agent populates event items --></div>
+  <div class="timeline" id="timeline"><!-- populated from planData() --></div>
 </div>
+
+<!-- Floating Notes Button -->
+<button id="notes-toggle-btn" onclick="toggleNotesPanel()" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; padding: 0.6rem 1rem; border-radius: 9999px; background: var(--accent); color: #fff; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: transform 0.2s;">
+  <span>📝</span> Notes
+</button>
+<!-- Floating Notes Panel -->
+<div id="notes-panel" style="position: fixed; bottom: 5rem; right: 1.5rem; width: 480px; max-width: calc(100vw - 3rem); background: var(--overlay-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 1rem; z-index: 999; display: none; flex-direction: column; gap: 0.5rem; transition: all 0.2s;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 0.25rem;">
+    <span style="font-weight: 700; font-size: 0.9rem; color: var(--text);">User Notes & Feedback</span>
+    <button onclick="toggleNotesPanel()" aria-label="Close notes panel" style="border: none; background: transparent; cursor: pointer; font-size: 1.1rem; padding: 0.2rem; color: var(--text); opacity: 0.6; width: auto; height: auto;">&times;</button>
+  </div>
+  <textarea id="notes-textarea" placeholder="Type your notes or feedback here..." oninput="syncNotes(this.value)" style="width: 100%; height: 180px; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: var(--font); font-size: 0.85rem; resize: vertical; outline: none;"></textarea>
+  <p style="font-size: 0.75rem; opacity: 0.6; line-height: 1.3;">These notes sync to the JSON state and copy block.</p>
+</div>
+
 <div class="toast" id="toast"></div>
 <script id="plan-data" type="application/json">{}</script>
 <script>
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
-function copyState(){navigator.clipboard.writeText(document.getElementById('plan-data').textContent.trim()).then(()=>toast('State copied!'))}
-function exportMd(){
-  let md='# '+document.querySelector('h1').textContent+'\n\n';
-  document.querySelectorAll('.event').forEach(e=>{
-    const time=e.querySelector('.event-time')?.textContent.trim();
-    const title=e.querySelector('.event-title')?.textContent.trim();
-    const body=e.querySelector('.event-body')?.textContent.trim();
-    md+=`**${time}** — ${title}\n${body||''}\n\n`;
+function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
+function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
+function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
+function initTheme(){
+  const saved = localStorage.getItem('plan-theme') || 'system';
+  const select = document.getElementById('theme-select');
+  if(select) select.value = saved;
+  applyTheme(saved);
+}
+function changeTheme(theme){
+  localStorage.setItem('plan-theme', theme);
+  applyTheme(theme);
+}
+function applyTheme(theme){
+  const root = document.documentElement;
+  root.classList.remove('theme-light', 'theme-dark');
+  if(theme === 'light'){
+    root.classList.add('theme-light');
+  } else if(theme === 'dark'){
+    root.classList.add('theme-dark');
+  }
+}
+function syncNotes(val){
+  const script = document.getElementById('plan-data');
+  if(!script) return;
+  try {
+    const data = JSON.parse(script.textContent || '{}');
+    data.notes = val;
+    script.textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    console.error('Error syncing notes:', e);
+  }
+}
+function toggleNotesPanel() {
+  const panel = document.getElementById('notes-panel');
+  if (panel) {
+    const isHidden = window.getComputedStyle(panel).display === 'none';
+    panel.style.display = isHidden ? 'flex' : 'none';
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  initTheme();
+  renderBody(planData());
+  if(typeof afterRender==='function')afterRender(planData());
+});
+
+function renderBody(data) {
+  const container = document.querySelector('.wrap');
+  if (!container) return;
+  const h1 = container.querySelector('h1');
+  if (h1) h1.textContent = data.title || 'Incident Timeline';
+  
+  const timelineDiv = document.getElementById('timeline');
+  if (timelineDiv) {
+    let eventsHtml = '';
+    (data.events || []).forEach(ev => {
+      const sev = (ev.severity || 'p3').toLowerCase();
+      eventsHtml += `
+        <div class="event">
+          <div class="event-dot ${esc(sev)}"></div>
+          <div class="event-card ${ev.milestone ? 'milestone' : ''}">
+            <div class="event-header">
+              <span class="event-time">${esc(ev.time)}</span>
+              <span class="event-title">${esc(ev.title)}</span>
+              <span class="sev-badge sev-${esc(sev)}">${esc(sev)}</span>
+            </div>
+            ${ev.body ? `<div class="event-body">${esc(ev.body)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    timelineDiv.innerHTML = eventsHtml;
+  }
+
+  // Load notes
+  const notesTextarea = document.getElementById('notes-textarea');
+  if (notesTextarea) {
+    notesTextarea.value = data.notes || '';
+  }
+}
+
+function toMarkdown(data) {
+  let md = '# ' + (data.title || 'Incident Timeline') + '\n\n';
+  (data.events || []).forEach(ev => {
+    const milestoneStr = ev.milestone ? ' [Milestone]' : '';
+    const sevStr = ev.severity ? ` [${ev.severity.toUpperCase()}]` : '';
+    md += `**${ev.time || ''}** — ${ev.title || ''}${sevStr}${milestoneStr}\n`;
+    if (ev.body) md += `${ev.body}\n`;
+    md += '\n';
   });
-  navigator.clipboard.writeText(md.trim()).then(()=>toast('Markdown copied!'))
+  if (data.notes) {
+    md += '## User Notes & Feedback\n' + data.notes + '\n';
+  }
+  return md.trim();
 }
 </script>
 </body>

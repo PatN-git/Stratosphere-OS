@@ -1,8 +1,8 @@
 ---
 name: html-patterns
-description: html-patterns
-version: "1.0.1"
-timestamp: 2026-06-17
+description: Reusable HTML, CSS, and JS patterns for interactive, complex plan documents and spatial components.
+version: "1.2.0"
+timestamp: 2026-06-25
 ---
 
 # Reusable Patterns for plan-html
@@ -59,4 +59,269 @@ timestamp: 2026-06-17
   .progress-container { background: var(--border); border-radius: 9999px; height: 1.25rem; overflow: hidden; width: 100%; }
   .progress-bar { background: var(--accent); color: white; text-align: right; padding-right: 0.5rem; font-size: 0.75rem; font-weight: bold; line-height: 1.25rem; }
 </style>
+```
+
+## Reading Progress Bar
+Renders a thin bar at the top of the viewport indicating how far down the document the user has scrolled.
+```html
+<div id="reading-progress" class="reading-progress"></div>
+<style>
+  .reading-progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--accent); width: 0%; z-index: 1001; transition: width 0.1s ease; }
+</style>
+<script>
+  window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+    document.getElementById('reading-progress').style.width = scrolled + '%';
+  });
+</script>
+```
+
+## Sticky Table of Contents (TOC) & Scroll-Spy
+Generates a side navigation list that highlights sections dynamically as they enter the viewport.
+```html
+<div class="layout">
+  <aside class="sidebar">
+    <nav class="toc" aria-label="Table of Contents">
+      <ul id="toc-list">
+        <!-- Dynamically generated list items:
+             <li><a href="#section-id" class="toc-link">Section Title</a></li>
+        -->
+      </ul>
+    </nav>
+  </aside>
+  <main class="content">
+    <section id="section-1" class="spy-section">Content 1</section>
+    <section id="section-2" class="spy-section">Content 2</section>
+  </main>
+</div>
+<style>
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; }
+  .sidebar { position: sticky; top: 2rem; height: calc(100vh - 4rem); overflow-y: auto; }
+  .toc ul { list-style: none; padding: 0; }
+  .toc li { margin-bottom: 0.5rem; }
+  .toc-link { text-decoration: none; color: var(--text); opacity: 0.6; font-size: 0.9rem; transition: opacity 0.2s; }
+  .toc-link:hover { opacity: 1; }
+  .toc-link.active { opacity: 1; color: var(--accent); font-weight: 600; }
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; margin-bottom: 1.5rem; }
+  }
+</style>
+<script>
+  // Scroll-Spy using IntersectionObserver
+  const observerOptions = { root: null, rootMargin: '0px 0px -60% 0px', threshold: 0 };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        document.querySelectorAll('.toc-link').forEach(link => {
+          if (link.getAttribute('href') === '#' + id) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+    });
+  }, observerOptions);
+  document.querySelectorAll('.spy-section').forEach(sec => observer.observe(sec));
+</script>
+```
+
+## Knowledge Explorer (Client-Side Search/Filter)
+Enables filtering sections in real-time by entering query keywords.
+```html
+<div class="search-box">
+  <input type="text" id="search-input" placeholder="Filter sections..." oninput="filterContent(this.value)">
+</div>
+<script>
+  function filterContent(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.spy-section').forEach(sec => {
+      const text = sec.textContent.toLowerCase();
+      const match = !q || text.includes(q);
+      sec.style.display = match ? 'block' : 'none';
+      
+      // Update corresponding TOC link visibility
+      const id = sec.getAttribute('id');
+      const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
+      if (tocLink) {
+        tocLink.parentElement.style.display = match ? 'block' : 'none';
+      }
+    });
+  }
+</script>
+```
+
+## Diagram Components (Inline SVG)
+Zero-dependency diagrams representing decision gates, branching options, and loops.
+
+### 1. Decision Node
+```html
+<svg viewBox="0 0 400 120" class="svg-diagram">
+  <!-- Diamond Shape -->
+  <polygon points="200,10 280,60 200,110 120,60" fill="var(--card-bg)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="200" y="65" text-anchor="middle" font-weight="bold" fill="var(--text)">Is Complex?</text>
+  <!-- Yes/No Outputs -->
+  <path d="M 280 60 L 350 60" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="315" y="50" text-anchor="middle" font-size="12" fill="var(--text)">Yes</text>
+  <path d="M 120 60 L 50 60" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="85" y="50" text-anchor="middle" font-size="12" fill="var(--text)">No</text>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--border)" />
+    </marker>
+  </defs>
+</svg>
+```
+
+### 2. Branching Options
+```html
+<svg viewBox="0 0 400 180" class="svg-diagram">
+  <!-- Root node -->
+  <rect x="150" y="10" width="100" height="40" rx="5" fill="var(--card-bg)" stroke="var(--border)" stroke-width="2"/>
+  <text x="200" y="35" text-anchor="middle" fill="var(--text)">Start</text>
+  
+  <!-- Branch Arrows -->
+  <path d="M 200 50 L 200 80 Q 200 90 110 90 L 80 90 L 80 110" fill="none" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 200 50 L 200 80 Q 200 90 290 90 L 320 90 L 320 110" fill="none" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Branch A -->
+  <rect x="30" y="110" width="100" height="40" rx="5" fill="var(--card-bg)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="80" y="135" text-anchor="middle" fill="var(--text)">Branch A</text>
+  
+  <!-- Branch B -->
+  <rect x="270" y="110" width="100" height="40" rx="5" fill="var(--card-bg)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="320" y="135" text-anchor="middle" fill="var(--text)">Branch B</text>
+</svg>
+```
+
+### 3. Loop Block
+```html
+<svg viewBox="0 0 400 160" class="svg-diagram">
+  <!-- Iteration box -->
+  <rect x="140" y="20" width="120" height="40" rx="5" fill="var(--card-bg)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="200" y="45" text-anchor="middle" fill="var(--text)">Execute Work</text>
+  
+  <!-- Forward Arrow -->
+  <path d="M 200 60 L 200 100" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Evaluation Diamond -->
+  <polygon points="200,100 240,120 200,140 160,120" fill="var(--card-bg)" stroke="var(--border)" stroke-width="1.5"/>
+  <text x="200" y="124" text-anchor="middle" font-size="10" fill="var(--text)">Done?</text>
+  
+  <!-- Loopback Arrow (eval -> back to iteration box) -->
+  <path d="M 160 120 L 80 120 Q 70 120 70 80 Q 70 40 80 40 L 140 40" fill="none" stroke="var(--border)" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="100" y="110" text-anchor="middle" font-size="10" fill="var(--text)">No</text>
+</svg>
+```
+
+---
+
+## Interactive Primitives (Binds to `plan-data` + Theme/Escaped)
+
+These snippets demonstrate how to declare self-contained elements that:
+1. Bind directly to the `<script id="plan-data">` state.
+2. Inherit the document's dark/light CSS variables.
+3. Call standard `esc()` helpers to avoid HTML injection/escaping issues.
+
+### 1. Range Slider
+```html
+<div class="control-group">
+  <label for="slider-id">Target Threshold (<span id="slider-id-val">0.8</span>)</label>
+  <input type="range" id="slider-id" min="0" max="1" step="0.05" value="0.8" oninput="document.getElementById('slider-id-val').textContent=this.value; updateState('sliderVal', parseFloat(this.value))">
+</div>
+<style>
+  .control-group { margin-bottom: 1rem; }
+  .control-group label { display: block; font-weight: bold; margin-bottom: 0.25rem; font-size: 0.9rem; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+</style>
+```
+
+### 2. Toggle (Checkbox)
+```html
+<div class="control-group" style="display:flex; align-items:center; gap:0.5rem;">
+  <input type="checkbox" id="toggle-id" onchange="updateState('toggleVal', this.checked)" style="width:1.1rem; height:1.1rem; accent-color:var(--accent); cursor:pointer;">
+  <label for="toggle-id" style="margin-bottom:0; cursor:pointer; font-weight:600; font-size:0.9rem;">Enable Feature</label>
+</div>
+```
+
+### 3. Checklist
+```html
+<ul class="checklist" id="checklist-id"></ul>
+<style>
+  .checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .checklist li { display: flex; align-items: center; gap: 0.5rem; }
+  .checklist label { cursor: pointer; font-size: 0.9rem; }
+</style>
+<script>
+  function renderChecklist(items) {
+    const ul = document.getElementById('checklist-id');
+    ul.innerHTML = items.map((item, idx) => `
+      <li>
+        <input type="checkbox" id="item-${idx}" ${item.done ? 'checked' : ''} onchange="updateChecklistItem(${idx}, this.checked)">
+        <label for="item-${idx}">${esc(item.text)}</label>
+      </li>
+    `).join('');
+  }
+  function updateChecklistItem(index, checked) {
+    const data = planData();
+    data.checklist[index].done = checked;
+    updatePlanData(data);
+  }
+</script>
+```
+
+### 4. Mini-Matrix
+```html
+<table class="mini-matrix">
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Cost</th>
+      <th>Speed</th>
+    </tr>
+  </thead>
+  <tbody id="matrix-body"></tbody>
+</table>
+<style>
+  .mini-matrix { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.9rem; }
+  .mini-matrix th, .mini-matrix td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
+  .mini-matrix th { background: var(--card); font-weight: 600; }
+  .mini-matrix tr:hover { background: var(--card); }
+</style>
+<script>
+  function renderMatrix(options) {
+    const tbody = document.getElementById('matrix-body');
+    tbody.innerHTML = options.map(opt => `
+      <tr>
+        <td style="font-weight:600;">${esc(opt.name)}</td>
+        <td>${esc(opt.cost)}</td>
+        <td>${esc(opt.speed)}</td>
+      </tr>
+    `).join('');
+  }
+</script>
+```
+
+### 5. Notes Field
+```html
+<div class="notes-field">
+  <label for="notes-textarea">Notes & Feedback</label>
+  <textarea id="notes-textarea" placeholder="Type notes here..." oninput="syncNotes(this.value)"></textarea>
+</div>
+<style>
+  .notes-field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .notes-field label { font-weight: bold; font-size: 0.9rem; }
+  .notes-field textarea { width: 100%; height: 120px; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: inherit; font-size: 0.875rem; resize: vertical; outline: none; }
+</style>
+<script>
+  function syncNotes(val) {
+    const data = planData();
+    data.notes = val;
+    updatePlanData(data);
+  }
+</script>
 ```

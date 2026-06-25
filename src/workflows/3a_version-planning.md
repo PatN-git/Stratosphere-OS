@@ -3,8 +3,8 @@ name: 3a_version-planning
 description: Maps parent features to product releases and generates the roadmap; owns the MAJOR.MINOR digits of the vX.Y.Z milestone.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.0"
-timestamp: 2026-06-18
+version: "1.0.1"
+timestamp: 2026-06-25
 ---
 
 # Version Planning
@@ -66,7 +66,7 @@ If neither holds, skip: releases default to `v1.0` and all features target `v1.0
 2. **GitHub gate:** if GitHub is not connected, skip steps 3–4 and note: *"GitHub not connected — roadmap recorded in `docs/ROADMAP.md` and BACKLOG_MAP only."*
 3. **Create release milestones & assign parents.** For each release lacking one, create the GitHub milestone `vX.Y.0`. Assign each `size:large` parent feature issue to its release `vX.Y.0`, and write the same `vX.Y.0` into the `Milestone` column of its BACKLOG_MAP row. **Do not touch leaf slices** — they may not exist yet; `/3b_create-issue` creates them inheriting the parent's `vX.Y.0`, and `/3c_sprint-planning` moves them to `vX.Y.Z`.
 4. **Comment** on each (re)assigned parent feature issue documenting the release placement and rationale (mirrors the 0b / 3c issue-comment pattern so GitHub history explains every milestone change).
-5. **(Optional) Render a read-only visual.** When the user asks for a visual, or the roadmap spans ≥ 3 releases, invoke the `plan-html` skill to render `docs/ROADMAP.html` — a swimlane (releases as columns, parent features as cards with `scope`/`size`/status badges, dependency arrows). It is generated **strictly from `docs/ROADMAP.md`** every run and is **read-only / presentation-only**: `docs/ROADMAP.md` remains the single source of truth, the HTML is never read back, and it carries no editing affordance. Default is markdown-only; skip this step otherwise.
+5. **Render a read-only visual.** Invoke the `plan-html` skill to render `docs/ROADMAP.html` — a swimlane (releases as columns, parent features as cards with `scope`/`size`/status badges, dependency arrows) using the `board` or `plan-document` template. It is generated **strictly from `docs/ROADMAP.md`** every run and is **read-only / presentation-only**: `docs/ROADMAP.md` remains the single source of truth, the HTML is never read back, and it carries no editing affordance.
 6. **Cleanup:** delete `docs/.roadmap.work.md` if it was created in Phase 1 (read-once-then-delete, per the `1a`/`1b` convention; `0d` also purges stray scratchpads as a backstop).
 7. **Hand-off:** *"Roadmap updated. Features in the current release `vX.Y` are ready to slice — run `/3b_create-issue`. Future-release features are gated until their release is current."*
 
