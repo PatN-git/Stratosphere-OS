@@ -221,14 +221,14 @@
       "version": "1.0.2"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "5e74adf469d69fd5e845410047fbd45748fb6da29d683170246118eba824ae11",
+      "sha256": "fa0e3537c87696a59f3bf7cc65660611e638d63b84151cc108f97382016212f4",
       "timestamp": "2026-06-24",
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     "skills/plan-html/assets/templates/index.md": {
-      "sha256": "3e4df578cc5b16d40922f410d16233bdc78ba057356f969e4028ab81ddbcaf9e",
+      "sha256": "524d8f842ff10c9137a5339411e346f2bba285a9aa8eb69904c08d25bf40c04b",
       "timestamp": "2026-06-24",
-      "version": "1.3.0"
+      "version": "1.3.1"
     },
     "skills/plan-html/references/html-patterns.md": {
       "sha256": "64580bfdbb7ed306ffe0b2cb710423936fa8d5c04d4d4c9cd59b3ada811a7a9d",

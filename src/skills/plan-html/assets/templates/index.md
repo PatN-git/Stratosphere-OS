@@ -1,7 +1,7 @@
 ---
 name: index
 description: index of plan-html templates
-version: "1.3.0"
+version: "1.3.1"
 timestamp: 2026-06-24
 ---
 
@@ -11,7 +11,6 @@ Load ONLY the single template file matching the scenario. Never load all files.
 
 | Template | File | Use when |
 |---|---|---|
-| `implementation-plan` | `implementation-plan.html` | Multi-phase roadmap, progress tracking, collapsible milestones |
 | `trade-off-matrix` | `trade-off-matrix.html` | ≥3 options × ≥3 criteria, color-coded comparison |
 | `status-report` | `status-report.html` | KPI dashboard, health indicators, metric cards |
 | `incident-timeline` | `incident-timeline.html` | Chronological events with severity/impact coloring |

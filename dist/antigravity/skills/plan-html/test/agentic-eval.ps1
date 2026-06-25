@@ -43,7 +43,6 @@ Assert "Tech spec doc (repo, spatial, 2.0x)"        (Gate 'repo'  $true  2.0) 'm
 Write-Host "`n[3] E2E Artifact Validation" -ForegroundColor Yellow
 
 $artifacts = @(
-  @{ file = "auth-refactor-plan.html"; ratio = "3.0x"; template = "implementation-plan" },
   @{ file = "db-options-matrix.html";  ratio = "3.1x"; template = "trade-off-matrix" },
   @{ file = "complex-plan-document.html"; ratio = "3.0x"; template = "plan-document" },
   @{ file = "triage-board.html"; ratio = "3.6x"; template = "board" }
@@ -100,7 +99,7 @@ Write-Host "`n[4] Template Index Coverage" -ForegroundColor Yellow
 
 $templateDir = Join-Path $root "assets\templates"
 $expectedTemplates = @(
-  "index.md","implementation-plan.html","trade-off-matrix.html",
+  "index.md","trade-off-matrix.html",
   "status-report.html","incident-timeline.html","decision-record.html","wireframe-compare.html",
   "plan-document.html","board.html"
 )
