@@ -2,7 +2,7 @@
 name: plan-html
 description: Use when presenting a complex or spatial plan to a human — roadmap, trade-off matrix, status dashboard, multi-section plan document, decision record, side-by-side comparison. Generates one self-contained interactive HTML file; fires on ≥~100-line or spatial human-facing output. Defaults to markdown for agent-loop content, repo docs, model input, and short/simple output.
 type: skill
-version: "1.1.2"
+version: "1.1.3"
 timestamp: 2026-06-25
 ---
 
@@ -10,7 +10,7 @@ timestamp: 2026-06-25
 Generate HTML ONLY if ALL conditions pass:
 1. Consumer is Human (not agent loop, not repo doc, not model input).
 2. Layout requires spatiality or scale:
-   - Side-by-side comparison, diagram component, interactive widget, or multi-section navigation.
+   - Side-by-side comparison, diagram/flowchart component (branching flow, path routing, state transition map), interactive widget, or multi-section navigation.
    - Total content length is ≥ ~100 lines (markdown equivalent).
 3. Output is self-contained: zero CDN, zero external fonts/scripts, single-file.
 4. Estimated HTML size < 5× markdown equivalent.
