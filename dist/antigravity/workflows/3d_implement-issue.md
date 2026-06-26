@@ -3,7 +3,7 @@ name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.6"
+version: "2.0.7"
 timestamp: 2026-06-23
 ---
 
@@ -24,9 +24,13 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
    - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
    - The brand design tokens: `.memory/DESIGN.md`.
    - The design rules: `.memory/DESIGN_RULES.md` (specifically §3 Immortal Components).
-   - **UI Slices Read Rule:** UI slices must implement design based *only* on these frozen repository artifacts using Fast-Track B (visual audit). Never access or re-read live Stitch.
-   - **Translation Rule:** the blueprint's layout hierarchy (and any Stitch HTML) is a layout REFERENCE, not copy-source. Re-express it in shadcn/ui ([[DR-004]]) + semantic HTML ([[DR-006]]), binding values to `DESIGN.md` tokens ([[DR-002]]/[[DR-003]]). See `.agents/workflows/.reference/shadcn-build-guide.md`.
+   - **UI Slices Read Rule:** UI slices must implement design based *only* on these frozen repository artifacts using Fast-Track B (visual audit). Never access or re-read the live generator.
+   - **Translation Rule:** the blueprint's layout hierarchy (and any generator HTML) is a layout REFERENCE, not copy-source. Re-express it in shadcn/ui ([[DR-004]]) + semantic HTML ([[DR-006]]), binding values to `DESIGN.md` tokens ([[DR-002]]/[[DR-003]]). See `.agents/workflows/.reference/shadcn-build-guide.md`.
 4. If no design reference exists (such as for pure backend logic, migrations, or utility functions), proceed immediately to Phase 1 without blocking or waiting for user input.
+5. **Regenerate Theme Tokens:** If design tokens or styling are involved, regenerate the tokens stylesheet before writing implementation code:
+   ```bash
+   python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css
+   ```
 
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 

@@ -1,13 +1,13 @@
 ---
 description: Guide for implementing design blueprints using shadcn/ui primitives.
-version: "1.0.1"
+version: "1.0.2"
 timestamp: 2026-06-17
 ---
 
 # Shadcn Build Guide
 > Distilled reference for implementing a frozen design blueprint in shadcn/ui. Consumed by `3c`.
 
-- The blueprint's layout hierarchy (and any Stitch HTML/CSS) is a **layout reference, not copy-source**. Re-express it; never paste generator markup.
+- The blueprint's layout hierarchy (and any generator HTML/CSS) is a **layout reference, not copy-source**. Re-express it; never paste generator markup.
 - Map each region to shadcn/ui primitives first (Button, Card, Dialog, Input, Sheet, …) before raw elements ([[DR-004]]); use raw HTML only where shadcn lacks a primitive.
 - Use semantic landmarks (`<nav>`/`<main>`/`<aside>`/`<article>`) for structure; never reproduce generator `<div>` soup ([[DR-006]]).
 - Bind every color to an OKLCH token from `DESIGN.md` ([[DR-002]]); spacing/type to fluid scales ([[DR-003]]); no arbitrary hex/px ([[DR-005]]).

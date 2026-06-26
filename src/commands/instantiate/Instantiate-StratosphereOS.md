@@ -2,7 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.3"
+version: "1.0.4"
 timestamp: 2026-06-17
 ---
 
@@ -13,7 +13,7 @@ Instantiate minimum durable context an AI agent needs to resume work on a reposi
 This command is a **one-time setup** (safe to re-run for upgrades). The ongoing protocols live in:
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
-- `.memory/DESIGN_RULES.md` — project structural rules: design principles, Stitch harmonization, immortal components
+- `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
 
@@ -146,13 +146,13 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 ### Checkpoint 4.1: Brand tokens → `DESIGN.md` (spec-compliant)
 
 - **Greenfield:** skip. Leave `DESIGN.md` as the empty template; fill in as the brand develops.
-- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `.agents/workflows/.reference/stitch-brief-guide.md` §B (propose-only).
+- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `.agents/workflows/.reference/design-brief-guide.md` §B (propose-only).
   1. Map color variables to the `colors:` YAML block (primary, secondary, tertiary, neutral, etc.).
   2. Map typography to the `typography:` YAML block (one entry per type level).
   3. Map spacing scale to the `spacing:` YAML block.
   4. Map corner radii to the `rounded:` YAML block.
   5. Add brief markdown rationale in the `## Overview`, `## Colors`, `## Typography`, `## Layout`, `## Shapes`, and `## Do's and Don'ts` sections.
-  6. Validate optionally with `npx @google/design.md lint .memory/DESIGN.md` (Windows: `npx @google/designmd lint`).
+  6. Validate optionally with `npx -p "@google/design.md" designmd lint .memory/DESIGN.md`.
 
 `DESIGN.md` does NOT use trust tags or `[DR-xxx]` IDs — it follows the external spec format.
 
@@ -163,7 +163,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   1. For each global structural component, add an entry to §3 Immortal Components in `.memory/DESIGN_RULES.md` with a `[[DR-xxx]]` ID and `[LAW]` trust tag.
   2. Note the desktop/mobile pattern observed.
   3. Flag any drift candidates the agent notices (e.g., two Navbar variants in the codebase).
-  4. The §1 Principles and §2 Stitch Harmonization sections come pre-populated from the template — review and adjust to match the project.
+  4. The §1 Principles and §2 Design Reference Rules sections come pre-populated from the template — review and adjust to match the project.
 
 ## Checkpoint 5: Constraint extraction
 
@@ -237,9 +237,21 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 8: Design Context (interactive)
 
 1. **Set Design Context:**
-   Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask: `Does this project use Google Stitch for UI design? [yes/no]`. 
-   Write the answer into `.memory/DESIGN_RULES.md` §2 `Stitch Status`. 
-   If `no`, optionally ask: `Provide any design reference URLs/templates (optional):` and record them in §2 `Design References`.
+   Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to ask: `What is the design source for this project? [stitch / claude-design / native]`. 
+   Write the answer into `.memory/DESIGN_RULES.md` §2 `Design Source`. 
+   If `native`, optionally ask: `Provide any design reference URLs/templates (optional):` and record them in §2 `Design References (native projects)`.
+
+2. **Gated toolchain install:**
+   If Design Source is `stitch`, or if this is a Node/UI project that wants design-spec linting, run npm install in the design scripts directory:
+   ```bash
+   # Windows (Antigravity/PowerShell)
+   cmd /c "npm install --prefix .agents/scripts/design"
+
+   # Unix/macOS (Claude Code)
+   npm install --prefix .agents/scripts/design
+   ```
+   *(Note: If the install fails due to network constraints or offline environment, print a warning, record in STATUS.md that the Google lint seam is not provisioned, and proceed with setup rather than halting).*
+   For `claude-design`, `native`, or non-Node/offline projects: skip the npm install and record in `.memory/STATUS.md` that the lint toolchain is not provisioned.
 
 ## Checkpoint 9: Skill setup (interactive)
 
@@ -270,7 +282,7 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    ```
    (Where `<plugin>` is the installed plugin root located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/`.)
 
-5. **Design note:** Google Stitch is OPTIONAL; no-Stitch projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
+5. **Design note:** External design generators are OPTIONAL; native projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
 6. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
 
 ## Constraints

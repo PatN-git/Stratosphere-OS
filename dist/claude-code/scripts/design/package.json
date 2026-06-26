@@ -1,0 +1,13 @@
+{
+  "name": "stratos-design-toolchain",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@google/design.md": "0.3.0"
+  },
+  "scripts": {
+    "lint": "designmd lint",
+    "diff": "designmd diff",
+    "export-dtcg": "designmd export --format dtcg"
+  }
+}

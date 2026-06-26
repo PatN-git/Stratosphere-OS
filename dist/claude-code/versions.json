@@ -31,14 +31,14 @@
       "version": "1.0.2"
     },
     "assets/templates/memory/DESIGN.md": {
-      "sha256": "71f0e202c93fecd7a1f49e3ba64372fb78881d67babc1149bc0badc292e6c29d",
+      "sha256": "af78550575f24209b4dbcc1f15426763534ad2c789143ea6c7d2fadc342c9a70",
       "timestamp": "",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     "assets/templates/memory/DESIGN_RULES.md": {
-      "sha256": "6621984a2204e8988e30208700b105bf143a828fb93c7047fb7689f431c3a5ba",
+      "sha256": "621d6f4e7785f0cf82b3af405736b18b433952ee258736894028767b2ed053f7",
       "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "version": "1.0.4"
     },
     "assets/templates/memory/GLOSSARY.md": {
       "sha256": "217c86de475bcd78f2de38817daca8415fbe99024e3ddbbdefd75898205a960d",
@@ -75,10 +75,15 @@
       "timestamp": "2026-06-22",
       "version": "1.1.0"
     },
-    "assets/templates/references/design-doc-template.md": {
-      "sha256": "97247ca6daf2ae0d154a9b624c9b1d825757df2848579f4a180ebb4c3a6ff516",
-      "timestamp": "<YYYY-MM-DD>",
+    "assets/templates/references/design-brief-guide.md": {
+      "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
+      "timestamp": "2026-06-17",
       "version": "1.0.2"
+    },
+    "assets/templates/references/design-doc-template.md": {
+      "sha256": "13423be90eae81688acf7997f25aab435efd6dfc6ca9f38d15b4b2f8dd12b767",
+      "timestamp": "<YYYY-MM-DD>",
+      "version": "1.0.3"
     },
     "assets/templates/references/discovery_brief_template.md": {
       "sha256": "22080320cb9c8e11044af9f3632c569798faa819d3ffbcd92687de58ada2699c",
@@ -111,14 +116,9 @@
       "version": "1.0.2"
     },
     "assets/templates/references/shadcn-build-guide.md": {
-      "sha256": "7cd44c95a4d7c36f474e55a4dfe1a8292a96c536ef41cf279bb5dd8be3012a28",
+      "sha256": "cb53c1ac093f79fe08b637acb4da0a0950ac8436eb3476ebe1f307809a3c6793",
       "timestamp": "2026-06-17",
-      "version": "1.0.1"
-    },
-    "assets/templates/references/stitch-brief-guide.md": {
-      "sha256": "6e12e77c256f1f68b8e3fe6a989896abd2f5992f122b8565c7ca4aaffb8410bd",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
       "sha256": "4b97052cd93636f9c22d3093db3fbb84446f261dc1f6728b8c9cb599525469a2",
@@ -171,9 +171,9 @@
       "version": "1.1.1"
     },
     "commands/2b_interface-design.md": {
-      "sha256": "615153256aafafdcff56770537fe8171fad7a1168ce168c4a0b20e6b0bf5ccc7",
+      "sha256": "72a280bdb9daa020b93a88da719a9d4636d717bdee813d3fd038d083a6890ffa",
       "timestamp": "2026-06-18",
-      "version": "1.1.2"
+      "version": "1.1.3"
     },
     "commands/3a_version-planning.md": {
       "sha256": "5509f9be2cd17c7446d79b48fd9d7bacce0e2636c0aef5deeee50d792b58de5e",
@@ -191,14 +191,14 @@
       "version": "2.0.1"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "9e717502a368ff4b558ba04c9db1423dcf6eae96e5dcee48ee0f628cf4463b72",
+      "sha256": "926b49015cb7e83dfd14fb7fbcc243453bd6c524a60a8a3705493c752a3fcea7",
       "timestamp": "2026-06-23",
-      "version": "2.0.6"
+      "version": "2.0.7"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "0bb348ecd74a648aa72b6811de92aac56c736af1b9951454e91ec87e0106298a",
+      "sha256": "2a263621e377ce585b560701dd2afa44bd5f067c0f99be4b570c1176910a50b7",
       "timestamp": "2026-06-22",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "463c5777e0e83e6975da3b1e252ace71b4022a3866688870e7bc35e5e47f6ae3",
@@ -206,9 +206,9 @@
       "version": "1.0.6"
     },
     "commands/stratosphere-setup.md": {
-      "sha256": "7d99de54cda8c211c3bcb5103731c7836bf85403676c1bd63286eb2310f68d6c",
+      "sha256": "e70094461bdc542b7bce54163f96aa9a4d00f3509f2cc03af7b9f8fd9f162c74",
       "timestamp": "2026-06-17",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "commands/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",

@@ -84,8 +84,7 @@ def copy_md_with_frontmatter(srcfile: Path, dstfile: Path, name=None):
     fm, _ = split_frontmatter(text)
     if fm is None or "description" not in top_level_keys(fm):
         desc = first_heading(text) or srcfile.stem.replace("_", " ").replace("-", " ")
-    version = None if srcfile.name == "DESIGN.md" else VERSION
-    out = ensure_frontmatter(text, name=name, description=desc, version=version)
+    out = ensure_frontmatter(text, name=name, description=desc, version=VERSION)
     dstfile.parent.mkdir(parents=True, exist_ok=True)
     write_lf(dstfile, out)
 
