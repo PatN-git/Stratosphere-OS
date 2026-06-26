@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.5"
+version: "1.0.6"
 timestamp: 2026-06-22
 ---
 
@@ -63,7 +63,12 @@ HALT execution. Await human instruction:
 ## Phase 5: Ship (gated, HITL)
 Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
 1. Branch isolation: Enforce that the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
-2. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
+2. **Design Drift Gate:** If this slice involves UI/styling, verify that the compiled token stylesheet is in sync with the design system source of truth:
+   ```bash
+   python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --check <app-css-dir>/theme.tokens.css
+   ```
+   If this command exits with a non-zero code, **halt and fail the ship**. The generated CSS is out of sync with `.memory/DESIGN.md` or was hand-edited. The agent (or user) must run `design_theme` with `--out` to synchronize, verify the changes, and commit the synchronized CSS file before shipping.
+3. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
 3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3d owns commits). Push the branch.
 4. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
    - `Closes #<sliceIssue>` (and the parent `BT-<padded>`)

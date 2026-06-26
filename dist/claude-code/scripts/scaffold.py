@@ -258,6 +258,18 @@ def main():
     if vm.exists():
         place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry, update=update, tier="managed")
 
+    # 6c. Project-local design token scripts (design-theme, linter package.json)
+    design_src_dir = PLUGIN_ROOT / "scripts" / "design"
+    if design_src_dir.exists() and design_src_dir.is_dir():
+        for src in sorted(design_src_dir.rglob("*")):
+            if src.is_file():
+                # Skip any path containing a 'test' segment
+                if 'test' in src.parts:
+                    continue
+                rel_parts = src.relative_to(design_src_dir)
+                dst = project / ".agents" / "scripts" / "design" / rel_parts
+                place(src, dst, res, dry, update=update, tier="managed")
+
     # Copy OKF viewer files
     viewer_src_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
     if viewer_src_dir.exists() and viewer_src_dir.is_dir():

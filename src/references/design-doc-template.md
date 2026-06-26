@@ -7,8 +7,8 @@ status: draft | ready-for-slicing | obsolete
 slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
-surface: ui-stitch-page | ui-stitch-feature | ui-manual | non-ui
-version: "1.0.2"
+surface: ui-generator-page | ui-generator-feature | ui-manual | non-ui
+version: "1.0.3"
 ---
 
 # Design: BT-<padded> - <Feature Name>
@@ -44,8 +44,8 @@ version: "1.0.2"
 
 <!-- SELECT AND KEEP EXACTLY ONE OF THE FOLLOWING BODY BLOCKS BASED ON THE SURFACE GATE; DELETE THE OTHERS -->
 
-### [Path A · Stitch] Frozen Layout Blueprint
-*Ingested once at design time and frozen here. Do not read live Stitch after this step.*
+### [Path A · Generator-assisted] Frozen Layout Blueprint
+*Ingested once at design time and frozen here. Do not read live generator after this step.*
 
 - **Frozen Layout Hierarchy:**
   ```
@@ -55,10 +55,10 @@ version: "1.0.2"
   - `token-name`: `value`
 - **Immortal-Component Conformance / Registration:**
   - Governed by: `<Immortal Component Name | None>`
-  - Shielding Behavior: `<Shielded from Stitch changes | Deferring to Immortal structure>`
+  - Shielding Behavior: `<Shielded from generator changes | Deferring to Immortal structure>`
   - Net-new Registration: `<Register new components as §3 Immortal Components if this is a net-new page/full-redesign>`
-- **Optional Stitch Provenance Link:**
-  - Link to Stitch snapshot: `<stitch-url-or-ref>` (Provenance only; this file is the SSOT)
+- **Optional Generator Provenance Link:**
+  - Link to generator snapshot: `<generator-url-or-ref>` (Provenance only; this file is the SSOT)
 
 ### [Path B · Reference-driven native] Blueprint
 - **Design References / Provenance:**
