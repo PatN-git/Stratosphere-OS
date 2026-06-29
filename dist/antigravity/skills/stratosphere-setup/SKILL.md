@@ -40,15 +40,21 @@ Before any file operations:
      - If they answer yes, initialize it by running `git init` before continuing.
    - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
-2. **Verify GitHub CLI (Optional):**
+2. **Verify GitHub CLI & Remote Connection (Optional):**
    - Check if the GitHub CLI (`gh`) is installed and authenticated. Run `gh --version` and `gh auth status` (be sure to clear the `GITHUB_TOKEN` environment variable if running tests to verify the user's persistent credentials).
    - If `gh` is not installed or not authenticated, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
      `GitHub CLI (gh) is recommended for automating PRs and issue management. It is not set up/authenticated. Would you like to pause to set it up now? [y/N]`
    - If the user selects **Yes**:
-     - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal.
-     - Wait for the user to complete authentication before proceeding.
+     - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal. Wait for authentication before proceeding.
    - If the user selects **No**:
-     - Proceed, but document in `.memory/STATUS.md` that GitHub CLI is unavailable. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6) and fall back to local file-based tracking.
+     - Document in `.memory/STATUS.md` that GitHub CLI is unavailable. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6) and fall back to local file-based tracking.
+   - **Check GitHub Remote Repository Connection:** If `gh` is installed and authenticated (or if GitHub integration was selected during plugin installation), verify that the local repository is connected to a remote GitHub repository by running `git remote -v` or `gh repo view`.
+   - If no GitHub remote repository is connected, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
+     `No remote GitHub repository is connected to this project. A connected GitHub repository is required to automatically populate labels and issues in BACKLOG_MAP.md. Would you like to connect or create a GitHub repository now? [y/N]`
+   - If the user selects **Yes**:
+     - Provide instructions or assist the user in running `gh repo create` or `git remote add origin <url>` and pushing their initial commit. Wait for connection confirmation before proceeding.
+   - If the user selects **No**:
+     - Document in `.memory/STATUS.md` that remote GitHub connection is unavailable. Fall back to local file-based label and issue tracking so `BACKLOG_MAP.md` is populated locally without remote sync errors.
 
 
 ## Checkpoint 0: Scaffold (deterministic — both paths)
@@ -126,7 +132,7 @@ Confirm they exist. If Checkpoint 0 reported any as `STALE`, `NEEDS-REVIEW`, or 
 - **Brownfield:** introspect the live schema using the available DB skill or tooling.
   1. Map all tables, primary keys, and foreign relationships.
   2. Identify Row Level Security (RLS) policies and non-nullable constraints.
-  3. Write findings into `.memory/DATABASE_SCHEMA.md`. All entries are `[LAW]` — the live DB is ground truth.
+  3. Write findings into `.memory/DATABASE_SCHEMA.md`. All entries are `[LAW]` — the live DB is ground truth. Do NOT delete the format example line under `## Superseded`.
 
 Why the live DB wins over code: migrations drift, ORMs lie, stale type files mislead. The running database is the only authoritative source.
 
@@ -138,6 +144,7 @@ Why the live DB wins over code: migrations drift, ORMs lie, stale type files mis
   2. Identify feature boundaries and immortal UI components.
   3. Assign `[[A-xxx]]` IDs to architectural rules. Only `[LAW]`-tier rules belong here.
   4. Add the one-line pointer to `DESIGN.md` and `DESIGN_RULES.md` in the `## Tech Stack` section: `UI/UX standards: see .memory/DESIGN.md (brand tokens) and .memory/DESIGN_RULES.md (structural rules)`.
+  5. **Preserve placeholders:** Do NOT delete empty structural sections (`## Major Feature Areas`, `## State / Data Flow`, `## Backend / Database Boundaries`) or the format example line under `## Superseded` if there are no immediate entries during setup. Keep them as placeholders.
 
 ## Checkpoint 4: Design audit
 
@@ -151,7 +158,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   2. Map typography to the `typography:` YAML block (one entry per type level).
   3. Map spacing scale to the `spacing:` YAML block.
   4. Map corner radii to the `rounded:` YAML block.
-  5. Add brief markdown rationale in the `## Overview`, `## Colors`, `## Typography`, `## Layout`, `## Shapes`, and `## Do's and Don'ts` sections.
+  5. Add brief markdown rationale in the `## Overview`, `## Colors`, `## Typography`, `## Layout`, `## Shapes`, and `## Do's and Don'ts` sections. Preserve all HTML comments (`<!-- shadcn... -->`, `<!-- optional dark overrides... -->`), prompt guidance comments (`<Rationale...>`), and empty sections (`## Shapes`, `## Components`, `## Do's and Don'ts`) if unpopulated.
   6. Validate optionally with `npx -p "@google/design.md" designmd lint .memory/DESIGN.md`.
 
 `DESIGN.md` does NOT use trust tags or `[DR-xxx]` IDs — it follows the external spec format.
@@ -163,13 +170,18 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   1. For each global structural component, add an entry to §3 Immortal Components in `.memory/DESIGN_RULES.md` with a `[[DR-xxx]]` ID and `[LAW]` trust tag.
   2. Note the desktop/mobile pattern observed.
   3. Flag any drift candidates the agent notices (e.g., two Navbar variants in the codebase).
-  4. The §1 Principles and §2 Design Reference Rules sections come pre-populated from the template — review and adjust to match the project.
+  4. **Preserve governance laws and sections:** The §1 Principles (DR-001 to DR-006) and §2 Design Reference Rules (DR-007 to DR-016) come pre-populated from the template. Do NOT silently rewrite, ignore, or overwrite them.
+     - If the existing codebase conflicts with DR-001 through DR-006 (e.g., uses hex colors instead of OKLCH, fixed px instead of fluid typography, or non-shadcn stack), explicitly flag these conflicts to the user and ask for instructions before modifying any laws.
+     - Ask the user explicitly about their Design Source (`stitch`, `claude-design`, or `native`) to populate `**Design Source:**`. Do NOT overwrite or delete `## 2. Design Reference Rules`.
+     - Preserve the **Applicability:** and **DESIGN.md round-trip:** paragraphs.
+     - Do NOT rewrite rules DR-007 through DR-016 without flagging proposed modifications to the user for confirmation.
+     - Do NOT delete the format example line under `## Superseded`.
 
 ## Checkpoint 5: Constraint extraction
 
 - **Greenfield:** skip. `LEARNINGS.md` accrues entries over time.
 - **Brownfield:** identify "Brownfield Traps" surfaced during the audit. Add as initial entries in `.memory/LEARNINGS.md` with [[L-xxx]] IDs.
-- Apply trust tags per `memory-protocol.md`. Default to `[ASSUMED]` unless evidence supports a higher tier. Never self-promote to `[LAW]` — propose to user.
+- Apply trust tags per `memory-protocol.md`. Default to `[ASSUMED]` unless evidence supports a higher tier. Never self-promote to `[LAW]` — propose to user. Do NOT delete the format example line under `## Superseded`.
 
 ### Checkpoint 5.1: Vocabulary seeding
 
@@ -178,6 +190,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   1. Propose 5–10 terms with one-line definitions to the user.
   2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc.
   3. Assign sequential IDs starting from `[[G-001]]`.
+  4. **Preserve guidelines and placeholders:** Do NOT delete the protocol instruction line (`> GLOSSARY follows the same protocol as LEARNINGS.md — not exempt from trust tags.`), the `Avoid:` instructions, or the format example line under `## Superseded`.
 
 ### Checkpoint 5.2: Secret hygiene
 
@@ -194,7 +207,7 @@ GitHub labels are ground truth for the `area:` dimension — the same principle 
 No GitHub labels exist yet.
 1. Create every label in the canonical registry verbatim in GitHub.
 2. No user confirmation required — no conflicts possible.
-3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry`.
+3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry` while preserving all operational bullet points (such as label syncing rules and the `Milestone` definition line).
 
 ### Brownfield
 GitHub labels already exist and may differ from the registry.
@@ -222,7 +235,7 @@ GitHub labels already exist and may differ from the registry.
 
 4. **Execute** confirmed changes in GitHub.
 
-5. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes single source of truth — do not revert to template defaults.
+5. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line).
 
 > [!IMPORTANT]
 > **`area:` labels are project-specific.** Adopt project's existing page/domain slugs rather than forcing template placeholders. All other dimensions (`type:`, `priority:`, `size:`, `status:`) are canonical — always propose renaming GitHub's labels to match, never adopt GitHub's non-standard names.
@@ -232,7 +245,7 @@ GitHub labels already exist and may differ from the registry.
 1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
 2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry.
 3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
-4. When a step seeds real content into a memory file, delete that file's shipped example rows; leave examples in files with nothing real to seed yet.
+4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)
 

@@ -11,6 +11,7 @@ version: "1.0.2"
 Episodic memory for project-specific lessons likely to matter again. Each entry carries a unique `L-xxx` ID, a trust tag, and (where applicable) a `Source: BT-xxx` cross-reference.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
+> **PRESERVATION RULE:** Do NOT delete the format example line under `## Superseded` during setup or when adding entries. Keep it as a placeholder until real superseded entries exist.
 
 ## What belongs here
 - API constraints discovered the hard way

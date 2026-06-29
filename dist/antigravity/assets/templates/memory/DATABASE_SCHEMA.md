@@ -13,6 +13,7 @@ Authoritative reference for tables, columns, relationships, and constraints. All
 > Trust tags and supersession rules → `.agents/rules/memory-protocol.md`.
 
 ## Rules
+- **PRESERVATION RULE:** Do NOT delete the format example line under `## Superseded` when populating schema tables. Keep it as a formatting placeholder until real superseded entries exist.
 - Check this file before proposing schema changes, writing migrations, or changing queries.
 - If code and this file disagree, verify the real schema first. Note conflicts as `[LAW]` learnings.
 - Update when schema changes are finalized.

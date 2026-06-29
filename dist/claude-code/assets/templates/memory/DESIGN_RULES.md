@@ -11,6 +11,7 @@ version: "1.0.4"
 Project structural rules and operational design governance. Read alongside `DESIGN.md` whenever a task touches `.tsx`, layout, styling, or UI components.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
+> **PRESERVATION RULE:** Do NOT silently delete or overwrite §1 Principles (DR-001 to DR-006), §2 Design Reference Rules (DR-007 to DR-016), the **Applicability:** and **DESIGN.md round-trip:** paragraphs, or the format example line under `## Superseded`. If project setup conflicts with existing laws, flag conflicts to the user and ask for instructions.
 
 Three sections:
 1. **Design Principles** — operational standards. Rarely change.

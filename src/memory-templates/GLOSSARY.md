@@ -12,6 +12,7 @@ Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, 
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
 > GLOSSARY follows the same protocol as `LEARNINGS.md` — not exempt from trust tags.
+> **PRESERVATION RULE:** Do NOT delete the protocol instruction line above, the `Avoid:` formatting instructions, or the format example line under `## Superseded` during setup or entry seeding. Keep them permanently as operational guidance and placeholders.
 
 ## What belongs here
 - Names of user segments and roles

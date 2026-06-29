@@ -26,19 +26,19 @@ Leave next session with enough context to resume immediately. Ensure all new ent
    - Assign next available `[[L-xxx]]` ID.
    - Apply trust tag (default `[ASSUMED]`; see `memory-protocol.md` for promotion rules).
    - Add `Source: BT-xxx` cross-reference.
-   - When writing the first real `[[L-xxx]]` (L-003+), delete the shipped examples (L-001/L-002).
+   - When writing the first real `[[L-xxx]]`, delete ONLY the shipped example dummy items (e.g., L-XXX/L-YYY); do NOT delete the format example line under `## Superseded`.
 5. If a domain term was agreed (during a discover session, while writing a PRD, or surfaced during implementation), add it to `.memory/GLOSSARY.md`:
    - Assign next available `[[G-xxx]]` ID.
    - Apply trust tag (default `[ASSUMED]`).
    - Capture rejected synonyms as the entry's `Avoid:` list (plain text), same as 1b. If a new `Avoid:` synonym likely already appears in code, offer the same one-time, module-scoped retrofit (propose-only).
    - Add `Source:` pointing to the discovery brief, PRD, or issue where the term was settled.
-   - When writing the first real `[[G-xxx]]` (G-002+), delete the shipped example (G-001).
+   - When writing the first real `[[G-xxx]]`, delete ONLY the shipped example dummy item (e.g., G-XXX); do NOT delete the format example line under `## Superseded` or the protocol/Avoid guidelines.
 6. If architecture changed meaningfully:
    - For `[LAW]`-level changes, propose to user. Agent NEVER self-writes to `ARCHITECTURE.md`.
    - On confirmation, add `[[A-xxx]]` entry. If superseding an old rule, follow supersession protocol in `memory-protocol.md`.
-   - When writing the first real `[[A-xxx]]` rules (A-005+), delete the shipped examples (A-001/A-002).
+   - When writing the first real `[[A-xxx]]` rule, delete ONLY the shipped example dummy item (e.g., A-XXX); do NOT delete empty structural sections (`## Major Feature Areas`, etc.) or the format example line under `## Superseded`.
 7. If schema understanding changed or a DB change landed, update `.memory/DATABASE_SCHEMA.md`. Schema changes are `[LAW]` by default.
-8. If a UI structural decision was made (new immortal component, change to a `[[DR-xxx]]` entry), update `.memory/DESIGN_RULES.md`. Propose to user; never self-promote. If brand tokens changed, update `.memory/DESIGN.md` per spec — propose changes to user. When registering the first real Immortal Components, delete the shipped examples (DR-012/DR-013).
+8. If a UI structural decision was made (new immortal component, change to a `[[DR-xxx]]` entry), update `.memory/DESIGN_RULES.md`. Propose to user; never self-promote. If brand tokens changed, update `.memory/DESIGN.md` per spec — propose changes to user. When registering the first real Immortal Components, delete ONLY the shipped example dummy items (e.g., DR-XXX/DR-YYY); do NOT delete §1 Principles, §2 Design Reference Rules, Applicability/round-trip paragraphs, or the format example line under `## Superseded`.
 9. **Run lint** by executing `python .agents/scripts/validate_memory.py`. Propose fixes for any reported errors, list any warnings, and await user confirmation.
 10. **Regenerate OKF Visualizer** by running `python .agents/scripts/okf_view.py` after the memory lint checks pass.
 11. Ensure `.memory/STATUS.md` lets the next session resume without re-discovery.

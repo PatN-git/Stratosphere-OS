@@ -48,6 +48,7 @@ components:
     padding: 12px
 ---
 
+<!-- PRESERVATION RULE: Do NOT delete HTML comments (shadcn notes, dark overrides), prompt guidance comments (<Rationale...>), or placeholder sections (Shapes, Components, Do's and Don'ts) during setup or updates. Keep them as placeholders until needed. -->
 <!-- shadcn variable names are generated from these tokens by design-theme (see .agents/scripts/design) -->
 <!-- optional dark overrides: add a top-level colorsDark block; omitted tokens are derived. Example:
 colorsDark:

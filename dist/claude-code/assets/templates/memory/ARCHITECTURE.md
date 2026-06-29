@@ -12,6 +12,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
 > If a rule could be debated or overridden, it belongs in `LEARNINGS.md` instead.
+> **PRESERVATION RULE:** Do NOT delete placeholder sections (`## Major Feature Areas`, `## State / Data Flow`, `## Backend / Database Boundaries`) or the format example line under `## Superseded` if there are no immediate entries during setup or updates. Keep them as placeholders until needed.
 
 ## Architectural Vocabulary
 - **Module:** A self-contained code unit (file, folder, component).
