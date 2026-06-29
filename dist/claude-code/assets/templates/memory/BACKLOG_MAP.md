@@ -13,6 +13,7 @@ Authoritative, high-density reference for project issues and their status.
 > Cross-reference rules → `.agents/rules/memory-protocol.md`.
 
 ## Rules
+- **PRESERVATION RULE:** Do NOT delete or modify operational instructions under Rules (such as Label source of truth syncing rules) or the `Milestone` definition line under Label Registry during setup or backlog updates. They must remain permanently as operational guidance.
 - When writing the first entry, populate the Label Registry with all labels used in this GitHub project.
 - **BT-id padding:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format.
 - Update when GitHub issues are created, closed, or change status.

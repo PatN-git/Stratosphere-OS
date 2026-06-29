@@ -88,8 +88,8 @@ bash scripts/install-antigravity.sh --global
 
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**
-> Want your agent to handle the installation and dependency checks automatically? Simply paste this prompt into your chat:
-> `Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS`
+> Want your agent to handle the installation, dependency checks, and GitHub integration automatically? Simply paste this prompt into your chat:
+> `Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS. Check dependencies (Python, Git, GitHub CLI gh), verify GitHub auth/connection, and assist with setup if needed.`
 
 ### 2. Instantiate Project Memory
 After installing the plugin, restart your app or agent session, navigate to your target project repository, and run:
