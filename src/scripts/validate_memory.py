@@ -180,24 +180,51 @@ def main():
                     cell_1 = table_match.group(1).strip()
                     # Skip separator or header
                     if not cell_1.startswith(':') and not cell_1.startswith('-') and cell_1.lower() != 'id':
-                        id_match = re.match(r'^(?:\[\[)?(BT?-\w+)(?:\]\])?$', cell_1)
-                        if id_match:
-                            def_id = id_match.group(1)
-                            # Register definition
-                            if not is_placeholder(def_id):
-                                if def_id in definitions:
-                                    prev = definitions[def_id]
-                                    errors.append(f"Duplicate ID definition: '{def_id}' defined in {prev['file']}:{prev['line_num']} and {fname}:{line_idx}")
-                                else:
-                                    definitions[def_id] = {
-                                        'id': def_id,
-                                        'file': fname,
-                                        'line_num': line_idx,
-                                        'tag': None,
-                                        'superseded_by': None,
-                                        'in_superseded': in_superseded,
-                                        'content': stripped
-                                    }
+                        clean_id = cell_1.replace('[[', '').replace(']]', '').strip()
+                        # Strictly validate format: BT-XXX, BT-LOCAL-<slug>, or BT-[0-9]{3,}
+                        if not re.match(r'^(?:BT-XXX|BT-LOCAL-[a-zA-Z0-9_-]+|BT-[0-9]{3,})$', clean_id):
+                            errors.append(f"Invalid Backlog ID format '{clean_id}' in {fname}:{line_idx}. Hierarchical suffixes (e.g. BT-059-01) are forbidden. Must be a flat 3+ digit integer (e.g. BT-060) or BT-LOCAL-<slug>.")
+                            continue
+                        
+                        def_id = clean_id
+                        
+                        # Register definition
+                        if not is_placeholder(def_id):
+                            if def_id in definitions:
+                                prev = definitions[def_id]
+                                errors.append(f"Duplicate ID definition: '{def_id}' defined in {prev['file']}:{prev['line_num']} and {fname}:{line_idx}")
+                            else:
+                                definitions[def_id] = {
+                                    'id': def_id,
+                                    'file': fname,
+                                    'line_num': line_idx,
+                                    'tag': None,
+                                    'superseded_by': None,
+                                    'in_superseded': in_superseded,
+                                    'content': stripped
+                                }
+                                
+                                # Validate dual-type labels for non-parent slices (non-placeholders without size:large)
+                                parts = [p.strip() for p in line.split('|')]
+                                if len(parts) >= 6:
+                                    labels_str = parts[4]
+                                    labels = [l.strip() for l in labels_str.split(',') if l.strip()]
+                                    if 'size:large' not in labels:
+                                        primary_types = {'type:bug', 'type:content', 'type:feature', 'type:improvement', 'type:maintenance', 'type:research', 'type:NEEDS_SPEC'}
+                                        execution_modes = {'type:HITL', 'type:AFK'}
+                                        
+                                        has_primary = [l for l in labels if l in primary_types]
+                                        has_execution = [l for l in labels if l in execution_modes]
+                                        
+                                        if not has_primary:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing a Primary Type label (e.g., type:feature, type:bug, type:improvement).")
+                                        elif len(has_primary) > 1:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Primary Type labels: {has_primary}.")
+                                            
+                                        if not has_execution:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing an Execution Mode label (type:HITL or type:AFK).")
+                                        elif len(has_execution) > 1:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Execution Mode labels: {has_execution}.")
                             
                             # Parse references in the rest of the row
                             ref_ids = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
