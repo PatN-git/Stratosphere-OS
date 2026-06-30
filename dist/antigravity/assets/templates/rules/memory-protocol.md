@@ -88,6 +88,5 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - **What to remove:** When writing real active content into a memory file, remove ONLY the dummy active items in that section (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.
 
 ## 8. Backlog ID Minting (Late Binding)
-- **No local number guessing:** Never compute `MAX(BT_ID) + 1` from local files; GitHub shares integer sequence numbers across both Issues and Pull Requests.
-- **Slug-first before creation:** Pre-creation artifacts (`/1b` discovery briefs, draft PRDs) use semantic slugs only (e.g., `docs/discovery/<slug>.md`). Never assign `BT-<n>` padding before creation.
-- **Atomic minting:** Bind `BT-<padded>` strictly at creation time from the return value of `gh issue create`. If offline, use `BT-LOCAL-<n>`.
+- **Pre-creation (`/1b` briefs, draft PRDs):** Identify strictly by semantic slug (`docs/discovery/<slug>.md`). Never guess or assign `BT-<n>` before creation.
+- **Creation (`/2a`, `/3b`):** Never compute `MAX(BT_ID) + 1` (GitHub shares IDs with PRs). Bind `BT-<padded>` strictly from `gh issue create` output (or `BT-LOCAL-<n>` if offline).
