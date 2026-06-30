@@ -21,7 +21,7 @@
       "version": "1.0.3"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "ddbced349c567db5eb6d9f458f60c49915225cdb9da26784671b633ca8dcdd80",
+      "sha256": "5dbce308185f5567032346d79c595ccb798b8a919e2f4385eaf45af3cb3c5ceb",
       "timestamp": "2026-06-18",
       "version": "1.1.1"
     },
@@ -211,7 +211,7 @@
       "version": "1.0.1"
     },
     "workflows/3b_create-issue.md": {
-      "sha256": "9dab54d3cbfa09ce97ab901deab0daf8b5b372b13de181a1a6ac61eefc2ec5af",
+      "sha256": "dfc0829a2540532d44e2c72ba917d2af8054fd0d6e1558a8c9e5dceb3c61e33a",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },
