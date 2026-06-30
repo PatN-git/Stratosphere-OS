@@ -4,9 +4,9 @@ title: "Discovery: <one-line problem statement>"
 description: ""
 timestamp: <YYYY-MM-DD>
 status: ready-for-prd | exit-bug | exit-spike | dropped
-slug: <topic-slug>
+slug: <topic-slug> # MUST be semantic slug only. Do NOT include or pre-allocate a BT-<n> ID.
 linked-prd: —
-version: "1.0.2"
+version: "1.0.3"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>

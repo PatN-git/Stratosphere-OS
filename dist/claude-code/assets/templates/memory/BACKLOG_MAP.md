@@ -15,7 +15,7 @@ Authoritative, high-density reference for project issues and their status.
 ## Rules
 - **PRESERVATION RULE:** Do NOT delete or modify operational instructions under Rules (such as Label source of truth syncing rules) or the `Milestone` definition line under Label Registry during setup or backlog updates. They must remain permanently as operational guidance.
 - When writing the first entry, populate the Label Registry with all labels used in this GitHub project.
-- **BT-id padding:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format.
+- **BT-id padding & Atomic Minting:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format. **CRITICAL:** Never predict or pre-allocate `BT-<n>` IDs offline by scanning existing entries and calculating `MAX(BT_ID) + 1`. Because GitHub shares sequence numbers across both Issues and Pull Requests, guessing numbers locally guarantees collisions. IDs must be atomically captured strictly upon executing `gh issue create`.
 - Update when GitHub issues are created, closed, or change status.
 - Include only ID, Title, Status, Labels, Milestone, Dependencies, ICE, Ref — nothing else.
 - Use the Label Registry; do not invent labels.

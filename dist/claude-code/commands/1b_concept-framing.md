@@ -11,6 +11,10 @@ timestamp: 2026-06-25
 
 **Hand-off contract:** The `/2a_write-prd` workflow reads the brief's Vocabulary, Actor, Problem, Chosen Framing, and Non-Goals to seed PRD §1, §2, §4, §6, §7. The `/2a_write-prd` workflow warns if no brief exists and its §10 Open Questions are high.
 
+> [!IMPORTANT]
+> **STRICT LATE BINDING (SLUG-ONLY RULE):**
+> Discovery briefs (`docs/discovery/<slug>.md`) are pre-creation artifacts. **DO NOT** pre-allocate, predict, or attach a numeric `BT-<n>` ID to the filename, frontmatter, or title. Never inspect `.memory/BACKLOG_MAP.md` to compute `MAX(BT_ID) + 1`. The artifact must be named strictly by its semantic slug (`docs/discovery/<slug>.md`). Numeric `BT-<n>` binding occurs exclusively downstream inside `/2a_write-prd` upon atomic execution of `gh issue create`.
+
 ---
 
 ## Phase 0: Brainstorm (Optional)
@@ -144,7 +148,7 @@ Present the brief: *"Review the discovery brief. Any changes before I hand off?"
 
 ## Phase 7: Hand-off & Memory Sync
 
-1. Write `docs/discovery/<slug>.md`.
+1. Write `docs/discovery/<slug>.md`. **CRITICAL:** Use ONLY the semantic topic slug for `<slug>` (e.g., `docs/discovery/user-auth-refactor.md`). Never prepend or embed a numeric `BT-<n>` ID.
 2. Write confirmed [[G-xxx]] entries to `.memory/GLOSSARY.md` — only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder). Include each term's `Avoid:` list. If a newly-recorded `Avoid:` synonym is likely already present in existing code, OFFER a one-time, module-scoped search for it in code identifiers and propose renames (propose-only; user confirms). Skip for brand-new vocabulary with no prior code.
 3. If a framing decision is reusable across features, propose [[L-xxx]] for `.memory/LEARNINGS.md`. Rare — only if user signals it's a pattern.
 4. **Invoke `plan-html` skill:** If the discovery brief is long or complex (≥ ~100 lines), invoke the `plan-html` skill using the `plan-document` template to render `docs/discovery/<slug>.html` for human review.
