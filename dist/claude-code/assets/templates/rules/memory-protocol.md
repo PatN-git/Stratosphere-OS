@@ -90,3 +90,4 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 ## 8. Backlog ID Minting (Late Binding)
 - **Pre-creation (`/1b` briefs, draft PRDs):** Identify strictly by semantic slug (`docs/discovery/<slug>.md`). Never guess or assign `BT-<n>` before creation.
 - **Creation (`/2a`, `/3b`):** Never compute `MAX(BT_ID) + 1` (GitHub shares IDs with PRs). Bind `BT-<padded>` strictly from `gh issue create` output (or `BT-LOCAL-<n>` if offline).
+- **Flat IDs only:** Backlog IDs must be zero-padded flat integers (matching `^BT-[0-9]{3,}$` or `BT-LOCAL-\w+`). Hierarchical sub-numbering (`BT-059-01`) is strictly forbidden; parent-child hierarchy is tracked exclusively via the `Dependencies` column.

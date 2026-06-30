@@ -91,7 +91,7 @@
       "version": "1.0.3"
     },
     "assets/templates/references/issue-templates.md": {
-      "sha256": "4e1dedb0739d0eec15673a737c617da0ceffac64d81ddf6ce94a2d94a62665b6",
+      "sha256": "abe59c674c71842ff58ccff82b75a1a2c307e1b001e96c72f1da7aec2f303496",
       "timestamp": "2026-06-22",
       "version": "1.0.0"
     },
@@ -121,7 +121,7 @@
       "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "903d7c427ae00c50304f9dc7a5cc92a66ebd0ee1b389db29d8926779b6ea44fc",
+      "sha256": "8afd53558f129a8e8e60f98e38d1137b572ae1c5bb0ace6c0c527d203953a951",
       "timestamp": "2026-06-23",
       "version": "1.0.4"
     },
@@ -181,7 +181,7 @@
       "version": "1.0.1"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "dfc0829a2540532d44e2c72ba917d2af8054fd0d6e1558a8c9e5dceb3c61e33a",
+      "sha256": "4d873d1144faaa907805079052ed117341b15a2e63cc137132c4ccf22f548620",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },
