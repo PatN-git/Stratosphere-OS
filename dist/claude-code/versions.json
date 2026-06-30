@@ -21,7 +21,7 @@
       "version": "1.0.3"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "a78d612ac4cca5b2d34e1781577f1457670d9fa6a6e3a63bcdec68bbe8b0b118",
+      "sha256": "5dbce308185f5567032346d79c595ccb798b8a919e2f4385eaf45af3cb3c5ceb",
       "timestamp": "2026-06-18",
       "version": "1.1.1"
     },
@@ -86,9 +86,9 @@
       "version": "1.0.3"
     },
     "assets/templates/references/discovery_brief_template.md": {
-      "sha256": "22080320cb9c8e11044af9f3632c569798faa819d3ffbcd92687de58ada2699c",
+      "sha256": "f471655a647947cc0012285e0952a91809df5bf633d2fe4595978a830a4e8a5e",
       "timestamp": "<YYYY-MM-DD>",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     "assets/templates/references/issue-templates.md": {
       "sha256": "4e1dedb0739d0eec15673a737c617da0ceffac64d81ddf6ce94a2d94a62665b6",
@@ -121,7 +121,7 @@
       "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "b0b09a2eceba061f1bbfe138c4473777aa632f703cfa0b898f548dfc8159f5a8",
+      "sha256": "903d7c427ae00c50304f9dc7a5cc92a66ebd0ee1b389db29d8926779b6ea44fc",
       "timestamp": "2026-06-23",
       "version": "1.0.4"
     },
@@ -161,12 +161,12 @@
       "version": "1.0.2"
     },
     "commands/1b_concept-framing.md": {
-      "sha256": "c849fe486b9ef4714d158953f708c0683c0884a8c6cee2c75db82c93c05c7128",
+      "sha256": "430d05954814ebd4db62fdba5d8df5718a564a9815a5b0c37b89b90ccbb5c6bc",
       "timestamp": "2026-06-25",
       "version": "1.0.4"
     },
     "commands/2a_write-prd.md": {
-      "sha256": "7eab7eed153fe74fff0e49d6d04e5a36e56624894c9ff2e02b5f31022055d0a6",
+      "sha256": "220a425b0d941e3244371c235384c355c816a33034d2695e6e51f3f1ccc2e4b2",
       "timestamp": "2026-06-25",
       "version": "1.1.1"
     },
@@ -181,7 +181,7 @@
       "version": "1.0.1"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "32ed8c5050248344be30b0d3a13b96df18b06501b10847b985f53af0de858398",
+      "sha256": "dfc0829a2540532d44e2c72ba917d2af8054fd0d6e1558a8c9e5dceb3c61e33a",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },

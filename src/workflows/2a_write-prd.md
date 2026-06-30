@@ -19,14 +19,17 @@ timestamp: 2026-06-25
 3. If feature warrants 2+ PRDs, suggest splitting before writing.
 4. One clarifying question only if blocking. Everything else → `> open:` into §10.
 
-## Phase 2: Reserve BT-<padded>
-Create the parent GitHub issue — its number becomes zero-padded to 3 digits (e.g., #7 becomes `BT-007`).
+## Phase 2: Reserve BT-<padded> (Atomic Minting)
+Execute `gh issue create` to create the parent GitHub issue — capture the exact returned GitHub issue number `#N` and zero-pad it to 3 digits (e.g., `#59` becomes `BT-059`).
+> [!IMPORTANT]
+> **ATOMIC MINTING RULE:** Never predict, pre-allocate, or guess the next issue number by scanning `BACKLOG_MAP.md` (`MAX(BT_ID) + 1`). Because GitHub shares integer numbering across both Issues and Pull Requests, guessing local numbers guarantees collisions. The numeric ID `BT-<padded>` is born strictly at creation time from the return value of `gh issue create`. If operating offline without GitHub connection, use a draft prefix `BT-LOCAL-<slug>` until synced.
+
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only)
 - **Labels (apply):** `size:large` (parent features are always large), `area:<x>` (inferred from registry), `type:feature`, `status:in progress`; `priority:<x>` only if confidently inferable — else default unknown priority to `priority:medium`; never invent a non-registry label
 - **Labels (never apply):** `size:medium`, `size:small`, `type:HITL`, `type:AFK` (slice-level)
 - **Body:** one-line summary + forward link to `docs/prds/BT-<padded>-<name>.md`
 
-Record issue URL for PRD front matter.
+Record issue URL and minted ID for PRD front matter.
 
 ## Phase 3: Draft
 Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation context, BACKLOG_MAP, LEARNINGS, and ADR-shaped memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline where they constrain the work.

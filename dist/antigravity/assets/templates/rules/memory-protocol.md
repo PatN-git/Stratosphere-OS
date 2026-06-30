@@ -86,3 +86,7 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 ## 7. Placeholder Preservation & Scaffolding Rule
 - **Never delete structural headings, comments, or guidelines:** When populating or updating any memory file during project setup or ongoing development, you MUST PRESERVE all section headings (even if empty, such as `## Major Feature Areas`, `## State / Data Flow`, `## Backend / Database Boundaries`, `## Shapes`, `## Components`, `## Do's and Don'ts`), HTML/markdown comments (e.g., `<!-- shadcn variable names... -->`), guidance text (e.g., `<Rationale...>`, `Avoid:` instructions), governance rules/bullet points, and the format example lines under `## Superseded`. They must remain in place as placeholders and guidance until needed or replaced by real domain content.
 - **What to remove:** When writing real active content into a memory file, remove ONLY the dummy active items in that section (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.
+
+## 8. Backlog ID Minting (Late Binding)
+- **Pre-creation (`/1b` briefs, draft PRDs):** Identify strictly by semantic slug (`docs/discovery/<slug>.md`). Never guess or assign `BT-<n>` before creation.
+- **Creation (`/2a`, `/3b`):** Never compute `MAX(BT_ID) + 1` (GitHub shares IDs with PRs). Bind `BT-<padded>` strictly from `gh issue create` output (or `BT-LOCAL-<n>` if offline).
