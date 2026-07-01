@@ -136,12 +136,12 @@
       "version": "1.0.2"
     },
     "commands/0a_start-session.md": {
-      "sha256": "8c3f57e32a9f10b68f88041262cb396b4e381b098d28c94b7f989d658fea3fee",
+      "sha256": "9d320a556be0cdd8b49acf5fa4deec0836b856bb8dcf403e7f08a62ffcf78c5e",
       "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "commands/0b_stop-session.md": {
-      "sha256": "7edfd1f9de15141e37156ed4dd3506fc00c13a9bb75b1051dd3059f1c76a51de",
+      "sha256": "fb600af094b27df2465ed7b70b0e8eb96eabd946224caf94985350af2e9198e3",
       "timestamp": "2026-06-23",
       "version": "1.0.2"
     },
@@ -181,7 +181,7 @@
       "version": "1.0.1"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "81acc5a1f727a7079f09cee6af2fea0eb40f4300404b3b184cd7dc4c8df667db",
+      "sha256": "809d6a7fe13378d82276a7d006e0c0ba3437816c8c7991b8bb82c29c9d791ce7",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },
@@ -191,12 +191,12 @@
       "version": "2.0.1"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "dbc70b4caa457e4911c289f83290fe761ef985ca863df6994a21b4adf45fd4b8",
+      "sha256": "4671d6e7b42473edf6b5e3971ba1340308a8b121cff0279d000627c8594e78f5",
       "timestamp": "2026-06-23",
       "version": "2.0.7"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "1ca750cfd8aac64ee48dec5c6070125e86ff06fdbaf835de68e8805b18151c01",
+      "sha256": "8c4749c920c938834c0c68f1365546f1c8ae17debcaa8e8c6f448cd6d524a70c",
       "timestamp": "2026-06-22",
       "version": "1.0.6"
     },

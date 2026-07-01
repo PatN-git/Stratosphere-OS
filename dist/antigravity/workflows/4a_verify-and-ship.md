@@ -78,6 +78,5 @@ Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase
    - Keep test cmd + result
    - Keep relevant `[[L-xxx]]`/`[[A-xxx]]` references
 5. Comment the PR link back on the GitHub issue (bi-directional trace); set the issue/`BACKLOG_MAP.md` status appropriately.
-6. **Sub-issue Epic Completion Check:** Inspect the parent epic (`#parentIssue`) via GitHub CLI or API (`gh issue view <parentIssue>`) to check its open vs. closed native sub-issues.
-   - If ALL native sub-issues under `#parentIssue` are verified/closed (`state: CLOSED`), output: `🎉 All native sub-issues for parent epic BT-<parent> are complete! PR #<n> ready to merge (human), and parent epic BT-<parent> can now be promoted to status:done.`
-   - Otherwise, output: `[SHIPPED] PR #<n> open for BT-<padded>. /4b_audit-architecture-drift is optional next. (Parent epic BT-<parent> has remaining open sub-issues).` Never merge.
+6. Output: `[SHIPPED] PR #<n> open for BT-<padded>. /4b_audit-architecture-drift is optional next.` Never merge.
+   - **Epic Check:** If all sub-issues under `#parent` are closed (`gh issue view <parent>`), state: `"All sub-issues for BT-<parent> complete! PR #<n> ready to merge (human), and BT-<parent> ready for status:done & closure."`

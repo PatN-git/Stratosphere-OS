@@ -16,7 +16,7 @@ Reconstruct minimum necessary context quickly without re-reading the whole repos
 1. Read `.memory/STATUS.md`. If STATUS shows no active task (e.g. post-bootstrap), output "No active task — next: /1a_research or /1b_concept-framing" and "Needs verification: none", then halt.
 2. Read STATUS `Current Branch`. If it's an active/unmerged feature branch and the repo isn't on it → check it out; if merged/unset → checkout default and pull. (Note: Defer all branch CREATION to 3c, only restore existing branches here).
 3. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies — unless invoked by 3b_create-issue.md.
-   - **Active Task State Transition:** If the user specifies or resumes a specific issue (`BT-XXX` / `#N`), immediately update its row in `.memory/BACKLOG_MAP.md` to `status:in-progress`. If GitHub is connected, assign or comment on `#N` indicating work has started. Ensure `.memory/STATUS.md` records `Active issue: BT-XXX`.
+   - **State Transition:** Set target issue (`BT-XXX`) to `status:in-progress` in `.memory/BACKLOG_MAP.md` and GitHub. If `BT-XXX` is a sub-issue, also set its parent epic (`BT-<parent>`) to `status:in-progress`. Update `Active issue` in `.memory/STATUS.md`.
 4. Read `.memory/LEARNINGS.md` (Active Entries only — skip `## Superseded` unless the task explicitly requires history).
 5. If the task involves a PRD, discovery brief, or domain-heavy feature — read `.memory/GLOSSARY.md` (Active Entries only).
 6. Read `.memory/ARCHITECTURE.md` if the task affects structure, state flow, feature boundaries, or cross-feature behavior.
