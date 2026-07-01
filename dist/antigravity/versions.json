@@ -91,7 +91,7 @@
       "version": "1.0.3"
     },
     "assets/templates/references/issue-templates.md": {
-      "sha256": "4e1dedb0739d0eec15673a737c617da0ceffac64d81ddf6ce94a2d94a62665b6",
+      "sha256": "abe59c674c71842ff58ccff82b75a1a2c307e1b001e96c72f1da7aec2f303496",
       "timestamp": "2026-06-22",
       "version": "1.0.0"
     },
@@ -121,7 +121,7 @@
       "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "903d7c427ae00c50304f9dc7a5cc92a66ebd0ee1b389db29d8926779b6ea44fc",
+      "sha256": "8afd53558f129a8e8e60f98e38d1137b572ae1c5bb0ace6c0c527d203953a951",
       "timestamp": "2026-06-23",
       "version": "1.0.4"
     },
@@ -166,12 +166,12 @@
       "version": "1.0.4"
     },
     "workflows/0a_start-session.md": {
-      "sha256": "2254ad492dccb47548b005369a4d504eec4762acfcea4afb36080d514e26834f",
+      "sha256": "9d320a556be0cdd8b49acf5fa4deec0836b856bb8dcf403e7f08a62ffcf78c5e",
       "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "workflows/0b_stop-session.md": {
-      "sha256": "7108f8dca88822d9fac5da153718801767294d83c2001b3cbfbd4f27517edcae",
+      "sha256": "fb600af094b27df2465ed7b70b0e8eb96eabd946224caf94985350af2e9198e3",
       "timestamp": "2026-06-23",
       "version": "1.0.2"
     },
@@ -211,7 +211,7 @@
       "version": "1.0.1"
     },
     "workflows/3b_create-issue.md": {
-      "sha256": "dfc0829a2540532d44e2c72ba917d2af8054fd0d6e1558a8c9e5dceb3c61e33a",
+      "sha256": "809d6a7fe13378d82276a7d006e0c0ba3437816c8c7991b8bb82c29c9d791ce7",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },
@@ -221,12 +221,12 @@
       "version": "2.0.1"
     },
     "workflows/3d_implement-issue.md": {
-      "sha256": "926b49015cb7e83dfd14fb7fbcc243453bd6c524a60a8a3705493c752a3fcea7",
+      "sha256": "4671d6e7b42473edf6b5e3971ba1340308a8b121cff0279d000627c8594e78f5",
       "timestamp": "2026-06-23",
       "version": "2.0.7"
     },
     "workflows/4a_verify-and-ship.md": {
-      "sha256": "2a263621e377ce585b560701dd2afa44bd5f067c0f99be4b570c1176910a50b7",
+      "sha256": "8c4749c920c938834c0c68f1365546f1c8ae17debcaa8e8c6f448cd6d524a70c",
       "timestamp": "2026-06-22",
       "version": "1.0.6"
     },

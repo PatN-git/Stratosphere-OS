@@ -16,6 +16,12 @@ timestamp: 2026-06-22
 ### Dependencies
 - Relation to existing tasks/files.
 
+### Actionable Research Steps
+- *List 3-4 concrete, stepwise checks, codebase symbols to inspect, or quick experiments/commands to run.*
+
+### Exit Criteria & Deliverables
+- *Specify the exact proof, prototype code, or memory artifact required to answer the question and unblock downstream Template B slices.*
+
 ### Blockers
 - What must be resolved before this can move to a Vertical Slice (Template B)?
 

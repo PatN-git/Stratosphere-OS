@@ -17,7 +17,7 @@ Leave next session with enough context to resume immediately. Ensure all new ent
 ## Procedure
 1. Compare completed vs. planned and do the following
     - Update active GitHub issues via comment with plan, completed steps, and open steps (if needed).
-    - If the agent or user marks a task `[DONE]`, delete it from `.memory/BACKLOG_MAP.md`.
+    - When a task is marked `[DONE]`, delete it from `.memory/BACKLOG_MAP.md` and close its GitHub issue. If it is a sub-issue and all sibling sub-issues under `#parent` are closed (`state: CLOSED`), prompt to close `#parent` in GitHub and mark `BT-<parent>` `status:done` in `BACKLOG_MAP.md`.
 2. Update `.memory/STATUS.md`: last sync, current branch, active issue, current focus, completed this session, blockers (if any), next immediate step. (When writing the first real content to STATUS.md, delete the shipped example placeholders).
 3. Evaluate the internal reasoning loop for this session to minimize token drift:
     - Analyze agent and sub-agent execution behaviors for inefficiencies (e.g., redundant tool executions, loops, loop-breaking errors, or prompt misunderstandings).

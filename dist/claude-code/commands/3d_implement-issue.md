@@ -18,8 +18,9 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
    - Feature branch format: `<type>/BT-<parentPadded>-<slug>` (use `type:` from the PARENT feature). If it exists → check it out and pull; else → create it from up-to-date default.
    - If the slice has no resolvable parent → use its own ID; if genuinely ambiguous → INTERACTIVE prompt to clarify (if AFK, default to the slice's own branch).
    - Never work on `main`.
-   - Update `.memory/STATUS.md` `Current Branch`.
+   - Update `.memory/STATUS.md` `Current Branch` and `Active issue`.
 2. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
+   - **State Transition:** Set target slice and its parent epic (`BT-<parent>`) to `status:in-progress` in `.memory/BACKLOG_MAP.md` and GitHub.
 3. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
    - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
    - The brand design tokens: `.memory/DESIGN.md`.

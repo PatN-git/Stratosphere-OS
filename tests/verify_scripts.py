@@ -20,6 +20,76 @@ def test_validate_memory():
         print("validate_memory test failed! Output:\n", result.stdout, result.stderr)
         return False
 
+def test_validate_memory_backlog():
+    print("\n--- Testing validate_memory.py Backlog checks ---")
+    tmp_mem = Path(".tmp/dummy_memory_backlog")
+    if tmp_mem.exists():
+        shutil.rmtree(tmp_mem, ignore_errors=True)
+    tmp_mem.mkdir(parents=True, exist_ok=True)
+    
+    backlog_content = """---
+type: backlog
+title: Backlog Map
+description: Test
+timestamp: 2026-06-18
+version: "1.1.1"
+---
+# BACKLOG MAP
+
+## Rules
+- Dummy rule
+
+## Label Registry
+- **Primary Type (`type:<class>`)**: `type:feature`
+- **Execution Mode (`type:<mode>`)**: `type:HITL`, `type:AFK`
+
+## Backlog
+
+| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| BT-059-01 | Hierarchical | planned | type:feature, type:HITL | v1.0.0 | — | — | — |
+| BT-060 | Missing primary type | planned | type:HITL, size:medium | v1.0.0 | — | — | — |
+| BT-061 | Missing execution mode | planned | type:feature, size:medium | v1.0.0 | — | — | — |
+| BT-062 | Fully valid slice | planned | type:feature, type:HITL, size:medium | v1.0.0 | — | — | — |
+| BT-063 | Parent feature is ignored | planned | type:feature, size:large | v1.0.0 | — | — | — |
+"""
+    (tmp_mem / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
+    
+    result = subprocess.run([sys.executable, "dist/antigravity/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
+    print("Exit code:", result.returncode)
+    
+    # Assertions
+    passed = True
+    if result.returncode != 1:
+        print("Error: Expected exit code 1, got", result.returncode)
+        passed = False
+        
+    expected_errors = [
+        "Invalid Backlog ID format 'BT-059-01'",
+        "Slice 'BT-060'",
+        "is missing a Primary Type label",
+        "Slice 'BT-061'",
+        "is missing an Execution Mode label"
+    ]
+    
+    for err in expected_errors:
+        if err not in result.stdout:
+            print(f"Error: Expected to find '{err}' in output, but did not. Output:\n", result.stdout)
+            passed = False
+            
+    unexpected_errors = [
+        "BT-062",
+        "BT-063"
+    ]
+    for uerr in unexpected_errors:
+        if uerr in result.stdout and ("missing" in result.stdout or "Invalid" in result.stdout) and f"'{uerr}'" in result.stdout:
+            print(f"Error: Unexpected error reported for '{uerr}'. Output:\n", result.stdout)
+            passed = False
+            
+    if passed:
+        print("validate_memory backlog checks passed!")
+    return passed
+
 def test_sync_skills():
     print("\n--- Testing sync_skills.py ---")
     # Run sync_skills.py from dist/antigravity/scripts/
@@ -104,6 +174,8 @@ def test_scaffold_repair_lock():
 if __name__ == "__main__":
     success = True
     if not test_validate_memory():
+        success = False
+    if not test_validate_memory_backlog():
         success = False
     if not test_sync_skills():
         success = False
