@@ -166,12 +166,12 @@
       "version": "1.0.4"
     },
     "workflows/0a_start-session.md": {
-      "sha256": "2254ad492dccb47548b005369a4d504eec4762acfcea4afb36080d514e26834f",
+      "sha256": "8c3f57e32a9f10b68f88041262cb396b4e381b098d28c94b7f989d658fea3fee",
       "timestamp": "2026-06-18",
       "version": "1.0.2"
     },
     "workflows/0b_stop-session.md": {
-      "sha256": "7108f8dca88822d9fac5da153718801767294d83c2001b3cbfbd4f27517edcae",
+      "sha256": "7edfd1f9de15141e37156ed4dd3506fc00c13a9bb75b1051dd3059f1c76a51de",
       "timestamp": "2026-06-23",
       "version": "1.0.2"
     },
@@ -211,7 +211,7 @@
       "version": "1.0.1"
     },
     "workflows/3b_create-issue.md": {
-      "sha256": "2d4dfad4925b3668e26d8f623e1ef43e1c8674bd30000098cef84acecb1e975f",
+      "sha256": "81acc5a1f727a7079f09cee6af2fea0eb40f4300404b3b184cd7dc4c8df667db",
       "timestamp": "2026-06-22",
       "version": "2.0.2"
     },
@@ -221,12 +221,12 @@
       "version": "2.0.1"
     },
     "workflows/3d_implement-issue.md": {
-      "sha256": "926b49015cb7e83dfd14fb7fbcc243453bd6c524a60a8a3705493c752a3fcea7",
+      "sha256": "dbc70b4caa457e4911c289f83290fe761ef985ca863df6994a21b4adf45fd4b8",
       "timestamp": "2026-06-23",
       "version": "2.0.7"
     },
     "workflows/4a_verify-and-ship.md": {
-      "sha256": "2a263621e377ce585b560701dd2afa44bd5f067c0f99be4b570c1176910a50b7",
+      "sha256": "1ca750cfd8aac64ee48dec5c6070125e86ff06fdbaf835de68e8805b18151c01",
       "timestamp": "2026-06-22",
       "version": "1.0.6"
     },
