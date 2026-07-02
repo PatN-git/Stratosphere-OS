@@ -1,0 +1,201 @@
+name: Sync Labels to Project
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled, closed]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Issue Labels to Project V2
+        uses: actions/github-script@v7
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          PROJECT_OWNER: ${{ vars.PROJECT_OWNER }}
+          PROJECT_OWNER_TYPE: ${{ vars.PROJECT_OWNER_TYPE }}
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+          DRY_RUN: ${{ vars.DRY_RUN }}
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const owner = process.env.PROJECT_OWNER || context.repo.owner;
+            const ownerType = (process.env.PROJECT_OWNER_TYPE || 'org').toLowerCase() === 'user' ? 'user' : 'organization';
+            const projectNum = parseInt(process.env.PROJECT_NUMBER, 10);
+            const dryRun = process.env.DRY_RUN === 'true';
+
+            if (!process.env.PROJECT_TOKEN) {
+              console.log("PROJECT_TOKEN secret is not set. Skipping sync.");
+              return;
+            }
+            if (isNaN(projectNum)) {
+              console.log("PROJECT_NUMBER variable is not set or invalid. Skipping sync.");
+              return;
+            }
+
+            const issueNodeId = context.payload.issue.node_id;
+            const labels = context.payload.issue.labels || [];
+            console.log(`Event Action: ${context.payload.action}`);
+            console.log(`Processing issue #${context.payload.issue.number} with labels:`, labels.map(l => l.name));
+
+            // Extract key:value labels
+            const kvLabels = [];
+            for (const label of labels) {
+              const parts = label.name.split(':');
+              if (parts.length >= 2) {
+                const key = parts[0].trim().toLowerCase();
+                const val = parts.slice(1).join(':').trim().toLowerCase();
+                kvLabels.push({ key, val, original: label.name });
+              }
+            }
+
+            // Determine status field value override on close/reopen
+            let statusOverrideVal = null;
+            if (context.payload.action === 'closed') {
+              if (context.payload.issue.state_reason === 'completed' || !context.payload.issue.state_reason) {
+                statusOverrideVal = 'done';
+              } else {
+                console.log(`Issue closed as not planned (${context.payload.issue.state_reason}). Skipping done status update.`);
+              }
+            } else if (context.payload.action === 'reopened') {
+              const statusLabel = kvLabels.find(l => l.key === 'status');
+              statusOverrideVal = statusLabel ? statusLabel.val : 'planned';
+            }
+
+            // 1. Fetch Project ID and Field Metadata
+            const projectQuery = `
+              query($owner: String!, $projectNumber: Int!) {
+                ${ownerType}(login: $owner) {
+                  projectV2(number: $projectNumber) {
+                    id
+                    fields(first: 50) {
+                      nodes {
+                        ... on ProjectV2Field {
+                          id
+                          name
+                        }
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            let projectData;
+            try {
+              const res = await github.graphql(projectQuery, { owner, projectNumber: projectNum });
+              projectData = res[ownerType]?.projectV2;
+            } catch (err) {
+              console.error("GraphQL error querying project metadata:", err.message);
+              throw new Error(`Failed to find project ${owner}/${projectNum} (${ownerType}). Ensure PROJECT_TOKEN has correct permissions.`);
+            }
+
+            if (!projectData) {
+              throw new Error(`Project #${projectNum} not found under ${ownerType} ${owner}.`);
+            }
+
+            const projectId = projectData.id;
+            const fieldsMap = {};
+            const singleSelectOptions = {};
+
+            for (const field of projectData.fields.nodes || []) {
+              if (!field) continue;
+              const fieldKey = field.name.toLowerCase();
+              fieldsMap[fieldKey] = field.id;
+              if (field.options) {
+                singleSelectOptions[fieldKey] = {};
+                for (const opt of field.options) {
+                  singleSelectOptions[fieldKey][opt.name.toLowerCase()] = opt.id;
+                }
+              }
+            }
+
+            console.log("Resolved Project V2 fields:", Object.keys(fieldsMap));
+
+            // 2. Add Issue to Project (Idempotent)
+            let itemId;
+            if (dryRun) {
+              console.log(`[DRY RUN] Would add issue node ${issueNodeId} to project ${projectId}`);
+              itemId = "mock-item-id";
+            } else {
+              const addMutation = `
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                    item {
+                      id
+                    }
+                  }
+                }
+              `;
+              try {
+                const addRes = await github.graphql(addMutation, { projectId, contentId: issueNodeId });
+                itemId = addRes.addProjectV2ItemById?.item?.id;
+                console.log(`Idempotently added issue to project. Item ID: ${itemId}`);
+              } catch (err) {
+                console.error("GraphQL error adding item to project:", err.message);
+                return; // Log and skip to avoid failing workflow
+              }
+            }
+
+            // 3. Update field values
+            const updateFieldVal = async (fieldKey, valueName) => {
+              const fieldId = fieldsMap[fieldKey];
+              if (!fieldId) {
+                console.log(`Field matching '${fieldKey}' not found in project. Skipping.`);
+                return;
+              }
+              const options = singleSelectOptions[fieldKey];
+              if (!options) {
+                console.log(`Field '${fieldKey}' is not a single-select field. Skipping.`);
+                return;
+              }
+              const optionId = options[valueName];
+              if (!optionId) {
+                console.log(`Option '${valueName}' not found on field '${fieldKey}' (available: ${Object.keys(options).join(', ')}). Skipping.`);
+                return;
+              }
+
+              if (dryRun) {
+                console.log(`[DRY RUN] Would update field '${fieldKey}' to option '${valueName}' (Option ID: ${optionId}) on item ${itemId}`);
+              } else {
+                const updateMutation = `
+                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                    updateProjectV2ItemFieldValue(input: {
+                      projectId: $projectId,
+                      itemId: $itemId,
+                      fieldId: $fieldId,
+                      value: { singleSelectOptionId: $optionId }
+                    }) {
+                      projectV2Item {
+                        id
+                      }
+                    }
+                  }
+                `;
+                try {
+                  await github.graphql(updateMutation, { projectId, itemId, fieldId, optionId });
+                  console.log(`Successfully updated field '${fieldKey}' to '${valueName}'`);
+                } catch (err) {
+                  console.error(`GraphQL error updating field '${fieldKey}':`, err.message);
+                }
+              }
+            };
+
+            // If this is a close or reopen event, override the status field
+            if (statusOverrideVal) {
+              console.log(`Close/Reopen event: Force updating status field to '${statusOverrideVal}'`);
+              await updateFieldVal('status', statusOverrideVal);
+            } else {
+              // Otherwise, sync all key:value labels
+              for (const { key, val, original } of kvLabels) {
+                await updateFieldVal(key, val);
+              }
+            }

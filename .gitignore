@@ -10,3 +10,5 @@ Thumbs.db
 .agents/.env
 __pycache__/
 *.pyc
+.env   
+.env.local

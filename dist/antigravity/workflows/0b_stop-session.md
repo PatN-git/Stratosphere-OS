@@ -3,8 +3,8 @@ name: 0b_stop-session
 description: Concludes session by codifying progress, updating memory artifacts, and performing linting to ensure a seamless, state-aware resumption of work.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.2"
-timestamp: 2026-06-23
+version: "1.0.4"
+timestamp: 2026-07-02
 ---
 
 # STOP SESSION

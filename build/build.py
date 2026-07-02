@@ -173,6 +173,7 @@ def build_platform(kind: str):
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "references", assets / "references")
+    copytree(SRC / "github", assets / "github")
     copytree(SRC / "scripts", out / "scripts")
 
     # 5.5 Post-copy pass to stamp version into asset templates

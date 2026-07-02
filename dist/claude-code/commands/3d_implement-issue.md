@@ -3,8 +3,8 @@ name: 3d_implement-issue
 description: Rigorous Test-Driven Development (TDD) cycle execution with token-efficient Fast-Tracks
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.7"
-timestamp: 2026-06-23
+version: "2.0.11"
+timestamp: 2026-07-02
 ---
 
 # Implement issue
@@ -20,7 +20,7 @@ Apply strictly to all backend logic, database operations, hooks, and state funct
    - Never work on `main`.
    - Update `.memory/STATUS.md` `Current Branch` and `Active issue`.
 2. Read the current slice issue description. Check if a design reference is linked in the GitHub Issue body or in the `Ref` column of `.memory/BACKLOG_MAP.md`.
-   - **State Transition:** Set target slice and its parent epic (`BT-<parent>`) to `status:in-progress` in `.memory/BACKLOG_MAP.md` and GitHub.
+   - **State Transition:** Set target slice and its parent epic (`BT-<parent>`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub (using `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --add-label "status:in progress"`).
 3. **Conditional Read:** If a UX design blueprint is referenced (e.g., `docs/design/BT-<padded>-interface.md`), you MUST load and read:
    - The frozen blueprint: `docs/design/BT-<padded>-interface.md` (search for the section relevant to the current slice).
    - The brand design tokens: `.memory/DESIGN.md`.
@@ -53,7 +53,7 @@ When refactoring in the loop, adhere to:
 4. **Avoid-drift check (propose-only):** check the identifiers THIS SLICE introduced or modified against GLOSSARY `Avoid:` lists (only terms that have one). Use judgment — flag a match only when the banned word is used as the domain concept the glossary canonicalized; ignore third-party/library names, import paths, string literals, and comments; match on whole-identifier boundaries. Propose any renames (citing the canonical term + `[[G-xxx]]`) at the REFACTOR/HITL gate; never auto-rename. Scope is this slice's diff only — never the whole repo.
 
 ## Phase 3: Slice Completion Gate
-Before the `/4a` hand-off, confirm the slice is fully built against its acceptance criteria. Inline self-check, NOT a sub-agent; **ephemeral** — write nothing to the issue or PR.
+Before the `/4a_verify-and-ship` hand-off, confirm the slice is fully built against its acceptance criteria. Inline self-check, NOT a sub-agent; **ephemeral** — write nothing to the issue or PR.
 1. Read the slice issue's **Acceptance Criteria (Verifiable)**.
 2. Produce an **exhaustive coverage map**: for every AC, name the passing test that covers it or mark it `[UNCOVERED]` — list each by name, never summarize as "looks complete."
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g., design blocker) → surface it explicitly, never silently ship.

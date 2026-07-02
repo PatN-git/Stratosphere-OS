@@ -204,13 +204,16 @@ def main():
                                     'content': stripped
                                 }
                                 
-                                # Validate dual-type labels for non-parent slices (non-placeholders without size:large)
+                                # Validate dual-type labels for non-parent slices (non-placeholders without size:large or early-stage status)
                                 parts = [p.strip() for p in line.split('|')]
                                 if len(parts) >= 6:
+                                    status_str = parts[3].lower()
                                     labels_str = parts[4]
                                     labels = [l.strip() for l in labels_str.split(',') if l.strip()]
-                                    if 'size:large' not in labels:
-                                        primary_types = {'type:bug', 'type:content', 'type:feature', 'type:improvement', 'type:maintenance', 'type:research', 'type:NEEDS_SPEC'}
+                                    
+                                    exempt_status = {'planned', 'status:planned', 'needs_spec', 'status:needs_spec'}
+                                    if 'size:large' not in labels and status_str not in exempt_status:
+                                        primary_types = {'type:bug', 'type:content', 'type:feature', 'type:improvement', 'type:maintenance', 'type:research'}
                                         execution_modes = {'type:HITL', 'type:AFK'}
                                         
                                         has_primary = [l for l in labels if l in primary_types]

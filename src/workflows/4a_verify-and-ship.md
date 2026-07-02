@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.6"
-timestamp: 2026-06-22
+version: "1.0.12"
+timestamp: 2026-07-02
 ---
 
 ## Phase 1: Value-Add Gate
@@ -20,6 +20,7 @@ _ACTION:_ Enforce risk gate on target issue to justify a focused test-alignment 
   - Security boundaries between users, tenants, teams, or roles
   - Explicit PRD acceptance criteria with meaningful edge cases
   - A `[size:large]` `[type:AFK]`
+3. If none of the above are met, the audit is skipped. Proceed to Phase 5.
 
 ## Phase 2: Execution
 **Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
@@ -35,13 +36,13 @@ _INPUT:_
 
 _PERSONA:_ Strict Business Logic Auditor. Relentlessly restrict audit to requirements and security boundaries.
 
-## Confidence scale & reporting threshold
+### Confidence scale & reporting threshold
 **Audit scope:** stated requirements, acceptance criteria, business logic, and security boundaries (Supabase RLS, auth/authz, billing/credits/limits). A Report-grade (≥80) finding looks like a missing assertion of a stated requirement, an untested specified edge case, or a security-boundary bypass.
 Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
 
 - **Implementation-only Divergence Rule:** Any implementation-only divergence (where the code does something different from design/primitives but does NOT violate any stated PRD Acceptance Criteria or Design Contract) MUST cap at [Weak Signal] (confidence < 70) and is withheld from the final report.
 
-## Clean Exit Rule
+### Clean Exit Rule
 - IF no architectural issues meet the **confidence >= 80** threshold → proceed to Phase 5.
 - OUTPUT: `[PASS] No high-confidence logical or security anomalies identified. Slice is verified.` 
 Do not generate additional output.
@@ -60,23 +61,26 @@ HALT execution. Await human instruction:
 - Human commands agent back to standard TDD loop to implement missing test coverage, OR approves.
 - If the user's response to a gap report authorizes shipping, proceed to Phase 5 on a clean re-audit without a second halt. If gaps remain unresolved → back to the TDD loop; NO PR.
 
-## Phase 5: Ship (gated, HITL)
-Reached ONLY from a clean state — Phase 1 `[SKIP]`, Phase 3 `[PASS]`, or Phase 4 approval. NEVER while ≥80 gaps remain open.
-1. Branch isolation: Enforce that the current branch is NOT `main`/`master` (`AGENT.md` branch rule) and that the current branch is the feature branch for this slice's parent. If on main → HALT and instruct the user to branch first.
-2. **Design Drift Gate:** If this slice involves UI/styling, verify that the compiled token stylesheet is in sync with the design system source of truth:
+## Phase 5: Isolated Ship Gate
+_INPUT:_ Verified code changes.
+_ACTION:_ Push isolated changes and open/update the PR.
+1. **Branch isolation:** Enforce that the current branch is NOT `main`/`master` (`AGENT.md` branch rule) AND is the feature branch for this slice's parent. If on `main` → HALT and instruct the user to branch first.
+2. Run the CSS design validator to check alignment with `DESIGN.md`:
+   - Command:
    ```bash
    python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --check <app-css-dir>/theme.tokens.css
    ```
    If this command exits with a non-zero code, **halt and fail the ship**. The generated CSS is out of sync with `.memory/DESIGN.md` or was hand-edited. The agent (or user) must run `design_theme` with `--out` to synchronize, verify the changes, and commit the synchronized CSS file before shipping.
-3. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4).
-3. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3d owns commits). Push the branch.
-4. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
+3. HALT for explicit user confirmation to ship (unless pre-authorized in Phase 4 or by an orchestrating workflow).
+4. On confirmation: commit any uncommitted slice code+tests ONLY on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). This is a safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift into it. (Note: 4a never creates the first commit; 3d owns commits). Push the branch.
+5. The PR is ONE per feature branch: if no PR exists for the branch → create it with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. The PR body accumulates each shipped slice:
    - `Closes #<sliceIssue>` (and the parent `BT-<padded>`)
    - One-line slice summary
    - Extend the AC↔test coverage table (if audited), OR `[PASS] slice verified`, OR `[SKIP] cosmetic`
+   - `[ ] Manual QA Required` (if needs_manual_qa is flagged by implementer)
    - Keep design ref `docs/design/BT-<padded>-interface.md` (if UI)
    - Keep test cmd + result
    - Keep relevant `[[L-xxx]]`/`[[A-xxx]]` references
-5. Comment the PR link back on the GitHub issue (bi-directional trace); set the issue/`BACKLOG_MAP.md` status appropriately.
-6. Output: `[SHIPPED] PR #<n> open for BT-<padded>. /4b_audit-architecture-drift is optional next.` Never merge.
-   - **Epic Check:** If all sub-issues under `#parent` are closed (`gh issue view <parent>`), state: `"All sub-issues for BT-<parent> complete! PR #<n> ready to merge (human), and BT-<parent> ready for status:done & closure."`
+6. Comment the PR link back on the GitHub issue (bi-directional trace); leave the slice at `status:in progress` in GitHub and `.memory/BACKLOG_MAP.md` (do NOT set status:done on ship; the slice is marked done when the PR is merged and automatically closes the issue).
+7. Output: `[SHIPPED] PR #<n> open for BT-<padded>. /4b_audit-architecture-drift is optional next.` Never merge.
+   - **Epic Check:** If all sub-issues under `#parent` are closed (`gh issue view <parent>`), state: `"All sub-issues for BT-<parent> complete! PR #<n> ready to merge (human), and BT-<parent> ready for status:done & closure."` (using `gh issue edit <parent> --remove-label "status:in progress" --add-label "status:done"`).

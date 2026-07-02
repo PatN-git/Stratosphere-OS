@@ -2,17 +2,18 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.4"
-timestamp: 2026-06-17
+version: "1.0.7"
+timestamp: 2026-07-02
 ---
 
 # Instantiate StratosphereOS
 
 Instantiate minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
 
-This command is a **one-time setup** (safe to re-run for upgrades). The ongoing protocols live in:
+This command is a **one-time setup** (safe to re-run for upgrades). The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
+- `.agents/workflows/.reference/` — shared templates and guides
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
@@ -212,30 +213,48 @@ No GitHub labels exist yet.
 ### Brownfield
 GitHub labels already exist and may differ from the registry.
 
-1. **Fetch** all existing GitHub labels (names + colours).
-2. **Build a reconciliation table** — one row per label, assign exactly one Action:
+1. **Fetch** all existing GitHub labels using `gh label list`.
+2. **Analyze & Propose Maps:** Identify existing labels representing statuses or types (including legacy formats like `status:in-progress`, `type:NEEDS_SPEC`, or custom synonyms) and map them to their canonical registry equivalents.
+3. **Build a dynamic reconciliation table** matching the project's actual labels, assigning exactly one Action per label:
 
    | GitHub Label (existing) | Registry Equivalent | Action |
    |:---|:---|:---|
    | `bug` | `type:bug` | MAP |
-   | `frontend` | `area:FE-<page_name>` (Note: this is a PATTERN, use literal slug e.g. `area:FE-login`) | MAP |
+   | `frontend` | `area:FE-<page_name>` (use literal slug e.g. `area:FE-login`) | MAP |
+   | `type:NEEDS_SPEC` | `status:needs_spec` | MAP |
+   | `status:in-progress` | `status:in progress` | MAP |
    | `wontfix` | _(none)_ | DROP |
-   | _(missing)_ | `priority:high` | ADD |
+   | _(missing)_ | `status:blocked` | ADD |
    | `type:feature` | `type:feature` | KEEP |
 
    **Action definitions:**
    - **KEEP** — exact match; no change needed.
-   - **MAP** — different name, same intent. Rename GitHub label to canonical registry name.
+   - **MAP** — different name/format, same intent. Rename GitHub label to canonical registry name.
    - **DROP** — exists in GitHub, no registry equivalent. Retire after migrating any issues that use it.
    - **ADD** — in registry but not yet in GitHub. Create it.
 
-3. **Present full table** to the user.
+4. **Present the custom table** to the user.
    - `KEEP` and `ADD` are auto-approved.
-   - `MAP` and `DROP` require explicit per-row user confirmation. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to obtain the user's confirmation — do not ask in prose.
+   - `MAP` and `DROP` require explicit user confirmation. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to obtain the user's confirmation — do not ask in prose.
 
-4. **Execute** confirmed changes in GitHub.
+5. **Execute** confirmed changes in GitHub.
 
-5. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line).
+6. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes the single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line).
+
+### GitHub Project & Board Setup (both paths)
+1. **Programmatic Check:** Before prompting or setting up, search for any existing Project V2 board for the owner by running `gh project list --owner <owner>`. If a board is detected, query its fields (`gh project view <number> --owner <owner> --json fields`) to verify if the `Status` single-select field is configured.
+2. **Field & Action Integration:** If a project board exists:
+   - Verify or extend its `Status` single-select column with `needs_spec` and `blocked` options.
+   - Install the project sync workflow: copy `.github/workflows/sync-labels-to-project.yml` from asset templates (`dist/antigravity/assets/templates/github/sync-labels-to-project.yml` or global assets) into the project repository's `.github/workflows/sync-labels-to-project.yml`.
+   - Set the required secrets and variables in the repository using the GitHub CLI:
+     ```bash
+     gh secret set PROJECT_TOKEN --body "<PAT_WITH_PROJECT_SCOPES>"
+     gh variable set PROJECT_OWNER --body "<owner_username_or_org>"
+     gh variable set PROJECT_NUMBER --body "<project_number>"
+     gh variable set PROJECT_OWNER_TYPE --body "<org|user>"
+     ```
+   - If no project board exists, ask the user if they wish to create one or skip board syncing.
+3. **Opt-in Status Backfill:** Offer to backfill label-less open issues with a default `status:planned` label (always obtain user consent; never force).
 
 > [!IMPORTANT]
 > **`area:` labels are project-specific.** Adopt project's existing page/domain slugs rather than forcing template placeholders. All other dimensions (`type:`, `priority:`, `size:`, `status:`) are canonical — always propose renaming GitHub's labels to match, never adopt GitHub's non-standard names.

@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENT.md": {
-      "sha256": "dbbb9a4590d35041797bc8b4297f424ca3f162d5a6e5624d11bbbfd732168df0",
-      "timestamp": "2026-06-22",
-      "version": "1.0.2"
+      "sha256": "95a7d6c0a932b6d09f9086ed79c82e2b326b15a2563918fb8c8d25cb3039f7e9",
+      "timestamp": "2026-07-01",
+      "version": "1.0.3"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "e55fa3202e00763afde8a8ad118ec5d74a74b120485f1f8baf38cecf89a60992",
@@ -21,9 +21,9 @@
       "version": "1.0.3"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "5dbce308185f5567032346d79c595ccb798b8a919e2f4385eaf45af3cb3c5ceb",
-      "timestamp": "2026-06-18",
-      "version": "1.1.1"
+      "sha256": "40a9355ce2384a4c508ef0f3c197146fb6801f33a65c6134b224430367a315b5",
+      "timestamp": "2026-07-02",
+      "version": "1.1.3"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "229e76e9ba34ce97e40ce611130a2a47c4147ff9658008662edea4b907a93f78",
@@ -136,14 +136,14 @@
       "version": "1.0.2"
     },
     "commands/0a_start-session.md": {
-      "sha256": "9d320a556be0cdd8b49acf5fa4deec0836b856bb8dcf403e7f08a62ffcf78c5e",
-      "timestamp": "2026-06-18",
-      "version": "1.0.2"
+      "sha256": "e8fc98e16ff503fd7c5fd1f79bf51edfa6867b48ba1d3c77da6ad36ec7c7b0a1",
+      "timestamp": "2026-07-02",
+      "version": "1.0.5"
     },
     "commands/0b_stop-session.md": {
       "sha256": "fb600af094b27df2465ed7b70b0e8eb96eabd946224caf94985350af2e9198e3",
-      "timestamp": "2026-06-23",
-      "version": "1.0.2"
+      "timestamp": "2026-07-02",
+      "version": "1.0.4"
     },
     "commands/0c_handoff.md": {
       "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
@@ -167,8 +167,8 @@
     },
     "commands/2a_write-prd.md": {
       "sha256": "220a425b0d941e3244371c235384c355c816a33034d2695e6e51f3f1ccc2e4b2",
-      "timestamp": "2026-06-25",
-      "version": "1.1.1"
+      "timestamp": "2026-07-02",
+      "version": "1.1.3"
     },
     "commands/2b_interface-design.md": {
       "sha256": "72a280bdb9daa020b93a88da719a9d4636d717bdee813d3fd038d083a6890ffa",
@@ -186,19 +186,24 @@
       "version": "2.0.2"
     },
     "commands/3c_sprint-planning.md": {
-      "sha256": "17a00f50c3c951fcf981b269394981c2489bca0c49183a5f858a5f04314c9ca2",
-      "timestamp": "2026-06-22",
-      "version": "2.0.1"
+      "sha256": "1560aa173e9be35e6e193f7427415331e4b79a14f925dbaf7e5c52c93b12843c",
+      "timestamp": "2026-07-02",
+      "version": "2.0.3"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "4671d6e7b42473edf6b5e3971ba1340308a8b121cff0279d000627c8594e78f5",
-      "timestamp": "2026-06-23",
-      "version": "2.0.7"
+      "sha256": "a07b3febc97d8c6174fcc7056435392f7709f572e4dec066a9c45a36c2b78661",
+      "timestamp": "2026-07-02",
+      "version": "2.0.11"
+    },
+    "commands/3z_afk-loop.md": {
+      "sha256": "6c8b03a2c62c50501d97433404e343718e92db693bfdcaaf8b7c4d8b3e6882fa",
+      "timestamp": "2026-07-02",
+      "version": "1.0.5"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "8c4749c920c938834c0c68f1365546f1c8ae17debcaa8e8c6f448cd6d524a70c",
-      "timestamp": "2026-06-22",
-      "version": "1.0.6"
+      "sha256": "a1c9614dcc9197799dfa564b861833b414fb0b05ca5928ef0a980d1d9a8db20b",
+      "timestamp": "2026-07-02",
+      "version": "1.0.12"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "463c5777e0e83e6975da3b1e252ace71b4022a3866688870e7bc35e5e47f6ae3",
@@ -206,9 +211,9 @@
       "version": "1.0.6"
     },
     "commands/stratosphere-setup.md": {
-      "sha256": "6bab2ecd25cf64f38aef03f1a63b954551e111d5b857dcbfd9259a60acd0d3a4",
-      "timestamp": "2026-06-17",
-      "version": "1.0.4"
+      "sha256": "98bb47edbdb2a708556a3a5a6d2d1d48e0f8a090d7959aa0a17928b800c4f59a",
+      "timestamp": "2026-07-02",
+      "version": "1.0.7"
     },
     "commands/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",

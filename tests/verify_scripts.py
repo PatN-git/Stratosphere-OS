@@ -48,10 +48,13 @@ version: "1.1.1"
 | ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
 |:---|:---|:---|:---|:---|:---|:---|:---|
 | BT-059-01 | Hierarchical | planned | type:feature, type:HITL | v1.0.0 | — | — | — |
-| BT-060 | Missing primary type | planned | type:HITL, size:medium | v1.0.0 | — | — | — |
-| BT-061 | Missing execution mode | planned | type:feature, size:medium | v1.0.0 | — | — | — |
-| BT-062 | Fully valid slice | planned | type:feature, type:HITL, size:medium | v1.0.0 | — | — | — |
-| BT-063 | Parent feature is ignored | planned | type:feature, size:large | v1.0.0 | — | — | — |
+| BT-060 | Missing primary type | in progress | type:HITL, size:medium | v1.0.0 | — | — | — |
+| BT-061 | Missing execution mode | in progress | type:feature, size:medium | v1.0.0 | — | — | — |
+| BT-062 | Fully valid slice | in progress | type:feature, type:HITL, size:medium | v1.0.0 | — | — | — |
+| BT-063 | Parent feature is ignored | in progress | type:feature, size:large | v1.0.0 | — | — | — |
+| BT-064 | Needs spec row exempt | needs_spec | size:medium | v1.0.0 | — | — | — |
+| BT-065 | Planned row exempt | planned | size:medium | v1.0.0 | — | — | — |
+| BT-066 | Leftover needs_spec invalid primary | in progress | type:NEEDS_SPEC, type:AFK, size:medium | v1.0.0 | — | — | — |
 """
     (tmp_mem / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
     
@@ -69,7 +72,9 @@ version: "1.1.1"
         "Slice 'BT-060'",
         "is missing a Primary Type label",
         "Slice 'BT-061'",
-        "is missing an Execution Mode label"
+        "is missing an Execution Mode label",
+        "Slice 'BT-066'",
+        "is missing a Primary Type label"
     ]
     
     for err in expected_errors:
@@ -79,7 +84,9 @@ version: "1.1.1"
             
     unexpected_errors = [
         "BT-062",
-        "BT-063"
+        "BT-063",
+        "BT-064",
+        "BT-065"
     ]
     for uerr in unexpected_errors:
         if uerr in result.stdout and ("missing" in result.stdout or "Invalid" in result.stdout) and f"'{uerr}'" in result.stdout:

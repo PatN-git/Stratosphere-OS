@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, sequences a 10-day capacity block into GitHub phases.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.1"
-timestamp: 2026-06-22
+version: "2.0.3"
+timestamp: 2026-07-02
 ---
 
 # Sprint planning
@@ -16,7 +16,7 @@ timestamp: 2026-06-22
 1. Read `.memory/BACKLOG_MAP.md` if not already loaded.
 2. Extract rows where `status != done`.
 3. **Audit Strategy:**
-   - Map matching active GitHub issues. Every selected issue must carry a `status:` label; if missing, add `status:planned` before sequencing. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
+   - Map matching active GitHub issues. Every selected issue must carry a `status:*` label; if missing, add `status:planned` before sequencing. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
    - All sliceable candidates must belong to the current release `vX.Y`. If candidates from two different `X.Y` releases appear, that is a version-planning gating violation — surface it and ask the user before sequencing.
    - If a leaf/non-parent GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels → immediately exclude and print: `[NEEDS_SPEC] BT-<padded> - <title>`.
    - List all existing leaf issues labeled as `[NEEDS_SPEC]` to surface to user.
@@ -59,5 +59,5 @@ Verify all milestone and priority labels to be set exist in the registry before 
 Halt execution. Prompt user for confirmation. When confirmed:
 1. Update issue metadata directly inside GitHub. Ensure the label registry's `priority:high|medium|low` bucket is correctly applied based on the ICE score (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low).
 2. Ensure the sprint milestone `vX.Y.Z` exists (create it in GitHub if absent), assign matching leaf slices to it — **moving each off its inherited `vX.Y.0` release bucket** — and update the `Milestone` column in `.memory/BACKLOG_MAP.md` accordingly; set `status:planned` in BACKLOG_MAP and GitHub.
-3. When changing any issue's priority/milestone/status in GitHub, post a comment on that issue documenting the change and its rationale, e.g.: *'Sprint vX.Y.Z sync: ICE <score> → priority:high; milestone vX.Y.Z; status:planned.'* (Mirrors 0b's issue-comment pattern so GitHub history explains every label/milestone change.)
+3. When changing any issue's priority/milestone/status in GitHub, post a comment on that issue documenting the change and its rationale using the format: *'Sprint vX.Y.Z sync: ICE <score> → priority:<high|medium|low>; milestone vX.Y.Z; status:planned.'*
 4. Output termination note: Sprint `vX.Y.Z` locked. Ready for execution. Run `/3d_implement-issue` to build the first sequenced slice.

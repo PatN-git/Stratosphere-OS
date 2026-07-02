@@ -2,8 +2,8 @@
 type: backlog
 title: Backlog Map
 description: Authoritative registry and status mapping of all project issues.
-timestamp: 2026-06-18
-version: "1.1.1"
+timestamp: 2026-07-02
+version: "1.1.3"
 ---
 # BACKLOG MAP
 
@@ -24,15 +24,16 @@ Authoritative, high-density reference for project issues and their status.
   - If a label appears in **GitHub but not the registry** → add it to the registry (with user confirmation).
   - If a label appears in the **registry but not GitHub** → create it in GitHub before using it in any issue.
   - Never use a label in the Backlog table that is not in both the registry and GitHub.
+- **Single Status Invariant:** An issue must always have exactly one `status:*` label. When transitioning an issue to a new status in GitHub or the Backlog table, always remove the prior `status:*` label first.
 
 ## Label Registry
 - **Area (`area:xxx`)**: `area:BE-ai`, `area:BE-api`, `area:BE-auth`, `area:BE-data`, `area:BE-infrastructure`, `area:FE-<page_name>` (where `<page_name>` is replaced with the page's slug during audit or page creation, e.g., `area:FE-login`, `area:FE-dashboard`)
-- **Primary Type (`type:<class>`)**: `type:bug`, `type:content`, `type:feature`, `type:improvement`, `type:maintenance`, `type:research`, `type:NEEDS_SPEC`
+- **Primary Type (`type:<class>`)**: `type:bug`, `type:content`, `type:feature`, `type:improvement`, `type:maintenance`, `type:research`
 - **Execution Mode (`type:<mode>`)**: `type:HITL` (Human-in-Loop required), `type:AFK` (Autonomous execution)
 - **Priority (`priority:xxx`)**: `priority:high` (Must have), `priority:medium` (Important), `priority:low` (Nice to have)
 - **Size (`size:xxx`)**: `size:large` (Architectural: Multi-feature/major schema), `size:medium` (Vertical: Standard Data/Logic/UI slice), `size:small` (Surgical: Local/Single-file)
 - **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)
-- **Status (`status:xxx`)**: `status:planned`, `status:in progress`, `status:done`
+- **Status (`status:xxx`)**: `status:planned`, `status:needs_spec`, `status:in progress`, `status:blocked`, `status:done`
 - **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a_version-planning`; `SPRINT` (Z) owned by `/3c_sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version.
 
 ## Backlog

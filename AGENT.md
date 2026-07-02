@@ -2,8 +2,8 @@
 type: constitution
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "1.0.2"
-timestamp: 2026-06-22
+version: "1.0.3"
+timestamp: 2026-07-01
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -12,7 +12,7 @@ timestamp: 2026-06-22
 A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
  
 ## 1. Architecture
-- **Layer 1: Workflows** (`.agents/workflows`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle and are triggered only by the user. Do not execute them autonomously.
+- **Layer 1: Workflows** (`.agents/workflows`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle and are triggered only by the user. Do not execute them autonomously. A user-invoked **orchestrator** workflow may sequence other workflows as part of its authorized run; this is the only sanctioned form of workflow-invoking-workflow.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
 - **Layer 3: Execution** (`.agents/skills/ & /execution`)-> Deterministic, autonomous (AFK) tools and specialized playbooks. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
 
@@ -36,7 +36,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single feature PR; it never creates the first commit and never merges.
 - **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
-- **Git Protocol:** Never push changes to remote repositories (GitHub) automatically. Commit locally, but leave the `push` action for manual user execution or explicit instruction.
+- **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
  
 ## 5. Operating Principles
 - **Think Before Coding:** For non-trivial tasks, state assumptions, tradeoffs, and a short plan before coding.
