@@ -178,6 +178,18 @@ def test_scaffold_repair_lock():
         if tmp_project.exists():
             shutil.rmtree(tmp_project, ignore_errors=True)
 
+def test_update_flow():
+    print("\n--- Testing in-place update E2E pipeline ---")
+    repo_root = Path(__file__).resolve().parent.parent
+    result = subprocess.run([sys.executable, "tests/test_update_flow.py"], cwd=str(repo_root), capture_output=True, text=True)
+    print("Exit code:", result.returncode)
+    if result.returncode == 0:
+        print("Update E2E pipeline test passed!")
+        return True
+    else:
+        print("Update E2E pipeline test failed! Output:\n", result.stdout, result.stderr)
+        return False
+
 if __name__ == "__main__":
     success = True
     if not test_validate_memory():
@@ -189,6 +201,8 @@ if __name__ == "__main__":
     if not test_scaffold():
         success = False
     if not test_scaffold_repair_lock():
+        success = False
+    if not test_update_flow():
         success = False
         
     if success:

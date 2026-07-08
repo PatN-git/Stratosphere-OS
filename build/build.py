@@ -161,6 +161,15 @@ def build_platform(kind: str):
         sk.parent.mkdir(parents=True, exist_ok=True)
         copy_md_with_frontmatter(inst, sk, name="stratosphere-setup")
 
+    upd = SRC / "commands" / "update" / "Stratosphere-Update.md"
+    if kind == "claude":
+        copy_md_with_frontmatter(upd, invoke_dir / "stratosphere-update.md",
+                                 name="stratosphere-update")
+    else:
+        sk = out / "skills" / "stratosphere-update" / "SKILL.md"
+        sk.parent.mkdir(parents=True, exist_ok=True)
+        copy_md_with_frontmatter(upd, sk, name="stratosphere-update")
+
     # 4. sync-skills command + script + registry
     sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"
     copy_md_with_frontmatter(sync_md, invoke_dir / "sync-skills.md", name="sync-skills")

@@ -3,11 +3,12 @@ type: glossary
 title: Glossary
 description: Shared domain vocabulary used across docs and code.
 timestamp: 2026-06-23
-version: "1.0.3"
+version: "1.0.4"
 ---
 # GLOSSARY
 
 ## Purpose
+<!-- SOS:BLOCK id=glossary-guidance v=1.0.4 -->
 Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, and code. Each entry carries a `G-xxx` ID and trust tag.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
@@ -25,6 +26,7 @@ Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, 
 - Brand tokens → `DESIGN.md`
 - One-off terms not expected to recur across docs
 - Technical/framework terms with standard industry meanings
+<!-- SOS:/BLOCK id=glossary-guidance -->
 
 ## Active Entries
 *Note: Once the glossary is large, entries MAY be grouped under `## Domain: <name>` subheadings for navigability. IDs remain a single global `G-xxx` space regardless of grouping.*

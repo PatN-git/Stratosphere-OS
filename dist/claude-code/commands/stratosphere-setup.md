@@ -1,16 +1,16 @@
 ---
 name: stratosphere-setup
 type: workflow
-description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. Run once per project; safe to re-run.
-version: "1.0.7"
-timestamp: 2026-07-02
+description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
+version: "1.0.8"
+timestamp: 2026-07-08
 ---
 
 # Instantiate StratosphereOS
 
 Instantiate minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
 
-This command is a **one-time setup** (safe to re-run for upgrades). The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
+This command is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.agents/workflows/.reference/` — shared templates and guides
@@ -29,6 +29,18 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 - `assets/templates/references/` → PRD and discovery-brief templates
 
 The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
+
+## Existing Installation Detection
+
+Before proceeding with setup, verify if StratosphereOS is already installed in this project:
+1. **Check detection markers:** Check if `.agents/.stratosphere-lock.json` exists, or if both `AGENT.md` and a populated `.memory/` folder exist.
+2. **Handle existing install:** If an existing install is detected, do **NOT** silently proceed. Stop and inform the user:
+   *"This project already has StratosphereOS installed. Setup bootstraps a new project; to upgrade, run `/stratosphere-update`."*
+3. **Ask confirmation:** Prompt the user using the native `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity) with three options:
+   - **Run /stratosphere-update instead (recommended):** Exit setup and run `/stratosphere-update`.
+   - **Continue setup anyway:** Proceed with setup (only create-only-if-missing templates; never overwrite preserved files).
+   - **Cancel:** Abort the setup process.
+   You must wait for the user's choice and follow it exactly.
 
 ## Version Control Setup & Path Detection
 
@@ -95,24 +107,7 @@ python <plugin>/scripts/scaffold.py --update
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b_stop-session`)
 - `.gitignore` (only if missing)
 
-**Update & Drift check (re-runs / brownfield):** The scaffolder script leaves existing files untouched and lists them under `LEFT AS-IS`. It also drops `.agents/.stratosphere-lock.json` containing the baseline hashes of what was installed.
-
-1. Run `python <plugin>/scripts/scaffold.py --update --dry-run` to compute state.
-2. If any `STALE` or `NEEDS-REVIEW` files exist, ask the user with the native tool (`AskUserQuestion` on Claude Code, `ask_question` on Antigravity), e.g.: *"Found N updated framework files (workflows + rules). Refresh them? Your `.memory/` and constitution stay untouched."*
-3. On confirmation, re-run with `--update` (no `--dry-run`).
-4. Surface any `NEEDS-REVIEW` constitution diffs separately for per-file confirmation; never auto-overwrite the constitution. The `.memory/` and `.gitignore` files remain fully preserved (`LEFT AS-IS`) and require manual review if they drift from templates under `assets/templates/`.
-
-If the lockfile exists, compare the current project state against the bundled `versions.json` from the plugin:
-1. Identify **Updates**: Bundled `version` > locked `version`.
-2. Identify **Drift**: Current workspace file hash != locked `sha256_at_install` hash.
-
-For any file that requires an update or has drifted:
-- **Do NOT just tell the user to manually analyze the differences.**
-- **Do NOT overwrite silently or insert raw git conflict markers.**
-- Instead, **you (the agent) must prepare a merge plan**: Analyze the new bundled template, analyze the user's current drifted file, and prepare an intelligent merge plan that applies the new template structure/rules while preserving the user's custom project data (e.g., custom trust tags, immortal components, specific logic).
-- Present this merge plan to the user for **explicit approval**.
-- Once the user approves, execute the merge to update the files.
-- **CRITICAL**: After successfully merging an updated or drifted file, you MUST run `python <plugin>/scripts/scaffold.py --repair-lock` to register the new merged state as the baseline. This ensures the drift check won't endlessly trigger on subsequent runs.
+**Upgrades and Updates:** If this is an existing project needing an upgrade or sync, do not use setup. Instead, run `/stratosphere-update` which performs a safe, in-place framework block update.
 
 ## Checkpoint 0.5: Project Vision (both paths)
 

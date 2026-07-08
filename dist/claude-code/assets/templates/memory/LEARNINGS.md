@@ -3,11 +3,12 @@ type: learnings
 title: Learnings
 description: Episodic project-specific lessons and insights.
 timestamp: 2026-06-17
-version: "1.0.2"
+version: "1.0.3"
 ---
 # LEARNINGS
 
 ## Purpose
+<!-- SOS:BLOCK id=learnings-guidance v=1.0.3 -->
 Episodic memory for project-specific lessons likely to matter again. Each entry carries a unique `L-xxx` ID, a trust tag, and (where applicable) a `Source: BT-xxx` cross-reference.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
@@ -26,6 +27,7 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 - One-off debugging logs unless they reveal a reusable rule
 - `[LAW]`-tier rules → `ARCHITECTURE.md` or `DESIGN_RULES.md`
 - Domain vocabulary → `GLOSSARY.md`
+<!-- SOS:/BLOCK id=learnings-guidance -->
 
 ## Active Entries
 

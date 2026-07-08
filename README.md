@@ -67,6 +67,7 @@ StratosphereOS provides structured slash commands spanning the entire developmen
 | **3z. Orchestration** | `/3z_afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
 | **4. Ship** | `/4a_verify-and-ship`<br/>`/4b_audit-architecture-drift` | Audits acceptance criteria against automated test coverage and audits structural drift. | Issue, tests, `.memory/*` | Quality gap report, traceable PR |
 | **0. Session Stop** | `/0b_stop-session`<br/>`/0c_handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
+| **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
 ---
 
@@ -97,7 +98,14 @@ After installing the plugin, restart your app or agent session, navigate to your
 ```text
 /stratosphere-setup
 ```
-This interactive command bootstraps the `.memory/` state layer, constitution files, and domain skills tailored to your project.
+This interactive command bootstraps the initial `.memory/` state layer, constitution files, and domain skills for new projects.
+
+### 3. Upgrading Framework Files (Updating)
+To upgrade an already-instantiated project to later plugin versions, run:
+```text
+/stratosphere-update
+```
+Your `.memory/` data and constitution are never overwritten; framework-owned blocks are updated in place, and you confirm any conflicts.
 
 ---
 

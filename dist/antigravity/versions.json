@@ -16,19 +16,19 @@
       "version": "1.0.1"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "53b3a74f0186f822c7245869b181aee8803768fb7149f0fb37f85f42aa08ecee",
+      "sha256": "b7b82515c46995c6172e75deda06ee4b858e7d1b5689c61f660e614272f5a35f",
       "timestamp": "2026-06-22",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "40a9355ce2384a4c508ef0f3c197146fb6801f33a65c6134b224430367a315b5",
+      "sha256": "0ab495e00b1690b7aa272da5545e0ceda1484472f7b99ffb0f468208b034045f",
       "timestamp": "2026-07-02",
-      "version": "1.1.3"
+      "version": "1.1.4"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
-      "sha256": "229e76e9ba34ce97e40ce611130a2a47c4147ff9658008662edea4b907a93f78",
+      "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
       "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     "assets/templates/memory/DESIGN.md": {
       "sha256": "7f874477820899722d2bd2982efd9537b2f561e1806d0d8191b40ed9bc9eea2e",
@@ -36,19 +36,19 @@
       "version": "1.0.2"
     },
     "assets/templates/memory/DESIGN_RULES.md": {
-      "sha256": "c20d5761238688985a4b3bdb5d8c128e86c6d4748b7983264fcf47436d1f4577",
+      "sha256": "f5a695c45de50aec0c777221195633aaf16667a3307ca1f8274552ea2ba4b3b1",
       "timestamp": "2026-06-17",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "1783c7819d8092885411b542f944dfeee3634a0b06ea24bb191b70be7e6955c7",
+      "sha256": "d756bea4a6328da9fd0152f1945e64e9f1841752882de83d5ec1a69959909d99",
       "timestamp": "2026-06-23",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "assets/templates/memory/LEARNINGS.md": {
-      "sha256": "38b4a92919c1cfa8ee57aafc733b92f2c77d98f9b5c1390116fb553e0dc9adb3",
+      "sha256": "58eb2de5260cd97b4eb1851c486695f43364783e6bd26691127e71c8e181395d",
       "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     "assets/templates/memory/STATUS.md": {
       "sha256": "e18e5a5a86302efc355c004306ee94b48a76a37c526bb33bf1c0e6824f8ba1e0",
@@ -161,9 +161,14 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "98bb47edbdb2a708556a3a5a6d2d1d48e0f8a090d7959aa0a17928b800c4f59a",
-      "timestamp": "2026-07-02",
-      "version": "1.0.7"
+      "sha256": "853ede54de6809296116aee63e21e9a9bc98b2830eee01ace05551feff862364",
+      "timestamp": "2026-07-08",
+      "version": "1.0.8"
+    },
+    "skills/stratosphere-update/SKILL.md": {
+      "sha256": "d252e88144666f2610d1a11a248033371bc5b02cbc0c719b7e9d1d872e84396d",
+      "timestamp": "2026-07-08",
+      "version": "1.0.0"
     },
     "workflows/0a_start-session.md": {
       "sha256": "e8fc98e16ff503fd7c5fd1f79bf51edfa6867b48ba1d3c77da6ad36ec7c7b0a1",
