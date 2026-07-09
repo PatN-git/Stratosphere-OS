@@ -60,7 +60,7 @@ StratosphereOS provides structured slash commands spanning the entire developmen
 | Stage | Command | Purpose & Rationale | Reads | Produces |
 |:---|:---|:---|:---|:---|
 | **0. Session Start** | `/0a_start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
-| **1. Discovery** | `/1a_research`<br/>`/1b_concept-framing` | Investigates domain context and deconstructs fuzzy ideas into structured briefs. | `.memory/*` | Discovery brief, glossary terms |
+| **1. Discovery** | `/1a_research`<br/>`/1b_concept-framing`<br/>`/1c_concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
 | **2. Design** | `/2a_write-prd`<br/>`/2b_interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
 | **3. Planning** | `/3a_version-planning`<br/>`/3b_create-issue`<br/>`/3c_sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
 | **3d. Execution** | `/3d_implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |

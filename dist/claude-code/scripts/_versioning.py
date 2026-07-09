@@ -38,6 +38,12 @@ def body_hash(text):
         text = f"---\n{fm}\n---\n{body}" if fm.strip() else f"---\n---\n{body}"
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+# Canonical pattern to parse SOS:BLOCK markers
+# Group 1: 'BLOCK' or '/BLOCK'
+# Group 2: block id
+# Group 3: version (optional)
+CANONICAL_MARKER_PATTERN = re.compile(r'<!--\s*SOS:(BLOCK|/BLOCK)\s+id=(\S+?)(?:\s+v=(\S+?))?\s*-->')
+
 def block_hash(text, block_id):
     """Computes the SHA-256 hash of the inter-marker content for block_id in text.
     
@@ -53,24 +59,34 @@ def block_hash(text, block_id):
     lines = normalized_text.split("\n")
     start_line_idx = -1
     end_line_idx = -1
-    start_re = re.compile(r'<!--\s*SOS:BLOCK\s+id=' + re.escape(block_id) + r'(?:\s+v=[^\s>]+)?\s*-->')
-    end_re = re.compile(r'<!--\s*SOS:/BLOCK\s+id=' + re.escape(block_id) + r'\s*-->')
+    
+    # Precondition: parse_file_blocks() has already validated tag-integrity and same-id uniqueness
+    # for user-authored files. Direct calls from get_blocks_map() trust that template files are well-formed.
+    # To harden, we assert that exactly one START and one END tag match this block_id.
+    start_count = 0
+    end_count = 0
     
     for i, line in enumerate(lines):
-        if start_re.search(line):
-            start_line_idx = i
-            break
-            
-    for i, line in enumerate(lines):
-        if end_re.search(line):
-            end_line_idx = i
-            break
-            
+        m = CANONICAL_MARKER_PATTERN.search(line)
+        if m and m.group(2) == block_id:
+            if m.group(1) == "BLOCK":
+                start_line_idx = i
+                start_count += 1
+            elif m.group(1) == "/BLOCK":
+                end_line_idx = i
+                end_count += 1
+                
+    if start_count != 1 or end_count != 1:
+        raise ValueError(f"Block '{block_id}' must have exactly one START and one END marker; found {start_count} START and {end_count} END")
+        
     if start_line_idx == -1 or end_line_idx == -1 or start_line_idx >= end_line_idx:
         raise ValueError(f"Block '{block_id}' markers not found or malformed")
         
     inter_lines = lines[start_line_idx + 1:end_line_idx]
     content = "\n".join(inter_lines)
+    
+    # strip() drops all leading/trailing newlines before hashing so that differences in spacing
+    # outside block boundaries do not manufacture false conflicts. This is self-consistent and used everywhere.
     content = content.strip("\n")
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 

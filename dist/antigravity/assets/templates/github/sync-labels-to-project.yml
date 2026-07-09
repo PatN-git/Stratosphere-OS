@@ -38,6 +38,13 @@ jobs:
             console.log(`Event Action: ${context.payload.action}`);
             console.log(`Processing issue #${context.payload.issue.number} with labels:`, labels.map(l => l.name));
 
+            // Exclude concept:* issues from project board syncing (investigation/pre-PRD, not build work)
+            const hasConceptLabel = labels.some(l => l.name.startsWith('concept:'));
+            if (hasConceptLabel) {
+              console.log("Issue has a 'concept:*' label. Skipping project board sync.");
+              return;
+            }
+
             // Extract key:value labels
             const kvLabels = [];
             for (const label of labels) {

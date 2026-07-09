@@ -2,8 +2,8 @@
 name: Micro-TDD Execution
 type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
-version: "1.0.2"
-timestamp: 2026-06-17
+version: "1.1.0"
+timestamp: 2026-07-08
 ---
 
 # SKILL: Micro-TDD Execution
@@ -23,18 +23,21 @@ Execute autonomous, deterministic code modifications during hands-free (AFK) ope
 ### Fast-Track A: Silent Logic Cycle (Default)
 Apply strictly to all pure logic, state updates, API mutations, hooks, and backend functions. Do not write production code until a failing test exists.
 
+0. **Declare Seam:**
+   - Name the interface boundary being asserted (the function/module/contract under test). For HITL slices, surface it for confirmation; for AFK, log it in one line. Do not test below the agreed seam (internal implementation detail) — assert behavior at the boundary.
 1. **Isolate & Specify (RED):**
    - Write exactly one minimal, target-focused unit test asserting the exact change or new capability.   
-   - Run the test suite natively (`npm test`, `vitest`, `pytest`, etc.).
+   - Run the single target test file natively. Type-check regularly during the loop to catch compilation or type definition issues early.
    - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos.
      - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
      - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
 2. **Implement & Pass (GREEN):**
    - Write the absolute simplest, non-speculative production code required to satisfy the failing test.
-   - Re-run the test suite.
-   - **Validate Green:** Confirm the new test passes and no regression errors exist across the remaining suite.
-3. **Clean Diffs (REFACTOR):**
+   - Re-run the target test file.
+   - **Validate Green:** Confirm the new test passes.
+3. **Clean Diffs & Verify (REFACTOR):**
    - Clean up code formatting using your active code simplifier protocols.
+   - Run one full-suite sweep to confirm no regression across the remaining suite.
    - Output only the passing test suite results and a 1-line summary: `[DONE] [[ID]] verified.`
 
 ### Fast-Track B: Visual & Layout Bypass

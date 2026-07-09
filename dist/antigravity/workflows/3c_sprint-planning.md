@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Scans BACKLOG_MAP & GitHub, filters by dependencies/priority, sequences a 10-day capacity block into GitHub phases.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.3"
-timestamp: 2026-07-02
+version: "2.0.4"
+timestamp: 2026-07-09
 ---
 
 # Sprint planning
@@ -16,13 +16,14 @@ timestamp: 2026-07-02
 1. Read `.memory/BACKLOG_MAP.md` if not already loaded.
 2. Extract rows where `status != done`.
 3. **Audit Strategy:**
-   - Map matching active GitHub issues. Every selected issue must carry a `status:*` label; if missing, add `status:planned` before sequencing. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog).
+   - Map matching active GitHub issues. Every selected issue must carry a `status:*` label; if missing, add `status:planned` before sequencing. Exclude parent issues (defined as any `size:large` issue that has sub-issues/slices in the backlog). Exclude any issues carrying any `concept:*` label (pre-PRD decisions, never sprint work) and do not emit `[NEEDS_SPEC]` alerts for them.
    - All sliceable candidates must belong to the current release `vX.Y`. If candidates from two different `X.Y` releases appear, that is a version-planning gating violation — surface it and ask the user before sequencing.
-   - If a leaf/non-parent GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels → immediately exclude and print: `[NEEDS_SPEC] BT-<padded> - <title>`.
+   - If a leaf/non-parent GitHub issue lacks an entry in `BACKLOG_MAP.md` or lacks both `type:xxx` and `size:xxx` labels (and does not carry a `concept:*` label) → immediately exclude and print: `[NEEDS_SPEC] BT-<padded> - <title>`.
    - List all existing leaf issues labeled as `[NEEDS_SPEC]` to surface to user.
 
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependency chains (`Blocked by`).
+   - Read dependency order from native GitHub dependencies (via `gh issue view <#> --json blockedBy`) when supported, resolving issue references dynamically. Otherwise, fall back to parsing the text `Blocked by:` field and the `Dependencies` column in `BACKLOG_MAP.md`.
    - If prerequisites are not `status: done` AND are NOT being planned/sequenced in this same sprint → tag candidate item `[BLOCKED]`.
    - If prerequisites are NOT `status: done` BUT they are selected/sequenced in this exact sprint → tag as `[blocked-but-sequenced-in-sprint]`.
 2. **ICE Prioritization:** Read the pre-calculated ICE score directly from the `ICE` column in `.memory/BACKLOG_MAP.md`.

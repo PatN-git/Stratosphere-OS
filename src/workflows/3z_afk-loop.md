@@ -1,16 +1,16 @@
 ---
 name: 3z_afk-loop
-description: Autonomous end-to-end runner for type:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps and opening PRs for fully-passed features (never merges). The sole orchestrator permitted to invoke other workflows.
+description: Autonomous end-to-end runner for type:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps and opening PRs for fully-passed features (never merges). The sole AFK/autonomous orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: User-invoked; runs autonomously after Step 1B scope authorization.
-version: "1.0.5"
-timestamp: 2026-07-02
+version: "1.0.6"
+timestamp: 2026-07-09
 ---
 
 # AFK END-TO-END LOOP
 
 ## Authority & Guardrails
-- **Sole orchestrator:** invokes other workflows by command name only — never duplicate their bodies (AGENT.md §1).
+- **Orchestrator rule:** invokes other workflows by command name only — never duplicate their bodies (AGENT.md §1). `3z` is the sole AFK/autonomous orchestrator; `1c_concept-map` is the user-invoked discovery orchestrator.
 - **Subagent isolation:** never run `/3d_implement-issue` and `/4a_verify-and-ship` in the same context. Each is a fresh subagent bootstrapped by `/0a_start-session`.
 - **AFK-only:** never autonomously executes a non-`type:AFK` slice.
 - **Ship:** push + open/update PR only for fully-passed feature branches, only when `gh` is connected; **never merge** (AGENT.md §4).

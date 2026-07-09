@@ -3,8 +3,8 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.4"
-timestamp: 2026-06-25
+version: "1.0.6"
+timestamp: 2026-07-09
 ---
 
 # Concept framing
@@ -41,10 +41,11 @@ timestamp: 2026-06-25
 3. Capture the raw ask verbatim. Restate in one sentence. If it describes multiple independent problems, flag scope now: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
 4. Scan BACKLOG_MAP for related active PRDs or prior briefs. Surface overlaps before grilling.
 5. **ODI Routing:** Note that opportunity scoring is optional and reserved for large/greenfield topics; small items start here in `1b` without ODI.
-6. **Multi-sided check:** Ask: *"Is this a multi-sided product (e.g. marketplace)?"*
+6. **Concept Map Routing:** If the idea is foggy, spans multiple sessions, or requires a dependency tree of decisions, research spikes, or prototypes before it can be specified, recommend routing the user to `/1c_concept-map`.
+7. **Multi-sided check:** Ask: *"Is this a multi-sided product (e.g. marketplace)?"*
    - If **yes**, read `.agents/workflows/.reference/multi-sided-discovery.md`, append its focus areas to the grill, and have the RAT test both sides (≈10 DMs each). Note that per-side opportunity *scoring* is a `1a` activity, not `1b` — `1b` has no evidence source; it grills and flags the two sides, it does not assign opportunity numbers.
    - If **no**, proceed normally (avoids token bloat for standard apps).
-7. **Discovery Work File Scope-Gate:**
+8. **Discovery Work File Scope-Gate:**
    - Use the work file for longer / interruptible grills (the Generate / greenfield path). A short "sharpen-only" session may skip it.
    - If utilizing the work file, delete any stale `docs/discovery/.<slug>.work.md` file for this slug at start-of-run.
    - **Path:** `docs/discovery/.<slug>.work.md` (hidden, ephemeral).
@@ -59,6 +60,9 @@ timestamp: 2026-06-25
 
 One question at a time. Where Phase 1 context gives you sufficient signal on a focus area, state your synthesis and ask the user to confirm or correct — don't re-ask what you already know. Where signal is insufficient, **lead open-ended** — let the user surface their own framing before you narrow. Follow with MC only to confirm once they've answered freely. Name vagueness explicitly — re-ask until the answer is sharp. If utilizing the work file, the checklist under `## Coverage (grill axes)` drives the grilling sequence.
 
+- **G1 — Recommend an Answer:** For every question asked, recommend a candidate answer and explain the rationale, then let the user confirm, correct, or select.
+- **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes).
+- **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependencies one at a time. Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
 
 **Stop conditions (first one hit ends grilling):**
 1. User signals done: "enough", "write it up", or equivalent.
@@ -71,7 +75,10 @@ One question at a time. Where Phase 1 context gives you sufficient signal on a f
 
 - **Actor identity** — "users" is not an actor. Push to role, segment, context.
 - **Problem shape** — "we need X" is a solution. Push to "what hurts without X, and how often?"
-- **Vocabulary** — every domain term that could mean two things gets pinned once.
+- **Vocabulary** — every domain term that could mean two things gets pinned once. Run these checks:
+  - **V1 (Vocabulary Stress-Test):** Stress-test the terms under scenario edge-cases to ensure they hold up.
+  - **V2 (Code-Contradiction Check):** If a codebase exists, check that terms do not contradict actual structures or naming conventions in the code.
+  - **V3 (Glossary-Conflict Callout):** Check `GLOSSARY.md` to ensure a term does not clash with any existing `[[G-xxx]]` definition.
 - **Internal Prior Art** — what code already touches this? What has been tried internally?
 - **External Research** — derive canonical slug from the restated ask using the same rule as `/1a_research` Phase 1 (kebab-case core problem as 2–5 word noun phrase).
   1. Glob `docs/research/*.md` (filenames only — filenames are slugs, ignoring `*.work.md`). Fuzzy-match against the slug/ask.

@@ -3,8 +3,8 @@ name: 3b_create-issue
 description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.2"
-timestamp: 2026-06-22
+version: "2.0.3"
+timestamp: 2026-07-09
 ---
 
 # Create issue
@@ -72,6 +72,7 @@ Before creating the task, propose the breakdown to the user:
     -   **ICE < 0.15:** `priority:low`
 3.  **Generate (Atomic Minting & Sub-issue Linkage):** Execute `gh issue create` to create the issue in GitHub (applying the appropriate template below). **CRITICAL:** Capture the exact numeric issue number `#N` returned by GitHub and zero-pad it (`BT-<padded>`). Never guess or compute `MAX(BT_ID) + 1` from local files, as Pull Requests consume IDs from GitHub's shared sequence. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body. **Apply the scope label (`scope:baseline` or `scope:differentiator`) based on the slice's inherited scope-class.** **Assign exactly TWO type labels:** Primary Type (e.g. `type:feature`) + Execution Mode (`type:HITL` or `type:AFK`). (If GitHub is disconnected in local fallback mode, assign ID as `BT-LOCAL-<n>`).
     -   **Sub-issue Linkage:** If derived from a parent epic (`#parent`), attach `#N` as a native sub-issue (`gh sub-issue add <parent> <N>`).
+    -   **Native Blocking Dependencies:** If the slice is blocked by other slices, check if `gh` supports native blocking (via `gh issue create --help`). If supported, pass `--blocked-by <ids>` on create, or execute `gh issue edit <N> --add-blocked-by <ids>` to wire the native dependencies. Keep the text `Blocked by: [IDs]` in the issue body and the BACKLOG_MAP Dependencies column as the human-legible mirror and BT-LOCAL fallback.
 4.  **Backlog Sync:** **Immediately** append the entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` using the registry-compliant format. **CRITICAL:** ID formatting must strictly adhere to the flat ID rules in [[memory-protocol.md#8-backlog-id-minting-late-binding]]. Write the bucketed priority label (e.g. `priority:medium`), size label (e.g. `size:medium`), **both type labels (Primary Type + Execution Mode)**, and **scope label (e.g. `scope:baseline`)** to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. In the `Dependencies` column, explicitly record `Sub-issue of BT-<parentPadded>` alongside any blocking sibling dependencies. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders). Set the new slice's `Milestone` to its parent feature's release `vX.Y.0` (read from the parent's BACKLOG_MAP row / GitHub milestone). If no release is assigned yet, default to `v1.0.0`. The sprint digit is assigned later by `/3c_sprint-planning`.
 5.  **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence them into a sprint, or `/3d_implement-issue` directly for a single ready slice.
 
