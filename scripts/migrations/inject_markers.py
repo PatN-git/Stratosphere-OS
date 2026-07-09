@@ -171,7 +171,7 @@ def main():
         if not p.exists():
             continue
             
-        text = p.read_text(encoding="utf-8")
+        text = p.read_bytes().decode("utf-8")
         if "SOS:BLOCK" in text:
             # Idempotency guard: skip already-marked files
             print(f"Skipping {filename} — already contains SOS:BLOCK markers.")
@@ -231,7 +231,7 @@ def main():
                 final_text = "\ufeff" + final_text
                 
             # Write back
-            p.write_text(final_text, encoding="utf-8")
+            p.write_bytes(final_text.encode("utf-8"))
             print(f"Successfully injected markers in {filename}")
             
             # Seed baseline hash in lockfile blocks map
