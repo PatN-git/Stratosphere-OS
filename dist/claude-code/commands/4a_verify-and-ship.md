@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.13"
+version: "1.0.14"
 timestamp: 2026-07-09
 ---
 
@@ -23,7 +23,7 @@ _ACTION:_ Enforce risk gate on target issue to justify a focused test-alignment 
 3. If none of the above are met, the audit is skipped. Proceed to Phase 5.
 
 ## Phase 2: Execution
-**Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). If executing natively, the agent MUST run both audits/axes (Spec Axis and Standards Axis) natively in sequence or parallel. Otherwise, or if you are at all unsure, isolate: invoke two independent parallel subagents (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3:
+**Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). If executing natively, the agent MUST run both audits/axes (Spec Axis and Standards Axis) natively in sequence or parallel. Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent and an independent Standards Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3:
 
 1. **Strict Business-Logic Auditor (Spec Axis):**
    - **Guardrails:** *"Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."*

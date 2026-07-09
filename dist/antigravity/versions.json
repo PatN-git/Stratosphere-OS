@@ -256,9 +256,9 @@
       "version": "1.0.6"
     },
     "workflows/4a_verify-and-ship.md": {
-      "sha256": "ebfe0ad709dadc57e245e3db31fc3087592432a1b07461f15a58bec86e5e9b74",
+      "sha256": "b2e7c0921dd65bd79b9638dad5e6c932fa9159d7b4896162ab59de4ff16ff526",
       "timestamp": "2026-07-09",
-      "version": "1.0.13"
+      "version": "1.0.14"
     },
     "workflows/4b_audit-architecture-drift.md": {
       "sha256": "463c5777e0e83e6975da3b1e252ace71b4022a3866688870e7bc35e5e47f6ae3",
