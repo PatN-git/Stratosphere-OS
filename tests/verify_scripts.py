@@ -183,12 +183,15 @@ def test_update_flow():
     repo_root = Path(__file__).resolve().parent.parent
     result = subprocess.run([sys.executable, "tests/test_update_flow.py"], cwd=str(repo_root), capture_output=True, text=True)
     print("Exit code:", result.returncode)
+    sys.stdout.flush()
     if result.returncode == 0:
         print("Update E2E pipeline test passed!")
         return True
     else:
         print("Update E2E pipeline test failed! Output:\n", result.stdout, result.stderr)
-        return False
+        sys.stdout.flush()
+        sys.stderr.flush()
+        raise AssertionError(f"test_update_flow.py failed with exit code {result.returncode}.\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
 
 if __name__ == "__main__":
     success = True
