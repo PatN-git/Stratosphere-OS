@@ -32,7 +32,7 @@ function Assert-ScaffoldTree([string]$proj) {
     }
     AssertFileCount "scaffold: .memory/*.md == 9" (Join-Path $proj ".memory") "*.md" 9
     AssertFileCount "scaffold: .agents/rules/*.md == 3" (Join-Path $proj ".agents\rules") "*.md" 3
-    AssertFileCount "scaffold: .agents/workflows/*.md == 16" (Join-Path $proj ".agents\workflows") "*.md" 16
+    AssertFileCount "scaffold: .agents/workflows/*.md == 17" (Join-Path $proj ".agents\workflows") "*.md" 17
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
     AssertPathExists "scaffold: okf_view.py" (Join-Path $proj ".agents\scripts\okf_view.py")
     AssertPathExists "scaffold: okf_viewer/generator.py" (Join-Path $proj ".agents\scripts\okf_viewer\generator.py")
@@ -63,13 +63,13 @@ function Run-Cell([string]$tool, [string]$scope) {
         if ($tool -eq "claude-code") {
             $base = if ($scope -eq "local") { Join-Path $proj ".claude" } else { Join-Path $tmpHome ".claude" }
             $pluginRoot = Join-Path $base "plugins\stratosphere-os"
-            AssertFileCount "install: .claude/commands/*.md == 18" (Join-Path $base "commands") "*.md" 18
+            AssertFileCount "install: .claude/commands/*.md == 19" (Join-Path $base "commands") "*.md" 19
             AssertPathExists "install: skills/micro-tdd" (Join-Path $base "skills\micro-tdd")
             AssertPathExists "install: skills/plan-html" (Join-Path $base "skills\plan-html")
         } else {
             $pluginRoot = if ($scope -eq "local") { Join-Path $proj ".agents\plugins\stratosphere-os" } else { Join-Path $tmpHome ".gemini\config\plugins\stratosphere-os" }
             AssertPathExists "install: plugin.json" (Join-Path $pluginRoot "plugin.json")
-            AssertFileCount "install: workflows/*.md == 16" (Join-Path $pluginRoot "workflows") "*.md" 16
+            AssertFileCount "install: workflows/*.md == 17" (Join-Path $pluginRoot "workflows") "*.md" 17
             Assert "install: no stratosphere-setup.md in workflows" (-not (Test-Path (Join-Path $pluginRoot "workflows\stratosphere-setup.md")))
         }
         AssertPathExists "install: bundled scaffold.py" (Join-Path $pluginRoot "scripts\scaffold.py")

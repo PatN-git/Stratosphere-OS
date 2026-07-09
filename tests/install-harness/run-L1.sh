@@ -29,7 +29,7 @@ assert_scaffold_tree() { # $1 proj
   done
   assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"
   assert "scaffold: .agents/rules 3 md" "$([ "$(nmd "$p/.agents/rules")" = "3" ] && echo 1 || echo 0)"
-  assert "scaffold: .agents/workflows 16 md" "$([ "$(nmd "$p/.agents/workflows")" = "16" ] && echo 1 || echo 0)"
+  assert "scaffold: .agents/workflows 17 md" "$([ "$(nmd "$p/.agents/workflows")" = "17" ] && echo 1 || echo 0)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"
   assert "scaffold: okf_view.py" "$(exists "$p/.agents/scripts/okf_view.py")"
   assert "scaffold: okf_viewer/generator.py" "$(exists "$p/.agents/scripts/okf_viewer/generator.py")"
@@ -57,12 +57,12 @@ run_cell() { # $1 tool  $2 scope
   if [ "$tool" = "claude-code" ]; then
     if [ "$scope" = "local" ]; then base="$proj/.claude"; else base="$home/.claude"; fi
     plugin="$base/plugins/stratosphere-os"
-    assert "install: 18 commands" "$([ "$(nmd "$base/commands")" = "18" ] && echo 1 || echo 0)"
+    assert "install: 19 commands" "$([ "$(nmd "$base/commands")" = "19" ] && echo 1 || echo 0)"
     assert "install: micro-tdd skill" "$(exists "$base/skills/micro-tdd")"
   else
     if [ "$scope" = "local" ]; then plugin="$proj/.agents/plugins/stratosphere-os"; else plugin="$home/.gemini/config/plugins/stratosphere-os"; fi
     assert "install: plugin.json" "$(exists "$plugin/plugin.json")"
-    assert "install: 16 workflows" "$([ "$(nmd "$plugin/workflows")" = "16" ] && echo 1 || echo 0)"
+    assert "install: 17 workflows" "$([ "$(nmd "$plugin/workflows")" = "17" ] && echo 1 || echo 0)"
     assert "install: no stratosphere-setup.md in workflows" "$([ -e "$plugin/workflows/stratosphere-setup.md" ] && echo 0 || echo 1)"
   fi
   assert "install: bundled scaffold.py" "$(exists "$plugin/scripts/scaffold.py")"

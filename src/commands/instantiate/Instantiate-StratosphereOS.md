@@ -2,8 +2,8 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.8"
-timestamp: 2026-07-08
+version: "1.0.9"
+timestamp: 2026-07-09
 ---
 
 # Instantiate StratosphereOS
@@ -11,6 +11,12 @@ timestamp: 2026-07-08
 Instantiate minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
 
 This command is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
+
+## Standalone Mode Routing
+If this command is run with the `--re-reconcile-labels` CLI flag:
+1. Skip all setup checks, git/github remote promptings, template scaffolding, vision statement settings, database audits, architecture mapping, design audits, learnings/glossary seeding, and skill synchronization.
+2. Jump directly to **Checkpoint 6: Label Reconciliation** to reconcile labels and project board, and install/verify extensions.
+3. Once Checkpoint 6 is complete, exit the workflow immediately.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.agents/workflows/.reference/` — shared templates and guides
@@ -197,7 +203,13 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 > [!NOTE]
 > **GitHub CLI Fallback:** If the GitHub CLI (`gh`) is unavailable or unauthenticated (because the user declined setup in the Version Control Setup step), skip all automated remote GitHub operations (Steps 1-4). Instead, skip directly to Step 5 using the template's canonical labels for the local registry, and inform the user they will need to manage remote labels manually on GitHub.
 
-GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`) are system-level constants and must always match the registry.
+0. **Ensure GitHub CLI extensions:** If `gh` is available and authenticated, ensure that the `gh-sub-issue` extension is installed in order to manage map sub-issue trees:
+   ```bash
+   gh extension install yahsan2/gh-sub-issue
+   ```
+   (If it is already installed, this is a safe no-op or reports already installed).
+
+GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
 
 ### Greenfield
 No GitHub labels exist yet.

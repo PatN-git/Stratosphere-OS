@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validates that test suites match business requirements, acceptance criteria, and security boundaries. Opens a traceable PR once the slice is verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.12"
-timestamp: 2026-07-02
+version: "1.0.14"
+timestamp: 2026-07-09
 ---
 
 ## Phase 1: Value-Add Gate
@@ -23,31 +23,33 @@ _ACTION:_ Enforce risk gate on target issue to justify a focused test-alignment 
 3. If none of the above are met, the audit is skipped. Proceed to Phase 5.
 
 ## Phase 2: Execution
-**Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3.
-- **Guardrails:** *"Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."*
-- **Output Contract:** The subagent returns the AC↔test table only. The main agent then resumes for the Phase 4 HITL halt.
+**Context Isolation Rule:** Before running the audit, verify whether this session authored the code under audit. Execute natively ONLY IF you can positively confirm this session has been read-only with respect to production code—i.e., you have not run `/3d_implement-issue` and have not edited files under the slice's source paths this session. (Session-setup writes by `/0a` to `.memory/STATUS.md` or branch checkouts do not count as tainting). If executing natively, the agent MUST run both audits/axes (Spec Axis and Standards Axis) natively in sequence or parallel. Otherwise, or if you are at all unsure, isolate: invoke an independent Strict Business-Logic Auditor subagent and an independent Standards Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) for Phase 2–3:
 
-_INPUT:_
-- GitHub Issue/PRD + the frozen design doc (`docs/design/BT-<padded>-interface.md`)
-- New/modified test files
-- relevant implementation files when needed to understand what the tests verify 
-- `.memory/LEARNINGS.md`
-- `.agents/workflows/.reference/confidence-scale.md`.
+1. **Strict Business-Logic Auditor (Spec Axis):**
+   - **Guardrails:** *"Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."*
+   - **Scope:** stated requirements, acceptance criteria, business logic, and security boundaries.
+   - **Input:** GitHub Issue/PRD + frozen design doc, new/modified test files, relevant implementation files, `.memory/LEARNINGS.md`, and `.agents/workflows/.reference/confidence-scale.md`.
+   - **Persona:** Strict Business Logic Auditor. Restrict audit to requirements and security boundaries.
+   - **Confidence Scale & Reporting Threshold:** Score findings 0–100 per `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
+   - **Implementation-only Divergence Rule:** Any implementation-only divergence (no PRD/design contract violation) caps at < 70 confidence and is withheld.
+   - **Output Contract:** The subagent returns the AC↔test table only.
 
-_PERSONA:_ Strict Business Logic Auditor. Relentlessly restrict audit to requirements and security boundaries.
-
-### Confidence scale & reporting threshold
-**Audit scope:** stated requirements, acceptance criteria, business logic, and security boundaries (Supabase RLS, auth/authz, billing/credits/limits). A Report-grade (≥80) finding looks like a missing assertion of a stated requirement, an untested specified edge case, or a security-boundary bypass.
-Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
-
-- **Implementation-only Divergence Rule:** Any implementation-only divergence (where the code does something different from design/primitives but does NOT violate any stated PRD Acceptance Criteria or Design Contract) MUST cap at [Weak Signal] (confidence < 70) and is withheld from the final report.
+2. **Standards Auditor (Standards Axis):**
+   - **Guardrails:** *"Review the slice diff for code-smell/standards violations only; do not edit code/tests, do not commit or push; return to main for Phase 4."*
+   - **Scope:** slice diff only (new/modified files for this slice), never the whole repo.
+   - **Input:** Slice diff (new/modified files), `.agents/workflows/.reference/code-smell-baseline.md`, plus any repo standards doc (`CODING_STANDARDS.md` or `.memory/ARCHITECTURE.md`).
+   - **Persona:** Standards Auditor. Review the slice diff for code quality, naming, maintainability, and baseline code smells.
+   - **Output Contract:** A separate findings list: `File · Smell/Rule · Hard breach | Judgment call · One-line fix`.
 
 ### Clean Exit Rule
-- IF no architectural issues meet the **confidence >= 80** threshold → proceed to Phase 5.
-- OUTPUT: `[PASS] No high-confidence logical or security anomalies identified. Slice is verified.` 
+- IF no spec issues meet the **confidence >= 80** threshold AND no standards violations are found → proceed to Phase 5.
+- OUTPUT: `[PASS] No high-confidence logical or security anomalies identified. Code meets quality standards. Slice is verified.`
 Do not generate additional output.
 
 ## Phase 3: Output
+IF issues exist, output them in two clearly separated sections (never merge or re-rank them):
+
+### 1. Spec / Business-Logic (Ship-Blocking)
 IF issues **confidence >= 80** exist, output only compact, dense markdown table mapping PRD Acceptance Criteria (AC) directly to tests:
 
 | AC / Requirement | Test Target | Status | Confidence | Gap / Security Risk |
@@ -55,6 +57,13 @@ IF issues **confidence >= 80** exist, output only compact, dense markdown table 
 | [1-line AC or requirement description] | [test_name] or [NONE] | FAIL | [80-100] | [Missing assertion, untested edge case, business logic gap, or security boundary risk] |
 
 *(Optional Footnote)* If sub-threshold findings (40-79) were identified and withheld, append: *"Note: <N> sub-threshold findings were withheld from this report."*
+
+### 2. Standards / Code Smells (Advisory)
+IF code smell or standards violations exist, output them in a separate table. This table is advisory and does not auto-block shipping (the human decides at Phase 4):
+
+| File | Smell / Rule | Hard breach \| Judgment call | One-line fix |
+|---|---|---|---|
+| [filename] | [Smell name/Rule ID] | [Hard breach or Judgment call] | [Proposed fix description] |
 
 ## Phase 4: Handoff
 HALT execution. Await human instruction:

@@ -1,9 +1,9 @@
 ---
 name: stratosphere-update
 type: workflow
-description: Upgrade in-place the StratosphereOS framework files, workflows, memory templates, rules, and constitution without overwriting project data.
-version: "1.0.0"
-timestamp: 2026-07-08
+description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
+version: "1.0.2"
+timestamp: 2026-07-09
 ---
 
 # StratosphereOS Update Flow
@@ -72,8 +72,19 @@ For each constitution file that has changed:
      1. **Out-of-block byte-identity:** Compare raw bytes outside changed blocks against the original file, asserting they are identical.
      2. **Marker integrity:** Validate exactly one ordered START/END pair per block ID, and check for unknown block IDs.
      3. **Cheap corroborating checks:** Assert BT-xxx ID sets, Backlog row count, and §3 Immortal Component DR-xxx ID sets are unchanged.
-   - Run memory validation `python .agents/scripts/validate_memory.py`.
 
 2. **Apply changes:**
    If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.
    If any validation fails, the scaffolder will abort and write nothing.
+
+---
+
+## Phase 5: GitHub Reconcile
+
+1. **Reconcile labels and extensions:**
+   Invoke `stratosphere-setup --re-reconcile-labels` (in Standalone Mode) in the user's terminal/workspace.
+   This will:
+   - Synchronize/add any newly introduced canonical labels (such as `concept:*`).
+   - Re-reconcile project boards and sync actions.
+   - Verify/install necessary tools (such as the `gh-sub-issue` extension).
+   - Skip gracefully if GitHub CLI is absent or unauthenticated.

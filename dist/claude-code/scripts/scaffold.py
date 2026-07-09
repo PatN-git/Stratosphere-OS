@@ -32,6 +32,7 @@ import shutil
 import sys
 from pathlib import Path
 
+# MUST match the block ids in memory-templates/*.md — enforced by test_known_block_ids_drift_guard
 KNOWN_BLOCK_IDS = {
     "backlog-rules", "label-canonical", "backlog-header",
     "design-principles", "design-reference-rules",
@@ -48,91 +49,46 @@ def semver_key(v_str):
     return (0, 0, 0)
 
 def get_blocks_map(text):
-    block_ids = []
-    pattern = re.compile(r'<!--\s*SOS:BLOCK\s+id=(\S+?)(?:\s+v=\S+?)?\s*-->')
-    for match in pattern.finditer(text):
-        block_ids.append(match.group(1))
-    
     blocks_map = {}
-    for bid in block_ids:
-        try:
-            blocks_map[bid] = _versioning.block_hash(text, bid)
-        except Exception:
-            pass
+    for m in _versioning.CANONICAL_MARKER_PATTERN.finditer(text):
+        if m.group(1) == "BLOCK":
+            bid = m.group(2)
+            try:
+                blocks_map[bid] = _versioning.block_hash(text, bid)
+            except Exception:
+                pass
     return blocks_map
 
-def parse_file_blocks(text):
-    normalized_text = _versioning.normalize(text)
-    marker_pattern = re.compile(r'(<!--\s*SOS:(/?BLOCK)\s+id=(\S+?)(?:\s+v=(\S+?))?\s*-->)')
-    matches = list(marker_pattern.finditer(normalized_text))
-    
-    seen_ids = set()
-    open_blocks = {}
-    
-    for m in matches:
-        full_match, tag_type, is_close, block_id, version = m.group(0), m.group(2), m.group(2) == "/BLOCK", m.group(3), m.group(4)
-        if block_id not in KNOWN_BLOCK_IDS:
-            raise ValueError(f"Unknown block ID '{block_id}'")
-        if not is_close:
-            if block_id in seen_ids:
-                raise ValueError(f"Duplicate block ID '{block_id}'")
-            if block_id in open_blocks:
-                raise ValueError(f"Nested block ID '{block_id}'")
-            open_blocks[block_id] = m
-            seen_ids.add(block_id)
-        else:
-            if block_id not in open_blocks:
-                raise ValueError(f"Orphan close marker for block ID '{block_id}'")
-            del open_blocks[block_id]
-            
-    if open_blocks:
-        raise ValueError(f"Unterminated block markers: {list(open_blocks.keys())}")
-        
-    segments = []
-    idx = 0
-    while idx < len(normalized_text):
-        m_start = marker_pattern.search(normalized_text, idx)
-        if not m_start:
-            segments.append({"type": "text", "content": normalized_text[idx:]})
-            break
-            
-        if m_start.start() > idx:
-            segments.append({"type": "text", "content": normalized_text[idx:m_start.start()]})
-            
-        if m_start.group(2) == "/BLOCK":
-            raise ValueError(f"Unexpected close marker at {m_start.start()}")
-            
-        block_id = m_start.group(3)
-        version = m_start.group(4)
-        
-        close_pat = re.compile(r'<!--\s*SOS:/BLOCK\s+id=' + re.escape(block_id) + r'\s*-->')
-        m_end = close_pat.search(normalized_text, m_start.end())
-        if not m_end:
-            raise ValueError(f"Failed to find end marker for '{block_id}'")
-            
-        inter_content = normalized_text[m_start.end():m_end.start()]
-        raw_block = normalized_text[m_start.start():m_end.end()]
-        
-        segments.append({
-            "type": "block",
-            "id": block_id,
-            "version": version,
-            "content": inter_content,
-            "raw_block": raw_block
-        })
-        idx = m_end.end()
-    return segments
+def get_marker_version(text, fallback):
+    versions = []
+    for m in _versioning.CANONICAL_MARKER_PATTERN.finditer(text):
+        if m.group(1) == "BLOCK" and m.group(3):
+            versions.append(m.group(3))
+    if versions:
+        try:
+            return max(versions, key=semver_key)
+        except Exception:
+            return versions[0]
+    return fallback
 
-def parse_file_blocks_raw(text):
-    marker_pattern = re.compile(r'(<!--\s*SOS:(/?BLOCK)\s+id=(\S+?)(?:\s+v=(\S+?))?\s*-->)')
-    matches = list(marker_pattern.finditer(text))
+def parse_file_blocks(text, raw=False):
+    if not raw:
+        text = _versioning.normalize(text)
+    matches = list(_versioning.CANONICAL_MARKER_PATTERN.finditer(text))
     
     seen_ids = set()
     open_blocks = {}
-    
     for m in matches:
-        full_match, tag_type, is_close, block_id, version = m.group(0), m.group(2), m.group(2) == "/BLOCK", m.group(3), m.group(4)
+        full_match = m.group(0)
+        tag_type = m.group(1)
+        is_close = tag_type == "/BLOCK"
+        block_id = m.group(2)
+        version = m.group(3)
         if block_id not in KNOWN_BLOCK_IDS:
+            # NOTE: Renaming a block ID in the future breaks forward compatibility. If a block ID is renamed
+            # in the templates, downstream target projects with existing files carrying the old ID in the wild
+            # will raise ValueError and skip updating. Renaming/removing block IDs requires writing a project
+            # migration script (similar to inject_markers.py) to update target project files first.
             raise ValueError(f"Unknown block ID '{block_id}'")
         if not is_close:
             if block_id in seen_ids:
@@ -152,7 +108,7 @@ def parse_file_blocks_raw(text):
     segments = []
     idx = 0
     while idx < len(text):
-        m_start = marker_pattern.search(text, idx)
+        m_start = _versioning.CANONICAL_MARKER_PATTERN.search(text, idx)
         if not m_start:
             segments.append({"type": "text", "content": text[idx:]})
             break
@@ -160,11 +116,11 @@ def parse_file_blocks_raw(text):
         if m_start.start() > idx:
             segments.append({"type": "text", "content": text[idx:m_start.start()]})
             
-        if m_start.group(2) == "/BLOCK":
+        if m_start.group(1) == "/BLOCK":
             raise ValueError(f"Unexpected close marker at {m_start.start()}")
             
-        block_id = m_start.group(3)
-        version = m_start.group(4)
+        block_id = m_start.group(2)
+        version = m_start.group(3)
         
         close_pat = re.compile(r'<!--\s*SOS:/BLOCK\s+id=' + re.escape(block_id) + r'\s*-->')
         m_end = close_pat.search(text, m_start.end())
@@ -215,11 +171,30 @@ def clean_for_raw_compare(text):
     return text
 
 def verify_invariants(orig_text, prop_text, changed_block_ids):
-    S_orig = parse_file_blocks_raw(orig_text)
-    S_prop = parse_file_blocks_raw(prop_text)
+    S_orig = parse_file_blocks(orig_text, raw=True)
+    S_prop_raw = parse_file_blocks(prop_text, raw=True)
+    
+    orig_block_ids = {s["id"] for s in S_orig if s["type"] == "block"}
+    for s in S_prop_raw:
+        if s["type"] == "block" and s["id"] not in orig_block_ids:
+            if s["id"] not in changed_block_ids:
+                raise ValueError(f"New block '{s['id']}' was added but not in changed_block_ids")
+            start_re = re.compile(r'^<!--\s*SOS:BLOCK\s+id=' + re.escape(s["id"]) + r'(?:\s+v=[^\s>]+)?\s*-->$')
+            end_re = re.compile(r'^<!--\s*SOS:/BLOCK\s+id=' + re.escape(s["id"]) + r'\s*-->$')
+            p_lines = s["raw_block"].strip().split("\n")
+            if len(p_lines) < 2:
+                raise ValueError(f"New block '{s['id']}' proposed raw block is too short")
+            p_start_line = p_lines[0].strip()
+            p_end_line = p_lines[-1].strip()
+            if not start_re.match(p_start_line):
+                raise ValueError(f"New block '{s['id']}' proposed start marker is malformed: '{p_start_line}'")
+            if not end_re.match(p_end_line):
+                raise ValueError(f"New block '{s['id']}' proposed end marker is malformed: '{p_end_line}'")
+                
+    S_prop = [s for s in S_prop_raw if not (s["type"] == "block" and s["id"] not in orig_block_ids)]
     
     if len(S_orig) != len(S_prop):
-        raise ValueError("Structure mismatch: different number of segments")
+        raise ValueError("Structure mismatch: different number of segments (excluding new blocks)")
         
     for i in range(len(S_orig)):
         o = S_orig[i]
@@ -316,17 +291,18 @@ def detect_and_apply_newline(text, original_text):
         return "\ufeff" + normalized
     return normalized
 
-def update_frontmatter_version(text, new_version):
-    fm, body = _versioning.split_frontmatter(text)
-    if fm is not None:
-        lines = []
-        for line in fm.splitlines():
-            if line.split(":", 1)[0].strip() == "version":
-                lines.append(f'version: "{new_version}"')
-            else:
-                lines.append(line)
-        return f"---\n{chr(10).join(lines)}\n---\n{body}"
-    return text
+def normalize_proposed_bytes(prop_bytes, existing_path):
+    if not existing_path.exists():
+        return prop_bytes
+    try:
+        user_text = existing_path.read_bytes().decode("utf-8")
+        prop_text = prop_bytes.decode("utf-8")
+        normalized_prop_text = detect_and_apply_newline(prop_text, user_text)
+        return normalized_prop_text.encode("utf-8")
+    except Exception:
+        return prop_bytes
+
+
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
@@ -427,7 +403,7 @@ def main():
     args = ap.parse_args()
 
     project = Path.cwd()
-    dry = args.dry_run
+    dry = args.dry_run or args.verify
     update = args.update or args.verify
     res = {
         "created": [], "would": [], "exists": [],
@@ -481,27 +457,24 @@ def main():
                 # In repair mode, we trust the workspace file and compute its current hash as the new baseline
                 if p.exists():
                     text = p.read_bytes().decode("utf-8")
-                    v, ts = _versioning.read_version(text, p)
-                    if v:
-                        lock_entry = {
-                            "version": v,
-                            "sha256_at_install": _versioning.body_hash(text)
-                        }
-                        blocks = get_blocks_map(text)
-                        if blocks:
-                            lock_entry["blocks"] = blocks
-                        lock_data["artifacts"][proj_path] = lock_entry
-                        count += 1
-                    else:
-                        print(f"Warning: skipped '{proj_path}' during lock repair (missing version stamp).")
+                    v = get_marker_version(text, "unknown")
+                    lock_entry = {
+                        "version": v,
+                        "sha256_at_install": _versioning.body_hash(text)
+                    }
+                    blocks = get_blocks_map(text)
+                    if blocks:
+                        lock_entry["blocks"] = blocks
+                    lock_data["artifacts"][proj_path] = lock_entry
+                    count += 1
             else:
                 # Normal mode: pull baseline hash from the bundled manifest, but ONLY if missing from lockfile
                 if proj_path not in lock_data.get("artifacts", {}) and p.exists():
                     text = p.read_bytes().decode("utf-8")
-                    v, ts = _versioning.read_version(text, p)
+                    v = get_marker_version(text, "unknown")
                     lock_entry = {
-                        "version": v or b_meta.get("version", "unknown"),
-                        "sha256_at_install": _versioning.body_hash(text) if v else b_meta.get("sha256", "unknown")
+                        "version": v,
+                        "sha256_at_install": _versioning.body_hash(text)
                     }
                     blocks = get_blocks_map(text)
                     if blocks:
@@ -596,9 +569,9 @@ def main():
                 if is_stale:
                     worklist["stale_managed"].append(proj_path)
                     if has_new_file:
-                        proposed_files[proj_path] = new_p.read_bytes()
+                        proposed_files[proj_path] = normalize_proposed_bytes(new_p.read_bytes(), p)
                     else:
-                        proposed_files[proj_path] = bundled_bytes
+                        proposed_files[proj_path] = normalize_proposed_bytes(bundled_bytes, p)
                         
             elif tier == "constitution":
                 is_stale = False
@@ -610,12 +583,15 @@ def main():
                 if is_stale:
                     worklist["needs_review_constitution"].append(proj_path)
                     if has_new_file:
-                        proposed_files[proj_path] = new_p.read_bytes()
+                        proposed_files[proj_path] = normalize_proposed_bytes(new_p.read_bytes(), p)
                         
             elif tier == "preserved":
                 b_version = b_meta.get("version", "0.0.0")
                 lock_entry = lock_data.get("artifacts", {}).get(proj_path, {})
                 locked_version = lock_entry.get("version")
+                
+                bundled_text = bundled_bytes.decode("utf-8")
+                bundled_block_hashes = get_blocks_map(bundled_text)
                 
                 is_stale = False
                 if not p.exists():
@@ -623,15 +599,25 @@ def main():
                 elif not locked_version:
                     is_stale = True
                 else:
-                    is_stale = (semver_key(b_version) > semver_key(locked_version))
+                    locked_blocks = lock_entry.get("blocks", {})
+                    is_stale = (
+                        (semver_key(b_version) > semver_key(locked_version))
+                        or (
+                            (semver_key(b_version) == semver_key(locked_version))
+                            and (
+                                (set(locked_blocks) != set(bundled_block_hashes))
+                                or any(locked_blocks.get(bid) != h for bid, h in bundled_block_hashes.items())
+                            )
+                        )
+                    )
                 
-                print(f"DEBUG version check for '{proj_path}': locked_version={locked_version}, b_version={b_version}, is_stale={is_stale}")
                 if is_stale:
                     file_info = {
                         "status": "stale",
                         "old_version": locked_version or "none",
                         "new_version": b_version,
-                        "blocks": {}
+                        "blocks": {},
+                        "template_blocks": bundled_block_hashes
                     }
                     
                     if not p.exists():
@@ -651,6 +637,7 @@ def main():
                         
                     if has_new_file:
                         prop_text = new_p.read_bytes().decode("utf-8")
+                        prop_text = detect_and_apply_newline(prop_text, user_text)
                         proposed_files[proj_path] = prop_text.encode("utf-8")
                         try:
                             user_segs = parse_file_blocks(user_text)
@@ -661,6 +648,10 @@ def main():
                                     p_seg = next((s for s in prop_segs if s["type"] == "block" and s["id"] == u_seg["id"]), None)
                                     if p_seg and _versioning.normalize(u_seg["content"]) != _versioning.normalize(p_seg["content"]):
                                         changed.add(u_seg["id"])
+                            user_block_ids = {s["id"] for s in user_segs if s["type"] == "block"}
+                            for p_seg in prop_segs:
+                                if p_seg["type"] == "block" and p_seg["id"] not in user_block_ids:
+                                    changed.add(p_seg["id"])
                             changed_blocks_per_file[proj_path] = changed
                         except Exception:
                             changed_blocks_per_file[proj_path] = set()
@@ -680,6 +671,19 @@ def main():
                         
                     blocks_changed = []
                     conflicts = []
+                    
+                    user_block_ids = {s["id"] for s in user_segments if s["type"] == "block"}
+                    for seg in template_segments:
+                        if seg["type"] != "block":
+                            continue
+                        bid = seg["id"]
+                        if bid not in user_block_ids:
+                            blocks_changed.append(bid)
+                            file_info["blocks"][bid] = {
+                                "status": "pristine",
+                                "old_hash": None,
+                                "new_hash": _versioning.block_hash(bundled_text, bid)
+                            }
                     
                     for seg in user_segments:
                         if seg["type"] != "block":
@@ -701,8 +705,8 @@ def main():
                             whole_file_matches = False
                             if "sha256_at_install" in lock_entry:
                                 try:
-                                    current_raw_hash = hashlib.sha256(p.read_bytes()).hexdigest()
-                                    if current_raw_hash == lock_entry["sha256_at_install"]:
+                                    current_hash = _versioning.body_hash(p.read_bytes().decode("utf-8"))
+                                    if current_hash == lock_entry["sha256_at_install"]:
                                         whole_file_matches = True
                                 except Exception:
                                     pass
@@ -734,20 +738,76 @@ def main():
                         worklist["preserved_files"][proj_path] = file_info
                         continue
                         
-                    proposed_segments = []
-                    for seg in user_segments:
-                        if seg["type"] == "block" and seg["id"] in blocks_changed:
+                    proposed_segments = list(user_segments)
+                    current_block_ids = set(user_block_ids)
+                    
+                    for seg in template_segments:
+                        if seg["type"] == "block" and seg["id"] not in user_block_ids:
+                            bid = seg["id"]
+                            t_idx = template_segments.index(seg)
+                            inserted = False
+                            
+                            for j in range(t_idx - 1, -1, -1):
+                                prev_seg = template_segments[j]
+                                if prev_seg["type"] == "block" and prev_seg["id"] in current_block_ids:
+                                    for idx, p_seg in enumerate(proposed_segments):
+                                        if p_seg["type"] == "block" and p_seg["id"] == prev_seg["id"]:
+                                            new_raw = f'<!-- SOS:BLOCK id={bid} v={b_version} -->\n{seg["content"]}\n<!-- SOS:/BLOCK id={bid} -->'
+                                            proposed_segments.insert(idx + 1, {
+                                                "type": "block",
+                                                "id": bid,
+                                                "version": b_version,
+                                                "content": seg["content"],
+                                                "raw_block": new_raw
+                                            })
+                                            current_block_ids.add(bid)
+                                            inserted = True
+                                            break
+                                    if inserted:
+                                        break
+                                        
+                            if not inserted:
+                                for j in range(t_idx + 1, len(template_segments)):
+                                    next_seg = template_segments[j]
+                                    if next_seg["type"] == "block" and next_seg["id"] in current_block_ids:
+                                        for idx, p_seg in enumerate(proposed_segments):
+                                            if p_seg["type"] == "block" and p_seg["id"] == next_seg["id"]:
+                                                new_raw = f'<!-- SOS:BLOCK id={bid} v={b_version} -->\n{seg["content"]}\n<!-- SOS:/BLOCK id={bid} -->'
+                                                proposed_segments.insert(idx, {
+                                                    "type": "block",
+                                                    "id": bid,
+                                                    "version": b_version,
+                                                    "content": seg["content"],
+                                                    "raw_block": new_raw
+                                                })
+                                                current_block_ids.add(bid)
+                                                inserted = True
+                                                break
+                                        if inserted:
+                                            break
+                                            
+                            if not inserted:
+                                new_raw = f'<!-- SOS:BLOCK id={bid} v={b_version} -->\n{seg["content"]}\n<!-- SOS:/BLOCK id={bid} -->'
+                                proposed_segments.append({
+                                    "type": "block",
+                                    "id": bid,
+                                    "version": b_version,
+                                    "content": seg["content"],
+                                    "raw_block": new_raw
+                                })
+                                current_block_ids.add(bid)
+                                
+                    for idx, seg in enumerate(proposed_segments):
+                        if seg["type"] == "block" and seg["id"] in user_block_ids and seg["id"] in blocks_changed:
                             new_seg = next(s for s in template_segments if s["type"] == "block" and s["id"] == seg["id"])
                             new_raw = f'<!-- SOS:BLOCK id={seg["id"]} v={b_version} -->\n{new_seg["content"]}\n<!-- SOS:/BLOCK id={seg["id"]} -->'
-                            proposed_segments.append({
+                            proposed_segments[idx] = {
                                 "type": "block",
                                 "id": seg["id"],
                                 "version": b_version,
                                 "content": new_seg["content"],
                                 "raw_block": new_raw
-                            })
-                        else:
-                            proposed_segments.append(seg)
+                            }
                             
                     parts = []
                     for seg in proposed_segments:
@@ -756,7 +816,6 @@ def main():
                         else:
                             parts.append(seg["raw_block"])
                     proposed_text = "".join(parts)
-                    proposed_text = update_frontmatter_version(proposed_text, b_version)
                     proposed_text = detect_and_apply_newline(proposed_text, user_text)
                     
                     proposed_files[proj_path] = proposed_text.encode("utf-8")
@@ -821,6 +880,12 @@ def main():
             
         for proj_path, prop_bytes in proposed_files.items():
             p = project / proj_path
+            if p.exists() and p.read_bytes() == prop_bytes:
+                new_p = p.parent / (p.name + ".stratosphere-new")
+                if new_p.exists():
+                    new_p.unlink()
+                continue
+                
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(prop_bytes)
             
@@ -831,26 +896,32 @@ def main():
             print(f"UPDATED: {proj_path}")
             
         for proj_path, info in worklist["preserved_files"].items():
+            if proj_path not in proposed_files:
+                continue
             p = project / proj_path
             if p.exists():
                 text = p.read_bytes().decode("utf-8")
-                v, ts = _versioning.read_version(text, p)
                 lock_entry = {
-                    "version": v or info["new_version"],
+                    "version": info["new_version"],
                     "sha256_at_install": _versioning.body_hash(text)
                 }
-                blocks = get_blocks_map(text)
-                if blocks:
-                    lock_entry["blocks"] = blocks
+                template_blocks = info.get("template_blocks")
+                if template_blocks is not None:
+                    lock_entry["blocks"] = template_blocks
+                else:
+                    blocks = get_blocks_map(text)
+                    if blocks:
+                        lock_entry["blocks"] = blocks
                 lock_data["artifacts"][proj_path] = lock_entry
                 
         for proj_path in worklist["stale_managed"] + worklist["needs_review_constitution"]:
+            if proj_path not in proposed_files:
+                continue
             p = project / proj_path
             if p.exists():
                 text = p.read_bytes().decode("utf-8")
-                v, ts = _versioning.read_version(text, p)
                 lock_data["artifacts"][proj_path] = {
-                    "version": v or plugin_version,
+                    "version": plugin_version,
                     "sha256_at_install": _versioning.body_hash(text)
                 }
                 
@@ -920,11 +991,11 @@ def main():
             if src.is_file():
                 rel_parts = src.relative_to(viewer_src_dir)
                 dst = project / ".agents" / "scripts" / "okf_viewer" / rel_parts
-                place(src, dst, res, dry)
+                place(src, dst, res, dry, update=update, tier="managed")
 
     view_script = PLUGIN_ROOT / "scripts" / "okf_view.py"
     if view_script.exists():
-        place(view_script, project / ".agents" / "scripts" / "okf_view.py", res, dry)
+        place(view_script, project / ".agents" / "scripts" / "okf_view.py", res, dry, update=update, tier="managed")
 
     # 8. .gitignore (create if missing; never edit an existing one)
     gi = project / ".gitignore"

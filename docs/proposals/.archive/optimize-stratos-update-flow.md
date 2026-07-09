@@ -84,12 +84,8 @@ routine `place(src, dst, ..., tier)` (around `src/scripts/scaffold.py` lines 71�
   }
 }
 ```
-The lockfile records the framework version a project file was installed at. **This proposal adds the
-`blocks` map** (per-block content hashes) — the interface the update flow's pristine detection depends
-on (§1 Lever 2). Note the **path mapping**:
-`versions.json` keys are bundle-relative (`assets/templates/memory/BACKLOG_MAP.md`); lockfile keys are
-project-relative (`.memory/BACKLOG_MAP.md`). `scaffold.py`'s `map_bundled_to_project()` converts
-between them.
+The lockfile records the template version a project file was installed or updated to. **Under Option B, the project file's frontmatter `version:` field is fully project-owned and never written by the update flow; the template version is tracked solely by the lockfile and the block-level `v=` marker attributes.** This proposal adds the `blocks` map (per-block content hashes) — the interface the update flow's pristine detection depends on (§1 Lever 2). Note the **path mapping**:
+`versions.json` keys are bundle-relative (`assets/templates/memory/BACKLOG_MAP.md`); lockfile keys are project-relative (`.memory/BACKLOG_MAP.md`). `scaffold.py`'s `map_bundled_to_project()` converts between them.
 
 The **update path today** lives inside the setup command
 `src/commands/instantiate/Instantiate-StratosphereOS.md` (search for "Update & Drift check", ~lines
@@ -196,6 +192,8 @@ table because it only shows up as `H_user vs H_new`, and a gate run proved that 
 crash-recovered or double-committed block (where `H_user == H_new ≠ H_base`) is misclassified as a
 *conflict* and sent through a needless merge that can corrupt an already-correct block. It also cleanly
 handles "user and template independently made the identical edit."
+
+**Version ownership (Option A vs B):** The version tracking model represents template versions rather than project evolution versions. Option B was selected over Option A (adding a second `sos_version` frontmatter field) because: (1) block markers already record template versions at the correct block granularity via `v=X.Y.Z`; (2) file-level template versions cannot represent mixed states (e.g. one block updated, one customized); (3) it requires zero project file migrations and avoids adding redundant frontmatter fields to keep the toolchain clean. Frontmatter `version:` is project-owned, whereas template versions are tracked via the lockfile and block-level `v=` attributes.
 
 Then the four `H_base`-relative rows:
 
@@ -400,10 +398,7 @@ and the lockfile old (exactly the crash-recovery state). Two rules make this saf
    so the change does not produce a whole-file line-ending churn in git; hashing/comparison always uses
    `normalize()` so this never affects classification.
 3. **Baseline advance** (Phase 3, **unconditional**). For every in-scope preserved file — *even when
-   zero blocks changed* — rewrite its frontmatter `version:` to the bundled version, recompute and store
-   each block's hash into the lockfile `blocks` map, and recompute `sha256_at_install`. Do **not** gate
-   this on "a block was updated" (that leaves unchanged-but-bumped files stale → re-prompt forever).
-   Extend `--repair-lock` accordingly.
+   zero blocks changed* — advance only the lockfile (version + block hashes); never write frontmatter `version:`. Recompute and store each block's hash into the lockfile `blocks` map (specifically storing the bundled template hash `H_new` for all blocks in the template, so subsequent runs correctly identify user customizations as conflicts rather than pristine swaps), and recompute `sha256_at_install`. Do **not** gate this on "a block was updated" (that leaves unchanged-but-bumped files stale → re-prompt forever). Extend `--repair-lock` accordingly.
 4. **Path-key mapping (required for Phase 0).** The version comparison joins `versions.json` (keys like
    `assets/templates/memory/BACKLOG_MAP.md`) to the lockfile (keys like `.memory/BACKLOG_MAP.md`). Reuse
    `scaffold.py`'s existing `map_bundled_to_project()` for the join; do **not** basename-match (two files
@@ -639,8 +634,7 @@ exercise `normalize()`.
 > H_new!=H_base` ⇒ **conflict** → Phase 2; otherwise no-op. If the file has NO markers ⇒ do NOT inject;
 > emit the guard notice and skip. **Phase 2:** for each conflict, edit ONLY within that block to port
 > the framework change while preserving the user's edit; show a diff. **Phase 3:** set the file's
-> frontmatter `version` to bundled, and rewrite the lockfile entry incl. each block's new hash in
-> `blocks`.
+> the framework change while preserving the user's edit; show a diff. **Phase 3:** advance only the lockfile (version + block hashes, specifically storing the bundled template hash `H_new` for all blocks in the template), and never write the frontmatter `version`.
 > **Phase 4:** the set of `BT-xxx` IDs and `## Backlog` data-row count MUST be identical before/after;
 > if not, ABORT and report data loss.
 > **Report:** (1) final file(s); (2) final lockfile; (3) per-phase notes; (4) ambiguities/spec gaps
