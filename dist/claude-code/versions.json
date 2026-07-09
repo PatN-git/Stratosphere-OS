@@ -176,14 +176,14 @@
       "version": "1.0.2"
     },
     "commands/1b_concept-framing.md": {
-      "sha256": "890b2db4c9bf0b207c7d086842009b86ca66280c8c26307c5c2d6f5d290b2977",
+      "sha256": "845fa29a4b417c996c27e280b1cc6a906414929a25fb4fd0827e248c8ced2a98",
       "timestamp": "2026-07-09",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     "commands/1c_concept-map.md": {
-      "sha256": "714665cacaed70380323a7d32ba4ec5056c332967f52b59e1f32476f56c1bad1",
+      "sha256": "3829681be1f143bcc93f84aaf95e0e5b8209aac6fff407d15cddb77c7f37dc0f",
       "timestamp": "2026-07-09",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "commands/2a_write-prd.md": {
       "sha256": "220a425b0d941e3244371c235384c355c816a33034d2695e6e51f3f1ccc2e4b2",

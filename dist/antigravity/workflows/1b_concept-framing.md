@@ -3,7 +3,7 @@ name: 1b_concept-framing
 description: Interview the user relentlessly about the idea/problem space to reach shared understanding, lock vocabulary and framing before writing a PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.6"
+version: "1.0.7"
 timestamp: 2026-07-09
 ---
 
@@ -60,8 +60,8 @@ timestamp: 2026-07-09
 
 One question at a time. Where Phase 1 context gives you sufficient signal on a focus area, state your synthesis and ask the user to confirm or correct — don't re-ask what you already know. Where signal is insufficient, **lead open-ended** — let the user surface their own framing before you narrow. Follow with MC only to confirm once they've answered freely. Name vagueness explicitly — re-ask until the answer is sharp. If utilizing the work file, the checklist under `## Coverage (grill axes)` drives the grilling sequence.
 
-- **G1 — Recommend an Answer:** For every question asked, recommend a candidate answer and explain the rationale, then let the user confirm, correct, or select.
-- **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes).
+- **G1 — Recommend when grounded, open when not:** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
+- **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
 - **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependencies one at a time. Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
 
 **Stop conditions (first one hit ends grilling):**
