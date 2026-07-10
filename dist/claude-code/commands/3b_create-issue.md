@@ -1,91 +1,77 @@
 ---
 name: 3b_create-issue
-description: Standardize feature ideas into "Implementation-Ready" vertical slices with ICE prioritization.
+description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.3"
+version: "2.0.5"
 timestamp: 2026-07-09
 ---
 
 # Create issue
 
-**Purpose:** Convert (raw) ideas into deterministic, "Implementation-Ready" vertical slices while maintaining absolute sync with the project's memory layer.
+**Purpose:** Convert ideas into implementation-ready vertical slices synced with memory.
 
-**Hand-off contract:** Upstream: `/3a_version-planning` gates which parent features are in the current release; slice only current-release features. When sourced from a PRD (`BT-<n>` doc in `.memory/BACKLOG_MAP.md`), reads §1/§6/§7/§8 and coverage-checks slices against §6 + §8 (Phase 2). No PRD → checks against captured intent. Template A spikes skip coverage.
+**Hand-off contract:** Upstream: `/3a_version-planning` gates current-release parent features to slice. Sourced from PRD → reads §1, §6, §7, §8 and coverage-checks against §6 + §8. Else checks against captured intent. Template A spikes skip coverage.
 
 ## Phase 1: Intake & Memory Audit
-1.  **Intake:** Receive raw idea or "Minimum Viable Issue."
-2.  **Memory Audit:** If not done before in session run `/0a_start-session` first to familiarize with the project state and architecture.
-3.  **Scope source:** PRD-sourced (a `.memory/BACKLOG_MAP.md` row links `docs/prds/BT-<padded>-<name>.md`, or user cites `BT-<padded>`) → load it along with the frozen design document `docs/design/BT-<padded>-interface.md`. The PRD §6 + §8 and the design blueprint/contract are the scope to cover. Else the raw idea / MVI is the scope.
+1. **Intake:** Receive raw idea or MVI.
+2. **Memory Audit:** Run `/0a_start-session` if not done this session.
+3. **Scope:** PRD-sourced → load `docs/prds/BT-<padded>-<name>.md` and frozen design doc `docs/design/BT-<padded>-interface.md`. Scope is PRD §6 + §8 and design blueprint. Else raw idea/MVI is scope.
 
-## Phase 2: The Vertical Slice Quiz & Prioritization
-Before creating the task, propose the breakdown to the user:
-1.  **Numbered List of Slices:**
-    -   **Title:** [Short name]
-    -   **Logic/user story:** Why is this a vertical slice? (Briefly explain the end-to-end path).
-    -   **Blocked by:** [IDs of prerequisite slices]
-    -   **Inheritance:** Each slice inherits the **scope-class** (`scope:baseline` or `scope:differentiator`) and the **ODI score** (if present) of the PRD §6 story it implements. Slices are **not** created for `[DEFERRED]` stories (mirrored in PRD §9).
+## Phase 2: Vertical Slice Quiz & Prioritization
+Propose breakdown to user:
+1. **Slices List:**
+   - **Title:** [Short name]
+   - **Logic/user story:** end-to-end path.
+   - **Blocked by:** prerequisite slices.
+   - **Inheritance:** inherits scope-class and ODI score from PRD §6. No slices for `[DEFERRED]` stories.
+2. **Prioritization Metrics (Template A spikes: skip):**
+   - **Impact from ODI:** Map story ODI score to Impact:
+     - `ODI < 5` → `0.25`
+     - `5 <= ODI <= 8` → `0.5`
+     - `9 <= ODI <= 12` → `1.0`
+     - `13 <= ODI <= 16` → `2.0`
+     - `17 <= ODI <= 20` → `3.0`
+     - (Note: scope-class governs ordering; baseline sequenced before differentiator).
+   - **Confidence from ODI:** Map story ODI confidence to Confidence:
+     - `[HIGH]` → `100%`
+     - `[MEDIUM]` → `80%`
+     - `[LOW]` → `50%`
+    - **Fallback (ODI absent):** Prompt user for Impact and Confidence:
+      - **Impact:** ∈ {0.25 (min), 0.5 (low), 1.0 (med), 2.0 (high), 3.0 (crit)}
+      - **Confidence:** ∈ {50% (guess), 80% (high), 100% (certain)}
+   - Prompt for **Size** (Effort):
+     - **Size:** ∈ {size:small (weight 1), size:medium (weight 2), size:large (weight 3)}
+3. **Coverage Check (Template A spikes: skip):**
+   - **PRD-sourced:** Invoke a Coverage Auditor subagent (via Antigravity `invoke_subagent` or Claude Code `Task` general-purpose). Input: proposed slice list (titles + Path/layer bullets) inline. Reads: `docs/prds/BT-<padded>-<name>.md` (§6 + §8) and, if present, `docs/design/BT-<padded>-interface.md` fresh from the file system. Guardrail: *"Report the coverage map only; do not create issues or edit any file."* Output Contract: return the coverage map only — map **every `[BASELINE]` and `[DIFFERENTIATOR]` §6 story, §8 DoD item, and design blueprint element** to its covering slice or `[UNCOVERED]`, walking the **journey-grouped** §6 stories. `[DEFERRED]` stories / §9 Out-of-Scope items are intentionally out and must be treated as covered/excluded (**not** `[UNCOVERED]`).
+   - **Loop Optimization:** Re-spawn the Coverage Auditor *only* when the slice list materially changes (slices added / removed / re-scoped), not on cosmetic edits (renames, ICE tweaks).
+   - **Resolution:** Gaps: uncovered → `[UNCOVERED]`; resolve (add slice, defer to §9, confirm out-of-scope, or "covered by construction"). Scope creep (hitting §4 Non-Goal / §9 Out-of-Scope) → `[SCOPE-CREEP]`. Blocker (open §10 Question) → Template A.
+   - **No PRD:** restate intent as requirement list; map slices. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs. Present the map with the slice list.
+4. **Approval Request:**
+   - Requirements & end-state covered (no `[UNCOVERED]`)?
+   - Granularity right?
+   - Dependencies correct?
+   - Modes (type:HITL/type:AFK) correct?
+   - ICE scores accurate?
 
-2.  **Prioritization Metrics (Template A spikes: skip):**
-    -   **Impact from ODI when present:** Map the story's ODI score to the Impact value:
-        -   `ODI < 5` → `0.25`
-        -   `5 <= ODI <= 8` → `0.5`
-        -   `9 <= ODI <= 12` → `1.0`
-        -   `13 <= ODI <= 16` → `2.0`
-        -   `17 <= ODI <= 20` → `3.0`
-        -   *(Note: ODI sets Impact magnitude, but scope-class governs ordering — a high-ODI baseline does not jump ahead of a differentiator on sequencing)*
-    -   **Confidence from ODI when present:** Map the story's ODI confidence tag to the Confidence value:
-        -   `[HIGH]` → `100%`
-        -   `[MEDIUM]` → `80%`
-        -   `[LOW]` → `50%`
-    -   **Fallback (ODI absent):** Prompt the user for both **Impact** and **Confidence** based on these fixed scales:
-        -   **Impact:** ∈ {0.25 (minimal), 0.5 (low), 1.0 (medium), 2.0 (high), 3.0 (critical)}
-        -   **Confidence:** ∈ {50% (guess/speculative), 80% (high confidence/known implementation), 100% (absolute certainty/trivial)}
-    -   Prompt for **Size** (Effort) based on this fixed scale:
-        -   **Size:** ∈ {size:small (Effort weight = 1, ~1h capacity), size:medium (Effort weight = 2, ~6h capacity), size:large (Effort weight = 3, ~12h capacity)}
-
-3.  **Coverage Check** (Template A spikes: skip):
-    -   **PRD-sourced:** Invoke a Coverage Auditor subagent (using Antigravity's `invoke_subagent` or Claude Code's `Task` tool with the `general-purpose` type) to perform the coverage check.
-        -   **Input:** Pass the proposed slice list (titles + Path/layer bullets) *inline* to the prompt.
-        -   **Subagent Reads:** Instruct the subagent to read `docs/prds/BT-<padded>-<name>.md` (§6 + §8) and, if present, `docs/design/BT-<padded>-interface.md` fresh from the file system.
-        -   **Guardrails:** *"Report the coverage map only; do not create issues or edit any file."*
-        -   **Output Contract:** The subagent must return the coverage map only (mapping every `[BASELINE]` and `[DIFFERENTIATOR]` §6 story, §8 DoD item, and design blueprint element to the covering slice or `[UNCOVERED]`). **[DEFERRED] stories / §9 Out of Scope items are intentionally out and must be treated as covered/excluded (not [UNCOVERED]).** The subagent walks the **journey-grouped** §6 stories.
-        -   **Loop Optimization:** Re-spawn the Coverage Auditor *only* when the slice list materially changes (e.g., slices added/removed/re-scoped), not on cosmetic edits (e.g., renames, ICE tweaks).
-        -   **Resolution:** For flagged gaps: uncovered item → `[UNCOVERED]`; resolve: add slice / defer to §9 / confirm out-of-scope / mark "covered by construction". slice hitting a §4 Non-Goal or §9 Out-of-Scope item → `[SCOPE-CREEP]`. slice blocked by an open §10 Question → Enforce Template A.
-
-    -   **No PRD:** restate captured intent as a requirement list; map slices to it. Gaps → `[UNCOVERED?]` (soft) for user confirmation. No §-refs.
-    -   Present the map with the slice list.
-4.  **Approval Request:**
-    -   Is every requirement & end-state covered (no `[UNCOVERED]`)?
-    -   Does the granularity feel right? (Too coarse / too fine)
-    -   Are the dependency relationships correct?
-    -   Are the correct slices marked as `type:HITL` (Human-in-Loop) and `type:AFK` (Autonomous)?
-    -   Are the Impact and Confidence scores accurate?
-
-*Stop and iterate until the user approves the breakdown.*
+Halt until user approves breakdown.
 
 ## Phase 3: Implementation & Memory Sync
-1.  **Calculate ICE Score (Template A spikes: skip):** Compute `ICE = (Impact * Confidence) / Effort weight` (where Confidence is converted to a decimal: 50% = 0.5, 80% = 0.8, 100% = 1.0; Effort weight is small=1, medium=2, large=3).
-2.  **Determine Priority Label (Template A spikes: skip):** Bucket the raw ICE score into a standard controlled label:
-    -   **ICE >= 0.5:** `priority:high`
-    -   **0.15 <= ICE < 0.5:** `priority:medium`
-    -   **ICE < 0.15:** `priority:low`
-3.  **Generate (Atomic Minting & Sub-issue Linkage):** Execute `gh issue create` to create the issue in GitHub (applying the appropriate template below). **CRITICAL:** Capture the exact numeric issue number `#N` returned by GitHub and zero-pad it (`BT-<padded>`). Never guess or compute `MAX(BT_ID) + 1` from local files, as Pull Requests consume IDs from GitHub's shared sequence. Write the raw `ICE`, `Impact`, and `Confidence` inputs directly into the issue body. **Apply the scope label (`scope:baseline` or `scope:differentiator`) based on the slice's inherited scope-class.** **Assign exactly TWO type labels:** Primary Type (e.g. `type:feature`) + Execution Mode (`type:HITL` or `type:AFK`). (If GitHub is disconnected in local fallback mode, assign ID as `BT-LOCAL-<n>`).
-    -   **Sub-issue Linkage:** If derived from a parent epic (`#parent`), attach `#N` as a native sub-issue (`gh sub-issue add <parent> <N>`).
-    -   **Native Blocking Dependencies:** If the slice is blocked by other slices, check if `gh` supports native blocking (via `gh issue create --help`). If supported, pass `--blocked-by <ids>` on create, or execute `gh issue edit <N> --add-blocked-by <ids>` to wire the native dependencies. Keep the text `Blocked by: [IDs]` in the issue body and the BACKLOG_MAP Dependencies column as the human-legible mirror and BT-LOCAL fallback.
-4.  **Backlog Sync:** **Immediately** append the entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` using the registry-compliant format. **CRITICAL:** ID formatting must strictly adhere to the flat ID rules in [[memory-protocol.md#8-backlog-id-minting-late-binding]]. Write the bucketed priority label (e.g. `priority:medium`), size label (e.g. `size:medium`), **both type labels (Primary Type + Execution Mode)**, and **scope label (e.g. `scope:baseline`)** to the Labels column, and the raw ICE details (e.g., `ICE: 0.27 (I: 2.0, C: 80%)`) to the ICE column. In the `Dependencies` column, explicitly record `Sub-issue of BT-<parentPadded>` alongside any blocking sibling dependencies. (If this is the first real entry, perform the example purge to clean BACKLOG_MAP.md of placeholders). Set the new slice's `Milestone` to its parent feature's release `vX.Y.0` (read from the parent's BACKLOG_MAP row / GitHub milestone). If no release is assigned yet, default to `v1.0.0`. The sprint digit is assigned later by `/3c_sprint-planning`.
-5.  **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence them into a sprint, or `/3d_implement-issue` directly for a single ready slice.
-
+1. **Calculate ICE Score (Template A spikes: skip):** `ICE = (Impact * Confidence) / Effort weight` (Confidence as decimal; Effort: small=1, medium=2, large=3).
+2. **Determine Priority Label (Template A: skip):**
+   - `ICE >= 0.5` → `priority:high`
+   - `0.15 <= ICE < 0.5` → `priority:medium`
+   - `ICE < 0.15` → `priority:low`
+3. **Generate (Atomic Minting):** Execute `gh issue create`. Offline fallback: assign `BT-LOCAL-<n>`. **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs. Write raw ICE metrics in issue body. Apply scope label (`scope:baseline` or `scope:differentiator`). Assign exactly TWO type labels: Primary Type (e.g. `type:feature`) + Execution Mode (`type:HITL` or `type:AFK`).
+   - **Sub-issue Linkage:** If derived from parent epic (`#parent`), link sub-issue (`gh sub-issue add <parent> <N>`).
+   - **Dependencies:** If supported, pass `--blocked-by` or run `gh issue edit <N> --add-blocked-by <ids>`. Maintain "Blocked by: [IDs]" in issue body and BACKLOG_MAP.
+4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders). Write bucketed priority, size, both type labels, and scope label to Labels column, and ICE details to ICE. In Dependencies column, record `Sub-issue of BT-<parentPadded>` and sibling blockers. Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`). sprint digit Z assigned by 3c.
+5. **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence, or `/3d_implement-issue` for single ready slice.
 
 ---
 
 ## LABEL REGISTRY
-Use the registry in `.memory/BACKLOG_MAP.md` as the single source of truth. Always perform a just-in-time check to ensure any label to be applied is defined in the registry.
-
-**If a label is not in the registry:** STOP and do the following:
-1. Propose adding it to the `.memory/BACKLOG_MAP.md ## Label Registry`.
-2. Await user confirmation.
-3. Once approved, create the label in GitHub first, then write it to the registry, and then apply it to the issue.
+Use registry in `.memory/BACKLOG_MAP.md`. Do not invent labels. If label missing: propose adding to BACKLOG_MAP registry, await confirmation, create in GitHub, write to registry, then apply.
 
 ## Issue Templates
-Refer to the canonical templates (Template A and Template B) defined in `.agents/workflows/.reference/issue-templates.md` when generating backlog tasks.
+Follow canonical templates in `.agents/workflows/.reference/issue-templates.md`.

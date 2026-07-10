@@ -2,8 +2,8 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "1.2.0"
-timestamp: 2026-06-23
+version: "1.4.0"
+timestamp: 2026-07-09
 ---
 
 # Improving Workflows & Skills
@@ -74,7 +74,46 @@ Run this over an artifact when you touch it or after it grows. Hunt **sentence-b
 - **Sprawl** — too long even when every line is live; cure with the ladder (disclose reference; split by branch/sequence).
 - **Sediment** — stale lines that accreted; the default fate without a pruning discipline.
 
-**Never prune:** load-bearing exhaustiveness ("list every AC by name"), safety invariants, or sub-agent guardrails (§2). They read like over-statement but are the lever.
+### Never prune — the protected classes
+They read like over-statement but are the lever. Do **not** cut, dilute, summarize, or word-trim any of:
+- **Load-bearing exhaustiveness** — "list every AC by name", "map *every* `[BASELINE]`/`[DIFFERENTIATOR]` story to a slice or `[UNCOVERED]`".
+- **Checkable/exhaustive completion criteria** — "every AC maps to a passing test", "never summarize as 'looks complete'", "never silently ship".
+- **Safety / irreversible-action invariants** — branch checks, "don't modify production code", PR-dup guards. Keep them universal — don't narrow one to sub-agent scope only.
+- **Sub-agent guardrails** (§2) — a dispatched sub-agent runs isolated and never sees surrounding prose; the guardrail is its **entire contract**. Keep every copy, verbatim.
+- **Leading-word tokens** — `[UNCOVERED]`, `seam`, `depth`, `[[G-xxx]]`/`[[A-xxx]]`/`[[DR-xxx]]`. Keep the **exact token**, never a synonym; never drop a `[[…]]` reference.
+- **Context-pointer paths** — cite the full installed path (`.agents/workflows/.reference/<name>.md`, `.agents/rules/okf-protocol.md`), not a bare basename.
+
+### Over-prune — the anti-pattern (guard against each)
+**Over-prune** = cutting or diluting a protected class under the guise of economy. Real regressions seen in practice:
+- deleting a sub-agent guardrail because it "looks redundant";
+- collapsing an exhaustive output/completion contract to a summary fragment ("map every X…" → "check coverage");
+- swapping a leading-word token for a synonym, or dropping a `[[…]]` reference;
+- shortening a context-pointer to a bare basename (`per .agents/…/okf-protocol.md` → `per okf-protocol`);
+- narrowing a universal safety invariant to sub-agent scope only;
+- rewriting a file from a **stale base** (version moves sideways/backward) instead of editing in place — clobbers newer content;
+- introducing an inaccuracy while compressing (a claim the body contradicts, e.g. describing a HITL-gated loop as "without human gating");
+- a copy/merge error (a duplicated or half-deleted clause).
+
+### Post-prune diff gate (run before calling a prune done — checkable, not vibes)
+Diff against the pre-prune version. For **every** removed or reworded span, name which non-protected class it was (**no-op / duplication / sprawl / sediment**); if you can't, restore it. Then confirm: every guardrail, completion criterion, safety invariant, leading-word token, and pointer path still present; `version` bumped **forward** (never sideways/backward); `build/validate.py` green. **When fidelity and economy conflict, fidelity wins — keep the words.**
+
+## 4.5. Word-Level Economy
+
+Perform a systematic, word-level economy pass on every sentence. Prune words that carry no structural or behavioral meaning for an agent.
+
+**Scope limit (read §4 "Never prune" first):** these cuts apply to *executor-neutral prose only*. A sub-agent guardrail, completion criterion, safety invariant, leading-word token, or context-pointer path is **not** prose to trim — article/preposition/filler-compressing one of those is **over-pruning** (§4), not economy. Trim around the protected content, never through it.
+
+- **Article audit:** Review all articles ("the", "a", "an"). Retain only when referencing a specific, disambiguated noun (e.g. "read the active issue's description"). Otherwise, cut them (e.g., "query the tracker" → "query tracker").
+- **Preposition audit:** Compress multi-word prepositions and directional phrases (e.g. "in order to" → "to"; "with respect to" → "for"; "proceed to Phase 5" → "Phase 5").
+- **Filler verb audit:** Drop imperative assertions that add no constraints (e.g., "you MUST load and read" → "read"; "confirm and proceed" → "confirm"). All instructions are mandatory by default.
+- **Redundant qualifiers:** Eliminate redundant modifiers (e.g., "explicit user confirmation" → "user confirmation"; "strictly adhere to" → "follow").
+- **Cross-workflow boilerplate:** Tool-invocation patterns (like explaining *how* to call `invoke_subagent` or `Claude Code's Task tool`) are no-ops. Keep the behavioral intent ("invoke a subagent"), but cut the tool mechanics.
+- **Duplicate rationale:** Cut explanatory sentences unless they prevent a documented agent failure mode (e.g., keeping a one-line explanation of why guess-minting issue IDs causes collisions is allowed to prevent drift).
+
+### Worked Example:
+- **Before:** *"Query the tracker to compute the \"frontier\" (the set of open, unblocked, unassigned decision tickets)"*
+- **After:** *"Query tracker for frontier (open, unblocked, unassigned tickets)"*
+- **Cuts:** Pruned articles ("the" ×2), compressed "to compute the" to "for", dropped the verbose definition ("set of... decision tickets") in favor of direct qualifiers.
 
 ## 5. Mechanics
 

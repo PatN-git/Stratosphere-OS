@@ -1,29 +1,29 @@
 ---
 name: 0a_start-session
-description: Initializes session to avoid cold start by reviewing necessary project context from memory layer/protocol.
+description: Initialize session and load context from memory layer.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.5"
-timestamp: 2026-07-02
+version: "1.0.6"
+timestamp: 2026-07-09
 ---
 
 # START SESSION
 
 ## Goal
-Reconstruct minimum necessary context quickly without re-reading the whole repository. Surface crystallization opportunities before work begins.
+Reconstruct necessary context without reading full repository. Surface crystallization opportunities before starting.
 
 ## Procedure
-1. Read `.memory/STATUS.md`. If STATUS shows no active task (e.g. post-bootstrap), output "No active task — next: /1a_research or /1b_concept-framing" and "Needs verification: none", then halt.
-2. Read STATUS `Current Branch`. If it's an active/unmerged feature branch and the repo isn't on it → check it out; if merged/unset → checkout default and pull. (Note: Defer all branch CREATION to 3c, only restore existing branches here).
-3. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies — unless invoked by 3b_create-issue.md.
-   - **State Transition:** Set target issue (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub (using `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --add-label "status:in progress"`). If `BT-XXX` is a sub-issue, also set its parent epic (`BT-<parent>`) to `status:in progress` (removing prior statuses). Update `Active issue` in `.memory/STATUS.md`.
-4. Read `.memory/LEARNINGS.md` (Active Entries only — skip `## Superseded` unless the task explicitly requires history).
-5. If the task involves a PRD, discovery brief, or domain-heavy feature — read `.memory/GLOSSARY.md` (Active Entries only).
-6. Read `.memory/ARCHITECTURE.md` if the task affects structure, state flow, feature boundaries, or cross-feature behavior.
-7. Read `.memory/BACKLOG_MAP.md` to ensure the current task doesn't conflict with other work-in-progress.
-8. Only if the task touches DB queries, schema, migrations, or RLS — read `.memory/DATABASE_SCHEMA.md`.
-9. Only if the task touches `.tsx`, layout, styling, or UI components — read `.memory/DESIGN.md` (brand tokens) AND `.memory/DESIGN_RULES.md` (structural rules).
-10. Read only the most relevant code files next — not the whole codebase.
+1. Read `.memory/STATUS.md`. If no active task, output "No active task — next: /1a_research or /1b_concept-framing" and "Needs verification: none", then halt.
+2. Read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. (Note: Defer branch creation to 3c; only restore existing branches).
+3. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies (unless from 3b_create-issue.md).
+   - **State Transition:** Set target issue (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub (`gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --add-label "status:in progress"`). If sub-issue, also set parent epic (`BT-<parent>`) to `status:in progress` (removing prior statuses). Update `Active issue` in `.memory/STATUS.md`.
+4. Read `.memory/LEARNINGS.md` (Active only — skip ## Superseded).
+5. If task involves PRD, discovery brief, or domain feature — read `.memory/GLOSSARY.md` (Active only).
+6. Read `.memory/ARCHITECTURE.md` if task affects structure, state flow, boundaries, or cross-feature behavior.
+7. Read `.memory/BACKLOG_MAP.md` to check conflicts with work-in-progress.
+8. Only if task touches DB queries, schema, migrations, or RLS — read `.memory/DATABASE_SCHEMA.md`.
+9. Only if task touches `.tsx`, UI, layout, or styling — read `.memory/DESIGN.md` (brand tokens) and `.memory/DESIGN_RULES.md` (structural rules).
+10. Read only relevant code files — not whole codebase.
 
 ## Output Pattern
 Context synced.
