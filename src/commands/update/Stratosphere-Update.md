@@ -2,8 +2,8 @@
 name: stratosphere-update
 type: workflow
 description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
-version: "1.0.2"
-timestamp: 2026-07-09
+version: "1.0.3"
+timestamp: 2026-07-10
 ---
 
 # StratosphereOS Update Flow
@@ -16,9 +16,56 @@ Your `.memory/` data (such as backlog tasks, active learning logs, custom glossa
 
 ---
 
-## Phase 0: Compute Update Scope
+## Phase 0: Plugin Freshness (remote)
 
-1. **Locate the installed plugin root** (`<plugin>`) using the same search order as setup:
+Before running the local scaffolding update, verify if the installed StratosphereOS plugin is up to date with the latest release on GitHub.
+
+1. **Read Installed Version:**
+   Locate the installed plugin root directory `<plugin>` using the search order in Phase 1 (e.g. check Claude marketplace cache, manual global/local plugin folders, or Antigravity config folders). Read and parse `<plugin>/versions.json`. Extract the `"plugin_version"` field. Let this be `<installed_version>`.
+
+2. **Check Latest Version on GitHub:**
+   Run the following GitHub CLI command to retrieve the latest release tag name of the framework:
+   `gh release view --repo PatN-git/Stratosphere-OS --json tagName --jq .tagName`
+   
+   - **Offline / No GH fallback:** If `gh` is not installed or not authenticated (`gh auth status` fails), or if the network is unreachable (timeout/error), print the following warning line verbatim to the console:
+     `Could not verify latest StratOS release (offline/no gh); proceeding with installed v<installed_version>.`
+     and immediately proceed to **Phase 1: Compute Update Scope**.
+   
+   - If the check succeeds, normalize the retrieved release tag by stripping any leading `v` (e.g. `v1.1.0` becomes `1.1.0`). Let this be `<latest_version>`.
+
+3. **Compare and Route Update Flow:**
+   Compare `<latest_version>` against `<installed_version>` using standard semver comparison.
+   
+   - **Up to date:** If `<latest_version>` <= `<installed_version>`: print the following line:
+     `StratOS plugin is current (v<installed_version>).`
+     and proceed to **Phase 1: Compute Update Scope**.
+     
+   - **Out of date:** If `<latest_version>` > `<installed_version>`: detect the installation type by checking `<plugin>`'s path and run the matching update path:
+     
+     - **Claude Marketplace Cache** (path starts with `~/.claude/plugins/cache/` or contains `cache/`):
+       Do **NOT** touch the cache folder directly and do **NOT** attempt any git operations on it. Print the following notification verbatim:
+       `Newer StratOS v<latest_version> available (you have v<installed_version>). Update via:`
+       `  /plugin marketplace update stratosphere-os`
+       `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
+       Then **HALT** execution. (If the user explicitly instructs to proceed anyway, continue against the stale plugin with a loud warning).
+       
+     - **Antigravity Install** (path is under `~/.gemini/config/plugins/` or `./.agents/plugins/`):
+       The installed directory is a copy, not a git checkout. Print the following notification verbatim:
+       `Update your StratOS clone (git pull) and re-run scripts/install-antigravity.sh (or .ps1) --global (or --local), then re-run /stratosphere-update.`
+       If a source clone path is known/available, offer to run those commands to pull and reinstall after one confirmation. Otherwise, halt.
+       
+     - **In-place Git Checkout** (plugin directory contains a `.git` folder):
+       This is a development setup. Ask the user for confirmation:
+       `Latest version v<latest_version> is newer than installed v<installed_version>. Pull updates from git?`
+       If confirmed (using `ask_question` or `AskUserQuestion`), run:
+       `git -C <plugin> pull --ff-only`
+       Once updated, re-locate the plugin, re-read `<plugin>/versions.json` to get the new version, print `"StratOS plugin updated to v<new_version>."`, and proceed to **Phase 1: Compute Update Scope**.
+
+---
+
+## Phase 1: Compute Update Scope
+
+1. **Locate the installed plugin root** (`<plugin>`) using the search order:
    - **Claude Code:**
      - Marketplace install: `~/.claude/plugins/cache/*/stratosphere-os/*/` (glob — pick the newest version directory)
      - Manual/global: `~/.claude/plugins/stratosphere-os/`
@@ -36,7 +83,7 @@ Your `.memory/` data (such as backlog tasks, active learning logs, custom glossa
 
 ---
 
-## Phase 1 & 2: Merge Residue & Review
+## Phase 2 & 3: Merge Residue & Review
 
 For every file in the worklist, perform the appropriate merge or review step:
 
