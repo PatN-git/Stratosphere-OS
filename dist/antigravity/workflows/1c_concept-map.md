@@ -1,51 +1,43 @@
 ---
 name: 1c_concept-map
-description: Chart a concept map of decisions as tickets on the tracker and converge them to a discovery brief.
+description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.1"
+version: "1.0.3"
 timestamp: 2026-07-09
 ---
 
 # Concept Map Workflow
 
-**Purpose:** Deconstruct a foggy, complex, multi-session idea into dependency-ordered decision tickets on the project's existing tracker, resolving one decision per session to converge systematically to a standard discovery brief.
+**Purpose:** Deconstruct complex, multi-session ideas into dependency-ordered tracker tickets, resolving one per session to converge to discovery brief.
 
-**Hand-off contract:** Composes `/1a_research` and the tracker operations in `.agents/workflows/.reference/concept-map-operations.md`. Converges to a discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`) which is consumed identically by `/2a_write-prd`.
+**Hand-off contract:** Composes `/1a_research` and tracker operations in `.agents/workflows/.reference/concept-map-operations.md`. Converges to discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`).
 
 ---
 
 ## Phase 0: Resume & Route
 
-1. **Start Session:** Ensure `/0a_start-session` has been run to load context and state.
-2. **Discover Open Maps:** Query for open concept maps in the tracker:
-   - **GitHub CLI:** Run `gh issue list --label concept:map --state open`
+1. **Start Session:** Run `/0a_start-session` to load context.
+2. **Discover Open Maps:** Query open concept maps:
+   - **GitHub CLI:** `gh issue list --label concept:map --state open`
    - **BT-LOCAL Fallback:** Scan `docs/discovery/*.map.md` for open maps.
-3. **Map Selection:** 
-   - If open maps exist, present them to the user. Allow resuming an existing map (transitioning directly to **Phase 2: Work**) or starting a new map.
-   - If no map is selected/exists, proceed to **Phase 1: Chart** to bootstrap a new concept map.
-4. **Fog-or-Flat Discriminator:** If starting a new map, assess the initial idea's complexity:
-   - Does it fit in a single session?
-   - Can all open questions be resolved immediately?
-   - Is there a dependency graph of decisions, research spikes, or prototypes needed?
-   - *Routing:* If the idea is flat (independent, user-decidable questions fitting one session), redirect to `/1b_concept-framing`. If it is foggy or has interdependencies, proceed with `1c` Charting.
+3. **Map Selection:** Present open maps. Resume existing map (proceed to Phase 2: Work) or proceed to Phase 1: Chart to start new map.
+4. **Fog-or-Flat:** If new map, assess complexity. Single-session and no dependencies → redirect `/1b_concept-framing`; else proceed to Phase 1: Chart.
 
 ---
 
 ## Phase 1: Chart
 
-1. **Destination Definition:** Identify the core destination of the concept map. The destination defines the exact boundary of what the concept aims to accomplish, fixing the scope of the discovery phase.
-2. **Breadth-First Grilling:** Conduct a breadth-first scan of the concept using the grilling guidelines:
-   - Identify major open areas of ambiguity and dependency.
-   - If no fog is surfaced (e.g. all questions are simple/flat), offer to compile a brief inline or hand off to `/1b_concept-framing`.
+1. **Destination:** Define destination and scope.
+2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b_concept-framing`.
 3. **Register Map:**
-   - **GitHub CLI:** Create the `concept:map` tracking issue copying `.agents/workflows/.reference/concept-map-template.md`. Append the map row to `.memory/BACKLOG_MAP.md` (milestone-exempt, `status:in progress`).
-   - **BT-LOCAL Fallback:** Create the local map file `docs/discovery/<slug>.map.md` copying the template, and row it in `BACKLOG_MAP.md`.
-4. **Create-then-Wire Decision Tickets:** Create initial decision tickets for sharp questions as child issues:
-   - Label as `concept:<type>` (`research`, `grilling`, `prototype`, or `task`).
-   - Link as sub-issues to the map (`gh sub-issue add <map#> <N>`).
-   - Wire native dependencies (`gh issue edit <N> --add-blocked-by <ids>`) if blocked by other tickets.
-5. **Halt Charting:** Do not resolve any decisions during charting. Stop and hand off the map to the user.
+   - **GitHub CLI:** Create `concept:map` issue using `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (status: `in progress`, milestone-exempt).
+   - **BT-LOCAL Fallback:** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
+4. **Create-and-Wire Decision Tickets:** Create child issues:
+   - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`).
+   - Link as sub-issues (`gh sub-issue add <map#> <N>`).
+   - Wire dependencies (`gh issue edit <N> --add-blocked-by <ids>`) if blocked.
+5. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
 ---
 
@@ -75,12 +67,10 @@ timestamp: 2026-07-09
 
 ## Phase 3: Converge
 
-1. **Convergence Condition:** Run Phase 3 only when both the frontier and the fog are empty.
-2. **Synthesize Discovery Brief:** Compile all ticket resolutions and research files into the standard brief `docs/discovery/<slug>.md` using `.agents/workflows/.reference/discovery_brief_template.md` (set `type: discovery-brief`).
-3. **RAT Audit (Adversarial Challenger):** Spawn a RAT subagent to challenge the brief:
-   - *RAT Guardrail:* "Review the brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do NOT edit files."
-4. **Crystallize Vocabulary:** Write confirmed new domain terms into `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]` terms.
-5. **Archive Lifecycle:** 
-   - Close the `concept:map` tracking issue.
-   - Update the map's row status in `.memory/BACKLOG_MAP.md` to `status:done`.
-6. **Hand-off:** Expose the completed discovery brief. Trigger `/2a_write-prd` or relevant exit ramps.
+1. **Convergence Condition:** Run Phase 3: Converge only when frontier and fog are empty.
+2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`).
+3. **RAT Audit:** Invoke a subagent to challenge brief:
+   - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
+4. **Crystallize Vocabulary:** Write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`.
+5. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `BACKLOG_MAP.md` to `status:done`.
+6. **Hand-off:** Expose brief. Trigger `/2a_write-prd` or exit ramps.

@@ -2,13 +2,13 @@
 type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-06-23
-version: "1.0.4"
+timestamp: 2026-07-09
+version: "1.0.5"
 ---
 
 # Memory Protocol
 
-Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer. For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-protocol.md).
+For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-protocol.md).
 
 ## 1. Trust Tags
 

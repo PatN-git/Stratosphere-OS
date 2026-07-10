@@ -136,9 +136,9 @@
       "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "8afd53558f129a8e8e60f98e38d1137b572ae1c5bb0ace6c0c527d203953a951",
-      "timestamp": "2026-06-23",
-      "version": "1.0.4"
+      "sha256": "ec3e4151bb67ca11523a4c74d86732dfd077939db6c2d31ab1f5bc53a043db2a",
+      "timestamp": "2026-07-09",
+      "version": "1.0.5"
     },
     "assets/templates/rules/okf-protocol.md": {
       "sha256": "ed11f63a200e47e8d3d12c9e7dd0105128a26421b2243423a7a4b264a5f4f359",
@@ -146,9 +146,9 @@
       "version": "1.0.1"
     },
     "assets/templates/rules/output-mode.md": {
-      "sha256": "d118d691867470540194c200284849e23e6127156b12f9324145b75d66b85727",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "12c02693917a68dee9d620d42b18d009ca338307b12e6543253c0d0d73ab82d5",
+      "timestamp": "2026-07-10",
+      "version": "1.0.3"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "b4f7104ef3ebe8ef2f1a9244537a27cf0fc04594c9dbcaa3b3327f24f229c3cb",
@@ -186,84 +186,84 @@
       "version": "1.0.4"
     },
     "workflows/0a_start-session.md": {
-      "sha256": "e8fc98e16ff503fd7c5fd1f79bf51edfa6867b48ba1d3c77da6ad36ec7c7b0a1",
-      "timestamp": "2026-07-02",
-      "version": "1.0.5"
+      "sha256": "f9d895b11e1681152e4d2aa4018eb68ffe892980d775289d68e643e274cf8343",
+      "timestamp": "2026-07-09",
+      "version": "1.0.6"
     },
     "workflows/0b_stop-session.md": {
-      "sha256": "fb600af094b27df2465ed7b70b0e8eb96eabd946224caf94985350af2e9198e3",
-      "timestamp": "2026-07-02",
-      "version": "1.0.4"
+      "sha256": "a63325463e60dc25f5430e4ba590172ff95d4f16d485e7ce0e1f75deef9e13bd",
+      "timestamp": "2026-07-09",
+      "version": "1.0.5"
     },
     "workflows/0c_handoff.md": {
-      "sha256": "7265bb4db166fc0935080f1cd74ed537faf572ae9b6c4b23f4a24926dc27ff74",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
-    },
-    "workflows/0d_nightly-consolidation.md": {
-      "sha256": "00e0aa5b3a17039f353f027f8b4660c9666035aa050cd034fc7cb19c387771e9",
-      "timestamp": "2026-06-23",
-      "version": "1.0.3"
-    },
-    "workflows/1a_research.md": {
-      "sha256": "25b326cc6e27cf02239ea178a3bddda93a9bcc2bf0c70be63867d4bc913ef354",
-      "timestamp": "2026-06-17",
+      "sha256": "c36034d84ff6f73c4e501ba607f56b49af1b90bb6f7c4e4ae1f80ac87f074d48",
+      "timestamp": "2026-07-09",
       "version": "1.0.2"
     },
+    "workflows/0d_nightly-consolidation.md": {
+      "sha256": "5ac69edc2fcd61f63f2697a5922ba65d7a57438c1312c1d1f8e8f5d31393ab22",
+      "timestamp": "2026-07-09",
+      "version": "1.0.4"
+    },
+    "workflows/1a_research.md": {
+      "sha256": "0da3be0524c52e7ec655ee12b2d492602cff3deb5d0e49f4c42c20d829cef673",
+      "timestamp": "2026-07-09",
+      "version": "1.0.4"
+    },
     "workflows/1b_concept-framing.md": {
-      "sha256": "845fa29a4b417c996c27e280b1cc6a906414929a25fb4fd0827e248c8ced2a98",
+      "sha256": "50011eec331b2c33f0f72d81533c7e085192cb3ea1a47ace0bda5d7017a0d96d",
+      "timestamp": "2026-07-09",
+      "version": "1.0.10"
+    },
+    "workflows/1c_concept-map.md": {
+      "sha256": "aeda94e8b885c8189bf3f7cb4e38bbc05fc418d12a9a015a95e3c985403f5ced",
+      "timestamp": "2026-07-09",
+      "version": "1.0.3"
+    },
+    "workflows/2a_write-prd.md": {
+      "sha256": "067c2986bfc98db84ba235563603074663c634c9a9c41c59cb5e6c832c40f9a4",
+      "timestamp": "2026-07-09",
+      "version": "1.1.5"
+    },
+    "workflows/2b_interface-design.md": {
+      "sha256": "2ae621c451308d3774789931b05cdc98b73ac22aff12520176413ce45a4eba33",
+      "timestamp": "2026-07-09",
+      "version": "1.1.6"
+    },
+    "workflows/3a_version-planning.md": {
+      "sha256": "1c7ca552df1ba856d40dfa5182b2397ac4d96be4ecc15042c9c83dfc4b9f0bf4",
+      "timestamp": "2026-07-09",
+      "version": "1.0.3"
+    },
+    "workflows/3b_create-issue.md": {
+      "sha256": "dca2b20185f644fe3feae98f7e6529f37a0722d2f58b1778e089f74580177a9e",
+      "timestamp": "2026-07-09",
+      "version": "2.0.5"
+    },
+    "workflows/3c_sprint-planning.md": {
+      "sha256": "b5389d843476c7c36ed965fd7e5b97da1d2843f09a9ad9cab2f369eeb90887f9",
+      "timestamp": "2026-07-09",
+      "version": "2.0.6"
+    },
+    "workflows/3d_implement-issue.md": {
+      "sha256": "ede1744093a99d1799f5b14bca138b143ffea3da055521cd70e3ef0629eba056",
+      "timestamp": "2026-07-09",
+      "version": "2.0.13"
+    },
+    "workflows/3z_afk-loop.md": {
+      "sha256": "955964f761ffc94e981182a035cb7915c66e58b83188ab41b3ef24ef58ce2e13",
       "timestamp": "2026-07-09",
       "version": "1.0.7"
     },
-    "workflows/1c_concept-map.md": {
-      "sha256": "3829681be1f143bcc93f84aaf95e0e5b8209aac6fff407d15cddb77c7f37dc0f",
-      "timestamp": "2026-07-09",
-      "version": "1.0.1"
-    },
-    "workflows/2a_write-prd.md": {
-      "sha256": "220a425b0d941e3244371c235384c355c816a33034d2695e6e51f3f1ccc2e4b2",
-      "timestamp": "2026-07-02",
-      "version": "1.1.3"
-    },
-    "workflows/2b_interface-design.md": {
-      "sha256": "72a280bdb9daa020b93a88da719a9d4636d717bdee813d3fd038d083a6890ffa",
-      "timestamp": "2026-06-18",
-      "version": "1.1.3"
-    },
-    "workflows/3a_version-planning.md": {
-      "sha256": "5509f9be2cd17c7446d79b48fd9d7bacce0e2636c0aef5deeee50d792b58de5e",
-      "timestamp": "2026-06-25",
-      "version": "1.0.1"
-    },
-    "workflows/3b_create-issue.md": {
-      "sha256": "324b9025e84e9f17c207b013557646e6791d996e9ac97d29053ce3454ac86c99",
-      "timestamp": "2026-07-09",
-      "version": "2.0.3"
-    },
-    "workflows/3c_sprint-planning.md": {
-      "sha256": "12933fa647f2e9ea453c7df625dba1e11018e7c23e1649f5a6f36c9845f5ce49",
-      "timestamp": "2026-07-09",
-      "version": "2.0.4"
-    },
-    "workflows/3d_implement-issue.md": {
-      "sha256": "a07b3febc97d8c6174fcc7056435392f7709f572e4dec066a9c45a36c2b78661",
-      "timestamp": "2026-07-02",
-      "version": "2.0.11"
-    },
-    "workflows/3z_afk-loop.md": {
-      "sha256": "bca1bd532020aed658822ac7eb0036c314ecd15d04ef4867852600a6f1fcb0d5",
-      "timestamp": "2026-07-09",
-      "version": "1.0.6"
-    },
     "workflows/4a_verify-and-ship.md": {
-      "sha256": "b2e7c0921dd65bd79b9638dad5e6c932fa9159d7b4896162ab59de4ff16ff526",
+      "sha256": "f9ca2e8d964ecfbabc29792b91fd094e87becf39218dc82a066daf98fa4931ea",
       "timestamp": "2026-07-09",
-      "version": "1.0.14"
+      "version": "1.0.17"
     },
     "workflows/4b_audit-architecture-drift.md": {
-      "sha256": "463c5777e0e83e6975da3b1e252ace71b4022a3866688870e7bc35e5e47f6ae3",
-      "timestamp": "2026-06-22",
-      "version": "1.0.6"
+      "sha256": "30aceb1162decea47a229b96d923414a88c890d6369ca9d45da340d4bfb0e3b0",
+      "timestamp": "2026-07-09",
+      "version": "1.0.7"
     },
     "workflows/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
