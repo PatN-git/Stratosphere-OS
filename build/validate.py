@@ -195,6 +195,53 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         if path in prev and meta["sha256"] != prev[path]["sha256"] and meta["version"] == prev[path]["version"]:
             errs.append(f"{plat}/{path}: content changed but version not bumped (still {meta['version']})")
 
+# 2.9 Versioning Consistency Guard
+build_version = None
+readme_version = None
+
+# Extract version from build/build.py
+build_py = root / "build" / "build.py"
+if not build_py.exists():
+    errs.append("MISSING build/build.py")
+else:
+    build_content = build_py.read_text(encoding="utf-8")
+    m = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', build_content)
+    if not m:
+        errs.append("Could not find VERSION in build/build.py")
+    else:
+        build_version = m.group(1)
+
+# Extract version from README.md badge
+readme_md = root / "README.md"
+if not readme_md.exists():
+    errs.append("MISSING README.md")
+else:
+    readme_content = readme_md.read_text(encoding="utf-8")
+    m = re.search(r'version-(\d+\.\d+\.\d+)', readme_content)
+    if not m:
+        errs.append("Could not find version badge in README.md")
+    else:
+        readme_version = m.group(1)
+
+if build_version and readme_version and build_version != readme_version:
+    errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != README.md badge ({readme_version})")
+
+# Extract and compare plugin_version in dist/*/versions.json
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    v_file = root / plat / "versions.json"
+    if not v_file.exists():
+        errs.append(f"MISSING {plat}/versions.json")
+    else:
+        try:
+            data = json.loads(v_file.read_text(encoding="utf-8"))
+            plugin_v = data.get("plugin_version")
+            if not plugin_v:
+                errs.append(f"MISSING plugin_version in {plat}/versions.json")
+            elif build_version and plugin_v != build_version:
+                errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != {plat}/versions.json plugin_version ({plugin_v})")
+        except Exception as e:
+            errs.append(f"ERROR reading {plat}/versions.json: {e}")
+
 # 3. Counts
 for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:
     n = len(list((root / plat / inv).glob('*.md')))

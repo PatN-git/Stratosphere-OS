@@ -3,7 +3,7 @@ name: 1c_concept-map
 description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.2"
+version: "1.0.3"
 timestamp: 2026-07-09
 ---
 
@@ -43,16 +43,25 @@ timestamp: 2026-07-09
 
 ## Phase 2: Work
 
-1. **Calculate Frontier:** Query tracker for frontier (open, unblocked, unassigned tickets).
-2. **Select & Claim:** Present frontier. Claim ticket: assign to self (`gh issue edit <N> --add-assignee @me`).
-3. **Guidelines:** Apply G1-G3 (grill guidelines) and V1-V3 (vocabulary discipline) from 1b.
-4. **Resolve by Type:**
-    - **`research`:** Run `/1a_research` inline, spawn research subagent, save to `docs/research/<map-slug>-<question-slug>.md`.
-    - **`grilling`:** Grill.
-    - **`prototype`:** Run `plan-html` (UI) or Template A spike (logic).
-    - **`task`:** Execute action.
-5. **Commit Resolution:** Comment and close ticket. Index on map body under `Decisions so far`. Update map (wire new tickets, graduate fog, or mark mis-scoped tickets out-of-scope).
-6. **Halt Work:** Resolve only one dependency step per session and stop (cheap frontier tickets can be batched).
+1. **Calculate Frontier:** Query the tracker to compute the "frontier" (the set of open, unblocked, unassigned decision tickets):
+   - Open tickets with no open dependencies/blockers and no assignee.
+2. **Select & Claim Ticket:** Present the frontier to the user. The user select (or the agent picks) one ticket.
+   - **Claim:** Assign the ticket to yourself (`gh issue edit <N> --add-assignee @me`) to lock the ticket.
+3. **Grilling Guidelines (G1-G3):**
+   - **G1 (Recommend when grounded, open when not):** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
+   - **G2 (Facts vs Decisions):** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
+   - **G3 (Dependency Order):** Resolve dependency chains sequentially.
+4. **Vocabulary Discipline (V1-V3):** Apply V1 (Scenario stress-test), V2 (Code-contradiction check), and V3 (Glossary-conflict check) to all vocabulary terms.
+5. **Resolve Ticket by Type:**
+   - **`research`:** Run `/1a_research` Phase 1 inline, spawn research subagent to run research loop, and save the result as `docs/research/<map-slug>-<question-slug>.md`.
+   - **`grilling`:** Grill to resolve the decision.
+   - **`prototype`:** Run `plan-html` (UI) or Template A spike (logic).
+   - **`task`:** Execute action (e.g. provision access) to unblock a decision.
+6. **Ticket Resolution Commit:**
+   - Comment the resolution on the ticket and close the ticket.
+   - Index the resolved ticket on the map body under `Decisions so far`.
+   - Update the map: create-then-wire newly surfaced tickets, graduate sharp fog, or mark mis-scoped tickets as out-of-scope.
+7. **Halt Work:** Resolve only one dependency step per session (though independent, cheap frontier tickets may be batched if they fit the context limit), then stop.
 
 ---
 

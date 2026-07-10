@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -107,6 +107,11 @@ To upgrade an already-instantiated project to later plugin versions, run:
 ```
 Your `.memory/` data and constitution are never overwritten; framework-owned blocks are updated in place, and you confirm any conflicts.
 
+> [!TIP]
+> **Keeping the Plugin Fresh**
+> - **Claude Code users:** You can set `"autoUpdate": true` for the StratOS marketplace plugin configuration in your global settings so that the host environment keeps the plugin updated automatically in the background.
+> - **Google Antigravity users:** Update your local repository clone via `git pull` and re-run the `scripts/install-antigravity.sh` or `scripts/install-antigravity.ps1` script to install the latest templates.
+
 ---
 
 ## Architecture & Governance
@@ -119,9 +124,22 @@ By default, UI projects assume React + Tailwind CSS + shadcn/ui. Non-UI projects
 
 ---
 
-### Maintainer Notes: Single Source Build Pipeline
+### Maintainer Notes: Single Source Build & Release Pipeline
 This repository is the single source of truth (`src/`) that compiles into both Claude Code and Google Antigravity plugin distributions (`dist/`).
 
+#### How to Build
 ```bash
 python build/build.py
 ```
+
+#### How to Release
+1. **Bump Version:** Update the `VERSION` variable inside `build/build.py` and the version badge in `README.md` in lockstep.
+2. **Rebuild plugins:** Run `python build/build.py` to regenerate the `dist/` artifacts and `versions.json`.
+3. **Commit & Tag:** Commit the updated version files and create a git release tag:
+   ```bash
+   git add .
+   git commit -m "release: vX.Y.Z"
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
+4. **Publish:** Create a GitHub Release referencing the tag `vX.Y.Z` on GitHub.

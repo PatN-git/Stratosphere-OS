@@ -181,9 +181,9 @@
       "version": "1.0.9"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "25ede172d45770951383a1efb0f7b9a5c19bce99593211d27dc0b622c3f13521",
-      "timestamp": "2026-07-09",
-      "version": "1.0.2"
+      "sha256": "8bb50e1c5c8a835f16882f0274b23155d123f782d93889c0d47336fe62488fb7",
+      "timestamp": "2026-07-10",
+      "version": "1.0.4"
     },
     "workflows/0a_start-session.md": {
       "sha256": "f9d895b11e1681152e4d2aa4018eb68ffe892980d775289d68e643e274cf8343",
@@ -211,14 +211,14 @@
       "version": "1.0.4"
     },
     "workflows/1b_concept-framing.md": {
-      "sha256": "f62cc6d756f8d13892e7fb35bebb3a2a746b8ebb7fe236663a7fca5c84316fd4",
+      "sha256": "50011eec331b2c33f0f72d81533c7e085192cb3ea1a47ace0bda5d7017a0d96d",
       "timestamp": "2026-07-09",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     "workflows/1c_concept-map.md": {
-      "sha256": "c8c48102d1ebf035c568d3e8947c449668ab10e2ce2e3682422d98c893fcee44",
+      "sha256": "aeda94e8b885c8189bf3f7cb4e38bbc05fc418d12a9a015a95e3c985403f5ced",
       "timestamp": "2026-07-09",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     "workflows/2a_write-prd.md": {
       "sha256": "067c2986bfc98db84ba235563603074663c634c9a9c41c59cb5e6c832c40f9a4",
@@ -271,5 +271,5 @@
       "version": "1.0.1"
     }
   },
-  "plugin_version": "1.0.0"
+  "plugin_version": "1.1.0"
 }

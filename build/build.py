@@ -27,7 +27,20 @@ import _versioning
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 DIST = ROOT / "dist"
-VERSION = "1.0.0"
+
+# --- Version Signal Propagation ---------------------------------------------
+# Bumping this VERSION propagates to the following files upon running build:
+# 1. dist/claude-code/.claude-plugin/plugin.json (version)
+# 2. dist/antigravity/plugin.json (version)
+# 3. dist/claude-code/versions.json (plugin_version)
+# 4. dist/antigravity/versions.json (plugin_version)
+# 5. .claude-plugin/marketplace.json (via DESCRIPTION / metadata)
+#
+# NOTE: The version badge in README.md (~line 4) is auto-stamped by
+# scripts/release.py during the release process, and validate.py
+# asserts that they remain in exact synchronization.
+# ----------------------------------------------------------------------------
+VERSION = "1.1.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a first-party skill, on-demand external skills, and a one-command project installer."
