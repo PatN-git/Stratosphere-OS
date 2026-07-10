@@ -2,8 +2,8 @@
 type: reference
 title: Improving Workflows & Skills — Lexicon
 description: Self-contained lexicon for authoring StratOS skills/workflows — discipline terms + the leading-word palette (the tokens to use, and the synonyms to avoid). Companion to README.md.
-version: "1.0.0"
-timestamp: 2026-06-23
+version: "1.2.0"
+timestamp: 2026-07-09
 ---
 
 # Lexicon — Improving Workflows & Skills
@@ -29,6 +29,11 @@ The vocabulary of the playbook itself.
 - **Duplication** — the same meaning in more than one place (distinct from a leading word, which repeats a *token*, never the meaning).
 - **Sprawl** — simply too long, even when every line is live and unique; cured by the ladder (disclose reference; split by branch/sequence).
 - **Sediment** — stale lines that accrete because adding feels safe and removing feels risky.
+- **Article/preposition audit** — systematically sweep for "the", "a", "of the", "in order to", "with respect to" in workflow prose; keep only when disambiguating a specific referent.
+- **Cross-workflow boilerplate** — repeated tool-invocation patterns that are no-ops for any model; a failure mode adjacent to duplication.
+- **Protected class** — content the pruning pass must never cut, dilute, or word-trim: load-bearing exhaustiveness, checkable completion criteria, safety invariants, sub-agent guardrails, leading-word tokens, context-pointer paths (README §4). Reads like over-statement; it is the lever.
+- **Over-prune** — cutting or diluting a **protected class** under the guise of economy (a deleted guardrail, a gutted contract, a token→synonym swap, a shortened pointer, a narrowed invariant, a stale-base rewrite, a compression-introduced inaccuracy). The opposite failure to **sediment**: economy over-reaching instead of under-reaching. When economy and fidelity conflict, fidelity wins.
+- **Post-prune diff gate** — the checkable close-out of a pruning pass: diff vs the pre-prune version, classify every removed span as no-op/duplication/sprawl/sediment (else restore it), confirm all protected classes survive, `version` bumped forward, build green.
 
 ---
 
