@@ -2,8 +2,8 @@
 type: rule
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
-timestamp: 2026-06-17
-version: "1.0.2"
+timestamp: 2026-07-10
+version: "1.0.3"
 ---
 
 # Output Mode Protocol
@@ -16,8 +16,10 @@ Maximize information density while minimizing token waste. Focus on *what was do
 | Mode | Task Type | Output Structure |
 | :--- | :--- | :--- |
 | **Routine** | Trivial, cosmetic, or repetitive mechanical tasks. | Skip plan. Execute immediately. Max 1 line of keyword-only status. |
+| **Advisory** | A question, explanation, or recommendation with no file change. | Answer first (BLUF). No preamble or recap; length matches the question. |
 | **Standard** | Any non-trivial functional change. | 5-point brief: Assumptions, Plan, Execution, Verification, Updates. |
 | **Complex** | Impacts `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, or `DESIGN_RULES.md`. | **Trade-off Brief** (Choice/Consequence) + Standard structure. |
+
 
 ## 3. Mode Specifications
 
@@ -38,8 +40,9 @@ Maximize information density while minimizing token waste. Focus on *what was do
 5. **Updates**: [Changes to docs/scripts]
 
 ## 4. General Constraints
-- **No fillers:** e.g. avoid "I understand," "Sure," "Great," or "I'll get right on that."
 - **Word economy:** Drop any word whose removal does not change meaning. Prefer the shortest phrasing that preserves intent (e.g. "in order to" → "to"; cut hedges and intensifiers).
-- **Surgical narrative:** explain the *why*, not the *how*.
+- **No fillers:** delete any phrase whose removal loses no information — acknowledgements (e.g. "Sure", "Great"), flattery (e.g. "Great question"), self-narration (e.g. "Let me…"), and sign-offs (e.g. "Hope this helps").
+- **Surgical narrative:** explain *why*, not *how*.
 - **Direct verification:** show results, not process.
+- **No preamble or recap:** open on content, not by restating the question; don't close with unnecessary summary if answer is short.
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.
