@@ -115,10 +115,14 @@ def force_rmtree(path: Path):
             func(p)
         except OSError:
             pass
+    import sys
     for _ in range(4):
         if not path.exists():
             return
-        shutil.rmtree(path, onexc=onexc)
+        if sys.version_info >= (3, 12):
+            shutil.rmtree(path, onexc=onexc)
+        else:
+            shutil.rmtree(path, onerror=onexc)
         if not path.exists():
             return
         time.sleep(0.4)
