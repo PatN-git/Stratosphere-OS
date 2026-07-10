@@ -2,8 +2,8 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.9"
-timestamp: 2026-07-09
+version: "1.0.10"
+timestamp: 2026-07-10
 ---
 
 # Instantiate StratosphereOS
@@ -209,7 +209,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
    ```
    (If it is already installed, this is a safe no-op or reports already installed).
 
-GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
+GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `mode:`, `tier:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
 
 ### Greenfield
 No GitHub labels exist yet.
@@ -221,7 +221,7 @@ No GitHub labels exist yet.
 GitHub labels already exist and may differ from the registry.
 
 1. **Fetch** all existing GitHub labels using `gh label list`.
-2. **Analyze & Propose Maps:** Identify existing labels representing statuses or types (including legacy formats like `status:in-progress`, `type:NEEDS_SPEC`, or custom synonyms) and map them to their canonical registry equivalents.
+2. **Analyze & Propose Maps:** Identify existing labels representing statuses, types, modes, or tiers (including legacy formats like `type:HITL`, `type:AFK`, `type:NEEDS_SPEC`, or custom synonyms) and map them to their canonical registry equivalents.
 3. **Build a dynamic reconciliation table** matching the project's actual labels, assigning exactly one Action per label:
 
    | GitHub Label (existing) | Registry Equivalent | Action |
@@ -230,9 +230,13 @@ GitHub labels already exist and may differ from the registry.
    | `frontend` | `area:FE-<page_name>` (use literal slug e.g. `area:FE-login`) | MAP |
    | `type:NEEDS_SPEC` | `status:needs_spec` | MAP |
    | `status:in-progress` | `status:in progress` | MAP |
+   | `type:HITL` | `mode:HITL` | MAP |
+   | `type:AFK` | `mode:AFK` | MAP |
    | `wontfix` | _(none)_ | DROP |
    | _(missing)_ | `status:blocked` | ADD |
    | `type:feature` | `type:feature` | KEEP |
+
+   *(Note: `tier:epic` and `tier:slice` are added as a data backfill/ADD action, not a rename).*
 
    **Action definitions:**
    - **KEEP** — exact match; no change needed.
@@ -264,7 +268,7 @@ GitHub labels already exist and may differ from the registry.
 3. **Opt-in Status Backfill:** Offer to backfill label-less open issues with a default `status:planned` label (always obtain user consent; never force).
 
 > [!IMPORTANT]
-> **`area:` labels are project-specific.** Adopt project's existing page/domain slugs rather than forcing template placeholders. All other dimensions (`type:`, `priority:`, `size:`, `status:`) are canonical — always propose renaming GitHub's labels to match, never adopt GitHub's non-standard names.
+> **`area:` labels are project-specific.** Adopt project's existing page/domain slugs rather than forcing template placeholders. All other dimensions (`type:`, `mode:`, `tier:`, `priority:`, `size:`, `status:`) are canonical — always propose renaming GitHub's labels to match, never adopt GitHub's non-standard names.
 
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 

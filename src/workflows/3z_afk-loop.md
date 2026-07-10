@@ -1,10 +1,10 @@
 ---
 name: 3z_afk-loop
-description: Autonomous end-to-end runner for type:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
+description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: User-invoked; runs autonomously after Step 1B scope authorization.
-version: "1.0.7"
-timestamp: 2026-07-09
+version: "1.0.8"
+timestamp: 2026-07-10
 ---
 
 # AFK END-TO-END LOOP
@@ -12,7 +12,7 @@ timestamp: 2026-07-09
 ## Authority & Guardrails
 - **Orchestrator rule:** invokes other workflows by command name; never duplicate bodies (AGENT.md §1). `3z` is sole AFK/autonomous orchestrator; `1c` is user-invoked discovery orchestrator.
 - **Subagent isolation:** never run `/3d_implement-issue` and `/4a_verify-and-ship` in same context. Each is fresh subagent bootstrapped by `/0a_start-session`.
-- **AFK-only:** never autonomously execute non-`type:AFK` slices.
+- **AFK-only:** never autonomously execute non-`mode:AFK` slices.
 - **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENT.md §4).
 
 ## Phase 1: Bootstrap & Scope Intake
@@ -28,9 +28,9 @@ _Done when:_ orchestrator context synced.
 2. **Preflight checks:**
    - **Unknown/closed check:** For each slice ID, verify it exists in `BACKLOG_MAP.md` and status is not `status:done`. Else halt: `[ERROR] BT-<padded> not found or closed`.
    - **Mode-based pre-flight:** AFK/HITL mode governs execution; primary type is orthogonal:
-     - `type:AFK` → Keep (if `size:large`, add complexity advisory).
-     - `type:HITL` → `[SKIP] BT-<padded> type:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d_implement-issue + /4a_verify-and-ship manually").
-     - Neither `type:AFK` nor `type:HITL` (missing mode, or `status:needs_spec`) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode type:AFK or type:HITL to be run").
+     - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
+     - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d_implement-issue + /4a_verify-and-ship manually").
+     - Neither `mode:AFK` nor `mode:HITL` (missing mode, or `status:needs_spec`) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`.
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.

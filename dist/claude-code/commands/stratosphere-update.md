@@ -2,7 +2,7 @@
 name: stratosphere-update
 type: workflow
 description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
-version: "1.0.4"
+version: "1.0.5"
 timestamp: 2026-07-10
 ---
 
@@ -38,7 +38,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
    `gh release view --repo PatN-git/Stratosphere-OS --json tagName --jq .tagName`
    
    - **Offline / No GH fallback:** If `gh` is not installed or not authenticated (`gh auth status` fails), or if the network is unreachable (timeout/error), print the following warning line verbatim to the console:
-     `Could not verify latest StratOS release (offline/no gh); proceeding with installed v<installed_version>.`
+     `Could not verify latest StratOS release (offline/no gh); proceeding under installed v<installed_version>. If the release changed the update procedure, re-run when online.`
      and immediately proceed to **Phase 1: Compute Update Scope**.
    
    - If the check succeeds, normalize the retrieved release tag by stripping any leading `v` (e.g. `v1.1.0` becomes `1.1.0`). Let this be `<latest_version>`.
@@ -69,7 +69,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
        `Latest version v<latest_version> is newer than installed v<installed_version>. Pull updates from git?`
        If confirmed (using `ask_question` or `AskUserQuestion`), run:
        `git -C <plugin> pull --ff-only`
-       Once updated, re-locate the plugin, re-read `<plugin>/versions.json` to get the new version, print `"StratOS plugin updated to v<new_version>."`, and proceed to **Phase 1: Compute Update Scope**.
+       Once updated, re-locate the plugin, re-read `<plugin>/versions.json` to get the new version, print `"StratOS plugin updated to v<new_version> — reload plugins and re-run /stratosphere-update."` verbatim, and then **HALT** execution.
 
      - **Else / Catch-all (Manual/Copied Claude Install or other)**:
        If the plugin directory does not match any of the above, print the following notification verbatim:

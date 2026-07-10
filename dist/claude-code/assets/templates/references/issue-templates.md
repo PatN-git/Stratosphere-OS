@@ -1,13 +1,13 @@
 ---
 description: Canonical templates for StratOS backlog issues (Template A for spikes/discovery, Template B for normal vertical slices).
-version: "1.0.0"
-timestamp: 2026-06-22
+version: "1.0.1"
+timestamp: 2026-07-10
 ---
 
 # Issue Templates
 
 ## TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `type:NEEDS_SPEC`*
+*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`)*
 
 ### Overview
 - One sentence: what and why.

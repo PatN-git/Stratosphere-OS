@@ -3,8 +3,8 @@ name: 3a_version-planning
 description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.3"
-timestamp: 2026-07-09
+version: "1.0.4"
+timestamp: 2026-07-10
 ---
 
 # Version Planning
@@ -12,7 +12,7 @@ timestamp: 2026-07-09
 **Hand-off contract:** Reads parent features from `.memory/BACKLOG_MAP.md` and `docs/prds/`. Updates `docs/ROADMAP.md`, creates milestone `vX.Y.0` in GitHub, assigns parent features, and updates BACKLOG_MAP Milestone column. Slicing in `/3b_create-issue` is gated to current release features only. Owns MAJOR (X) and MINOR (Y) digits; sprint digit (Z) is owned by `/3c_sprint-planning`.
 
 **Scale-gate:** Run only when:
-1. `count(parent features where size:large AND status != done AND not yet assigned to current release) ≥ 2`, OR
+1. `count(parent features where tier:epic AND status != done AND not yet assigned to current release) ≥ 2`, OR
 2. ≥ 2 parent features contend for same current-release scope.
 
 Else skip: default to `v1.0.0` and proceed directly to `/3b_create-issue`.
@@ -27,7 +27,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b_create-issue`.
 
 ## Phase 0: Precondition
 1. Confirm `.memory/BACKLOG_MAP.md` is loaded.
-2. Confirm ≥ 1 `size:large` parent feature exists in BACKLOG_MAP. Else halt: *"No parent features to roadmap — run `/2a_write-prd` first."*
+2. Confirm ≥ 1 `tier:epic` parent feature exists in BACKLOG_MAP. Else halt: *"No parent features to roadmap — run `/2a_write-prd` first."*
 
 ## Phase 1: Read Current State (no writes)
 1. **Baselines** (do not collapse the two):

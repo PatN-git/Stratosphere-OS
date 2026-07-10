@@ -41,20 +41,24 @@ version: "1.1.1"
 
 ## Label Registry
 - **Primary Type (`type:<class>`)**: `type:feature`
-- **Execution Mode (`type:<mode>`)**: `type:HITL`, `type:AFK`
+- **Execution Mode (`mode:<mode>`)**: `mode:HITL`, `mode:AFK`
+- **Tier (`tier:<tier>`)**: `tier:epic`, `tier:slice`
 
 ## Backlog
 
 | ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
 |:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-059-01 | Hierarchical | planned | type:feature, type:HITL | v1.0.0 | — | — | — |
-| BT-060 | Missing primary type | in progress | type:HITL, size:medium | v1.0.0 | — | — | — |
-| BT-061 | Missing execution mode | in progress | type:feature, size:medium | v1.0.0 | — | — | — |
-| BT-062 | Fully valid slice | in progress | type:feature, type:HITL, size:medium | v1.0.0 | — | — | — |
-| BT-063 | Parent feature is ignored | in progress | type:feature, size:large | v1.0.0 | — | — | — |
+| BT-059-01 | Hierarchical | planned | type:feature, mode:HITL | v1.0.0 | — | — | — |
+| BT-060 | Missing primary type | in progress | mode:HITL, tier:slice, size:medium | v1.0.0 | — | — | — |
+| BT-061 | Missing execution mode | in progress | type:feature, tier:slice, size:medium | v1.0.0 | — | — | — |
+| BT-062 | Fully valid slice | in progress | type:feature, mode:HITL, tier:slice, size:medium | v1.0.0 | — | — | — |
+| BT-063 | Parent feature is ignored | in progress | type:feature, tier:epic | v1.0.0 | — | — | — |
 | BT-064 | Needs spec row exempt | needs_spec | size:medium | v1.0.0 | — | — | — |
 | BT-065 | Planned row exempt | planned | size:medium | v1.0.0 | — | — | — |
-| BT-066 | Leftover needs_spec invalid primary | in progress | type:NEEDS_SPEC, type:AFK, size:medium | v1.0.0 | — | — | — |
+| BT-066 | Leftover needs_spec invalid primary | in progress | type:NEEDS_SPEC, mode:AFK, tier:slice, size:medium | v1.0.0 | — | — | — |
+| BT-067 | Epic with size | in progress | type:feature, tier:epic, size:large | v1.0.0 | — | — | — |
+| BT-068 | Leaf with legacy type:AFK | in progress | type:feature, type:AFK, tier:slice, size:medium | v1.0.0 | — | — | — |
+| BT-069 | Active concept map | in progress | concept:map, status:in progress | v1.0.0 | — | — | — |
 """
     (tmp_mem / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
     
@@ -74,7 +78,11 @@ version: "1.1.1"
         "Slice 'BT-061'",
         "is missing an Execution Mode label",
         "Slice 'BT-066'",
-        "is missing a Primary Type label"
+        "is missing a Primary Type label",
+        "Epic 'BT-067'",
+        "must not carry size: labels",
+        "Slice 'BT-068'",
+        "is missing an Execution Mode label"
     ]
     
     for err in expected_errors:
@@ -86,10 +94,11 @@ version: "1.1.1"
         "BT-062",
         "BT-063",
         "BT-064",
-        "BT-065"
+        "BT-065",
+        "BT-069"
     ]
     for uerr in unexpected_errors:
-        if uerr in result.stdout and ("missing" in result.stdout or "Invalid" in result.stdout) and f"'{uerr}'" in result.stdout:
+        if uerr in result.stdout and ("missing" in result.stdout or "Invalid" in result.stdout or "must not" in result.stdout) and f"'{uerr}'" in result.stdout:
             print(f"Error: Unexpected error reported for '{uerr}'. Output:\n", result.stdout)
             passed = False
             

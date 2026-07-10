@@ -2,8 +2,8 @@
 name: ROADMAP-template
 type: roadmap
 description: Release roadmap mapping product releases to parent features with MVP cut-line rationale and shipped history.
-version: "1.0.0"
-timestamp: 2026-06-18
+version: "1.0.1"
+timestamp: 2026-07-10
 ---
 # Product Roadmap
 
@@ -16,7 +16,7 @@ timestamp: 2026-06-18
 ## vX.Y — <release name> [ACTIVE] [MAJOR | MINOR]
 > **Rationale / MVP cut-line:** <why these features, why now, what is deferred and why>
 
-- BT-<padded> — <feature title> (`scope:baseline` | `scope:differentiator`, `size:large`)
+- BT-<padded> — <feature title> (`scope:baseline` | `scope:differentiator`, `tier:epic`)
 - BT-<padded> — <feature title> (...)
 
 ## vX.(Y+1) — <next release> [PLANNED] [MINOR]

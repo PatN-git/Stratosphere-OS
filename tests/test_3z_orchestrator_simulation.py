@@ -42,7 +42,7 @@ class MockOrchestrator:
             if exec_mode == "AFK":
                 kept.append(s)
             elif exec_mode == "HITL":
-                skipped.append(f"[SKIP] {s['id']} type:HITL - excluded")
+                skipped.append(f"[SKIP] {s['id']} mode:HITL - excluded")
             else:
                 skipped.append(f"[SKIP] {s['id']} no execution mode - excluded")
 
@@ -51,7 +51,7 @@ class MockOrchestrator:
                 if exec_mode == "HITL":
                     raise ValueError("HALT: run /3d_implement-issue + /4a_verify-and-ship manually")
                 elif not exec_mode:
-                    raise ValueError("HALT: requires execution mode type:AFK or type:HITL to be run")
+                    raise ValueError("HALT: requires execution mode mode:AFK or mode:HITL to be run")
 
         # Group by parent feature and order
         grouped = sorted(kept, key=lambda x: (x["parent"], x.get("dep_order", 0), x["id"]))
@@ -158,7 +158,7 @@ def test_simulation(ship_mode="auto-PR"):
     orch = MockOrchestrator(raw_backlog, ship_mode=ship_mode)
     queue, skipped = orch.step_1b_preflight()
     
-    assert any("BT-104" in x and "type:HITL" in x for x in skipped), "HITL slice BT-104 should be skipped"
+    assert any("BT-104" in x and "mode:HITL" in x for x in skipped), "HITL slice BT-104 should be skipped"
     assert any("BT-106" in x and "no execution mode" in x for x in skipped), "BT-106 with no execution mode should be skipped"
     assert len(queue) == 4, "Only AFK slices should be queued"
 

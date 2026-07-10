@@ -3,8 +3,8 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.1.6"
-timestamp: 2026-07-09
+version: "1.1.7"
+timestamp: 2026-07-10
 ---
 
 # Interface Design
@@ -90,7 +90,7 @@ timestamp: 2026-07-09
 ## Phase 5: Publish & Sync
 1. Append design doc link to parent GitHub Issue body.
 2. Append memory IDs to Ref column in `BACKLOG_MAP.md` (never put design doc path in Ref column).
-3. Handoff: *"Interface design complete. If ≥ 2 unassigned `size:large` features (`status != done`) now sit in the backlog, or ≥ 2 features contend for the current release's scope, run `/3a_version-planning` to place this on the roadmap first; otherwise run `/3b_create-issue` to slice."*
+3. Handoff: "Interface design complete. If ≥ 2 unassigned `tier:epic` features (`status != done`) now sit in the backlog, or ≥ 2 features contend for the current release's scope, run `/3a_version-planning` to place this on the roadmap first; otherwise run `/3b_create-issue` to slice."
 
 ---
 

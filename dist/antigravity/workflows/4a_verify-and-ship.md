@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.17"
-timestamp: 2026-07-09
+version: "1.0.18"
+timestamp: 2026-07-10
 ---
 
 # Verify and Ship
@@ -16,7 +16,7 @@ timestamp: 2026-07-09
 ## Phase 1: Value-Add Gate
 *Input:* GitHub Issue/PRD.
 1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
-2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, explicit PRD AC, or is `[size:large]` / `[type:AFK]` → proceed to Phase 2: Execution (Context Isolation).
+2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, explicit PRD AC, or is `[size:large]` / `[mode:AFK]` → proceed to Phase 2: Execution (Context Isolation).
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
 
 ## Phase 2: Execution (Context Isolation)
