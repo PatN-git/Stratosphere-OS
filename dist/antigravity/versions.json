@@ -146,9 +146,9 @@
       "version": "1.0.1"
     },
     "assets/templates/rules/output-mode.md": {
-      "sha256": "d118d691867470540194c200284849e23e6127156b12f9324145b75d66b85727",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "12c02693917a68dee9d620d42b18d009ca338307b12e6543253c0d0d73ab82d5",
+      "timestamp": "2026-07-10",
+      "version": "1.0.3"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "b4f7104ef3ebe8ef2f1a9244537a27cf0fc04594c9dbcaa3b3327f24f229c3cb",
