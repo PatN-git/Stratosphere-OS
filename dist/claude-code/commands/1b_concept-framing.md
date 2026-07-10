@@ -3,7 +3,7 @@ name: 1b_concept-framing
 description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.8"
+version: "1.0.9"
 timestamp: 2026-07-09
 ---
 
@@ -97,7 +97,7 @@ Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT
 
 1. **Identify Riskiest Assumption:** Single assumption that makes concept fail.
 2. **Determine Cheapest Test:** Propose fastest test (landing page, waitlist, N DMs, fake-door, mock). Must not take >2 weeks.
-3. **Subagent:** Invoke a subagent. Input: chosen framing, actor, problem. Guardrail: "Report only; do not write files." Output: `{ riskiest_assumption, why_fatal, cheapest_test, est_setup_time }`.
+3. **Subagent - "Skeptical Challenger":** Invoke a subagent. Input: chosen framing, actor, problem. Guardrail: "Report only; do not write any file." Output: `{ riskiest_assumption, why_fatal, cheapest_test, est_setup_time }`.
 4. **Present verdict:** Present challenge and cheapest test to user. Record in brief.
 
 ## Phase 5: Write Discovery Brief

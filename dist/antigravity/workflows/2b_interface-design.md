@@ -3,7 +3,7 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.1.5"
+version: "1.1.6"
 timestamp: 2026-07-09
 ---
 
@@ -78,7 +78,7 @@ timestamp: 2026-07-09
 3. Set status → `ready-for-slicing`.
 
 ### UX / System Stress Test
-1. Subagent: Invoke subagent (via invoke_subagent or Task tool). Input: actors/flows/states, resolved blueprint. Reads: design doc fresh from the filesystem. Guardrail: "Report matrix only; do not edit files." Output: adverse condition -> failure mode -> handling (UI: bad signal/low battery/distracted; Path C: network partition/malformed payload/DB lock/retry storm).
+1. Subagent - "Stress Tester": Invoke a subagent. Input: actors/flows/states, resolved blueprint. Reads: design doc fresh from the filesystem. Guardrail: "Report the matrix only; do not edit any file." Output: adverse condition -> failure mode -> handling (UI: bad signal/low battery/distracted; Path C: network partition/malformed payload/DB lock/retry storm).
 2. **Extend design doc:** Write stress matrix into existing `## States / Edge Classes`.
 
 ### Greenfield Bootstrap Deltas

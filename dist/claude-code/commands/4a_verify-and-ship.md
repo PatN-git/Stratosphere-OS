@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.16"
+version: "1.0.17"
 timestamp: 2026-07-09
 ---
 
@@ -20,9 +20,10 @@ timestamp: 2026-07-09
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
 
 ## Phase 2: Execution (Context Isolation)
-- **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d_implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
-- **Isolate:** Otherwise invoke subagents (using `invoke_subagent` or `Task` tool):
-  1. **Strict Business-Logic Auditor:** Input: Issue/PRD, design doc, tests, implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
+- **Context Isolation Rule:**
+  - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d_implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
+  - **Isolate:** Otherwise invoke an independent Strict Business-Logic Auditor subagent (using `invoke_subagent` or `Task` tool):
+    1. **Strict Business-Logic Auditor:** Input: Issue/PRD, design doc, tests, implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
   2. **Standards Auditor:** Input: slice diff (new/modified files only), coding standards, `.agents/workflows/.reference/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
 
 ### Clean Exit Rule

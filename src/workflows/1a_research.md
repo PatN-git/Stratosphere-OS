@@ -3,7 +3,7 @@ name: 1a_research
 description: Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.3"
+version: "1.0.4"
 timestamp: 2026-07-09
 ---
 
@@ -71,11 +71,11 @@ Maintain work file to track progress.
 1. **Query Decomposition:** derive 5–8 sub-queries and populate `## Plan`. Search sequentially.
 2. **Gather & Tag:** per sub-query: read sources, extract findings, assign confidence, append to `## Findings`, increment queries count.
 3. **Verify/Refute:** for `[HIGH]` confidence or decision-driving claims, verify citation URLs.
-   - **Budget Tracking:** compute `remaining = 24 - issued`. If `remaining <= 0` → skip refutation, mark affected claims per the Loop Budget Cap rule, and do not spawn a subagent.
-   - **Audit:** invoke subagent (via Antigravity invoke_subagent or Claude Code Task general-purpose) for skeptical pass. Input: `[HIGH]`/decision-driving claims, sources. Constraint: "Use at most `remaining` search queries. Fetch URLs to confirm they resolve and support claims. Return JSON per-claim: {verdict: survived|refuted|downgraded, url_resolves: bool, content_supports_claim: yes|partial|no, supporting_excerpt: str, sources, queries_used} + total_queries_used. Do not write any file (parent owns the work file)."
-   - **Reconciliation:** increment work file query counter by `queries_used`; write verdicts to Findings. Downgrade unresolved/404/redirected/unsupported URLs to `[LOW]`/`[Unknown]` (paywalled/403 to `[Requires trial]`). Never publish unfetched/un-persisted URLs.
-   - **Decision-Driving Claim:** claim that, if wrong, changes recommendations.
-   - **Triangulation:** verify ≥2 independent source types after collapsing common origins.
+    - **Budget Tracking:** compute `remaining = 24 - issued`. If `remaining <= 0` → skip refutation, mark affected claims per the Loop Budget Cap rule, and do not spawn a subagent.
+    - **Audit:** Invoke a subagent (via Antigravity invoke_subagent or Claude Code Task general-purpose) for skeptical pass. Input: `[HIGH]`/decision-driving claims, sources. Constraint: "Use at most `remaining` search queries. Fetch URLs to confirm they resolve and support claims. Return verdicts + queries_used as JSON per-claim: {verdict: survived|refuted|downgraded, url_resolves: bool, content_supports_claim: yes|partial|no, supporting_excerpt: str, sources, queries_used} + total_queries_used. Do not write any file (parent owns the work file)."
+    - **Reconciliation:** increment work file query counter by `queries_used`; write verdicts to Findings. Downgrade unresolved/404/redirected/unsupported URLs to `[LOW]`/`[Unknown]` (paywalled/403 to `[Requires trial]`). Never publish unfetched/un-persisted URLs.
+    - **Decision-Driving Claim:** claim that, if wrong, changes recommendations.
+    - **Triangulation:** verify ≥2 independent source types after collapsing common origins.
 
 ### 3. Stop Conditions
 Terminate loop when:
