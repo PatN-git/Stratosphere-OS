@@ -181,9 +181,9 @@
       "version": "1.0.9"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "08f3c70ab657c877e8e230e982dcba672960d0ee7ce3dc1dd2749df22b7748c2",
+      "sha256": "8bb50e1c5c8a835f16882f0274b23155d123f782d93889c0d47336fe62488fb7",
       "timestamp": "2026-07-10",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "workflows/0a_start-session.md": {
       "sha256": "e8fc98e16ff503fd7c5fd1f79bf51edfa6867b48ba1d3c77da6ad36ec7c7b0a1",

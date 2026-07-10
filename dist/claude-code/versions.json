@@ -236,9 +236,9 @@
       "version": "1.0.9"
     },
     "commands/stratosphere-update.md": {
-      "sha256": "08f3c70ab657c877e8e230e982dcba672960d0ee7ce3dc1dd2749df22b7748c2",
+      "sha256": "8bb50e1c5c8a835f16882f0274b23155d123f782d93889c0d47336fe62488fb7",
       "timestamp": "2026-07-10",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "commands/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",

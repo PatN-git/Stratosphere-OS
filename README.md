@@ -107,6 +107,11 @@ To upgrade an already-instantiated project to later plugin versions, run:
 ```
 Your `.memory/` data and constitution are never overwritten; framework-owned blocks are updated in place, and you confirm any conflicts.
 
+> [!TIP]
+> **Keeping the Plugin Fresh**
+> - **Claude Code users:** You can set `"autoUpdate": true` for the StratOS marketplace plugin configuration in your global settings so that the host environment keeps the plugin updated automatically in the background.
+> - **Google Antigravity users:** Update your local repository clone via `git pull` and re-run the `scripts/install-antigravity.sh` or `scripts/install-antigravity.ps1` script to install the latest templates.
+
 ---
 
 ## Architecture & Governance

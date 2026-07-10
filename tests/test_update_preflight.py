@@ -1,14 +1,23 @@
 import os
 import sys
+from pathlib import Path
+
+# NOTE: Since Stratosphere-Update.md is an agentic markdown workflow file, its runtime 
+# execution behavior cannot be directly validated by automated unit tests. Real validation 
+# of the preflight check is performed manually or via interactive dry-run testing.
+# This test performs a static substring check to ensure required instructions are not deleted or modified.
 
 def test_preflight_instructions():
-    filepath = "src/commands/update/Stratosphere-Update.md"
-    if not os.path.exists(filepath):
+    # Resolve file path relative to this script's location
+    test_dir = Path(__file__).resolve().parent
+    repo_root = test_dir.parent
+    filepath = repo_root / "src" / "commands/update/Stratosphere-Update.md"
+    
+    if not filepath.exists():
         print(f"FAIL: {filepath} does not exist.")
         sys.exit(1)
 
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+    content = filepath.read_text(encoding='utf-8')
 
     # Core required patterns in the remote preflight phase
     required_checks = {
@@ -40,6 +49,11 @@ def test_preflight_instructions():
         ],
         "Current version check": [
             "StratOS plugin is current (v"
+        ],
+        "Manual/copied Claude install catch-all and halt": [
+            "Else / Catch-all (Manual/Copied Claude Install or other)",
+            "Update your installed StratOS plugin from its source (re-run your original install method)",
+            "HALT"
         ]
     }
 

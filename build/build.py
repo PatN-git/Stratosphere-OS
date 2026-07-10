@@ -36,8 +36,9 @@ DIST = ROOT / "dist"
 # 4. dist/antigravity/versions.json (plugin_version)
 # 5. .claude-plugin/marketplace.json (via DESCRIPTION / metadata)
 #
-# NOTE: The version badge in README.md (~line 4) must be bumped manually
-# in lockstep as it is a separate hardcode.
+# NOTE: The version badge in README.md (~line 4) is auto-stamped by
+# scripts/release.py during the release process, and validate.py
+# asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
 VERSION = "1.1.0"
 DESCRIPTION = (

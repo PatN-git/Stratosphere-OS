@@ -1,0 +1,87 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate version tags against manifest
+        run: |
+          # Extract tag version (strip leading 'v')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "Triggered by tag: $GITHUB_REF_NAME (normalized version: $TAG_VERSION)"
+
+          # Extract version from build/build.py
+          BUILD_VERSION=$(python -c "
+          import re
+          content = open('build/build.py').read()
+          m = re.search(r'VERSION\s*=\s*[\"\'\']([^\"\'\']+)[\"\'\']', content)
+          print(m.group(1) if m else '')
+          ")
+          echo "build/build.py VERSION is: $BUILD_VERSION"
+
+          # Extract versions from dist/*/versions.json
+          CLAUDE_VERSION=$(python -c "
+          import json
+          data = json.load(open('dist/claude-code/versions.json'))
+          print(data.get('plugin_version', ''))
+          ")
+          echo "dist/claude-code/versions.json plugin_version is: $CLAUDE_VERSION"
+
+          ANTIGRAVITY_VERSION=$(python -c "
+          import json
+          data = json.load(open('dist/antigravity/versions.json'))
+          print(data.get('plugin_version', ''))
+          ")
+          echo "dist/antigravity/versions.json plugin_version is: $ANTIGRAVITY_VERSION"
+
+          # Assert all versions are identical to the tag version
+          if [ "$TAG_VERSION" != "$BUILD_VERSION" ]; then
+            echo "ERROR: Tag version '$TAG_VERSION' does not match build/build.py VERSION '$BUILD_VERSION'"
+            exit 1
+          fi
+
+          if [ "$TAG_VERSION" != "$CLAUDE_VERSION" ]; then
+            echo "ERROR: Tag version '$TAG_VERSION' does not match dist/claude-code/versions.json plugin_version '$CLAUDE_VERSION'"
+            exit 1
+          fi
+
+          if [ "$TAG_VERSION" != "$ANTIGRAVITY_VERSION" ]; then
+            echo "ERROR: Tag version '$TAG_VERSION' does not match dist/antigravity/versions.json plugin_version '$ANTIGRAVITY_VERSION'"
+            exit 1
+          fi
+
+          echo "All version assertions passed successfully."
+
+      - name: Build plugins
+        run: python build/build.py
+
+      - name: Validate distribution
+        run: python build/validate.py
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
