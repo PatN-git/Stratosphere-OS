@@ -3,8 +3,8 @@ name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.5"
-timestamp: 2026-07-09
+version: "2.0.6"
+timestamp: 2026-07-10
 ---
 
 # Create issue
@@ -51,7 +51,7 @@ Propose breakdown to user:
    - Requirements & end-state covered (no `[UNCOVERED]`)?
    - Granularity right?
    - Dependencies correct?
-   - Modes (type:HITL/type:AFK) correct?
+   - Modes (mode:HITL/mode:AFK) correct?
    - ICE scores accurate?
 
 Halt until user approves breakdown.
@@ -62,10 +62,10 @@ Halt until user approves breakdown.
    - `ICE >= 0.5` → `priority:high`
    - `0.15 <= ICE < 0.5` → `priority:medium`
    - `ICE < 0.15` → `priority:low`
-3. **Generate (Atomic Minting):** Execute `gh issue create`. Offline fallback: assign `BT-LOCAL-<n>`. **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs. Write raw ICE metrics in issue body. Apply scope label (`scope:baseline` or `scope:differentiator`). Assign exactly TWO type labels: Primary Type (e.g. `type:feature`) + Execution Mode (`type:HITL` or `type:AFK`).
+3. **Generate (Atomic Minting):** Execute `gh issue create`. Offline fallback: assign `BT-LOCAL-<n>`. **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs. Write raw ICE metrics in issue body. Apply scope label (`scope:baseline` or `scope:differentiator`). Assign canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`).
    - **Sub-issue Linkage:** If derived from parent epic (`#parent`), link sub-issue (`gh sub-issue add <parent> <N>`).
    - **Dependencies:** If supported, pass `--blocked-by` or run `gh issue edit <N> --add-blocked-by <ids>`. Maintain "Blocked by: [IDs]" in issue body and BACKLOG_MAP.
-4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders). Write bucketed priority, size, both type labels, and scope label to Labels column, and ICE details to ICE. In Dependencies column, record `Sub-issue of BT-<parentPadded>` and sibling blockers. Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`). sprint digit Z assigned by 3c.
+4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders). Write bucketed priority, size, type, execution mode, tier, and scope label to Labels column, and ICE details to ICE. In Dependencies column, record `Sub-issue of BT-<parentPadded>` and sibling blockers. Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`). sprint digit Z assigned by 3c.
 5. **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence, or `/3d_implement-issue` for single ready slice.
 
 ---

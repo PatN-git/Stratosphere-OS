@@ -3,8 +3,8 @@ name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.4"
-timestamp: 2026-07-09
+version: "1.0.5"
+timestamp: 2026-07-10
 ---
 
 # Nightly Consolidation
@@ -37,15 +37,28 @@ Do not modify files without user approval.
   - Rebuild `index.md` as `* [Title](/path.md) - description` grouped under `# [Directory Name]`.
   - **Special-case `docs/knowledge/`**: List one entry per source bundle (`docs/knowledge/<source>/` subdirectory).
 
-## Phase 3.6: Version-Planning Detector
-- Scan `.memory/BACKLOG_MAP.md` for parent features (rows where Labels column has `size:large` and `type:feature`, and Status is not `status:done`).
-- Parent feature is unroadmapped if:
-  - Milestone column is empty/`-`/`—`, OR
-  - `docs/ROADMAP.md` is absent, OR
-  - `docs/ROADMAP.md` lacks the zero-padded ID (e.g., `BT-007`).
-- Count unroadmapped parent features (N).
-- If N > 0, output: *"N features unroadmapped — consider /3a_version-planning."* If `docs/ROADMAP.md` is missing: *"(Roadmap docs/ROADMAP.md is missing; run /3a_version-planning to initialize)."*
-- Never run `3a` autonomously.
+## Phase 3.6: Planning-State Advisor
+Recommend the next planning workflow from backlog state. Read-only; never run a planning workflow autonomously.
+
+1. **Base state:** parse `.memory/BACKLOG_MAP.md` rows where `status != done`.
+2. **Ground-truth against GitHub:** run `gh auth status`.
+   - **Connected** → GitHub is authoritative; enrich each row:
+     - milestones + open issues: `gh issue list --state open --json number,milestone,labels`; open milestones via `gh api repos/{owner}/{repo}/milestones`.
+     - epic children: for each `tier:epic`, `gh issue view <n> --json subIssues` (numeric `<n>`, matching the repo's existing read convention) — count child slices.
+     - if a row's status/milestone disagrees with GitHub → emit `[DRIFT] BT-<padded>: map=<x> github=<y>` and trust GitHub for the advisory.
+   - **Absent/unauth** → compute from `.memory/BACKLOG_MAP.md` only; tag the outlook `[local-only — GitHub not checked]`.
+3. **Recommendation (evaluate in this order — finish in-flight work before starting new planning; first match wins):**
+   | Signal (`status != done`) | Recommend |
+   |---|---|
+   | an open sprint `vX.Y.Z` (Z≥1) with unfinished slices | `/3d_implement-issue` (or `/3z_afk-loop` for `mode:AFK` slices) |
+   | ≥1 ready `tier:slice` (`status:planned`, milestone `vX.Y.0`, no sprint digit Z) and no open sprint `vX.Y.Z` (Z≥1) | `/3c_sprint-planning` |
+   | a current-release `tier:epic` whose slicing is **incomplete** — zero child slices, **or** fewer child slices than its PRD §6 `[BASELINE]`/`[DIFFERENTIATOR]` stories (lazy slicing means a part-sliced epic still needs more) | `/3b_create-issue` — slice `BT-<padded>` |
+   | ≥2 `tier:epic` unassigned to a release (milestone empty/`-`/`—`, or ID absent from `docs/ROADMAP.md`) | `/3a_version-planning` |
+   | `docs/ROADMAP.md` absent and ≥1 `tier:epic` exists | `/3a_version-planning` — initialize roadmap |
+   | none of the above | *"Backlog healthy — no planning action pending."* |
+4. **Output** the top recommended command (first match), the signal that fired it **naming every `BT-<padded>` involved**, then a one-line **"also pending:"** list of any lower-priority signals that also match (so a running sprint never hides that epics need roadmapping), plus any `[DRIFT]` lines and the `[local-only]` tag. Never summarize as "some features".
+
+_Completion criterion:_ one top recommendation (or the healthy no-op) **plus** the also-pending list emitted; every cited signal names its `BT-<padded>` IDs; drift and local-only state surfaced. This phase invokes no planning workflow.
 
 ## Phase 4: Await Direction
 Halt. Ask user: *"What aspects of the plan do you want to implement?"*

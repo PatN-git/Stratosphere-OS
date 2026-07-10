@@ -204,20 +204,37 @@ def main():
                                     'content': stripped
                                 }
                                 
-                                # Validate dual-type labels for non-parent slices (non-placeholders without size:large or early-stage status)
+                                # Validate taxonomy labels for slices and epics (tier:epic replaces size:large as the parent signal)
                                 parts = [p.strip() for p in line.split('|')]
                                 if len(parts) >= 6:
                                     status_str = parts[3].lower()
                                     labels_str = parts[4]
                                     labels = [l.strip() for l in labels_str.split(',') if l.strip()]
                                     
+                                    is_epic = 'tier:epic' in labels
+                                    is_concept = any(l.startswith('concept:') for l in labels)
                                     exempt_status = {'planned', 'status:planned', 'needs_spec', 'status:needs_spec'}
-                                    if 'size:large' not in labels and status_str not in exempt_status:
+                                    
+                                    if is_epic:
+                                        # Epic checks: must NOT carry size: or mode:
+                                        has_size = [l for l in labels if l.startswith('size:')]
+                                        has_mode = [l for l in labels if l.startswith('mode:')]
+                                        if has_size:
+                                            errors.append(f"Epic '{def_id}' in {fname}:{line_idx} must not carry size: labels: {has_size}.")
+                                        if has_mode:
+                                            errors.append(f"Epic '{def_id}' in {fname}:{line_idx} must not carry execution mode labels: {has_mode}.")
+                                    elif is_concept:
+                                        # Concept rows exempt from taxonomy checks (BACKLOG_MAP.md:29)
+                                        pass
+                                    elif status_str not in exempt_status:
+                                        # Leaf checks
                                         primary_types = {'type:bug', 'type:content', 'type:feature', 'type:improvement', 'type:maintenance', 'type:research'}
-                                        execution_modes = {'type:HITL', 'type:AFK'}
+                                        execution_modes = {'mode:HITL', 'mode:AFK'}
                                         
                                         has_primary = [l for l in labels if l in primary_types]
                                         has_execution = [l for l in labels if l in execution_modes]
+                                        has_size = [l for l in labels if l.startswith('size:')]
+                                        has_tier_slice = 'tier:slice' in labels
                                         
                                         if not has_primary:
                                             errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing a Primary Type label (e.g., type:feature, type:bug, type:improvement).")
@@ -225,9 +242,17 @@ def main():
                                             errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Primary Type labels: {has_primary}.")
                                             
                                         if not has_execution:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing an Execution Mode label (type:HITL or type:AFK).")
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing an Execution Mode label (mode:HITL or mode:AFK).")
                                         elif len(has_execution) > 1:
                                             errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Execution Mode labels: {has_execution}.")
+                                            
+                                        if not has_size:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing a size: label.")
+                                        elif len(has_size) > 1:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple size: labels: {has_size}.")
+                                            
+                                        if not has_tier_slice:
+                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing 'tier:slice' label.")
                             
                             # Parse references in the rest of the row
                             ref_ids = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)

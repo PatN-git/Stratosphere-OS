@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "2.0.6"
-timestamp: 2026-07-09
+version: "2.0.7"
+timestamp: 2026-07-10
 ---
 
 # Sprint planning
@@ -15,9 +15,9 @@ timestamp: 2026-07-09
 1. Read `.memory/BACKLOG_MAP.md`.
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
-   - Map active GitHub issues. Set `status:planned` if missing. Exclude epics/parents (`size:large` with children). Exclude `concept:*` issues.
+   - Map active GitHub issues. Set `status:planned` if missing. Exclude epics (`tier:epic`). Exclude `concept:*` issues.
    - Verify all slices belong to current release `vX.Y`. If mismatches exist, flag and ask user.
-   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if leaf issue (without `concept:*` label) lacks BACKLOG_MAP entry or both `type:xxx` and `size:xxx` labels.
+   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if leaf issue (without `concept:*` label) lacks BACKLOG_MAP entry, or lacks any of `type:`, `mode:`, `tier:slice`, and `size:` labels.
    - List leaf issues labeled `[NEEDS_SPEC]`.
 
 ## Phase 2: Filter & Sort Engine
@@ -31,7 +31,7 @@ timestamp: 2026-07-09
 ## Phase 3: Capacity Calculation & Safeguards
 *Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues.*
 - **Weights:** `size:large` = 12h | `size:medium` = 6h | `size:small` = 1h.
-- **AFK Check:** Flag leaf issues containing `size:large` and `type:AFK`.
+- **AFK Check:** Flag leaf issues containing `size:large` and `mode:AFK`.
 - **Label Check:** Verify labels exist in registry.
 
 ## Phase 4: Sequence Proposal
@@ -44,10 +44,10 @@ Output compressed readout matching capacity thresholds:
 - [HITL] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 
 [CRITICAL ALERTS]
-⚠️ WARNING: BT-<padded> is size:large but labeled type:AFK. Confirm auto-execution!
+⚠️ WARNING: BT-<padded> is size:large but labeled mode:AFK. Confirm auto-execution!
 🗒️ Note: BT-<padded> labeled as `[NEEDS_SPEC]` needs to be enriched to be included in sprint planning.
 ```
-*Optional Fully-AFK Sprint Advisory:* If sequenced issues are entirely `type:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
+*Optional Fully-AFK Sprint Advisory:* If sequenced issues are entirely `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 Verify labels in registry.
 

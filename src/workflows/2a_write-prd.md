@@ -3,8 +3,8 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.1.5"
-timestamp: 2026-07-09
+version: "1.1.6"
+timestamp: 2026-07-10
 ---
 
 # Write PRD
@@ -25,8 +25,8 @@ Execute `gh issue create` to create parent GitHub issue — capture exact return
 > **ATOMIC MINTING RULE:** Never predict or guess next issue number by scanning `BACKLOG_MAP.md`. GitHub shares numbering across issues/PRs; local guesses collide. Numeric ID `BT-<padded>` is born strictly at creation time from the return value of `gh issue create`. If offline, use prefix `BT-LOCAL-<slug>` until synced.
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
-- **Labels (apply):** `size:large`, `area:<x>` (inferred), `type:feature`, `status:in progress`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
-- **Labels (never apply):** `size:medium`, `size:small`, `type:HITL`, `type:AFK`.
+- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:in progress`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
+- **Labels (never apply):** `size:*`, `mode:*`.
 - **Body:** one-line summary + link to `docs/prds/BT-<padded>-<name>.md`.
 
 Record issue URL and minted ID for PRD front matter.
@@ -76,7 +76,7 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 2. Update parent issue body: summary + doc link + §10 Open Questions.
 3. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`):
    ```
-   | BT-<padded> | <Feature name> | in progress | area:<x>, type:feature, size:large | v1.0.0 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
+   | BT-<padded> | <Feature name> | in progress | area:<x>, tier:epic, type:feature | v1.0.0 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
    Note: Use ASCII hyphens `-`. Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a_version-planning` owns MAJOR.MINOR and may reassign, `/3c_sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
 4. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render `docs/prds/BT-<padded>-<feature-name>.html`.

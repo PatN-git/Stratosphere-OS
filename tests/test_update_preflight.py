@@ -31,7 +31,7 @@ def test_preflight_instructions():
             "tagName"
         ],
         "Offline fallback behavior": [
-            "Could not verify latest StratOS release (offline/no gh); proceeding with installed v"
+            "Could not verify latest StratOS release (offline/no gh); proceeding under installed v"
         ],
         "Marketplace cache path check & halt": [
             "cache",
@@ -45,7 +45,9 @@ def test_preflight_instructions():
         "In-place git pull pathway": [
             ".git",
             "git -C <plugin> pull --ff-only",
-            "confirm"
+            "confirm",
+            "reload plugins and re-run",
+            "HALT"
         ],
         "Current version check": [
             "StratOS plugin is current (v"
