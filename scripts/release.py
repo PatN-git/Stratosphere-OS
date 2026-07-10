@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-def get_bump_level(old_v, new_v):
+def get_bump_level(path, old_v, new_v):
     if old_v == new_v:
         return "none"
     try:
@@ -29,6 +29,9 @@ def get_bump_level(old_v, new_v):
         n = list(map(int, new_v.split('.')))
         if len(o) < 3 or len(n) < 3:
             return "patch"
+        if n < o:
+            print(f"Warning: Artifact version downgrade detected for {path}! {old_v} -> {new_v}")
+            return "none"
         if n[0] > o[0]:
             return "major"
         elif n[1] > o[1]:
@@ -56,7 +59,7 @@ def run_cmd(args, capture=True):
     return res
 
 def main():
-    parser = argparse.ArgumentParser(description="StrapOS release version derivation tool.")
+    parser = argparse.ArgumentParser(description="StratosphereOS release version derivation tool.")
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt (CI mode).")
     args = parser.parse_args()
 
@@ -88,11 +91,11 @@ def main():
     # 3. Read current build.py VERSION
     build_py_path = ROOT / "build" / "build.py"
     build_content = build_py_path.read_text(encoding="utf-8")
-    m = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', build_content)
+    m = re.search(r'VERSION\s*=\s*(["\'])([^"\']+)((?:\1))', build_content)
     if not m:
         print("Error: Could not find VERSION variable in build/build.py")
         sys.exit(1)
-    current_build_version = m.group(1)
+    current_build_version = m.group(2)
 
     if not last_tag or not baseline_plugin_version:
         print(f"Baseline plugin version falls back to current build.py version: {current_build_version}")
@@ -130,7 +133,7 @@ def main():
                     overall_bump = "minor"
             else:
                 old_v = baseline_manifest[path].get("version", "1.0.0")
-                bump = get_bump_level(old_v, new_v)
+                bump = get_bump_level(path, old_v, new_v)
                 if bump != "none":
                     changes_summary.append((path, f"{old_v} -> {new_v}", bump))
                     if bump == "major":
@@ -159,43 +162,57 @@ def main():
         for path, change, bump in changes_summary:
             print(f"  - {path}: {change} ({bump})")
     else:
-        print("\nNo artifact changes detected against baseline.")
+        if last_tag:
+            print("\nNo artifact changes detected against baseline.")
 
     # 6. Confirmation and write
-    if derived_version != current_build_version or overall_bump != "none":
+    if derived_version != current_build_version or overall_bump != "none" or not last_tag:
         if not args.yes:
             ans = input(f"\nDo you want to stage version {derived_version} to build/build.py and README.md? (y/n): ").strip().lower()
             if ans not in ['y', 'yes']:
                 print("Aborted.")
                 sys.exit(0)
 
-        # Update build/build.py
-        new_build_content = re.sub(
-            r'(VERSION\s*=\s*["\'])([^"\']+)(")',
-            r'\g<1>' + derived_version + r'\g<3>',
-            build_content
-        )
-        build_py_path.write_text(new_build_content, encoding="utf-8")
-        print("Updated build/build.py VERSION.")
+        did_update = False
+        if derived_version != current_build_version:
+            # Update build/build.py with captured quote style
+            m_quote = re.search(r'VERSION\s*=\s*(["\'])([^"\']+)((?:\1))', build_content)
+            if m_quote:
+                new_build_content = re.sub(
+                    r'(VERSION\s*=\s*)(["\'])([^"\']+)(\2)',
+                    r'\g<1>\g<2>' + derived_version + r'\g<4>',
+                    build_content
+                )
+                build_py_path.write_text(new_build_content, encoding="utf-8")
+                print("Updated build/build.py VERSION.")
+                did_update = True
+            else:
+                print("Error: Could not re-parse VERSION to detect quote character.")
+                sys.exit(1)
 
-        # Update README.md badge
-        readme_path = ROOT / "README.md"
-        readme_content = readme_path.read_text(encoding="utf-8")
-        new_readme_content = re.sub(
-            r'(version-)(\d+\.\d+\.\d+)',
-            r'\g<1>' + derived_version,
-            readme_content
-        )
-        readme_path.write_text(new_readme_content, encoding="utf-8")
-        print("Updated README.md badge version.")
+            # Update README.md version badge (shield URL) with count=1 limit
+            readme_path = ROOT / "README.md"
+            readme_content = readme_path.read_text(encoding="utf-8")
+            new_readme_content = re.sub(
+                r'(img\.shields\.io/badge/version-)(\d+\.\d+\.\d+)',
+                r'\g<1>' + derived_version,
+                readme_content,
+                count=1
+            )
+            readme_path.write_text(new_readme_content, encoding="utf-8")
+            print("Updated README.md badge version.")
 
-        # 7. Final build & validate
-        print("Recompiling with new version...")
-        run_res = run_cmd([sys.executable, "build/build.py"])
-        if run_res.returncode != 0:
-            print(f"Build failed: {run_res.stderr}")
-            sys.exit(1)
+        # If it is a first release (no last_tag) or we updated the version, compile it
+        if did_update or not last_tag:
+            print("Recompiling with new version...")
+            run_res = run_cmd([sys.executable, "build/build.py"])
+            if run_res.returncode != 0:
+                print(f"Build failed: {run_res.stderr}")
+                sys.exit(1)
+        else:
+            print("No version change. Re-using previous compilation.")
 
+        # Always validate the resulting build outputs
         print("Running validate.py...")
         val_res = run_cmd([sys.executable, "build/validate.py"])
         if val_res.returncode != 0:

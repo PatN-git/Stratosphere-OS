@@ -73,6 +73,10 @@ jobs:
       - name: Build plugins
         run: python build/build.py
 
+      - name: Check for stale distribution files (git diff dist/)
+        run: |
+          git diff --exit-code dist/
+
       - name: Validate distribution
         run: python build/validate.py
 

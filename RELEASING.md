@@ -13,6 +13,8 @@ This document describes how to release a new version of the StratosphereOS plugi
    python scripts/release.py
    ```
    *Note: This script enforces the "biggest change wins" convention (Major if any major bump or removal; Minor if any minor bump or addition; Patch if only patch bumps).*
+   
+   **First Release Note:** The very first release of the project (e.g. `v1.1.0`) must be cut manually (rebuild → validate → git tag v1.1.0) since `release.py` requires an existing tag to derive versions from. Subsequent version bumps will be automatically derived by the script.
 
 3. **Commit the Staged Release:**
    Commit the updated version metadata, `dist/` builds, and `README.md` version badge:
