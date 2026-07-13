@@ -65,7 +65,7 @@ def main():
 
     # 1. Find last tag
     print("Finding the last release tag...")
-    tag_res = run_cmd(["git", "describe", "--tags", "--abbrev=0"])
+    tag_res = run_cmd(["git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*"])
     last_tag = tag_res.stdout.strip() if tag_res.returncode == 0 else None
 
     baseline_manifest = {}

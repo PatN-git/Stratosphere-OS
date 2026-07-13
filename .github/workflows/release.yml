@@ -2,90 +2,82 @@ name: Release Automation
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+  workflow_dispatch: {}
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Build and Create Release
+    name: Release on main
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Validate version tags against manifest
+      - name: Read version from build/build.py
+        id: get_version
         run: |
-          # Extract tag version (strip leading 'v')
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          echo "Triggered by tag: $GITHUB_REF_NAME (normalized version: $TAG_VERSION)"
-
-          # Extract version from build/build.py
-          BUILD_VERSION=$(python -c "
+          VERSION=$(python - << 'EOF'
           import re
           content = open('build/build.py').read()
-          m = re.search(r'VERSION\s*=\s*[\"\'\']([^\"\'\']+)[\"\'\']', content)
+          m = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', content)
           print(m.group(1) if m else '')
-          ")
-          echo "build/build.py VERSION is: $BUILD_VERSION"
-
-          # Extract versions from dist/*/versions.json
-          CLAUDE_VERSION=$(python -c "
-          import json
-          data = json.load(open('dist/claude-code/versions.json'))
-          print(data.get('plugin_version', ''))
-          ")
-          echo "dist/claude-code/versions.json plugin_version is: $CLAUDE_VERSION"
-
-          ANTIGRAVITY_VERSION=$(python -c "
-          import json
-          data = json.load(open('dist/antigravity/versions.json'))
-          print(data.get('plugin_version', ''))
-          ")
-          echo "dist/antigravity/versions.json plugin_version is: $ANTIGRAVITY_VERSION"
-
-          # Assert all versions are identical to the tag version
-          if [ "$TAG_VERSION" != "$BUILD_VERSION" ]; then
-            echo "ERROR: Tag version '$TAG_VERSION' does not match build/build.py VERSION '$BUILD_VERSION'"
+          EOF
+          )
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: Could not extract VERSION from build/build.py"
             exit 1
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          if [ "$TAG_VERSION" != "$CLAUDE_VERSION" ]; then
-            echo "ERROR: Tag version '$TAG_VERSION' does not match dist/claude-code/versions.json plugin_version '$CLAUDE_VERSION'"
-            exit 1
+      - name: Check if tag already exists (Idempotency gate)
+        id: check_tag
+        run: |
+          if [ -n "$(git ls-remote --tags origin "refs/tags/v$VERSION")" ]; then
+            echo "Release v$VERSION already exists — nothing to do."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Release v$VERSION does not exist. Proceeding."
+            echo "exists=false" >> $GITHUB_OUTPUT
           fi
-
-          if [ "$TAG_VERSION" != "$ANTIGRAVITY_VERSION" ]; then
-            echo "ERROR: Tag version '$TAG_VERSION' does not match dist/antigravity/versions.json plugin_version '$ANTIGRAVITY_VERSION'"
-            exit 1
-          fi
-
-          echo "All version assertions passed successfully."
 
       - name: Build plugins
+        if: steps.check_tag.outputs.exists != 'true'
         run: python build/build.py
 
-      - name: Check for stale distribution files (git diff dist/)
-        run: |
-          git diff --exit-code dist/
-
       - name: Validate distribution
+        if: steps.check_tag.outputs.exists != 'true'
         run: python build/validate.py
 
+      - name: Check for stale or untracked distribution files
+        if: steps.check_tag.outputs.exists != 'true'
+        run: |
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "ERROR: dist/ is out of sync with src/ (modified or untracked files found)"
+            git status --porcelain dist/
+            git diff dist/
+            exit 1
+          fi
+
       - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists != 'true'
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           draft: false
           prerelease: false
           generate_release_notes: true
