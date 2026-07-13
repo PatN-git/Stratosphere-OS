@@ -14,21 +14,29 @@ This document describes how to release a new version of the StratosphereOS plugi
    ```
    *Note: This script enforces the "biggest change wins" convention (Major if any major bump or removal; Minor if any minor bump or addition; Patch if only patch bumps).*
    
-   **First Release Note:** The very first release of the project (e.g. `v1.1.0`) must be cut manually (rebuild → validate → git tag v1.1.0) since `release.py` requires an existing tag to derive versions from. Subsequent version bumps will be automatically derived by the script.
+   **First Release Note:** The very first release of the project (`v1.1.0`) was cut manually (rebuild → validate → git tag v1.1.0) since `release.py` requires an existing tag to establish a baseline. Subsequent version bumps are automatically derived by the script.
 
-3. **Commit the Staged Release:**
-   Commit the updated version metadata, `dist/` builds, and `README.md` version badge:
-   ```bash
-   git add .
-   git commit -m "release: prepare vX.Y.Z"
-   ```
+ 3. **Commit & Merge to Main via PR:**
+    Commit the updated version metadata, `dist/` builds, and `README.md` version badge to your working branch, open a Pull Request, and merge it into the `main` branch (never push directly to `main` as per our governance rules):
+    ```bash
+    git add .
+    git commit -m "release: prepare vX.Y.Z"
+    ```
 
-4. **Tag & Push:**
-   Create a git tag matching the derived version exactly (the `v*` prefix is mandatory and tag MUST equal `v` + `build.py` VERSION), then push:
-   ```bash
-   git tag vX.Y.Z
-   git push origin main --tags
-   ```
+ 4. **Automated Validation and Publishing:**
+    Upon pushing to `main`, the "Release on main" GitHub Action (`.github/workflows/release.yml`) automatically triggers. It will:
+    - Extract the version from `build/build.py`.
+    - Check if a release tag for this version already exists. If it does (e.g., for doc-only, test-only, or CI-only commits where the version did not change), the workflow exits early with success (no-op).
+    - Run the full build verification suite and ensure that committed `dist/` files are fully up-to-date with source code.
+    - Automatically tag the commit as `vX.Y.Z` and publish the official GitHub Release page.
 
-5. **Automated Publishing:**
-   The GitHub Action `.github/workflows/release.yml` will trigger, run the full validation suite, and create the official GitHub Release page automatically. The preflight check in `/stratosphere-update` relies on these releases to check for newer plugin versions.
+    No manual git tagging or tag pushing is required.
+
+## Versioning Conventions
+
+- **Change-Based Versioning:** When editing source files in `src/`, always bump each edited file's version in its YAML frontmatter by the size of its change:
+  - **PATCH**: Routine bug fixes, formatting, and typo corrections.
+  - **MINOR**: Additive or backward-compatible modifications.
+  - **MAJOR**: Breaking changes.
+- **Derived Bumps:** Because most routine framework updates consist of bug fixes and minor logic corrections, they will result in `PATCH` bumps. Most derived plugin releases will therefore be patch (`Z`) bumps (e.g., `v1.1.0` -> `v1.1.1`), which is the expected and correct behavior.
+- **First Release Note:** The very first release of the project (`v1.1.0`) was cut manually to establish a baseline. All subsequent versions must be derived and staged via `release.py` prior to merging to `main`.
