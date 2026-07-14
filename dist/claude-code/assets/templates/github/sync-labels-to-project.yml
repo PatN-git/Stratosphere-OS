@@ -19,6 +19,7 @@ jobs:
         with:
           github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
+            const normKey = s => String(s).toLowerCase().replace(/[_\-\s]+/g, ' ').trim();
             const owner = process.env.PROJECT_OWNER || context.repo.owner;
             const ownerType = (process.env.PROJECT_OWNER_TYPE || 'org').toLowerCase() === 'user' ? 'user' : 'organization';
             const projectNum = parseInt(process.env.PROJECT_NUMBER, 10);
@@ -115,12 +116,12 @@ jobs:
 
             for (const field of projectData.fields.nodes || []) {
               if (!field) continue;
-              const fieldKey = field.name.toLowerCase();
+              const fieldKey = normKey(field.name);
               fieldsMap[fieldKey] = field.id;
               if (field.options) {
                 singleSelectOptions[fieldKey] = {};
                 for (const opt of field.options) {
-                  singleSelectOptions[fieldKey][opt.name.toLowerCase()] = opt.id;
+                  singleSelectOptions[fieldKey][normKey(opt.name)] = { id: opt.id, originalName: opt.name };
                 }
               }
             }
@@ -154,21 +155,25 @@ jobs:
 
             // 3. Update field values
             const updateFieldVal = async (fieldKey, valueName) => {
-              const fieldId = fieldsMap[fieldKey];
+              const normFieldKey = normKey(fieldKey);
+              const fieldId = fieldsMap[normFieldKey];
               if (!fieldId) {
-                console.log(`Field matching '${fieldKey}' not found in project. Skipping.`);
+                console.log(`Field matching '${fieldKey}' (normalized: '${normFieldKey}') not found in project. Skipping.`);
                 return;
               }
-              const options = singleSelectOptions[fieldKey];
+              const options = singleSelectOptions[normFieldKey];
               if (!options) {
                 console.log(`Field '${fieldKey}' is not a single-select field. Skipping.`);
                 return;
               }
-              const optionId = options[valueName];
-              if (!optionId) {
-                console.log(`Option '${valueName}' not found on field '${fieldKey}' (available: ${Object.keys(options).join(', ')}). Skipping.`);
+              const normValueName = normKey(valueName);
+              const option = options[normValueName];
+              if (!option) {
+                const availableOptNames = Object.values(options).map(o => o.originalName).join(', ');
+                core.warning(`Option '${valueName}' (normalized: '${normValueName}') not found on field '${fieldKey}' (available options: ${availableOptNames}). Hint: Add this option to the board's Status field or check its spelling.`);
                 return;
               }
+              const optionId = option.id;
 
               if (dryRun) {
                 console.log(`[DRY RUN] Would update field '${fieldKey}' to option '${valueName}' (Option ID: ${optionId}) on item ${itemId}`);

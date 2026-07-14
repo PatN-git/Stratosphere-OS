@@ -21,6 +21,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+def semver_key(v_str):
+    if not v_str:
+        return (0, 0, 0)
+    m = re.match(r"^v?(\d+)\.(\d+)\.(\d+)", v_str)
+    if m:
+        return tuple(int(x) for x in m.groups())
+    return (0, 0, 0)
+
 def get_bump_level(path, old_v, new_v):
     if old_v == new_v:
         return "none"
@@ -156,6 +164,42 @@ def main():
             derived_version = raise_version(baseline_plugin_version, overall_bump)
             print(f"\nDerived Bump Level: {overall_bump.upper()}")
             print(f"New Plugin Version: {derived_version} (previous: {baseline_plugin_version})")
+
+        # Stamp max(derived_version, current build.py VERSION) by semver
+        if semver_key(current_build_version) > semver_key(derived_version):
+            print(f"Manual version override detected in build/build.py: {current_build_version} is newer than derived {derived_version}. Using {current_build_version}.")
+            derived_version = current_build_version
+
+        # Warn if non-.md framework files changed but version wasn't bumped
+        if last_tag and baseline_plugin_version:
+            diff_res = run_cmd(["git", "diff", "--name-only", last_tag])
+            if diff_res.returncode == 0:
+                changed_files = [line.strip() for line in diff_res.stdout.splitlines() if line.strip()]
+                framework_prefixes = (
+                    "src/scripts/",
+                    "scripts/",
+                    "build/",
+                    ".github/",
+                    "src/github/"
+                )
+                changed_framework_files = [
+                    f for f in changed_files
+                    if any(f.startswith(pref) for pref in framework_prefixes)
+                ]
+                
+                clean_baseline = baseline_plugin_version.lstrip('v')
+                clean_derived = derived_version.lstrip('v')
+                
+                if changed_framework_files and clean_derived == clean_baseline:
+                    print("\n" + "="*80)
+                    print("WARNING: Non-.md framework changes detected since the last release tag:")
+                    for f in sorted(changed_framework_files)[:10]:
+                        print(f"  - {f}")
+                    if len(changed_framework_files) > 10:
+                        print(f"  ... and {len(changed_framework_files) - 10} more files.")
+                    print("\nThese changes are not tracked by artifact version frontmatter.")
+                    print(f"To release them, you MUST manually bump VERSION in build/build.py (currently {current_build_version}).")
+                    print("="*80 + "\n")
 
     if changes_summary:
         print("\nArtifact Changes Summary:")
