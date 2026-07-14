@@ -166,9 +166,9 @@
       "version": "1.0.2"
     },
     "commands/0d_nightly-consolidation.md": {
-      "sha256": "8d327ddc542c67c2fac402c9fd7f10187616653115940bc9fd21ecaf298df65a",
-      "timestamp": "2026-07-10",
-      "version": "1.0.5"
+      "sha256": "c1dae1b9347a3723883c2589b8ee8b7a0f92d806f5e6e2ca0e79265b6e999d14",
+      "timestamp": "2026-07-14",
+      "version": "1.0.6"
     },
     "commands/1a_research.md": {
       "sha256": "0da3be0524c52e7ec655ee12b2d492602cff3deb5d0e49f4c42c20d829cef673",

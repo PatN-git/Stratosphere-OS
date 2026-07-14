@@ -3,8 +3,8 @@ name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.5"
-timestamp: 2026-07-10
+version: "1.0.6"
+timestamp: 2026-07-14
 ---
 
 # Nightly Consolidation
@@ -42,10 +42,11 @@ Recommend the next planning workflow from backlog state. Read-only; never run a 
 
 1. **Base state:** parse `.memory/BACKLOG_MAP.md` rows where `status != done`.
 2. **Ground-truth against GitHub:** run `gh auth status`.
-   - **Connected** → GitHub is authoritative; enrich each row:
+   - **Connected** → GitHub is authoritative; enrich each base-state row (status != done):
      - milestones + open issues: `gh issue list --state open --json number,milestone,labels`; open milestones via `gh api repos/{owner}/{repo}/milestones`.
      - epic children: for each `tier:epic`, `gh issue view <n> --json subIssues` (numeric `<n>`, matching the repo's existing read convention) — count child slices.
-     - if a row's status/milestone disagrees with GitHub → emit `[DRIFT] BT-<padded>: map=<x> github=<y>` and trust GitHub for the advisory.
+     - a base-state row whose mapped issue is **absent from the open list** is *closed* on GitHub, not milestone-cleared — reconcile it as done for the advisory and do **not** emit `[DRIFT]`.
+     - only when the mapped issue is **present (open)** and its milestone/status disagrees → emit `[DRIFT] BT-<padded>: map=<x> github=<y>` and trust GitHub for the advisory.
    - **Absent/unauth** → compute from `.memory/BACKLOG_MAP.md` only; tag the outlook `[local-only — GitHub not checked]`.
 3. **Recommendation (evaluate in this order — finish in-flight work before starting new planning; first match wins):**
    | Signal (`status != done`) | Recommend |
