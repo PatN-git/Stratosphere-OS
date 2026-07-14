@@ -215,6 +215,152 @@ def test_update_preflight():
         print("update_preflight instructions test failed! Output:\n", result.stdout, result.stderr)
         return False
 
+def test_orphan_guard():
+    print("\n--- Testing Orphan-Guard Anti-Recurrence Check ---")
+    repo_root = Path(__file__).resolve().parent.parent
+    scaffold_script = repo_root / "dist" / "antigravity" / "scripts" / "scaffold.py"
+    
+    # 1. Add dist/antigravity/scripts to sys.path so we can import scaffold
+    sys.path.insert(0, str(repo_root / "dist" / "antigravity" / "scripts"))
+    import scaffold
+    
+    # Define EXCLUDE lists
+    EXCLUDED_PLUGINS_METADATA = {
+        "plugin.json",
+        "versions.json",
+        "external-skills.json",
+    }
+    
+    # Helper to scan and map dist files
+    dist_dir = repo_root / "dist" / "antigravity"
+    
+    # We will build two fixtures
+    # Fixture 1: "no board"
+    tmp_no_board = repo_root / ".tmp" / "fixture_no_board"
+    if tmp_no_board.exists():
+        shutil.rmtree(tmp_no_board, ignore_errors=True)
+    tmp_no_board.mkdir(parents=True, exist_ok=True)
+    
+    # Fixture 2: "with board" (opted-in)
+    tmp_with_board = repo_root / ".tmp" / "fixture_with_board"
+    if tmp_with_board.exists():
+        shutil.rmtree(tmp_with_board, ignore_errors=True)
+    tmp_with_board.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        # Run normal scaffold on both
+        sc1 = subprocess.run([sys.executable, str(scaffold_script)], cwd=str(tmp_no_board), capture_output=True, text=True)
+        if sc1.returncode != 0:
+            print("Scaffold on Fixture 1 failed:", sc1.stderr)
+            return False
+            
+        sc2 = subprocess.run([sys.executable, str(scaffold_script)], cwd=str(tmp_with_board), capture_output=True, text=True)
+        if sc2.returncode != 0:
+            print("Scaffold on Fixture 2 failed:", sc2.stderr)
+            return False
+            
+        # For Fixture 2, simulate setup's board step (conditional install of sync-labels Action)
+        action_dst = tmp_with_board / ".github" / "workflows" / "sync-labels-to-project.yml"
+        action_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(dist_dir / "assets" / "templates" / "github" / "sync-labels-to-project.yml", action_dst)
+        
+        # Run update on Fixture 2 so it is lockfile tracked/updated
+        up2 = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp_with_board), capture_output=True, text=True)
+        if up2.returncode != 0:
+            print("Scaffold update on Fixture 2 failed:", up2.stderr)
+            return False
+            
+        # Walk and check every file in dist/antigravity
+        failures = []
+        for p in dist_dir.rglob("*"):
+            if not p.is_file():
+                continue
+            
+            rel = p.relative_to(dist_dir)
+            rel_str = rel.as_posix()
+            
+            # Check exclusions
+            if "__pycache__" in rel.parts or rel_str.endswith(".pyc"):
+                continue
+            if rel_str == "scripts/sync_skills.py":
+                # sync_skills.py is run within plugin scope by sync-skills command; never copied to project
+                continue
+            if rel_str.startswith("skills/"):
+                # Skills are on-demand and third-party, gitignored. Documented exclude.
+                continue
+            if rel_str.startswith("scripts/_versioning.py") or rel_str.startswith("scripts/scaffold.py"):
+                # Scaffold script itself lives in plugin/scripts, not copied to project root
+                continue
+            if rel_str in EXCLUDED_PLUGINS_METADATA:
+                continue
+                
+            # Determine expected project destination
+            proj_rel_path = None
+            if rel_str.startswith("assets/templates/") or rel_str.startswith("workflows/") or rel_str.startswith("commands/"):
+                proj_rel_path = scaffold.map_bundled_to_project(rel_str)
+            elif rel_str == "scripts/validate_memory.py":
+                proj_rel_path = ".agents/scripts/validate_memory.py"
+            elif rel_str == "scripts/okf_view.py":
+                proj_rel_path = ".agents/scripts/okf_view.py"
+            elif rel_str.startswith("scripts/design/"):
+                if "test" in rel.parts:
+                    continue # skip design tests
+                proj_rel_path = f".agents/scripts/design/{rel.relative_to('scripts/design').as_posix()}"
+            elif rel_str.startswith("scripts/okf_viewer/"):
+                proj_rel_path = f".agents/scripts/okf_viewer/{rel.relative_to('scripts/okf_viewer').as_posix()}"
+                
+            if not proj_rel_path:
+                failures.append(f"Bundled file '{rel_str}' has no mapping to the project root and is not excluded.")
+                continue
+                
+            # Verify existence in the fixtures
+            # 1. No Board Fixture
+            p_no_board = tmp_no_board / proj_rel_path
+            if proj_rel_path == ".github/workflows/sync-labels-to-project.yml":
+                # Excluded on no-board fixture because not opted-in
+                if p_no_board.exists():
+                    failures.append(f"Optional action '{proj_rel_path}' exists in 'no board' project, but shouldn't.")
+            else:
+                if not p_no_board.exists():
+                    failures.append(f"Bundled file '{rel_str}' (expected at '{proj_rel_path}') is missing from 'no board' project.")
+                    
+            # 2. With Board Fixture (opted-in)
+            p_with_board = tmp_with_board / proj_rel_path
+            if not p_with_board.exists():
+                failures.append(f"Bundled file '{rel_str}' (expected at '{proj_rel_path}') is missing from 'with board' project.")
+                
+        # Verify gitignore/gitattributes reconciliation
+        for fixture_path, name in [(tmp_no_board, "no board"), (tmp_with_board, "with board")]:
+            gi_file = fixture_path / ".gitignore"
+            if not gi_file.exists():
+                failures.append(f".gitignore is missing from {name} project.")
+            else:
+                gi_content = gi_file.read_text(encoding="utf-8")
+                if "*.work.md" not in gi_content:
+                    failures.append(f"*.work.md missing from reconciled .gitignore in {name} project.")
+                    
+            ga_file = fixture_path / ".gitattributes"
+            if not ga_file.exists():
+                failures.append(f".gitattributes is missing from {name} project.")
+            else:
+                ga_content = ga_file.read_text(encoding="utf-8")
+                if "docs/okf-view.html linguist-generated=true -diff" not in ga_content:
+                    failures.append(f"Linguist attributes missing from reconciled .gitattributes in {name} project.")
+                
+        if failures:
+            print("Orphan Guard failed! Unresolved / mismatched files:")
+            for f in failures:
+                print("  *", f)
+            return False
+            
+        print("Orphan-Guard verification passed! No framework orphans found.")
+        return True
+        
+    finally:
+        # Cleanup
+        shutil.rmtree(tmp_no_board, ignore_errors=True)
+        shutil.rmtree(tmp_with_board, ignore_errors=True)
+
 if __name__ == "__main__":
     success = True
     if not test_validate_memory():
@@ -230,6 +376,8 @@ if __name__ == "__main__":
     if not test_update_preflight():
         success = False
     if not test_update_flow():
+        success = False
+    if not test_orphan_guard():
         success = False
         
     if success:

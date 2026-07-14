@@ -2,8 +2,8 @@
 name: stratosphere-update
 type: workflow
 description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
-version: "1.0.5"
-timestamp: 2026-07-10
+version: "1.0.6"
+timestamp: 2026-07-13
 ---
 
 # StratosphereOS Update Flow
@@ -141,3 +141,12 @@ For each constitution file that has changed:
    - Re-reconcile project boards and sync actions.
    - Verify/install necessary tools (such as the `gh-sub-issue` extension).
    - Skip gracefully if GitHub CLI is absent or unauthenticated.
+
+---
+
+## Phase 6: Skill Synchronization (Advisory)
+
+1. **Verify and synchronize domain skills:**
+   Because domain-specific skills are third-party, gitignored, and fetched on-demand, they are not bundled directly into `scaffold.py`. Remind the user to run, or offer to run:
+   `/sync-skills`
+   to ensure that all local skill definitions are fully synchronized with their latest upstream sources and not orphaned.

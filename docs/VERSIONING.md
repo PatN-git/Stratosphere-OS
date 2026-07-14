@@ -50,3 +50,9 @@ The overall framework plugin version is derived from individual artifact version
 - **Release Invariant**: The tag name must exactly match `v` + `VERSION`, which must equal the plugin version in both platform manifests. This is guaranteed by `validate.py` and the CI stale-dist guard (`git status --porcelain dist/`).
 - **Conditional Releases**: Releases are cut only when `VERSION` moves (indicating that a distributed artifact was modified and rebuilt). Documentation, testing, or CI-only changes do not bump version metadata and thus do not trigger a new release.
 - **Initial Bootstrapping**: The very first release (`v1.1.0`) was cut manually since no prior tag existed for comparison. All subsequent releases are derived automatically via `release.py`.
+- **What /stratosphere-update Covers**:
+  - `scaffold.py` acts as the single installer and updater for all framework-owned files.
+  - When running `/stratosphere-update` (which invokes `scaffold.py --update`), it refreshes all managed framework templates and rules (via block merging or byte-diff updates) as well as opted-in framework GitHub Actions (such as `.github/workflows/sync-labels-to-project.yml`) if they are present in the project.
+  - It additively reconciles required `.gitignore` and `.gitattributes` lines (e.g. `*.work.md` and linguist diff directives) without removing or reordering user-written lines.
+  - Third-party and domain-specific skills are updated separately via `/sync-skills` as they are gitignored and fetched on demand.
+  - An automated orphan-guard test in CI (`tests/verify_scripts.py`) enforces that no bundled framework file can be orphaned (every bundled file must be mapped by `scaffold.py` to its project destination or explicitly excluded with a documented reason).

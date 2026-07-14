@@ -325,6 +325,75 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      ".agents/skills/", "!.agents/skills/.lock.json",
                      "*.work.md", "*.stratosphere-new"]
 
+FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
+
+def map_bundled_to_project(rel_path: str):
+    parts = rel_path.split("/")
+    if parts[0] == "assets" and parts[1] == "templates":
+        sub = parts[2]
+        name = parts[3]
+        if sub == "constitution": return name
+        elif sub == "memory": return f".memory/{name}"
+        elif sub == "rules": return f".agents/rules/{name}"
+        elif sub == "references": return f".agents/workflows/.reference/{name}"
+        elif sub == "github": return f".github/workflows/{name}"
+    elif parts[0] in ("workflows", "commands") and (re.match(r"^[0-4].*\.md$", parts[-1]) or parts[-1] == "sync-skills.md"):
+        return f".agents/workflows/{parts[-1]}"
+    return None
+
+def reconcile_gitignore(project_dir, dry_run):
+    gi = project_dir / ".gitignore"
+    if not gi.exists():
+        if dry_run:
+            new_p = project_dir / ".gitignore.stratosphere-new"
+            new_p.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
+            return GITIGNORE_ENTRIES
+        gi.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
+        return GITIGNORE_ENTRIES
+        
+    content = gi.read_text(encoding="utf-8")
+    lines = [line.strip() for line in content.splitlines()]
+    missing = [entry for entry in GITIGNORE_ENTRIES if entry.strip() not in lines]
+    
+    if missing:
+        new_content = content
+        if new_content and not new_content.endswith("\n"):
+            new_content += "\n"
+        new_content += "\n".join(missing) + "\n"
+        if dry_run:
+            new_p = project_dir / (gi.name + ".stratosphere-new")
+            new_p.write_text(new_content, encoding="utf-8")
+        else:
+            gi.write_text(new_content, encoding="utf-8")
+    return missing
+
+def reconcile_gitattributes(project_dir, dry_run):
+    ga = project_dir / ".gitattributes"
+    required_lines = ["docs/okf-view.html linguist-generated=true -diff"]
+    if not ga.exists():
+        if dry_run:
+            new_p = project_dir / ".gitattributes.stratosphere-new"
+            new_p.write_text("\n".join(required_lines) + "\n", encoding="utf-8")
+            return required_lines
+        ga.write_text("\n".join(required_lines) + "\n", encoding="utf-8")
+        return required_lines
+        
+    content = ga.read_text(encoding="utf-8")
+    lines = [line.strip() for line in content.splitlines()]
+    missing = [entry for entry in required_lines if entry.strip() not in lines]
+    
+    if missing:
+        new_content = content
+        if new_content and not new_content.endswith("\n"):
+            new_content += "\n"
+        new_content += "\n".join(missing) + "\n"
+        if dry_run:
+            new_p = project_dir / (ga.name + ".stratosphere-new")
+            new_p.write_text(new_content, encoding="utf-8")
+        else:
+            ga.write_text(new_content, encoding="utf-8")
+    return missing
+
 FOLDERS = [
     ".memory",
     ".agents/rules",
@@ -434,23 +503,12 @@ def main():
         except Exception:
             bundled_manifest = {}
             
-        def map_bundled_to_project(rel_path: str):
-            parts = rel_path.split("/")
-            if parts[0] == "assets" and parts[1] == "templates":
-                sub = parts[2]
-                name = parts[3]
-                if sub == "constitution": return name
-                elif sub == "memory": return f".memory/{name}"
-                elif sub == "rules": return f".agents/rules/{name}"
-                elif sub == "references": return f".agents/workflows/.reference/{name}"
-            elif parts[0] in ("workflows", "commands") and (re.match(r"^[0-4].*\.md$", parts[-1]) or parts[-1] == "sync-skills.md"):
-                return f".agents/workflows/{parts[-1]}"
-            return None
-            
         count = 0
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
+            if proj_path.startswith(".github/workflows/"):
+                continue
             
             p = project / proj_path
             if repair:
@@ -516,19 +574,6 @@ def main():
         else:
             lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
             
-        def map_bundled_to_project(rel_path: str):
-            parts = rel_path.split("/")
-            if parts[0] == "assets" and parts[1] == "templates":
-                sub = parts[2]
-                name = parts[3]
-                if sub == "constitution": return name
-                elif sub == "memory": return f".memory/{name}"
-                elif sub == "rules": return f".agents/rules/{name}"
-                elif sub == "references": return f".agents/workflows/.reference/{name}"
-            elif parts[0] in ("workflows", "commands") and (re.match(r"^[0-4].*\.md$", parts[-1]) or parts[-1] == "sync-skills.md"):
-                return f".agents/workflows/{parts[-1]}"
-            return None
-            
         worklist = {
             "plugin_version": plugin_version,
             "stale_managed": [],
@@ -545,6 +590,12 @@ def main():
                 continue
                 
             p = project / proj_path
+
+            # Framework GitHub Actions are opt-in: manage a bundled workflow only if it is
+            # both allowlisted AND already present in the project. Skip anything else.
+            if proj_path.startswith(".github/workflows/"):
+                if Path(proj_path).name not in FRAMEWORK_GITHUB_FILES or not p.exists():
+                    continue
             tier = "managed"
             if proj_path.startswith(".memory/"):
                 tier = "preserved"
@@ -917,6 +968,8 @@ def main():
         for proj_path in worklist["stale_managed"] + worklist["needs_review_constitution"]:
             if proj_path not in proposed_files:
                 continue
+            if proj_path.startswith(".github/workflows/"):
+                continue
             p = project / proj_path
             if p.exists():
                 text = p.read_bytes().decode("utf-8")
@@ -924,6 +977,24 @@ def main():
                     "version": plugin_version,
                     "sha256_at_install": _versioning.body_hash(text)
                 }
+                
+        # Reconcile gitignore and gitattributes
+        gi_added = reconcile_gitignore(project, dry)
+        ga_added = reconcile_gitattributes(project, dry)
+        
+        # Clean up stratosphere-new files if not dry
+        if not dry:
+            for name in (".gitignore", ".gitattributes"):
+                new_p = project / (name + ".stratosphere-new")
+                if new_p.exists():
+                    new_p.unlink()
+        
+        if gi_added:
+            verb = "WOULD RECONCILE" if dry else "RECONCILED"
+            print(f"{verb} .gitignore: added {', '.join(gi_added)}")
+        if ga_added:
+            verb = "WOULD RECONCILE" if dry else "RECONCILED"
+            print(f"{verb} .gitattributes: added {', '.join(ga_added)}")
                 
         lock_data["installed_plugin_version"] = plugin_version
         lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -997,26 +1068,23 @@ def main():
     if view_script.exists():
         place(view_script, project / ".agents" / "scripts" / "okf_view.py", res, dry, update=update, tier="managed")
 
-    # 8. .gitignore (create if missing; never edit an existing one)
-    gi = project / ".gitignore"
-    gi_existed = gi.exists()
-    if not gi_existed:
-        if dry:
-            res["would"].append(Path(".gitignore"))
-        else:
-            gi.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
-            res["created"].append(Path(".gitignore"))
-
-    # 8b. .gitattributes (create if missing; never edit an existing one)
-    ga = project / ".gitattributes"
-    ga_existed = ga.exists()
-    if not ga_existed:
-        if dry:
-            res["would"].append(Path(".gitattributes"))
-        else:
-            ga_content = "docs/okf-view.html linguist-generated=true -diff\n"
-            ga.write_text(ga_content, encoding="utf-8")
-            res["created"].append(Path(".gitattributes"))
+    # 8. .gitignore & .gitattributes Reconciliation
+    gi_added = reconcile_gitignore(project, dry)
+    ga_added = reconcile_gitattributes(project, dry)
+    
+    if gi_added:
+        verb = "WOULD RECONCILE" if dry else "RECONCILED"
+        print(f"{verb} .gitignore: added {', '.join(gi_added)}")
+        if not dry:
+            res["refreshed"].append(Path(".gitignore"))
+    else:
+        res["exists"].append(Path(".gitignore"))
+        
+    if ga_added:
+        verb = "WOULD RECONCILE" if dry else "RECONCILED"
+        print(f"{verb} .gitattributes: added {', '.join(ga_added)}")
+        if not dry:
+            res["refreshed"].append(Path(".gitattributes"))
     else:
         res["exists"].append(Path(".gitattributes"))
 
@@ -1108,12 +1176,7 @@ def main():
         print(f"LEFT AS-IS (already present, agent should drift-check): {len(res['exists'])}")
         for p in res["exists"]:
             print(f"  - {p}")
-    if gi_existed:
-        # existing .gitignore: remind agent to verify secret-hygiene entries
-        print("NOTE: .gitignore already exists — verify it contains: " + ", ".join(GITIGNORE_ENTRIES))
-        print("NOTE: Existing projects must manually add *.work.md to their .gitignore (scaffold never edits existing ones).")
-    if ga_existed:
-        print("NOTE: .gitattributes already exists — verify it contains: docs/okf-view.html linguist-generated=true -diff")
+
 
 
 if __name__ == "__main__":
