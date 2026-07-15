@@ -90,6 +90,16 @@
       "subPath": "agent-skills-main/skills/web-design-guidelines/",
       "targetPath": ".agents/skills/vercel-web-design",
       "description": "Vercel web design guidelines."
+    },
+    {
+      "name": "jules-dispatch",
+      "category": "experimental",
+      "default": false,
+      "repoZipUrl": "https://github.com/PatN-git/Stratosphere-OS/archive/refs/heads/main.zip",
+      "ref": "main",
+      "subPath": "Stratosphere-OS-main/src/experimental/jules-dispatch/",
+      "targetPath": ".agents/skills/jules-dispatch",
+      "description": "EXPERIMENTAL, opt-in: offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatches + reports; never merges, never orchestrates. Activates post-merge; pin ref at release."
     }
   ]
 }

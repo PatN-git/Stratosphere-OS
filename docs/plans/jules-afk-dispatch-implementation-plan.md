@@ -155,9 +155,9 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 **Steps:**
 1. **README entry (decided):** document `jules-dispatch` in `README.md` as an **experimental, opt-in** pack — what it does, that it's fetched via `sync-skills` (not bundled), the `.env.local`/`X-Goog-Api-Key` requirement, and the "dispatch → walk away → `--status` → verify/merge yourself" flow. Mark clearly as experimental/test.
 2. Data-egress note in `AGENT.md`/`README.md`: Jules clones into a Google-managed VM; PR reconciled on origin; key hygiene per I4; least-privilege GitHub-app scope.
-3. **Optional** Antigravity parity: **first verify** `sync_skills.py` supports a `.agents/workflows/` single-file target (every existing entry targets a `.agents/skills/<dir>` — this path is untested, m4). If unsupported, document manual copy instead of relying on it.
+3. **Antigravity launcher — DEFERRED (capability verified absent).** `sync_skills.py` always extracts to `skills_base / <entry name>` = `.agents/skills/<name>` (`fetch()` line ~243); the `targetPath` field is cosmetic and a `.agents/workflows/` target is impossible via sync-skills. So the pack ships as a **skill** (`SKILL.md`, invocable by name on Claude Code and available to Antigravity as a skill); a slash-command launcher on Antigravity would need a sync-skills enhancement or a manual copy. Documented, not built, for v0.1.
 
-**🚦 Gate P6:** docs lint passes; egress note present; if the launcher route is used, a test confirms `sync_skills.py` actually places it and `--update` leaves it (it will — non-bundled — but a drift-check may *flag* a tracked-dir file, so note that).
+**🚦 Gate P6:** README experimental section + data-egress note present; `build/validate.py` guard asserts no `experimental/` path in `dist/`; `python build/validate.py` = OK. Antigravity slash-launcher explicitly deferred (see step 3).
 
 ---
 
