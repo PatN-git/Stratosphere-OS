@@ -24,7 +24,7 @@ nmd()     { local n; n=$(find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l)
 
 assert_scaffold_tree() { # $1 proj
   local p="$1"
-  for f in AGENT.md CLAUDE.md GEMINI.md .gitignore .gitattributes index.md; do
+  for f in AGENTS.md CLAUDE.md GEMINI.md .gitignore .gitattributes index.md; do
     assert "scaffold: $f" "$(exists "$p/$f")"
   done
   assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"

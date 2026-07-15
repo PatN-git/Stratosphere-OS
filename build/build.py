@@ -40,7 +40,7 @@ DIST = ROOT / "dist"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "1.1.1"
+VERSION = "2.0.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a first-party skill, on-demand external skills, and a one-command project installer."

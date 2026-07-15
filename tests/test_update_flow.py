@@ -1639,12 +1639,12 @@ def test_constitution_needs_review():
     tmp.mkdir(parents=True, exist_ok=True)
     
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
-    (tmp / "AGENT.md").write_text("Old constitution", encoding="utf-8")
+    (tmp / "AGENTS.md").write_text("Old constitution", encoding="utf-8")
     
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            "AGENT.md": {
+            "AGENTS.md": {
                 "version": "1.0.0",
                 "sha256_at_install": "different"
             }
@@ -1658,11 +1658,11 @@ def test_constitution_needs_review():
     shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
     
     (mock_plugin / "assets" / "templates" / "constitution").mkdir(parents=True, exist_ok=True)
-    (mock_plugin / "assets" / "templates" / "constitution" / "AGENT.md").write_text("New constitution", encoding="utf-8")
+    (mock_plugin / "assets" / "templates" / "constitution" / "AGENTS.md").write_text("New constitution", encoding="utf-8")
     
     versions_data = {
         "artifacts": {
-            "assets/templates/constitution/AGENT.md": {
+            "assets/templates/constitution/AGENTS.md": {
                 "version": "1.0.1",
                 "timestamp": "2026-07-09",
                 "sha256": "dummy"
@@ -1674,19 +1674,19 @@ def test_constitution_needs_review():
     scaffold_script = mock_plugin / "scripts" / "scaffold.py"
     run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
     
-    # Read worklist and verify AGENT.md is in needs_review_constitution
+    # Read worklist and verify AGENTS.md is in needs_review_constitution
     worklist_data = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
-    if "AGENT.md" not in worklist_data["needs_review_constitution"]:
-        raise AssertionError("Expected AGENT.md to be in needs_review_constitution")
+    if "AGENTS.md" not in worklist_data["needs_review_constitution"]:
+        raise AssertionError("Expected AGENTS.md to be in needs_review_constitution")
         
     # Simulate user review acceptance by manually creating .stratosphere-new file
-    new_file = tmp / "AGENT.md.stratosphere-new"
+    new_file = tmp / "AGENTS.md.stratosphere-new"
     new_file.write_text("Accepted constitution updates", encoding="utf-8")
     
     # Run update (non-dry-run should commit it)
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
-    committed_content = (tmp / "AGENT.md").read_text(encoding="utf-8")
+    committed_content = (tmp / "AGENTS.md").read_text(encoding="utf-8")
     if committed_content != "Accepted constitution updates":
         raise AssertionError("Expected constitution to be committed")
     print("Constitution review and merge test passed!")

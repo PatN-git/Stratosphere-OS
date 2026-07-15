@@ -2,8 +2,8 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.10"
-timestamp: 2026-07-10
+version: "1.0.11"
+timestamp: 2026-07-15
 ---
 
 # Instantiate StratosphereOS
@@ -29,7 +29,7 @@ Cold starts are expensive! A small, durable memory layer eliminates re-derivatio
 ## Template source (read before any file creation)
 
 All templates ship **bundled with the plugin** under its `assets/templates/` directory. Locate the installed plugin's `assets/templates/` and read the relevant template file before creating any project file — never reconstruct templates from memory:
-- `assets/templates/constitution/` → `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
+- `assets/templates/constitution/` → `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
@@ -39,7 +39,7 @@ The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the proje
 ## Existing Installation Detection
 
 Before proceeding with setup, verify if StratosphereOS is already installed in this project:
-1. **Check detection markers:** Check if `.agents/.stratosphere-lock.json` exists, or if both `AGENT.md` and a populated `.memory/` folder exist.
+1. **Check detection markers:** Check if `.agents/.stratosphere-lock.json` exists, or if both `AGENTS.md` and a populated `.memory/` folder exist.
 2. **Handle existing install:** If an existing install is detected, do **NOT** silently proceed. Stop and inform the user:
    *"This project already has StratosphereOS installed. Setup bootstraps a new project; to upgrade, run `/stratosphere-update`."*
 3. **Ask confirmation:** Prompt the user using the native `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity) with three options:
@@ -106,7 +106,7 @@ python <plugin>/scripts/scaffold.py --update
 
 **What it creates** (skips anything already present):
 - Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
-- Constitution → project root: `AGENT.md`, `CLAUDE.md`, `GEMINI.md`
+- Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
 - Lifecycle workflows (`0a`–`4b`, `sync-skills`) + their `.reference/` templates → `.agents/workflows/`
@@ -118,7 +118,7 @@ python <plugin>/scripts/scaffold.py --update
 ## Checkpoint 0.5: Project Vision (both paths)
 
 1. Prompt the user using the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to input the project's core vision statement (e.g. "What is the primary vision or goal of this project?").
-2. Write this statement directly into `AGENT.md` under the `## Vision` heading, replacing the placeholder.
+2. Write this statement directly into `AGENTS.md` under the `## Vision` heading, replacing the placeholder.
 
 ## Checkpoint 1: Workspace rules in effect (both paths)
 

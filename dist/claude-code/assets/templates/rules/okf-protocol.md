@@ -2,8 +2,8 @@
 type: rule
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.1 conformance.
-version: "1.0.1"
-timestamp: 2026-06-18
+version: "1.0.2"
+timestamp: 2026-07-15
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -32,7 +32,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 
 | `type` | Applies to | Extra fields beyond the base contract |
 |:---|:---|:---|
-| `constitution` | `AGENT.md`, `CLAUDE.md`, `GEMINI.md` | — |
+| `constitution` | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` | — |
 | `rule` | `.agents/rules/*.md` | — |
 | `workflow` | `.agents/workflows/*.md` | `trigger` (required); `type` keeps its `HITL`/`AFK` qualifier, e.g. `workflow HITL` |
 | `status` | `STATUS.md` | — |

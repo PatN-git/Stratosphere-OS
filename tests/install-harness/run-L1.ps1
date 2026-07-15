@@ -27,7 +27,7 @@ if (-not (Test-Path (Join-Path $repo "dist\claude-code")) -or -not (Test-Path (J
 $realBefore = Get-RealHomeSnapshot
 
 function Assert-ScaffoldTree([string]$proj) {
-    foreach ($f in @("AGENT.md","CLAUDE.md","GEMINI.md",".gitignore",".gitattributes","index.md")) {
+    foreach ($f in @("AGENTS.md","CLAUDE.md","GEMINI.md",".gitignore",".gitattributes","index.md")) {
         AssertPathExists "scaffold: $f" (Join-Path $proj $f)
     }
     AssertFileCount "scaffold: .memory/*.md == 9" (Join-Path $proj ".memory") "*.md" 9
