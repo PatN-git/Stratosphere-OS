@@ -8,7 +8,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from jules_api import JulesError
+from jules_api import JulesError, session_id_of
 
 LEDGER_REL = Path(".memory") / "jules-ledger.jsonl"
 
@@ -56,7 +56,7 @@ def dispatch_one(client, source, slice_id, issue, ledger_path, *, starting_branc
     )
     row = {
         "slice_id": slice_id,
-        "session_id": session.get("id") or session.get("name"),
+        "session_id": session_id_of(session),
         "source": source,
         "title": str(slice_id),
         "created_at": now or _now(),
@@ -105,11 +105,13 @@ def select_eligible(slices):
 
 
 def _sprint_candidates(repo=None):
-    """Open mode:AFK issues via gh, shaped for select_eligible (blocked_by parsed from a
-    `Blocked-by: BT-x, BT-y` body line if present)."""
+    """mode:AFK issues via gh, shaped for select_eligible. Fetches BOTH states so the
+    `done` set (closed issues) is populated for dependency gating; carries the full
+    issue under `_issue` so preflight reuses it (no N+1 re-fetch). `Blocked-by:` body
+    tokens must be issue numbers to match slice_id (documented in SKILL.md)."""
     import subprocess
-    args = ["gh", "issue", "list", "--label", "mode:AFK", "--state", "open",
-            "--json", "number,title,body,labels", "--limit", "100"]
+    args = ["gh", "issue", "list", "--label", "mode:AFK", "--state", "all",
+            "--json", "number,title,body,labels,state", "--limit", "200"]
     if repo:
         args += ["--repo", repo]
     out = subprocess.run(args, capture_output=True, text=True)
@@ -121,18 +123,21 @@ def _sprint_candidates(repo=None):
         for line in (iss.get("body") or "").splitlines():
             low = line.lower()
             if low.startswith("blocked-by:") or low.startswith("blocked by:"):
-                blocked = [b.strip() for b in line.split(":", 1)[1].split(",") if b.strip()]
+                blocked = [b.strip().lstrip("#") for b in line.split(":", 1)[1].split(",") if b.strip()]
+        closed = str(iss.get("state", "")).upper() in ("CLOSED", "DONE")
         slices.append({"slice_id": str(iss["number"]),
                        "labels": [lbl.get("name") for lbl in iss.get("labels", [])],
-                       "blocked_by": blocked})
+                       "blocked_by": blocked,
+                       "state": "done" if closed else "open",
+                       "_issue": iss})
     return slices
 
 
-def main(argv=None):
+def main(argv=None, *, client=None, issue_fetcher=None, sprint_lister=None):
+    """CLI. `client`/`issue_fetcher`/`sprint_lister` are injectable for offline tests;
+    they default to the real Jules client, gh issue-view, and gh issue-list."""
     import argparse
-    from config import load_api_key
     from preflight import preflight
-    from jules_api import JulesClient
 
     ap = argparse.ArgumentParser(description="Dispatch bounded mode:AFK slices to Google Jules (opt-in, experimental).")
     ap.add_argument("--slice", action="append", default=[], help="slice/issue id (repeatable)")
@@ -145,25 +150,37 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
-    ids = [c["slice_id"] for c in select_eligible(_sprint_candidates(args.repo))] if args.sprint else list(args.slice)
-    if not ids:
-        print("Nothing to dispatch (no --slice, and --sprint found none eligible).")
-        return 0
-
+    sprint_lister = sprint_lister or _sprint_candidates
     items = []
-    for sid in ids:
-        pf = preflight(sid, repo=args.repo)
-        if not pf.ok:
-            print(f"[{sid}] SKIP: {pf.reason}")
-            continue
-        items.append((sid, pf.issue))
+    if args.sprint:
+        for cand in select_eligible(sprint_lister(args.repo)):
+            iss = cand.get("_issue")
+            fetch = (lambda _s, _i=iss: _i) if iss is not None else issue_fetcher
+            pf = preflight(cand["slice_id"], fetcher=fetch, repo=args.repo)
+            if not pf.ok:
+                print(f"[{cand['slice_id']}] SKIP: {pf.reason}")
+                continue
+            items.append((cand["slice_id"], pf.issue))
+    else:
+        for sid in args.slice:
+            pf = preflight(sid, fetcher=issue_fetcher, repo=args.repo)
+            if not pf.ok:
+                print(f"[{sid}] SKIP: {pf.reason}")
+                continue
+            items.append((sid, pf.issue))
 
+    if not items:
+        print("Nothing to dispatch.")
+        return 0
     if args.dry_run:
         for sid, _ in items:
             print(f"[dry-run] would dispatch {sid}")
         return 0
 
-    client = JulesClient(api_key=load_api_key())
+    if client is None:
+        from config import load_api_key
+        from jules_api import JulesClient
+        client = JulesClient(api_key=load_api_key())
     for r in dispatch_many(client, args.source, items, args.ledger,
                            max_sessions=args.max_sessions, starting_branch=args.starting_branch):
         extra = f" session={r['session_id']}" if r.get("session_id") else ""

@@ -16,7 +16,7 @@ it never verifies or merges. You run `/4a_verify-and-ship` and merge.
 - **Never merges, never enables auto-merge** — `automationMode` is `AUTO_CREATE_PR` only.
 - **Not an orchestrator** — never invokes `4a`/`3z`/`3d`.
 - **Never checks out or pushes a Jules branch locally** — operates via `gh`/API against origin (that branch exists only on origin).
-- **Key never logged** — `config.safe_log` scrubs it; read from `JULES_API_KEY` in `.env.local`, sent as the `X-Goog-Api-Key` header.
+- **Key never logged** — read from `JULES_API_KEY` in `.env.local` and sent only as the `X-Goog-Api-Key` header; never placed in a URL, printed, or written (`config.safe_log` is available to scrub it from any diagnostic output).
 
 ## When to use
 User asks to send/offload/dispatch a slice, or fan a sprint's AFK slices, to Jules. Only

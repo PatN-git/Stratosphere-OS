@@ -20,7 +20,10 @@ def _parse_dotenv(path):
         if not line or line.startswith("#") or "=" not in line:
             continue
         k, v = line.split("=", 1)
-        vals[k.strip()] = v.strip().strip('"').strip("'")
+        k = k.strip()
+        if k.startswith("export "):
+            k = k[len("export "):].strip()
+        vals[k] = v.strip().strip('"').strip("'")
     return vals
 
 

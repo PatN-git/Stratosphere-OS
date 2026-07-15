@@ -15,12 +15,20 @@ BASE = "https://jules.googleapis.com/v1alpha"
 
 
 class JulesError(Exception):
-    """Any Jules API failure. `retry_after` is set for 429s when the server sends it."""
+    """Any Jules API failure. `retry_after` surfaces the server's Retry-After on 429s
+    (surfaced for the caller to act on — this client does not auto-retry)."""
     def __init__(self, status, message, retry_after=None):
         super().__init__(f"[{status}] {message}")
         self.status = status
         self.message = message
         self.retry_after = retry_after
+
+
+def session_id_of(session):
+    """Bare session id from a Session resource. Handles a plain `id` or the AIP
+    `name: "sessions/<id>"` form so we never double-prefix a later GET."""
+    sid = session.get("id") or session.get("name") or ""
+    return str(sid).split("/")[-1]
 
 
 def _default_caller(api_key):
@@ -72,7 +80,8 @@ class JulesClient:
         return self._call("POST", "/sessions", body=body)
 
     def get_session(self, session_id):
-        return self._call("GET", f"/sessions/{session_id}")
+        sid = str(session_id).split("/")[-1]  # tolerate 'sessions/<id>' — never double-prefix
+        return self._call("GET", f"/sessions/{sid}")
 
     def list_activities(self, session_id, since=None):
         query = {"pageSize": 30}

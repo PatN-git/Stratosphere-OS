@@ -81,16 +81,19 @@ def status(client, ledger_path, *, ci_fetcher=None, printer=print):
     return rows
 
 
-def main(argv=None):
+def main(argv=None, *, client=None, ci_fetcher=None):
+    """CLI. `client`/`ci_fetcher` are injectable for offline tests."""
     import argparse
-    from config import load_api_key
-    from jules_api import JulesClient
 
     ap = argparse.ArgumentParser(description="Poll dispatched Jules sessions; report PR readiness (deterministic, zero-LLM).")
     ap.add_argument("--ledger", default=str(LEDGER_REL))
     args = ap.parse_args(argv)
 
-    status(JulesClient(api_key=load_api_key()), args.ledger)
+    if client is None:
+        from config import load_api_key
+        from jules_api import JulesClient
+        client = JulesClient(api_key=load_api_key())
+    status(client, args.ledger, ci_fetcher=ci_fetcher)
     return 0
 
 

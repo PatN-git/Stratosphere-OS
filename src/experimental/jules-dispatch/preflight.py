@@ -40,6 +40,7 @@ def preflight(slice_id, fetcher=None, repo=None):
         return PreflightResult(False, f"{slice_id} is tier:epic — dispatch implementable slices, not epics", issue)
     if "mode:AFK" not in labels:
         return PreflightResult(False, f"{slice_id} lacks mode:AFK — not eligible for Jules dispatch", issue)
-    if "acceptance criteria" not in (issue.get("body") or "").lower():
+    body = (issue.get("body") or "").lower()
+    if not any(marker in body for marker in ("acceptance criteria", "## acceptance", "acceptance:")):
         return PreflightResult(False, f"{slice_id} has no acceptance criteria — too underspecified to offload", issue)
     return PreflightResult(True, "ok", issue)

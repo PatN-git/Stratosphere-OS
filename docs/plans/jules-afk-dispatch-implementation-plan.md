@@ -90,11 +90,11 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 
 **Steps:**
 1. `jules_api.py`: `create_session`, `get_session`, `list_activities(since=None)`, `find_pr_url(session_id)`, `list_sources`. Default caller reads `X-Goog-Api-Key`; tests inject a `ReplayCaller` over `tests/fixtures/jules/`.
-2. One `JulesError(status, message)` for failures (401/429/unexpected shape) — actionable message, never a bare `KeyError`. Respect `Retry-After` on 429.
+2. One `JulesError(status, message)` for failures (401/429/unexpected shape) — actionable message, never a bare `KeyError`. **Surface** `Retry-After` on 429 (attached to the exception for the caller; the client does not auto-retry).
 3. `find_pr_url` uses the `CONTRACT.md` path; returns `None` when absent.
 4. **Test runner:** create `tests/test_jules.py` with an explicit `__main__` calling each `test_*()` (mirroring `verify_scripts.py:364`); add a line to the repo's test entry so the suite actually runs them.
 
-**🚦 Gate P1** (`python tests/test_jules.py`): each method parses its cassette; `find_pr_url` returns the PR from `activities_pr_ready.json`, `None` from `activities_running.json`; injected 401→`JulesError(401,…)`, 429 honors `Retry-After`; `list_activities(since=T)` forwards `createTime=T`.
+**🚦 Gate P1** (`python tests/test_jules.py`): each method parses its cassette; `find_pr_url` returns the PR from `activities_pr_ready.json`, `None` from `activities_running.json`; injected 401→`JulesError(401,…)`, 429 surfaces `Retry-After` (carried on the exception); `list_activities(since=T)` forwards `createTime=T`.
 
 > Note (m1): these prove parsing + determinism, **not** live correctness. Live correctness is proven only by P0 capture and P7 E2E. Treat snapshots as regression guards, not proof.
 
