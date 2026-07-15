@@ -5,7 +5,7 @@ Creates the project's folder structure and copies bundled templates into place.
 New files are created if missing; with `--update`, **managed** framework files
 (workflows, rules, references, validate_memory.py) are refreshed in place when
 they differ, while **preserved** files (.memory/, .gitignore) and the
-**constitution** (AGENT.md/CLAUDE.md/GEMINI.md) are never overwritten.
+**constitution** (AGENTS.md/CLAUDE.md/GEMINI.md) are never overwritten.
 
 The script lives in the installed plugin at `<plugin>/scripts/scaffold.py`.
 Run it FROM THE PROJECT ROOT (cwd = project), e.g.:
@@ -599,7 +599,7 @@ def main():
             tier = "managed"
             if proj_path.startswith(".memory/"):
                 tier = "preserved"
-            elif proj_path in ("AGENT.md", "CLAUDE.md", "GEMINI.md"):
+            elif proj_path in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
                 tier = "constitution"
                 
             new_p = p.parent / (p.name + ".stratosphere-new")
@@ -1015,7 +1015,7 @@ def main():
             res["would"].append(Path(f) / "")
 
     # 2. Constitution -> project root
-    for name in ("AGENT.md", "CLAUDE.md", "GEMINI.md"):
+    for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
         place(ASSETS / "constitution" / name, project / name, res, dry, update=update, tier="constitution")
 
     # 3. Memory templates -> .memory/

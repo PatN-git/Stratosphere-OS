@@ -203,7 +203,7 @@ def assert_tree(tool, scope, home, proj):
     check("install: bundled scaffold.py", (plugin / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
     p = Path(proj)
-    for f in ("AGENT.md", "CLAUDE.md", "GEMINI.md", ".gitignore", ".gitattributes", "index.md"):
+    for f in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".gitignore", ".gitattributes", "index.md"):
         check(f"scaffold: {f}", (p / f).exists())
     check("scaffold: 9 memory files", len(list((p / ".memory").glob("*.md"))) == 9 if (p / ".memory").exists() else False)
     check("scaffold: 3 rule files", len(list((p / ".agents" / "rules").glob("*.md"))) == 3 if (p / ".agents" / "rules").exists() else False)
@@ -291,7 +291,7 @@ def main():
             print(f"  [Debug] agent text: {text[:500]}")
         blob = " ".join(t["name"] + " " + t["input"] for t in tools)
         # scaffold.py check: tool blob OR filesystem evidence (in case stream-json fails)
-        scaffold_ran = "scaffold.py" in blob or (proj / "AGENT.md").exists()
+        scaffold_ran = "scaffold.py" in blob or (proj / "AGENTS.md").exists()
         check("agent ran scaffold.py", scaffold_ran)
         if not args.marketplace:
             if args.tool == "claude-code":
@@ -304,9 +304,9 @@ def main():
             check("agent used /plugin marketplace", "marketplace add" in blob or "plugin install" in blob.lower())
         # guard: must not hand-write the constitution instead of scaffolding
         if args.tool == "claude-code":
-            wrote_constitution = any(t["name"] in ("Write", "Edit") and ("AGENT.md" in t["input"] or "CLAUDE.md" in t["input"]) for t in tools)
+            wrote_constitution = any(t["name"] in ("Write", "Edit") and ("AGENTS.md" in t["input"] or "CLAUDE.md" in t["input"]) for t in tools)
         else:
-            wrote_constitution = any(t["name"] in ("write_to_file", "replace_file_content", "multi_replace_file_content") and ("AGENT.md" in t["input"] or "GEMINI.md" in t["input"]) for t in tools)
+            wrote_constitution = any(t["name"] in ("write_to_file", "replace_file_content", "multi_replace_file_content") and ("AGENTS.md" in t["input"] or "GEMINI.md" in t["input"]) for t in tools)
         check("agent did NOT hand-write constitution files", not wrote_constitution)
         # HARNESS_DONE: check parsed text OR raw output (handles plain-text npx fallback)
         harness_done = "HARNESS_DONE" in text or any("HARNESS_DONE" in l for l in raw_lines)

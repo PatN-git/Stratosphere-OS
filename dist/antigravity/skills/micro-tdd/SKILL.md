@@ -2,8 +2,8 @@
 name: Micro-TDD Execution
 type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
-version: "1.1.0"
-timestamp: 2026-07-08
+version: "1.1.1"
+timestamp: 2026-07-15
 ---
 
 # SKILL: Micro-TDD Execution
@@ -13,7 +13,7 @@ Execute autonomous, deterministic code modifications during hands-free (AFK) ope
 
 ## 1. Operating Context & Routing
 - **Trigger:** Routed autonomously by Layer 2 Orchestration whenever a code change is needed for backend logic, database tables, custom hooks, utilities, or state managers.
-- **Precedence:** Acts as a Layer 3 Autonomous Skill. It is strictly subordinate to Core Rules (`.agents/rules/`) and explicit User Requests, but enhances default high-level operational guidelines in `AGENT.md`.
+- **Precedence:** Acts as a Layer 3 Autonomous Skill. It is strictly subordinate to Core Rules (`.agents/rules/`) and explicit User Requests, but enhances default high-level operational guidelines in `AGENTS.md`.
 - **Communication Protocol:** Enforces **Silent Execution Mode**. Natively suppress inner monologue, execution step narration, and line-by-line code explanations.
 
 ---

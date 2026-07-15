@@ -103,7 +103,7 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
             is_concept = True
         elif parent_dir == "rules" and not is_index:
             is_concept = True
-        elif parent_dir == "constitution" and filename == "AGENT.md":
+        elif parent_dir == "constitution" and filename == "AGENTS.md":
             is_concept = True
         elif parent_dir == "references" and filename in concept_references:
             is_concept = True

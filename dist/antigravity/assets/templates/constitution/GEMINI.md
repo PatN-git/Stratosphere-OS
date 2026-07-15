@@ -2,10 +2,8 @@
 type: constitution
 name: GEMINI
 description: GEMINI
-version: "1.0.1"
-timestamp: 2026-06-17
+version: "1.1.0"
+timestamp: 2026-07-15
 ---
 
-GEMINI.md
-
-Follow the full constitution in AGENT.md (architecture, precedence, security, version control, operating principles, memory protocol, and verification). Check .agents/skills for domain-specific playbooks before proposing solutions.
+Follow the full constitution in AGENTS.md (architecture, precedence, security, version control, operating principles, memory protocol, and verification). Check .agents/skills for domain-specific playbooks before proposing solutions.
