@@ -1,0 +1,9 @@
+{
+  "name": "sessions/sess_abc123",
+  "id": "sess_abc123",
+  "title": "BT-0042",
+  "state": "IN_PROGRESS",
+  "createTime": "2026-07-15T09:00:00Z",
+  "updateTime": "2026-07-15T09:03:00Z",
+  "outputs": []
+}

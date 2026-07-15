@@ -1,0 +1,14 @@
+{
+  "name": "sessions/sess_abc123",
+  "id": "sess_abc123",
+  "prompt": "BT-0042: add a code comment to lib/constants.js\n\nAcceptance criteria:\n- a comment is added",
+  "sourceContext": {
+    "source": "sources/github/PatN-git/cleantech_jobs",
+    "githubRepoContext": { "startingBranch": "main" }
+  },
+  "title": "BT-0042",
+  "requirePlanApproval": true,
+  "automationMode": "AUTO_CREATE_PR",
+  "createTime": "2026-07-15T09:00:00Z",
+  "state": "QUEUED"
+}

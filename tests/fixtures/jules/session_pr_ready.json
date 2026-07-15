@@ -1,0 +1,17 @@
+{
+  "name": "sessions/sess_abc123",
+  "id": "sess_abc123",
+  "title": "BT-0042",
+  "state": "COMPLETED",
+  "createTime": "2026-07-15T09:00:00Z",
+  "updateTime": "2026-07-15T09:20:00Z",
+  "outputs": [
+    {
+      "pullRequest": {
+        "url": "https://github.com/PatN-git/cleantech_jobs/pull/123",
+        "title": "BT-0042: add a code comment to lib/constants.js",
+        "description": "## Summary\n..."
+      }
+    }
+  ]
+}
