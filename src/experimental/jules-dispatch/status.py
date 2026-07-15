@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from dispatch import load_ledger
+from dispatch import LEDGER_REL, load_ledger
 from jules_api import JulesError
 
 
@@ -79,3 +79,20 @@ def status(client, ledger_path, *, ci_fetcher=None, printer=print):
     if changed:
         _rewrite(ledger_path, rows)
     return rows
+
+
+def main(argv=None):
+    import argparse
+    from config import load_api_key
+    from jules_api import JulesClient
+
+    ap = argparse.ArgumentParser(description="Poll dispatched Jules sessions; report PR readiness (deterministic, zero-LLM).")
+    ap.add_argument("--ledger", default=str(LEDGER_REL))
+    args = ap.parse_args(argv)
+
+    status(JulesClient(api_key=load_api_key()), args.ledger)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

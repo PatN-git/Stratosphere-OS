@@ -116,7 +116,7 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 **Objective.** Offload one slice, or several. **Batch = sequential dispatch loop, not concurrent** (avoids the single-ledger write race) — yet each created session runs **in parallel on Jules's side**, so you still get parallel throughput while walking away.
 
 **Steps:**
-1. `x_jules-dispatch.md` (agent-first workflow doc) + `dispatch.py`.
+1. `dispatch.py` (with argparse CLI) documented in the pack's `SKILL.md` (single self-contained skill doc; the pack ships as a skill, so no separate workflow doc — see the improve-workflows-skills §1/§2 pass).
 2. Single: `preflight` → build prompt from **issue title/body/acceptance-criteria only** (conventions come from the repo's `AGENTS.md`, which Jules auto-reads; environment from Jules's UI snapshot — the prompt carries neither) → `create_session(auto_pr=True, require_plan_approval=True)` → append ledger row `{slice_id, session_id, source, created_at, state:DISPATCHED}`.
 3. Batch: explicit list or `--sprint` (leaves with `mode:AFK`+`tier:slice` from the sprint milestone / `BACKLOG_MAP.md`); **exclude** slices with unmet `--blocked-by` deps; dispatch **sequentially**, one row per slice; a single failure records `FAILED` and continues.
 4. `--max-sessions N` cap (default small) to bound alpha quota/cost (m6).
@@ -168,8 +168,8 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 **Steps:**
 0. ⚠️ `cleantech_jobs` is a **real repo**, not a sandbox. All E2E artifacts must be trivial, clearly tagged, never merged, and fully removed in teardown. **Confirm the specific throwaway issues with the maintainer before any live dispatch.**
 1. Agent creates 1–2 trivial, harmless throwaway issues via `gh` (e.g. add a code comment / touch a doc line), titled `TEST(jules-e2e): …`, labeled `mode:AFK` + `tier:slice`.
-2. `/x_jules-dispatch <slice>` → session created, ledger row `DISPATCHED`.
-3. (out-of-band wait — Jules is deliberately slow) `/x_jules-dispatch --status` → PR discovered (branch `jules-…`, author `google-labs-jules[bot]`), CI reported, row `DONE`, PR left **open** (never merged).
+2. `dispatch.py --slice <id> --source <src>` → session created, ledger row `DISPATCHED`.
+3. (out-of-band wait — Jules is deliberately slow) `status.py` → PR discovered (branch `jules-…`, author `google-labs-jules[bot]`), CI reported, row `DONE`, PR left **open** (never merged).
 4. `--sprint` variant on 2 independent throwaway slices → 2 parallel sessions, both PRs reported.
 
 **🚦 Gate P7 (acceptance):** full dispatch→PR→report loop green; PRs opened by Jules, **not merged**; **dispatch/status runner path makes 0 LLM calls** (deterministic — the honest, scoped form of the token claim).

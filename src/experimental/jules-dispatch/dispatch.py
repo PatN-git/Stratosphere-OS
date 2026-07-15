@@ -102,3 +102,74 @@ def select_eligible(slices):
             continue
         out.append(s)
     return out
+
+
+def _sprint_candidates(repo=None):
+    """Open mode:AFK issues via gh, shaped for select_eligible (blocked_by parsed from a
+    `Blocked-by: BT-x, BT-y` body line if present)."""
+    import subprocess
+    args = ["gh", "issue", "list", "--label", "mode:AFK", "--state", "open",
+            "--json", "number,title,body,labels", "--limit", "100"]
+    if repo:
+        args += ["--repo", repo]
+    out = subprocess.run(args, capture_output=True, text=True)
+    if out.returncode != 0:
+        raise JulesError(0, f"gh issue list failed: {out.stderr.strip()}")
+    slices = []
+    for iss in json.loads(out.stdout or "[]"):
+        blocked = []
+        for line in (iss.get("body") or "").splitlines():
+            low = line.lower()
+            if low.startswith("blocked-by:") or low.startswith("blocked by:"):
+                blocked = [b.strip() for b in line.split(":", 1)[1].split(",") if b.strip()]
+        slices.append({"slice_id": str(iss["number"]),
+                       "labels": [lbl.get("name") for lbl in iss.get("labels", [])],
+                       "blocked_by": blocked})
+    return slices
+
+
+def main(argv=None):
+    import argparse
+    from config import load_api_key
+    from preflight import preflight
+    from jules_api import JulesClient
+
+    ap = argparse.ArgumentParser(description="Dispatch bounded mode:AFK slices to Google Jules (opt-in, experimental).")
+    ap.add_argument("--slice", action="append", default=[], help="slice/issue id (repeatable)")
+    ap.add_argument("--sprint", action="store_true", help="dispatch all eligible open mode:AFK+tier:slice issues")
+    ap.add_argument("--source", required=True, help="Jules source name (list via jules_api.list_sources)")
+    ap.add_argument("--repo", help="owner/name for gh (default: current repo)")
+    ap.add_argument("--max-sessions", type=int, default=3)
+    ap.add_argument("--starting-branch", default="main")
+    ap.add_argument("--ledger", default=str(LEDGER_REL))
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args(argv)
+
+    ids = [c["slice_id"] for c in select_eligible(_sprint_candidates(args.repo))] if args.sprint else list(args.slice)
+    if not ids:
+        print("Nothing to dispatch (no --slice, and --sprint found none eligible).")
+        return 0
+
+    items = []
+    for sid in ids:
+        pf = preflight(sid, repo=args.repo)
+        if not pf.ok:
+            print(f"[{sid}] SKIP: {pf.reason}")
+            continue
+        items.append((sid, pf.issue))
+
+    if args.dry_run:
+        for sid, _ in items:
+            print(f"[dry-run] would dispatch {sid}")
+        return 0
+
+    client = JulesClient(api_key=load_api_key())
+    for r in dispatch_many(client, args.source, items, args.ledger,
+                           max_sessions=args.max_sessions, starting_branch=args.starting_branch):
+        extra = f" session={r['session_id']}" if r.get("session_id") else ""
+        print(f"[{r.get('slice_id')}] {r.get('state')}{extra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
