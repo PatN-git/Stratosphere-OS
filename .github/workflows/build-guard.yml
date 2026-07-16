@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags, for the release bump-guard
 
       - uses: actions/setup-python@v5
         with:
@@ -24,6 +26,13 @@ jobs:
 
       - name: Validate plugin structure
         run: python build/validate.py .
+
+      - name: Release bump-guard (PRs only)
+        # Fails a PR that changed shipped content since the last release tag without
+        # advancing build.py VERSION. Catches new artifacts + non-.md framework changes
+        # that validate.py's per-artifact/consistency guards miss.
+        if: github.event_name == 'pull_request'
+        run: python build/bump_guard.py .
 
       - name: Validate subagent instructions
         run: python tests/test_subagent_spawning.py

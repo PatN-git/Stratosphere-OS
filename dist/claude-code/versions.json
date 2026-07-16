@@ -221,9 +221,9 @@
       "version": "1.0.9"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "4955a558d6ef8cc3d14458ccfd78fc3e308827bfd37fb421611f433ae3fcb8bd",
-      "timestamp": "2026-07-10",
-      "version": "1.0.18"
+      "sha256": "9c694d611858e19aed3658d4a6760ebe331a798f4dec7f4b554d3027efc42f04",
+      "timestamp": "2026-07-15",
+      "version": "1.0.19"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "30aceb1162decea47a229b96d923414a88c890d6369ca9d45da340d4bfb0e3b0",
@@ -276,5 +276,5 @@
       "version": "1.2.0"
     }
   },
-  "plugin_version": "2.0.0"
+  "plugin_version": "2.1.0"
 }
