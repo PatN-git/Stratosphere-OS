@@ -3,13 +3,13 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: User. Do not run autonomously.
-version: "1.0.18"
-timestamp: 2026-07-10
+version: "1.0.19"
+timestamp: 2026-07-15
 ---
 
 # Verify and Ship
 
-**Hand-off contract:** Final gate before pushing the feature branch and opening/updating the PR. Leaves the slice at `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub; the PR merge closes the slice issue.
+**Hand-off contract:** Final gate before pushing the feature branch and opening/updating the PR. The feature PR is opened as a **draft** and marked ready for review only when the parent epic is complete (a standalone issue with no parent opens non-draft) — this keeps a partly-built feature un-mergeable until all its slices land. Leaves the slice at `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub; the PR merge closes the slice issue.
 
 ---
 
@@ -60,7 +60,7 @@ Halt. Await human approval. If approved, or if user response to gap report autho
    If command exits non-zero, **halt and fail ship**. Synchronize CSS tokens first.
 3. Halt for user confirmation to ship (unless pre-authorized).
 4. **Push:** Commit only uncommitted slice code+tests (no memory/doc drift) on the isolated branch (message: `<type>(BT-<padded>): <slice summary>`). Safety net for uncommitted slice files only — never sweep unrelated `.memory/`/`docs/` drift in. (4a never creates the first commit; 3d owns commits.) Push the branch.
-5. **PR (one per feature branch):** if no PR exists for the branch → create with `gh pr create` (if connected); else UPDATE its body and add a comment noting the re-verification — do NOT create a duplicate PR per slice. Title: `feat(BT-<parentPadded>): <parent feature name>`. Body accumulates each shipped slice: `Closes #<sliceIssue>` (and parent `BT-<padded>`), one-line slice summary, design doc link (if UI), the AC↔test coverage table (if audited) OR `[PASS] slice verified` OR `[SKIP] cosmetic`, `[ ] Manual QA Required` if flagged, test command + result, and relevant `[[L-xxx]]`/`[[A-xxx]]` references.
+5. **PR (one per feature branch):** if no PR exists for the branch → create with `gh pr create` (if connected) as a **draft** (`--draft`) — the feature PR accumulates sibling slices and must stay un-mergeable until the parent epic is complete (step 7 flips it ready). **Exception:** a standalone issue with no parent feature is a complete unit — create it non-draft. Else (PR exists) → UPDATE its body and add a comment noting the re-verification; do NOT create a duplicate PR per slice and do NOT change its draft state here. Title: `feat(BT-<parentPadded>): <parent feature name>`. Body accumulates each shipped slice: `Closes #<sliceIssue>` (and parent `BT-<padded>`), one-line slice summary, design doc link (if UI), the AC↔test coverage table (if audited) OR `[PASS] slice verified` OR `[SKIP] cosmetic`, `[ ] Manual QA Required` if flagged, test command + result, and relevant `[[L-xxx]]`/`[[A-xxx]]` references.
 6. **Backport:** Comment the PR link on the GitHub issue (bi-directional trace). Leave the slice at `status:in progress`; do NOT set status:done on ship — the slice is marked done when the PR merges and auto-closes the issue.
-7. **Epic Check:** If all sibling sub-issues under parent are closed, state: `"All sub-issues for BT-<parent> complete! Ready to merge."` and update parent to `status:done` (`gh issue edit <parent> --remove-label "status:in progress" --add-label "status:done"`).
+7. **Epic Check:** If all sibling sub-issues under the parent are closed → mark the feature PR ready for review (`gh pr ready <n>`, if connected; no-op if it was opened non-draft), state `"All sub-issues for BT-<parent> complete! PR #<n> ready to merge."`, and update parent to `status:done` (`gh issue edit <parent> --remove-label "status:in progress" --add-label "status:done"`).
 8. Output: `[SHIPPED] PR #<n> open for BT-<padded>.` Never merge.
