@@ -2,16 +2,16 @@
 type: implementation-plan
 title: Jules Dispatch — Phased Implementation Plan (v0.1, experimental)
 description: Optional, on-demand skill pack that offloads bounded StratOS slices to Google Jules (async cloud agent), preserving Claude/Antigravity tokens on the expensive implement step. Dispatches and reports; hands off at "PR opened". Distributed via sync-skills, invisible to scaffold --update, never merges, never orchestrates.
-status: finalized — ready to execute at P0
+status: COMPLETE — P0–P7 done; live E2E passed and torn down 2026-07-16
 audience: implementing-agent
-timestamp: 2026-07-15
-version: "1.0.0"
-revision: finalized — all decisions locked; awaiting maintainer go + token-limit reset
+timestamp: 2026-07-16
+version: "1.1.0"
+revision: P0–P7 built & verified on feat/jules-dispatch-v0.1; live E2E on cleantech_jobs passed
 ---
 
 # Jules Dispatch — Implementation Plan (v0.1)
 
-> **▶ RESUME POINT (when work restarts):** Plan is FINALIZED — no open design decisions. Begin at **P0**. P0–P6 (the full deterministic pack + tests + distribution) need **nothing from the maintainer** and can run start-to-finish solo. Only **P7 (live E2E)** needs the key already in `.env.local` and the Jules app on `cleantech_jobs` (both confirmed present). See "Inputs" for the tiny maintainer surface and the mandatory P7 teardown.
+> **✅ COMPLETE.** P0–P7 built, tested, and committed on `feat/jules-dispatch-v0.1`. Live E2E on `cleantech_jobs` passed the full loop (dispatch → session → PR #79 → `status.py` report → teardown; never merged, fully cleaned up). Contract confirmed live: `/sources`, `create_session`, `get_session`, `find_pr_url` (PR at `session.outputs[].pullRequest.url`). **Remaining (human):** open the feature PR; pin `external-skills.json` `ref` to the merge commit at release. See "Inputs" and the changelog.
 
 > **Authoring note (agent-first):** Executable work orders, not prose. Each phase has preconditions, deterministic steps, artifacts, and a **binary test gate**. Do not advance until the gate is GREEN. Follow StratOS TDD (`3d`/`micro-tdd`): failing gate first → implement to green → refactor. **Never merge — humans merge.**
 
@@ -131,7 +131,7 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 **Objective.** Fire-and-forget catch-up that **reports**, and stops.
 
 **Steps:**
-1. `status.py`: read ledger → for each `DISPATCHED`, `get_session` + `find_pr_url`. PR ready → print `PR ready: <url>` + `gh pr view` CI status, set ledger row `DONE`. Still running → leave. Jules errored → `FAILED` + reason. **Jules-PR fingerprint (from CleanTech PR #77):** branch prefixed `jules-<digits>-<hash>`, commits authored by `google-labs-jules[bot]`, body with `## Summary` / `## Changes` — a corroborating detection signal alongside the session's own PR URL.
+1. `status.py`: read ledger → for each `DISPATCHED`, `get_session` + `find_pr_url`. PR ready → print `PR ready: <url>` + `gh pr view` CI status, set ledger row `DONE`. Still running → leave. Jules errored → `FAILED` + reason. **Identifying the PR (verified live):** authoritative = the session's `outputs[].pullRequest.url` (what `find_pr_url` uses); reliable corroboration = commit author `google-labs-jules[bot]`. The branch name is **not** a fixed `jules-*` prefix — Jules follows the repo's `AGENTS.md` conventions (live E2E produced `feature/<slug>-<sessionId>`).
 2. **Hand-off, not orchestration (decided — always-4a, human-triggered):** `--status` is a **deterministic, human-invoked** poll (no LLM, ~0 tokens). There is **no background or scheduled *agent* reconcile** — Jules sessions are intentionally slow, so an auto-checking agent loop would burn tokens for nothing. When a PR is ready, `--status` prints the PR URL + `gh pr view` CI status and instructs the human to run the **full `/4a_verify-and-ship` manually** in a real clone (`gh pr checkout <pr> && /4a…`). Verification is **always full `4a`**, always human-initiated. The pack never invokes `4a`/`3z` itself (I2) and never checks out/pushes locally (I5). *(Optional later: a deterministic cron that only refreshes the ledger — still zero-LLM — but never an LLM agent poll.)*
 3. No merge, no auto-merge anywhere.
 
@@ -169,7 +169,7 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 0. ⚠️ `cleantech_jobs` is a **real repo**, not a sandbox. All E2E artifacts must be trivial, clearly tagged, never merged, and fully removed in teardown. **Confirm the specific throwaway issues with the maintainer before any live dispatch.**
 1. Agent creates 1–2 trivial, harmless throwaway issues via `gh` (e.g. add a code comment / touch a doc line), titled `TEST(jules-e2e): …`, labeled `mode:AFK` + `tier:slice`.
 2. `dispatch.py --slice <id> --source <src>` → session created, ledger row `DISPATCHED`.
-3. (out-of-band wait — Jules is deliberately slow) `status.py` → PR discovered (branch `jules-…`, author `google-labs-jules[bot]`), CI reported, row `DONE`, PR left **open** (never merged).
+3. (out-of-band wait — Jules is deliberately slow) `status.py` → PR discovered via the session's `outputs[].pullRequest.url` (commit author `google-labs-jules[bot]`), CI reported, row `DONE`, PR left **open** (never merged).
 4. `--sprint` variant on 2 independent throwaway slices → 2 parallel sessions, both PRs reported.
 
 **🚦 Gate P7 (acceptance):** full dispatch→PR→report loop green; PRs opened by Jules, **not merged**; **dispatch/status runner path makes 0 LLM calls** (deterministic — the honest, scoped form of the token claim).
@@ -187,7 +187,7 @@ The adversarial review's strongest recommendation was to make Jules an *implemen
 - **`3z` integration** = deferred to v0.2.
 - **Verification** = **always full `4a`, human-triggered**; `--status` is a deterministic zero-LLM poll with no background agent reconcile (P4).
 - **`AGENTS.md` standard** = ADOPTED (done on branch `refactor/adopt-agents-md-standard`, v2.0.0) — target repos carry a root `AGENTS.md` Jules auto-reads; no generator needed.
-- **GitHub-handoff reference** = ✅ received (CleanTech PR #77): Jules branch prefix `jules-<digits>-<hash>`, commit author `google-labs-jules[bot]`, `## Summary`/`## Changes` body.
+- **GitHub-handoff reference** = ✅ (PR #77 + live E2E): identify a Jules PR by the session's `outputs[].pullRequest.url` + commit author `google-labs-jules[bot]`; branch name varies (follows repo `AGENTS.md`), do not match on prefix.
 - **Test issues** = agent-generated via `gh` (deterministic tests use in-code fixtures; live E2E creates throwaway issues) — maintainer need not hand-write any.
 - **Key** = present in `.env.local` as **`JULES_API_KEY`** (canonical env var; the duplicate `X-Goog-Api-Key=` line is redundant and may be deleted).
 - **Live E2E repo** = **`cleantech_jobs`** (real repo, Jules app already installed) — mandatory full teardown per P7.

@@ -42,7 +42,10 @@ The activities stream is progress/plan detail; the PR lands on `session.outputs`
 }
 ```
 
-## GitHub-handoff fingerprint (from cleantech_jobs PR #77)
-Jules opens PRs from branches prefixed `jules-<digits>-<hash>`, commits authored by
-`google-labs-jules[bot]`, body with `## Summary` / `## Changes`. Corroborating signal
-alongside the session's own `outputs[].pullRequest.url`.
+## Identifying a Jules PR (verified live 2026-07-16)
+- **Authoritative:** the session's **`outputs[].pullRequest.url`** (what `find_pr_url` uses).
+- **Reliable corroboration:** commit author **`google-labs-jules[bot]`**.
+- **Branch name is NOT a fixed `jules-*` prefix** — Jules follows the target repo's
+  `AGENTS.md` branch conventions. Observed: PR #77 used `jules-<digits>-<hash>`, but the
+  live E2E on cleantech_jobs produced `feature/<slug>-<sessionId>`. **Do not match on the
+  branch prefix.**
