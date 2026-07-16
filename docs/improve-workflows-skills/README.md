@@ -2,8 +2,8 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "1.4.0"
-timestamp: 2026-07-09
+version: "1.5.0"
+timestamp: 2026-07-15
 ---
 
 # Improving Workflows & Skills
@@ -27,13 +27,34 @@ The single most important distinction, because the rules below (especially §2 e
 | Runs where | **any** project, even unscaffolded | only inside a **scaffolded** StratOS project |
 | Dependencies | **must be self-contained** — no project-local refs | **may cite** `.agents/workflows/.reference/*` |
 | Role | self-contained discipline; reusable everywhere | orchestrates a phase; **may delegate to skills** |
-| `disable-model-invocation` | set it to make a skill user-only | N/A — a command is already user-only |
+| `disable-model-invocation` | **not used in this repo** (a Claude Code field) — tune auto-fire via `description`; front a user-only skill with a workflow launcher | N/A — a command is already user-only |
 | `trigger:` frontmatter | inert — the **`description`** drives invocation | inert — documentation only |
 
 **Consequences you'll keep hitting:**
 - A skill can fire in a project that was never scaffolded, so it **cannot depend on a scaffolded file** — bundle its discipline inline.
 - A workflow always runs in a scaffolded project, so it **can and should** point at shared references instead of duplicating them.
-- Don't add `disable-model-invocation` to a workflow (redundant); to tune whether a *skill* auto-fires, edit its **`description`**, not `trigger:`.
+- Don't add `disable-model-invocation` at all — no artifact in this repo uses it; to tune whether a *skill* auto-fires, edit its **`description`**, not `trigger:` (see the Frontmatter contract below).
+
+### Frontmatter contract
+
+Every artifact declares OKF frontmatter. Required keys and the invocation levers:
+
+| | Skill | Workflow |
+|---|---|---|
+| Required keys | `name`, `type: skill`, `description`, `version`, `timestamp` | those + `type: workflow <MODE>` and `trigger:` |
+| `type` value | `skill` (plain) | `workflow HITL` or `workflow AFK` — the execution **mode**, not a status |
+| Invocation lever | the **`description`** — the model reads it to decide whether to fire | the command **channel** (user-only) + a documentary `trigger:` line |
+
+- **This repo does not use `disable-model-invocation`.** It's a real Claude Code field, but here a skill's auto-fire is tuned entirely through its **`description`**: write it to say when the skill should — and shouldn't — fire. To make a skill user-only, say so in the description (e.g. *"invoke only on explicit user request — never autonomously"*) and front it with a **workflow** launcher (below). Don't add the field.
+- **`trigger:` is documentary/inert** but conventional on every workflow: `trigger: User. Do not run autonomously.` The command channel is what enforces user-only.
+- **Status/maturity (e.g. "experimental") lives in the `description`, never in `type`.** `type` is artifact-kind + mode only.
+
+### Distribution — bundled vs on-demand (and where a launcher must live)
+
+- **Bundled skills** live in `src/skills/` → build → `dist/*/skills/`; they ship with the plugin and register globally.
+- **On-demand packs** (opt-in / experimental) live in `src/experimental/<name>/`, are registered in `external-skills.json`, and are fetched by **`sync-skills`** into `.agents/skills/<name>/`. `build/validate.py` guards that no `experimental/` path leaks into `dist/`.
+- **`sync_skills.py` installs by *name* under `.agents/skills/<name>/` only** — its `targetPath` field is cosmetic and it *cannot* place a file into `.agents/workflows/`. A skill fetched this way is invocable by name but has **no slash command on Antigravity**.
+- **A slash-command launcher must therefore be a bundled workflow in `src/workflows/`** that delegates to the skill (workflows may delegate to skills — §1; point, don't duplicate — §2). Claude Code registers the plugin command globally; for Antigravity, add the workflow's basename to `scaffold.py`'s `EXTRA_WORKFLOWS` so it's copied into the project's `.agents/workflows/`.
 
 ## 2. Shared components over duplication — propose the refactor
 
