@@ -1,0 +1,6 @@
+{
+  "activities": [
+    { "name": "sessions/sess_abc123/activities/act_1", "createTime": "2026-07-15T09:01:00Z", "planGenerated": { "steps": ["read repo", "edit file"] } },
+    { "name": "sessions/sess_abc123/activities/act_2", "createTime": "2026-07-15T09:05:00Z", "progressUpdate": { "message": "editing lib/constants.js" } }
+  ]
+}

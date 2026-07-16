@@ -269,6 +269,11 @@
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
       "timestamp": "2026-06-17",
       "version": "1.0.1"
+    },
+    "workflows/x_jules-dispatch.md": {
+      "sha256": "0032cac15e09554f0a23589c5dae7485f8eca868971277312e4448ad9ee484e1",
+      "timestamp": "2026-07-15",
+      "version": "0.1.1"
     }
   },
   "plugin_version": "2.0.0"

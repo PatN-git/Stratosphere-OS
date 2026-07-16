@@ -242,6 +242,15 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         except Exception as e:
             errs.append(f"ERROR reading {plat}/versions.json: {e}")
 
+# 2.95 Experimental source must NEVER leak into dist. The jules-dispatch pack lives
+# under src/experimental/ and ships on demand via sync-skills, not the plugin bundle.
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    pdir = root / plat
+    if pdir.exists():
+        for p in pdir.rglob("*"):
+            if "experimental" in p.relative_to(pdir).parts:
+                errs.append(f"EXPERIMENTAL PATH LEAKED INTO {plat}: {p.relative_to(root)}")
+
 # 3. Counts
 for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:
     n = len(list((root / plat / inv).glob('*.md')))

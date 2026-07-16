@@ -122,6 +122,14 @@ StratosphereOS conforms to the [Open Knowledge Format (OKF) v0.1 Specification](
 ### UI Stack & Design Tooling
 By default, UI projects assume React + Tailwind CSS + shadcn/ui. Non-UI projects rely on clean interface contracts defined during `/2b_interface-design`. Google Stitch design integration is supported automatically when enabled in workspace settings.
 
+### Experimental: Jules Dispatch (opt-in)
+An optional pack that offloads bounded `mode:AFK` slices to **Google Jules** (an async cloud coding agent) so implementation runs on Google's side, preserving Claude/Antigravity tokens. It **dispatches and reports only** — it never merges, never enables auto-merge, and never orchestrates other workflows; you verify each Jules PR with `/4a_verify-and-ship` and merge it yourself.
+
+- **Not bundled — fetched on demand:** `python <plugin>/scripts/sync_skills.py --only jules-dispatch` lands it at `.agents/skills/jules-dispatch/`. It is invisible to `/stratosphere-update` (survives byte-identical).
+- **Setup:** `JULES_API_KEY` in `.env.local` (sent as the `X-Goog-Api-Key` header); install the Jules GitHub app on the repo and configure its environment once in Jules's UI (Initial Setup → Run and Snapshot); keep a root `AGENTS.md` (Jules auto-reads it for conventions).
+- **Data egress:** Jules clones the repo into a Google-managed VM and opens a PR on origin. Reconcile via PR review — nothing is pushed from your local tree.
+- Status: `v0.1`, experimental. Source: `src/experimental/jules-dispatch/`; plan: `docs/plans/jules-afk-dispatch-implementation-plan.md`.
+
 ---
 
 ### Maintainer Notes: Single Source Build & Release Pipeline

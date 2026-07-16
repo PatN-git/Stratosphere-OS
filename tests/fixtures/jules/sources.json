@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "name": "sources/github/PatN-git/cleantech_jobs",
+      "id": "github/PatN-git/cleantech_jobs",
+      "githubRepo": { "owner": "PatN-git", "repo": "cleantech_jobs" }
+    }
+  ]
+}
