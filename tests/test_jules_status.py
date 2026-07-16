@@ -90,6 +90,21 @@ def test_no_merge_calls_in_code():
     print("PASS"); return True
 
 
+def test_no_local_git_in_code():
+    print("--- test_no_local_git_in_code ---")
+    # I5: the pack must NEVER run local git or a gh branch checkout — it operates via gh/API
+    # on origin. Match git/branch tokens only as QUOTED subprocess args, so the human-facing
+    # 'gh pr checkout <url> in a real clone' instruction string (prose) is not flagged.
+    pat = re.compile(r"""["'](git|checkout|clone|switch|push)["']""")
+    offenders = []
+    for py in PACK.glob("*.py"):
+        for i, line in enumerate(py.read_text(encoding="utf-8").splitlines(), 1):
+            if pat.search(line):
+                offenders.append(f"{py.name}:{i}: {line.strip()}")
+    assert not offenders, "local git/checkout op found in pack subprocess args (violates I5 — gh/API only):\n" + "\n".join(offenders)
+    print("PASS"); return True
+
+
 def test_no_workflow_invocation_in_status():
     print("--- test_no_workflow_invocation_in_status ---")
     # status.py may PRINT the /4a handoff instruction, but must not SUBPROCESS a workflow.
@@ -105,7 +120,7 @@ def test_no_workflow_invocation_in_status():
 TESTS = [
     test_status_pr_ready_flips_done, test_status_running_stays_dispatched,
     test_status_skips_done_rows, test_status_session_error_marks_failed,
-    test_no_merge_calls_in_code, test_no_workflow_invocation_in_status,
+    test_no_merge_calls_in_code, test_no_local_git_in_code, test_no_workflow_invocation_in_status,
 ]
 
 if __name__ == "__main__":
