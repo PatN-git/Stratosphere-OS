@@ -245,6 +245,11 @@
       "timestamp": "2026-06-17",
       "version": "1.0.1"
     },
+    "commands/x_jules-dispatch.md": {
+      "sha256": "822597e51ee990c0d9bbb4c8b668cf781e97b5a716ccef3dcc2447484c15c66b",
+      "timestamp": "2026-07-15",
+      "version": "0.1.0"
+    },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "43546b9af5d28e3eeb008b8f974c5c610fa5b50a7e47e49566389a36971c6082",
       "timestamp": "2026-07-15",

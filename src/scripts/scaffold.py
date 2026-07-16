@@ -318,7 +318,7 @@ ASSETS = PLUGIN_ROOT / "assets" / "templates"
 WF_SRC = PLUGIN_ROOT / "workflows" if (PLUGIN_ROOT / "workflows").exists() else PLUGIN_ROOT / "commands"
 
 LIFECYCLE_RE = re.compile(r"^[0-4].*\.md$")  # 0a..4b
-EXTRA_WORKFLOWS = {"sync-skills.md"}          # also copy this utility workflow
+EXTRA_WORKFLOWS = {"sync-skills.md", "x_jules-dispatch.md"}  # non-numbered workflows to also surface on Antigravity
 
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
@@ -337,7 +337,7 @@ def map_bundled_to_project(rel_path: str):
         elif sub == "rules": return f".agents/rules/{name}"
         elif sub == "references": return f".agents/workflows/.reference/{name}"
         elif sub == "github": return f".github/workflows/{name}"
-    elif parts[0] in ("workflows", "commands") and (re.match(r"^[0-4].*\.md$", parts[-1]) or parts[-1] == "sync-skills.md"):
+    elif parts[0] in ("workflows", "commands") and (LIFECYCLE_RE.match(parts[-1]) or parts[-1] in EXTRA_WORKFLOWS):
         return f".agents/workflows/{parts[-1]}"
     return None
 
