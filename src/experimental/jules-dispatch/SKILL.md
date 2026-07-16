@@ -1,15 +1,14 @@
 ---
 name: jules-dispatch
-type: skill experimental
-description: EXPERIMENTAL, user-invoked only — offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatch + report; hands off at "PR opened". Never merges, never orchestrates. Invoke when the user explicitly asks to send/offload a slice (or a sprint) to Jules.
-disable-model-invocation: true
-version: "0.1.2"
+type: skill
+description: EXPERIMENTAL, user-invoked only — offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatch + report; hands off at "PR opened". Never merges, never orchestrates. Invoke ONLY on an explicit user request (normally via /x_jules-dispatch) — never autonomously.
+version: "0.1.3"
 timestamp: 2026-07-15
 ---
 
-> **User-invoked only.** `disable-model-invocation: true` — the agent must never auto-fire
-> this skill. It spends Jules quota and opens PRs on a real repo, so dispatch is always a
-> deliberate human action.
+> **User-invoked only.** Run via `/x_jules-dispatch` or an explicit user request — never
+> autonomously (the description is the contract). It spends Jules quota and opens PRs on a
+> real repo, so dispatch is always a deliberate human action.
 
 # SKILL: jules-dispatch (experimental)
 
