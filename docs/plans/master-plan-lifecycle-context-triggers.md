@@ -145,6 +145,7 @@ clears a blocker**. Add it:
   merge). **0d Phase 3.6** drift check (extended in Workstream C below) reconciles any stragglers.
 - **Add to Plan C's Transition-ownership table** as: `blocker → in review|done ⇒ dependents' Blocked by cleared | 4a step 6 (in review), merge/0b (done)`.
 - *(Threshold is "in review OR done" per feedback — slices share a feature branch/PR, so a blocker's code exists once it is `in review`, making dependents safe to proceed.)*
+- **Blocker placement writers (post-feedback):** `3b` is the birth writer of `Blocked by` (at issue creation). `3c` may **add** a late-discovered blocker edge during sprint planning — but only as a `[NEW-DEP]` surfaced at its Phase 4 HITL halt and written on explicit user confirmation (Phase 5 step 3); it never removes an edge. Clearing remains 4a (at `in review`) / 0b / merge. This keeps effectively one writer per action: 3b births, 3c amends-with-confirmation, 4a/0b clear.
 - **3a** — BACKLOG row-shape refs → 9-column header.
 - **0d** — **extend existing Phase 3.6 drift check** to also compare `Parent` + `Blocked by` (+ `Labels`) against `gh`, not just status/milestone (GitHub authoritative, advisory-only, no new pass), **and flag any `Blocked by` entry whose blocker is already `in review`/`done` as stale (should have been cleared by 4a/merge).**
 - **1b** — align discovery-brief `status` to `draft|approved|superseded` if it uses old vocab (verify during execution).

@@ -246,9 +246,9 @@
       "version": "2.1.0"
     },
     "workflows/3c_sprint-planning.md": {
-      "sha256": "95f406ab8b12f14e6545f20347d7383b4ce536c42aeb1fe6e6e6c3a3aebfcc71",
+      "sha256": "76a79530f49ddd4af82c233fd70ade049391a11b9de2f6da519af7302604f23b",
       "timestamp": "2026-07-17",
-      "version": "2.1.0"
+      "version": "2.2.0"
     },
     "workflows/3d_implement-issue.md": {
       "sha256": "f675ab77fd6baf0ce3d8ca4c883665240c3ed12c3df6fad0c5e9b9da79dfbd22",
