@@ -7,7 +7,7 @@ paths:
 type: rule
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.1 conformance.
-version: "1.0.3"
+version: "1.0.4"
 timestamp: 2026-07-17
 ---
 
@@ -30,6 +30,8 @@ Every concept document must begin with a YAML frontmatter block containing:
 - `resource` (optional): URI to the underlying asset (e.g., issue URL, repo path) where one exists.
 
 Other existing metadata keys (such as `issue_url`, `status`, `linked-prd`) are preserved alongside these fields.
+
+**Canonical doc-status vocabulary (guidance; OKF stays value-agnostic).** Editorial `status:` on `prd` and `interface-design` docs uses one shared enum: `draft | approved | superseded`. Work-status (`status:*` GitHub labels / BACKLOG `Status`) never appears in doc frontmatter, and this editorial enum never appears on issues. The `discovery-brief` type keeps its own routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision, not editorial maturity.
 
 ### 2.1 Activation contract (`rule` and `workflow` types)
 

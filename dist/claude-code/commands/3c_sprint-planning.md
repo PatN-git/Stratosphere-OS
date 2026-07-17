@@ -3,7 +3,7 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: manual
-version: "2.0.8"
+version: "2.1.0"
 timestamp: 2026-07-17
 ---
 
@@ -11,17 +11,21 @@ timestamp: 2026-07-17
 
 **Hand-off contract:** Assigns leaf slices to sprint milestone `vX.Y.Z` (Z ≥ 1). Reads active release `X.Y` from parent `vX.Y.0` release milestone; defaults to `v1.0`. Sprint planning owns Z. Never invent `X.Y`.
 
+## Phase 0: Context Hydration (self-gated, read-only)
+Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+
 ## Phase 1: Context Intake & Triage Scan
 1. Read `.memory/BACKLOG_MAP.md`.
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
-   - Map active GitHub issues. Set `status:planned` if missing. Exclude epics (`tier:epic`). Exclude `concept:*` issues.
+   - Operate on `tier:slice AND status:planned` only. Exclude epics (`tier:epic`), `concept:*` issues, and `status:needs_spec` slices (Template A spikes — same exemption as `concept:*`). **Never auto-flip `needs_spec → planned`** (that promotion is a deliberate re-spec, not a sprint-planning side effect).
    - Verify all slices belong to current release `vX.Y`. If mismatches exist, flag and ask user.
    - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if leaf issue (without `concept:*` label) lacks BACKLOG_MAP entry, or lacks any of `type:`, `mode:`, `tier:slice`, and `size:` labels.
    - List leaf issues labeled `[NEEDS_SPEC]`.
 
 ## Phase 2: Filter & Sort Engine
-1. **Dependency Sorting:** Evaluate dependencies. Parse native GitHub dependencies (`gh issue view <#> --json blockedBy`) if supported; else parse text `Blocked by:` in issue body and `Dependencies` column in `BACKLOG_MAP.md`.
+1. **Dependency Sorting:** Evaluate dependencies. Parse native GitHub dependencies (`gh issue view <#> --json blockedBy`) if supported; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
+   - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
    - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.
 2. **ICE Prioritization:** Read pre-calculated ICE from `BACKLOG_MAP.md`. Recalculate ICE ONLY if empty or effort weight disagrees with label (ICE = (Impact * Confidence) / Effort weight; small=1, medium=2, large=3).

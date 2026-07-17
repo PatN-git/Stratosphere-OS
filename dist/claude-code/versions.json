@@ -21,9 +21,9 @@
       "version": "1.0.4"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "cf7c1ccbdf3c22812ef78f0d8c5e3dc3728baf8ed2e55c74ddaa3f6ac3c92bdd",
-      "timestamp": "2026-07-10",
-      "version": "1.1.6"
+      "sha256": "4dec1bd5d0aed63b560dcb4a225593428842ae873092f8c1659285f3523b0b40",
+      "timestamp": "2026-07-17",
+      "version": "1.2.0"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
@@ -56,9 +56,9 @@
       "version": "1.0.2"
     },
     "assets/templates/references/PRD-template.md": {
-      "sha256": "e6b92190cbb3f80f3d2ff569a18e57eb3041e187a2b882455914b98198564e70",
+      "sha256": "b36d5da2c3968b698d1c2aceb08efb179fe7a906ee24a740158df6610dcc9125",
       "timestamp": "<YYYY-MM-DD>",
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     "assets/templates/references/ROADMAP-template.md": {
       "sha256": "8d943104fcd7bfb895d22d021aeaea26405a3b3145bbb7377e4ccfe18641fbd4",
@@ -96,9 +96,9 @@
       "version": "1.0.2"
     },
     "assets/templates/references/design-doc-template.md": {
-      "sha256": "13423be90eae81688acf7997f25aab435efd6dfc6ca9f38d15b4b2f8dd12b767",
+      "sha256": "c310505ab156e43aa881e58001270a24703d6f8c5e8ea3ada2a2bbfac11368b4",
       "timestamp": "<YYYY-MM-DD>",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "assets/templates/references/discovery_brief_template.md": {
       "sha256": "f471655a647947cc0012285e0952a91809df5bf633d2fe4595978a830a4e8a5e",
@@ -106,9 +106,9 @@
       "version": "1.0.3"
     },
     "assets/templates/references/issue-templates.md": {
-      "sha256": "2282fa218b72b62a1f5c022cd06edc7806760dda03d2e83ed4903dde343b4302",
-      "timestamp": "2026-07-10",
-      "version": "1.0.1"
+      "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
+      "timestamp": "2026-07-17",
+      "version": "1.0.2"
     },
     "assets/templates/references/multi-sided-discovery.md": {
       "sha256": "3353663be806ad8734781a3d99c7c505c9809482bf4759839314eb032d0bd275",
@@ -136,14 +136,14 @@
       "version": "1.0.2"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "deae5ae1121387b57fa949b984c61a0a7f37a22ce51ac8dbb9e526c6776836d1",
+      "sha256": "003e4cf2ebc42eef2b8b8a5c174567c1df1c58c58620e11f9c61e43ce0a00950",
       "timestamp": "2026-07-17",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "7b728adca243d870ea2ba53dce012b02061ad69a48ae31b70f08a88a6b2350b1",
+      "sha256": "b94dcdc36f9eca7c99c7030227d7888a95235ebf443ebf95fdb1e8f74160eefd",
       "timestamp": "2026-07-17",
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     "assets/templates/rules/output-mode.md": {
       "sha256": "64012987d54a3d308db92778cd2f5104c3cce34c69d9c56d68011a1d5aad0401",
@@ -151,89 +151,89 @@
       "version": "1.0.4"
     },
     "commands/0a_start-session.md": {
-      "sha256": "5f2b9f1ded4e2968ea5065c239859addb7881700d8e522d612883cf6abb9a26d",
+      "sha256": "1894fb6770b0d2660ceee39db3743821c898721eea11bd161cddbee7d144a5b8",
       "timestamp": "2026-07-17",
-      "version": "1.0.7"
+      "version": "1.1.0"
     },
     "commands/0b_stop-session.md": {
-      "sha256": "0c85dcbeedc5314db55429ead62b8395d02c7befab45d2f5388ba576f6a5d31f",
+      "sha256": "732585f5c40f183e129814ae3c3a56b203ab78e7ad264ccd084925d84b2fb2c6",
       "timestamp": "2026-07-17",
-      "version": "1.1.1"
+      "version": "1.2.0"
     },
     "commands/0c_handoff.md": {
-      "sha256": "fa1d43f9c45b4e5edb2f8d8c0d4ffe8039b6304ed090de0f191b0fa2adba3b87",
-      "timestamp": "2026-07-17",
-      "version": "1.0.3"
-    },
-    "commands/0d_nightly-consolidation.md": {
-      "sha256": "5a1c355386e8c76745f74b87d6b9cc4f7ff52c79b0e5baea703d8b544d4a26a7",
-      "timestamp": "2026-07-17",
-      "version": "1.0.7"
-    },
-    "commands/1a_research.md": {
-      "sha256": "df7329a60673c3c537c126a6357fff4a7f114beb585e27ddc1f8d026620626bc",
-      "timestamp": "2026-07-17",
-      "version": "1.0.5"
-    },
-    "commands/1b_concept-framing.md": {
-      "sha256": "46199f2ae003b2492b2e0d761ec1dff2fe6ae753f17194f3fa1c20c346afd475",
-      "timestamp": "2026-07-17",
-      "version": "1.0.11"
-    },
-    "commands/1c_concept-map.md": {
-      "sha256": "13fd9d7324424ca853a18cc11de162f183d06055cc0669e04e70dbe2dec15f8c",
+      "sha256": "fd43128f561fe99e9299391b4698de0112c459a114e2d7f3b5969d51ccaca3ed",
       "timestamp": "2026-07-17",
       "version": "1.0.4"
     },
-    "commands/2a_write-prd.md": {
-      "sha256": "2e6fc53c3cb2a9598a30f6c6766c2d50cb16b13db861f067cfbbffa3ea45ae4d",
+    "commands/0d_nightly-consolidation.md": {
+      "sha256": "dad67d7a47cd31d717928c53a83f065375ce8083e45d3be9da97966b5074a416",
       "timestamp": "2026-07-17",
-      "version": "1.1.7"
+      "version": "1.1.0"
     },
-    "commands/2b_interface-design.md": {
-      "sha256": "790257daa01a378b06f3a8c4d998b01a957c2dee340d1538ad777dca0ba3f811",
+    "commands/1a_research.md": {
+      "sha256": "c936f97cfa9f10b46e086903b3c1b0a91dff7b80298ca26cd925db6ce01aef29",
       "timestamp": "2026-07-17",
-      "version": "1.1.8"
+      "version": "1.0.6"
     },
-    "commands/3a_version-planning.md": {
-      "sha256": "7de67c9565765c92d757ae7b2abefe8e012f376d894f51852e11403f64c2fd09",
+    "commands/1b_concept-framing.md": {
+      "sha256": "f440e7aa4a338252c08fdf637343ffbc00f6f1f8d37d53454fc2c1869acc10cf",
+      "timestamp": "2026-07-17",
+      "version": "1.0.12"
+    },
+    "commands/1c_concept-map.md": {
+      "sha256": "ad91d42bea4d85aca25b99942eb9b488394039336869cd74bc3c498fbd7b5152",
       "timestamp": "2026-07-17",
       "version": "1.0.5"
     },
-    "commands/3b_create-issue.md": {
-      "sha256": "32148f5b60522d19b15c9f51ac281fc731a2782d73e82541282b114107a819fd",
+    "commands/2a_write-prd.md": {
+      "sha256": "6645789e3d11ea3d9375f370cb6d0f8b7190a84dac94091e83b5a6745707646f",
       "timestamp": "2026-07-17",
-      "version": "2.0.7"
+      "version": "1.2.0"
+    },
+    "commands/2b_interface-design.md": {
+      "sha256": "fa38279b76c1084b26a3a5b8e679608bdfbbcd8e7f22e8e64c40feb86cf7e029",
+      "timestamp": "2026-07-17",
+      "version": "1.2.0"
+    },
+    "commands/3a_version-planning.md": {
+      "sha256": "7fd77a8f1c94c40b6b78d4b0dc8d3122073d99903aa3ade67948c6914c58f63f",
+      "timestamp": "2026-07-17",
+      "version": "1.0.6"
+    },
+    "commands/3b_create-issue.md": {
+      "sha256": "02f32cba463a3a82692d31b96b64b7816841d5872d9e2761d7ee95b071863919",
+      "timestamp": "2026-07-17",
+      "version": "2.1.0"
     },
     "commands/3c_sprint-planning.md": {
-      "sha256": "6f39b35abe0f19f9366c5908731b9d36f5a13c3c7bb41f7d31b75cabcb593597",
+      "sha256": "95f406ab8b12f14e6545f20347d7383b4ce536c42aeb1fe6e6e6c3a3aebfcc71",
       "timestamp": "2026-07-17",
-      "version": "2.0.8"
+      "version": "2.1.0"
     },
     "commands/3d_implement-issue.md": {
-      "sha256": "422e033f3d5f1cc4905a8f3ee65875602f6659bd06d7ccac63e76fcd2e5fa398",
+      "sha256": "f675ab77fd6baf0ce3d8ca4c883665240c3ed12c3df6fad0c5e9b9da79dfbd22",
       "timestamp": "2026-07-17",
-      "version": "2.0.14"
+      "version": "2.1.0"
     },
     "commands/3z_afk-loop.md": {
-      "sha256": "4e52128860652f91af09d08ff64bdefc64eec18df4f100f33624e605e47cb080",
+      "sha256": "034fe7cc10396317af353980c6f62a5d82c69119185fbd3a122e372a581e2032",
       "timestamp": "2026-07-17",
-      "version": "1.0.10"
+      "version": "1.0.11"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "08c5e4aeea3ce47af8dda4f1a5b0d959d3eef1d6267a9aca5c35e50e392ef350",
+      "sha256": "d50e3d31b499eb3b99ef4883a6546d365fb16b9ae61a16e7a774434349cc6503",
       "timestamp": "2026-07-17",
-      "version": "1.0.20"
+      "version": "1.1.0"
     },
     "commands/4b_audit-architecture-drift.md": {
-      "sha256": "8673e82f03c00c9f1543229c514739cab89cb71b203a90152d7a5f263052234e",
+      "sha256": "9571a664fbfe6c3c45c2477ae31681f50b583abb80faeab4faddfa27b57a5672",
       "timestamp": "2026-07-17",
-      "version": "1.0.8"
+      "version": "1.0.9"
     },
     "commands/stratosphere-setup.md": {
-      "sha256": "711228ca530922ab62fe6622f55042143be97a01ef222cbb77431a4de16526c0",
-      "timestamp": "2026-07-15",
-      "version": "1.0.11"
+      "sha256": "2f0ca7e852a9139f4ab18a9a848953eb786cad9024ea91f4d04841440a299046",
+      "timestamp": "2026-07-17",
+      "version": "1.0.12"
     },
     "commands/stratosphere-update.md": {
       "sha256": "bd48b819926fa92d990727c9083eced6932c40db12e030b70cb6b4b78d23fd33",
@@ -246,9 +246,14 @@
       "version": "1.0.1"
     },
     "commands/x_jules-dispatch.md": {
-      "sha256": "6a5d0aff7a6501f00d17383e47bd1753bb96c9242b362a1787e88b3528db4bf3",
+      "sha256": "b1664e9da947f9e6e2fdd3a2cd6fa81390ff65382bc6e14d9d57c2beae35c797",
       "timestamp": "2026-07-17",
-      "version": "0.1.2"
+      "version": "0.1.3"
+    },
+    "skills/load-memory/SKILL.md": {
+      "sha256": "190e52767d76c3c94a5518a0dc77d56ab1f90250f0fc82ba3d14f01ce876d2fb",
+      "timestamp": "2026-07-17",
+      "version": "1.0.0"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "43546b9af5d28e3eeb008b8f974c5c610fa5b50a7e47e49566389a36971c6082",
@@ -276,5 +281,5 @@
       "version": "1.2.0"
     }
   },
-  "plugin_version": "2.2.0"
+  "plugin_version": "3.0.0"
 }

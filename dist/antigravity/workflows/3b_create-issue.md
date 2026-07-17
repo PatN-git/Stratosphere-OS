@@ -3,7 +3,7 @@ name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: manual
-version: "2.0.7"
+version: "2.1.0"
 timestamp: 2026-07-17
 ---
 
@@ -13,9 +13,12 @@ timestamp: 2026-07-17
 
 **Hand-off contract:** Upstream: `/3a_version-planning` gates current-release parent features to slice. Sourced from PRD → reads §1, §6, §7, §8 and coverage-checks against §6 + §8. Else checks against captured intent. Template A spikes skip coverage.
 
-## Phase 1: Intake & Memory Audit
+## Phase 0: Context Hydration (self-gated, read-only)
+Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+
+## Phase 1: Intake & Scope
 1. **Intake:** Receive raw idea or MVI.
-2. **Memory Audit:** Run `/0a_start-session` if not done this session.
+2. **Defensive epic promotion (idempotent guard):** If the parent epic is still `status:needs_spec` (a 2a/2b promotion was missed), promote it `needs_spec → planned` now: `gh issue edit <parent> --remove-label "status:needs_spec" --add-label "status:planned"` and update its BACKLOG Status. No-op if already `planned` or further; skip for standalone slices with no parent.
 3. **Scope:** PRD-sourced → load `docs/prds/BT-<padded>-<name>.md` and frozen design doc `docs/design/BT-<padded>-interface.md`. Scope is PRD §6 + §8 and design blueprint. Else raw idea/MVI is scope.
 
 ## Phase 2: Vertical Slice Quiz & Prioritization
@@ -62,10 +65,10 @@ Halt until user approves breakdown.
    - `ICE >= 0.5` → `priority:high`
    - `0.15 <= ICE < 0.5` → `priority:medium`
    - `ICE < 0.15` → `priority:low`
-3. **Generate (Atomic Minting):** Execute `gh issue create`. Offline fallback: assign `BT-LOCAL-<n>`. **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs. Write raw ICE metrics in issue body. Apply scope label (`scope:baseline` or `scope:differentiator`). Assign canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`).
+3. **Generate (Atomic Minting):** Execute `gh issue create`. Offline fallback: assign `BT-LOCAL-<n>`. **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs. Write raw ICE metrics in issue body. Apply scope label (`scope:baseline` or `scope:differentiator`). Assign canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`) + **Status: `status:planned` for a normal Template B slice; `status:needs_spec` for a Template A spike** (milestone-exempt and `/3c`-excluded until re-specced).
    - **Sub-issue Linkage:** If derived from parent epic (`#parent`), link sub-issue (`gh sub-issue add <parent> <N>`).
    - **Dependencies:** If supported, pass `--blocked-by` or run `gh issue edit <N> --add-blocked-by <ids>`. Maintain "Blocked by: [IDs]" in issue body and BACKLOG_MAP.
-4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders). Write bucketed priority, size, type, execution mode, tier, and scope label to Labels column, and ICE details to ICE. In Dependencies column, record `Sub-issue of BT-<parentPadded>` and sibling blockers. Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`). sprint digit Z assigned by 3c.
+4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders) — 9-column schema. Write bucketed priority, size, type, execution mode, tier, and scope label to the Labels column (never the status), the bare status token (`planned`/`needs_spec`) to the Status column, and ICE details to ICE. In the **`Parent`** column write the single `BT-<parentPadded>` (or `—` for a standalone slice); in the **`Blocked by`** column write the comma-list of bare sibling blocker IDs (or `—`). Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`; Template A spikes are milestone-exempt → `—`). sprint digit Z assigned by 3c.
 5. **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence, or `/3d_implement-issue` for single ready slice.
 
 ---

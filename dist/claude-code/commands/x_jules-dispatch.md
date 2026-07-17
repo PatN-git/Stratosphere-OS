@@ -3,7 +3,7 @@ name: x_jules-dispatch
 description: EXPERIMENTAL launcher — run the opt-in jules-dispatch skill (offload bounded mode:AFK slices to Google Jules async agent). Thin delegator; the skill holds all logic and guardrails.
 type: workflow HITL
 trigger: manual
-version: "0.1.2"
+version: "0.1.3"
 timestamp: 2026-07-17
 ---
 
@@ -12,6 +12,9 @@ timestamp: 2026-07-17
 User-invoked entry point for the **jules-dispatch** skill. Holds no logic of its own —
 the skill is the single source of truth; this only routes to it (so it also works as a
 call target when a future workflow delegates here).
+
+## Phase 0: Context Hydration (self-gated, read-only)
+Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 
 ## Steps
 1. **Ensure the pack is installed.** If `.agents/skills/jules-dispatch/SKILL.md` is absent,

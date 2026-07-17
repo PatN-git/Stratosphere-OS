@@ -3,7 +3,7 @@ name: 1c_concept-map
 description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
 trigger: manual
-version: "1.0.4"
+version: "1.0.5"
 timestamp: 2026-07-17
 ---
 
@@ -17,7 +17,7 @@ timestamp: 2026-07-17
 
 ## Phase 0: Resume & Route
 
-1. **Start Session:** Run `/0a_start-session` to load context.
+1. **Hydrate:** Run `.agents/skills/load-memory/SKILL.md` in `memory-only` mode (skip code reads) to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 2. **Discover Open Maps:** Query open concept maps:
    - **GitHub CLI:** `gh issue list --label concept:map --state open`
    - **BT-LOCAL Fallback:** Scan `docs/discovery/*.map.md` for open maps.

@@ -2,10 +2,11 @@
 type: prd
 title: "BT-<padded>: <Feature name>"
 description: ""
+bt: BT-<padded>
 timestamp: <YYYY-MM-DD>
 resource: <GitHub Issue URL>
-status: ready-for-design | in-progress | complete
-version: "1.0.2"
+status: draft | approved | superseded
+version: "1.0.3"
 ---
 
 # BT-<padded>: <Feature name>
