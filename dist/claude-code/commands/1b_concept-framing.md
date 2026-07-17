@@ -2,9 +2,9 @@
 name: 1b_concept-framing
 description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.10"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.11"
+timestamp: 2026-07-17
 ---
 
 # Concept framing

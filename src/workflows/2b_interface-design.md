@@ -2,9 +2,9 @@
 name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.1.7"
-timestamp: 2026-07-10
+trigger: manual
+version: "1.1.8"
+timestamp: 2026-07-17
 ---
 
 # Interface Design
@@ -57,7 +57,7 @@ timestamp: 2026-07-10
 
 ### Path A (Generator-assisted):
 1. Ingest layout:
-   - **Stitch:** Ingest layout via Stitch MCP or manual export.
+   - **Stitch:** Ingest layout via Stitch MCP (`get_screen`). If `mcp:stitch/*` tools are not registered in active tool declarations, read `mcp_config.json` or `.env.local` for the Stitch Api Key and query the JSON-RPC endpoint directly via PowerShell.
    - **Claude Design:** Pull layout and code changes (never persist `/design-sync` live sync).
 2. Token Snap — map generator hex/px to existing `DESIGN.md` tokens (DR-009). OKLCH is preserved on Claude Design; snap is only a fallback for untokened values.
 3. Immortal Components: A1 → propose new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. A2 → discard any generator changes to global shell components (DR-008/DR-010).

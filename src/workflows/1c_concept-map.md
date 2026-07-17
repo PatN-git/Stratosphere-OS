@@ -2,9 +2,9 @@
 name: 1c_concept-map
 description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.3"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.4"
+timestamp: 2026-07-17
 ---
 
 # Concept Map Workflow

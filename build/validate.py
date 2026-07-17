@@ -132,6 +132,32 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
 
 
 
+# 2.6 Trigger-enum contract (OKF §2.1): rules and workflows share one `trigger` vocabulary.
+RULE_TRIGGERS = {"always_on", "glob", "model_decision"}
+for plat in ["dist/claude-code", "dist/antigravity"]:
+    # Rule templates: trigger in RULE_TRIGGERS; glob rules must carry both globs (Antigravity) and paths (Claude).
+    rules_dir = root / plat / "assets/templates/rules"
+    if rules_dir.exists():
+        for rp in rules_dir.glob("*.md"):
+            if rp.name == "index.md":
+                continue
+            d = fm_dict(rp.read_text(encoding="utf-8"))
+            trig = d.get("trigger")
+            if trig not in RULE_TRIGGERS:
+                errs.append(f"{plat}/assets/templates/rules/{rp.name} trigger={trig!r}; must be one of {sorted(RULE_TRIGGERS)}")
+            elif trig == "glob":
+                if not d.get("globs"):
+                    errs.append(f"{plat}/assets/templates/rules/{rp.name} trigger=glob but missing `globs` (Antigravity)")
+                if "paths" not in d:
+                    errs.append(f"{plat}/assets/templates/rules/{rp.name} trigger=glob but missing `paths` (Claude Code)")
+    # Workflows/commands: all are user-invoked -> trigger must be `manual`.
+    inv = "commands" if plat.endswith("claude-code") else "workflows"
+    for md in (root / plat / inv).glob("*.md"):
+        d = fm_dict(md.read_text(encoding="utf-8"))
+        # only enforce on lifecycle workflows (installer entrypoints are skills/commands without a trigger)
+        if "trigger" in d and d.get("trigger") != "manual":
+            errs.append(f"{plat}/{inv}/{md.name} trigger={d.get('trigger')!r}; workflows must be `manual`")
+
 # Also check python script files in dist for BOM
 for plat in ["dist/claude-code", "dist/antigravity"]:
     for py in (root / plat / "scripts").glob("*.py"):

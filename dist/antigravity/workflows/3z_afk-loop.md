@@ -2,9 +2,9 @@
 name: 3z_afk-loop
 description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
-trigger: User-invoked; runs autonomously after Step 1B scope authorization.
-version: "1.0.9"
-timestamp: 2026-07-15
+trigger: manual
+version: "1.0.10"
+timestamp: 2026-07-17
 ---
 
 # AFK END-TO-END LOOP

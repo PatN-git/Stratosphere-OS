@@ -2,9 +2,9 @@
 name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "2.0.6"
-timestamp: 2026-07-10
+trigger: manual
+version: "2.0.7"
+timestamp: 2026-07-17
 ---
 
 # Create issue

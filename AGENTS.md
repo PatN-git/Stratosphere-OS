@@ -2,8 +2,8 @@
 type: constitution
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "1.0.3"
-timestamp: 2026-07-01
+version: "1.0.4"
+timestamp: 2026-07-17
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -63,4 +63,5 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
+- **Host activation:** Antigravity loads these rules from `.agents/rules/` via their `trigger`/`globs` frontmatter. Claude Code loads `glob` rules (e.g. `okf-protocol`) natively from `.claude/rules/` via `paths:` when matching files are touched; `always_on` rules (`output-mode`, `memory-protocol`) load via the pointers above. Contract: `okf-protocol.md` §2.1.
 ``

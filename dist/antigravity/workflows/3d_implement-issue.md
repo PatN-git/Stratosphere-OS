@@ -2,9 +2,9 @@
 name: 3d_implement-issue
 description: TDD implementation of vertical slices with token-efficient Fast-Tracks.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "2.0.13"
-timestamp: 2026-07-09
+trigger: manual
+version: "2.0.14"
+timestamp: 2026-07-17
 ---
 
 # Implement issue

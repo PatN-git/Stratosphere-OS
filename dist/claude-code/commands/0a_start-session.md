@@ -2,9 +2,9 @@
 name: 0a_start-session
 description: Initialize session and load context from memory layer.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.6"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.7"
+timestamp: 2026-07-17
 ---
 
 # START SESSION

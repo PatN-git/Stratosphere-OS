@@ -2,9 +2,9 @@
 name: 3a_version-planning
 description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.4"
-timestamp: 2026-07-10
+trigger: manual
+version: "1.0.5"
+timestamp: 2026-07-17
 ---
 
 # Version Planning
