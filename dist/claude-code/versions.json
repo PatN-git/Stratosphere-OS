@@ -176,9 +176,9 @@
       "version": "1.0.6"
     },
     "commands/1b_concept-framing.md": {
-      "sha256": "f440e7aa4a338252c08fdf637343ffbc00f6f1f8d37d53454fc2c1869acc10cf",
+      "sha256": "533dbc43112cc7c5143af92b8ed16a3b524fc59c6b35fe1f75d42c49f3ca6339",
       "timestamp": "2026-07-17",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     "commands/1c_concept-map.md": {
       "sha256": "ad91d42bea4d85aca25b99942eb9b488394039336869cd74bc3c498fbd7b5152",
@@ -186,9 +186,9 @@
       "version": "1.0.5"
     },
     "commands/2a_write-prd.md": {
-      "sha256": "6645789e3d11ea3d9375f370cb6d0f8b7190a84dac94091e83b5a6745707646f",
+      "sha256": "b8f64cdc064496499ffd6679b24bd044ff713ec16656c6f488c009f9b5508cca",
       "timestamp": "2026-07-17",
-      "version": "1.2.0"
+      "version": "1.2.1"
     },
     "commands/2b_interface-design.md": {
       "sha256": "fa38279b76c1084b26a3a5b8e679608bdfbbcd8e7f22e8e64c40feb86cf7e029",

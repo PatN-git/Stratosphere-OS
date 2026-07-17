@@ -3,7 +3,7 @@ name: 1b_concept-framing
 description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: manual
-version: "1.0.12"
+version: "1.0.13"
 timestamp: 2026-07-17
 ---
 
@@ -33,7 +33,7 @@ Run `.agents/skills/load-memory/SKILL.md` in `memory-only` mode (skip code reads
 
 ## Phase 1: Precondition & Scope
 
-1. Confirm `.memory/BACKLOG_MAP.md` is loaded (the Context Hydration step above loads it) — else run `.agents/skills/load-memory/SKILL.md`.
+1. Confirm `.memory/BACKLOG_MAP.md` is loaded. The Context Hydration step only loads it when an active task already exists; starting fresh (the common case here) has none yet, so it short-circuits at `no-active-task` without reading it — in that case, read `.memory/BACKLOG_MAP.md` directly now (re-running the skill would just no-op again).
 2. Read `.memory/GLOSSARY.md` to avoid re-definitions.
 3. Capture raw ask verbatim. Restate in one sentence. If multiple independent problems, ask: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
 4. Scan BACKLOG_MAP for overlaps.

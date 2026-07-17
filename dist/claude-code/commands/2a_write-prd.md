@@ -3,7 +3,7 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-07-17
 ---
 
@@ -15,7 +15,7 @@ timestamp: 2026-07-17
 Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 
 ## Phase 1: Precondition & Mode
-1. Confirm `.memory/BACKLOG_MAP.md` is loaded (the Phase 0 hydration above loads it) — else run `.agents/skills/load-memory/SKILL.md`.
+1. Confirm `.memory/BACKLOG_MAP.md` is loaded. Phase 0 only loads it when an active task already exists; minting a brand-new feature (the common case here) has none yet, so Phase 0 short-circuits at `no-active-task` without reading it — in that case, read `.memory/BACKLOG_MAP.md` directly now (re-running the skill would just no-op again).
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
