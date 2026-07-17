@@ -3,7 +3,7 @@ name: 1a_research
 description: Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations.
 type: workflow HITL
 trigger: manual
-version: "1.0.5"
+version: "1.0.6"
 timestamp: 2026-07-17
 ---
 
@@ -15,6 +15,9 @@ timestamp: 2026-07-17
 **Hand-off contract:** Writes findings to `docs/research/<slug>.md` (including Opportunity scores, Served/Pain matrices, and Cost & Viability signals). Downstream: `/1b_concept-framing` detects and cites file; `/2a_write-prd` lifts scores and cost signals.
 
 ---
+
+## Phase 0: Context Hydration (self-gated, read-only)
+Run `.agents/skills/load-memory/SKILL.md` in `memory-only` mode (skip code reads) to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 
 ## Phase 1: Research Brief & Scope Routing
 
