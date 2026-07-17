@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: manual
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-07-17
 ---
 
@@ -25,9 +25,9 @@ Run `.agents/skills/load-memory/SKILL.md` in `memory-only` mode (skip code reads
 ## Phase 2: Execution (Context Isolation)
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d_implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
-  - **Isolate:** Otherwise dispatch **two separate, independent subagents in two isolated contexts** (via `invoke_subagent` or `Task` tool) — one per auditor. **Do not combine them into a single agent:** each auditor's guardrail is its entire contract and their inputs/scopes differ.
-    1. **Strict Business-Logic Auditor** (subagent 1): Input: Issue/PRD, design doc, tests, implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
-    2. **Standards Auditor** (subagent 2, separate dispatch): Input: slice diff (new/modified files only), coding standards, `.agents/workflows/.reference/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
+  - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
+    1. **Strict Business-Logic Auditor:** invoke an independent Strict Business-Logic Auditor subagent (via `invoke_subagent` or `Task` tool). Input: Issue/PRD, design doc, tests, implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
+    2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: slice diff (new/modified files only), coding standards, `.agents/workflows/.reference/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
 
 ### Clean Exit Rule
 If no spec issues (confidence ≥ 80) and no standards violations → proceed directly to Phase 5: Isolated Ship Gate. Output: `[PASS] Slice verified.`
