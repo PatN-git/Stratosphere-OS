@@ -256,9 +256,9 @@
       "version": "2.1.0"
     },
     "workflows/3z_afk-loop.md": {
-      "sha256": "034fe7cc10396317af353980c6f62a5d82c69119185fbd3a122e372a581e2032",
+      "sha256": "ce7a468a63c93b5b83604b56f2b9fcb388f2a49ebf26c3ef4b819590fcc021b5",
       "timestamp": "2026-07-17",
-      "version": "1.0.11"
+      "version": "1.0.12"
     },
     "workflows/4a_verify-and-ship.md": {
       "sha256": "d50e3d31b499eb3b99ef4883a6546d365fb16b9ae61a16e7a774434349cc6503",
