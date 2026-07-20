@@ -51,9 +51,9 @@
       "version": "1.0.3"
     },
     "assets/templates/memory/STATUS.md": {
-      "sha256": "e18e5a5a86302efc355c004306ee94b48a76a37c526bb33bf1c0e6824f8ba1e0",
-      "timestamp": "2026-06-17",
-      "version": "1.0.2"
+      "sha256": "459d8db74de78b602bf4f8ffcbd3d5c37cd5d5c93916659bd418864d753991d1",
+      "timestamp": "2026-07-17",
+      "version": "1.0.3"
     },
     "assets/templates/references/PRD-template.md": {
       "sha256": "b36d5da2c3968b698d1c2aceb08efb179fe7a906ee24a740158df6610dcc9125",
@@ -151,9 +151,9 @@
       "version": "1.0.4"
     },
     "skills/load-memory/SKILL.md": {
-      "sha256": "f944a3105de19ff975755e8c0e3d2cb19dd57f6d95f794831817241f19f1f462",
+      "sha256": "62b31f78274f799386477812af2301559fe3b41a423dbed2c433cabbd4249316",
       "timestamp": "2026-07-17",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "43546b9af5d28e3eeb008b8f974c5c610fa5b50a7e47e49566389a36971c6082",
@@ -191,9 +191,9 @@
       "version": "1.0.6"
     },
     "workflows/0a_start-session.md": {
-      "sha256": "96683af5518c4abb46fcf14b8b3552327fd5801b6aa1bfe707b96083a2ee5d23",
+      "sha256": "3d27e8aa10263e11b2b7186990ad0d32ca5926c4c9a1c607b14240084e44cd90",
       "timestamp": "2026-07-17",
-      "version": "1.1.1"
+      "version": "1.2.0"
     },
     "workflows/0b_stop-session.md": {
       "sha256": "9381f00664bba346d1f09e83c97ca4752582aca2decea41062566646164eb9ff",
@@ -256,9 +256,9 @@
       "version": "2.1.1"
     },
     "workflows/3z_afk-loop.md": {
-      "sha256": "c57c4a39f2b341f0e38496c652d6093bd8ab613dcf1bc66d8ddda9937697a1fa",
+      "sha256": "60fae723d6ba761a5417af1dc5586ee7654da285ca64f1e2d97f971efccc149e",
       "timestamp": "2026-07-17",
-      "version": "1.0.13"
+      "version": "1.0.14"
     },
     "workflows/4a_verify-and-ship.md": {
       "sha256": "2262bf78a8d095171e1c2a0633d6829354694bccb1b903e82054ff421a7b9627",

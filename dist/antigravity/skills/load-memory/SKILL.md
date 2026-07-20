@@ -2,7 +2,7 @@
 name: load-memory
 type: skill
 description: Read-only session-context reconstruction from the `.memory/` layer. Invoked inline by lifecycle workflows and /0a to restore context without re-reading the repo. Do not fire autonomously or on general requests; never mutates state.
-version: "1.1.0"
+version: "1.2.0"
 timestamp: 2026-07-17
 ---
 
@@ -11,7 +11,7 @@ timestamp: 2026-07-17
 Reconstruct read-only session context from the memory layer. Side-effect-free: never writes branches, issue status, or memory — those belong to `/0a` (Activate) and `3d`.
 
 ## Procedure
-0. Read `.memory/STATUS.md`; determine the active task (`Active Issue`, or the issue ID the invoking workflow passed). If `.memory/` is absent or there is no active task → `Session Status: no-active-task`, RETURN.
+0. Determine the active task — the issue ID the invoking workflow/prompt passed (its caller resolves it; `/0a` picks from the `status:in progress` set). `.memory/STATUS.md` is a resume hint, not the source of truth. If `.memory/` is absent or no active task → `Session Status: no-active-task`, RETURN.
 1. Self-gate: if already loaded this session and the active task is unchanged → `Session Status: cached`, RETURN.
 2. Read the active task source — GitHub issue body (`gh issue view <n>`), the invoking prompt, PRD, or spec: objective, constraints, dependencies.
 3. Read `.memory/LEARNINGS.md` (Active only; skip `## Superseded`).

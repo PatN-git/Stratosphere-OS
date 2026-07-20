@@ -3,7 +3,7 @@ name: 3z_afk-loop
 description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: manual
-version: "1.0.13"
+version: "1.0.14"
 timestamp: 2026-07-17
 ---
 
@@ -22,8 +22,8 @@ Run `/0a_start-session` to restore branch and load memory.
 _Done when:_ orchestrator context synced.
 
 ### Step 1B: Detect & Confirm Scope [HITL gate]
-1. Build queue from `.memory/BACKLOG_MAP.md` + `.memory/STATUS.md`:
-   - **Single:** active issue. **Batch:** sprint's sequenced slices.
+1. Build queue from `.memory/BACKLOG_MAP.md`:
+   - **Single:** the issue this run targets (named at invocation, or the sole `status:in progress` slice). **Batch:** the sprint's sequenced slices.
    - **Retry:** Slices marked `status:blocked` are re-queued (preflight excludes `status:in review` and `status:done` — both are terminal for the loop: `in review` is shipped and awaiting merge).
 2. **Preflight checks:**
    - **Unknown/closed check:** For each slice ID, verify it exists in `BACKLOG_MAP.md` and status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
@@ -41,8 +41,7 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement (Subagent)
-1. **Set Active Issue:** Set `Active issue = BT-<padded>` in `.memory/STATUS.md`.
-2. **Dispatch:** "Run `/0a_start-session` (loads BT-<padded>, sets slice `status:in progress` + first-slice epic promotion, restores branch — `3d` creates it if absent), then `/3d_implement-issue`. If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"needs_manual_qa\": false}`. Do NOT push; do NOT open PR."
+1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/0a_start-session` for `BT-<padded>` (loads it, sets slice `status:in progress` + first-slice epic promotion, restores branch — `3d` creates it if absent), then `/3d_implement-issue`. If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"needs_manual_qa\": false}`. Do NOT push; do NOT open PR."
 _Done when:_ subagent returns valid JSON and git status is clean.
 
 ### Step 2B: Verify (Subagent)
