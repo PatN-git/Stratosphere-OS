@@ -3,12 +3,12 @@ type: interface-design
 title: "Design: BT-<padded> - <Feature Name>"
 description: ""
 timestamp: <YYYY-MM-DD>
-status: draft | ready-for-slicing | obsolete
+status: draft | approved | superseded
 slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-generator-page | ui-generator-feature | ui-manual | non-ui
-version: "1.0.3"
+version: "1.0.4"
 ---
 
 # Design: BT-<padded> - <Feature Name>

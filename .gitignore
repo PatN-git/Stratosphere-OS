@@ -1,7 +1,8 @@
 .tmp/
 .memory/
 .agents/
-.claude/
+.claude/*
+!.claude/skills/
 node_modules/
 .DS_Store
 Thumbs.db

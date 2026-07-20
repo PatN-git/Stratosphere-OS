@@ -1,9 +1,14 @@
 ---
+trigger: glob
+globs: .memory/**/*,docs/**/*
+paths:
+  - ".memory/**/*"
+  - "docs/**/*"
 type: rule
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.1 conformance.
-version: "1.0.2"
-timestamp: 2026-07-15
+version: "1.0.3"
+timestamp: 2026-07-17
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -26,6 +31,30 @@ Every concept document must begin with a YAML frontmatter block containing:
 
 Other existing metadata keys (such as `issue_url`, `status`, `linked-prd`) are preserved alongside these fields.
 
+**Canonical doc-status vocabulary (guidance; OKF stays value-agnostic).** Editorial `status:` on `prd` and `interface-design` docs uses one shared enum: `draft | approved | superseded`. Work-status (`status:*` GitHub labels / BACKLOG `Status`) never appears in doc frontmatter, and this editorial enum never appears on issues. The `discovery-brief` type keeps its own routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision, not editorial maturity.
+
+### 2.1 Activation contract (`rule` and `workflow` types)
+
+`rule` and `workflow` files declare **when they activate** via a single canonical `trigger` key drawn from one shared enum. This unifies what were previously two divergent uses of `trigger:` (rules carried an Antigravity enum; workflows carried free-text prose).
+
+| `trigger` | Meaning | Applies to |
+|:---|:---|:---|
+| `always_on` | Always in context. | rules |
+| `glob` | Active only for files matching `globs`. Requires `globs`. | rules |
+| `model_decision` | The model decides from `description`. | rules |
+| `manual` | Activated only by explicit user invocation (slash command / `@`-mention). | workflows (all) |
+
+Rules that are **`glob`** also carry host-native activation fields as a **superset** so one file works in both hosts (each host ignores the other's keys):
+
+- `globs` (Antigravity): comma-separated glob patterns, **unquoted**, e.g. `globs: .memory/**/*,docs/**/*`.
+- `paths` (Claude Code): YAML list mirroring `globs`, e.g. `paths: [".memory/**/*", "docs/**/*"]`.
+
+Host activation semantics (see also [AGENTS.md](/AGENTS.md) §8):
+
+- **Antigravity** reads `trigger`/`globs` natively from `.agents/rules/`.
+- **Claude Code** has no `trigger` concept. `glob` rules activate via `paths` when installed to `.claude/rules/`; `always_on`/`model_decision` rules are surfaced through the AGENTS.md §8 pointer directory (on-demand load) to preserve token efficiency, not duplicated into `.claude/rules/`.
+- **Workflows** need no host field: they build to Claude slash commands (user-only by construction — the model cannot auto-invoke them) and to Antigravity workflows (manual `@`-mention). `trigger: manual` is therefore declarative in both. Autonomy that begins *after* user invocation (e.g. `3z`) is documented in the body, not the trigger.
+
 ## 3. Type Registry
 
 Agents must use the following defined types. If no existing type fits, the agent must propose a new type to the user and, upon confirmation, add it to this registry. Agents must never invent or use a type silently.
@@ -33,8 +62,8 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `type` | Applies to | Extra fields beyond the base contract |
 |:---|:---|:---|
 | `constitution` | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` | — |
-| `rule` | `.agents/rules/*.md` | — |
-| `workflow` | `.agents/workflows/*.md` | `trigger` (required); `type` keeps its `HITL`/`AFK` qualifier, e.g. `workflow HITL` |
+| `rule` | `.agents/rules/*.md` (glob rules also `.claude/rules/*.md`) | `trigger` (required): `always_on` \| `glob` \| `model_decision` (see §2.1); if `glob`, also `globs` (Antigravity) **and** `paths` (Claude) |
+| `workflow` | `.agents/workflows/*.md` | `trigger` (required): `manual` (see §2.1); `type` keeps its `HITL`/`AFK` qualifier, e.g. `workflow HITL` |
 | `status` | `STATUS.md` | — |
 | `backlog` | `BACKLOG_MAP.md` | — |
 | `learnings` | `LEARNINGS.md` | — |

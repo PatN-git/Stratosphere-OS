@@ -2,9 +2,9 @@
 name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.6"
-timestamp: 2026-07-14
+trigger: manual
+version: "1.1.0"
+timestamp: 2026-07-17
 ---
 
 # Nightly Consolidation
@@ -46,7 +46,8 @@ Recommend the next planning workflow from backlog state. Read-only; never run a 
      - milestones + open issues: `gh issue list --state open --json number,milestone,labels`; open milestones via `gh api repos/{owner}/{repo}/milestones`.
      - epic children: for each `tier:epic`, `gh issue view <n> --json subIssues` (numeric `<n>`, matching the repo's existing read convention) — count child slices.
      - a base-state row whose mapped issue is **absent from the open list** is *closed* on GitHub, not milestone-cleared — reconcile it as done for the advisory and do **not** emit `[DRIFT]`.
-     - only when the mapped issue is **present (open)** and its milestone/status disagrees → emit `[DRIFT] BT-<padded>: map=<x> github=<y>` and trust GitHub for the advisory.
+     - only when the mapped issue is **present (open)** and any of its **7 mirror fields** — status, milestone, `Labels`, `Parent`, `Blocked by` — disagrees with GitHub → emit `[DRIFT] BT-<padded>: <field> map=<x> github=<y>` and trust GitHub for the advisory (compare bare `status` token to the `Status` column, non-status labels to `Labels`, sub-issue parent to `Parent`, blocked-by to `Blocked by`).
+     - **stale-blocker check:** if a row's `Blocked by` names a blocker already at `status:in review` or `status:done` → emit `[DRIFT] BT-<padded>: stale blocker <id> should be cleared` (4a/merge should have removed it).
    - **Absent/unauth** → compute from `.memory/BACKLOG_MAP.md` only; tag the outlook `[local-only — GitHub not checked]`.
 3. **Recommendation (evaluate in this order — finish in-flight work before starting new planning; first match wins):**
    | Signal (`status != done`) | Recommend |

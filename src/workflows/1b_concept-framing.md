@@ -2,9 +2,9 @@
 name: 1b_concept-framing
 description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.10"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.11"
+timestamp: 2026-07-17
 ---
 
 # Concept framing
@@ -16,6 +16,9 @@ timestamp: 2026-07-09
 > Discovery briefs (`docs/discovery/<slug>.md`) are pre-creation artifacts. **DO NOT** pre-allocate, predict, or attach a numeric `BT-<n>` ID. The file must be named strictly by its semantic slug (`docs/discovery/<slug>.md`). Numeric `BT-<n>` binding occurs downstream in `/2a_write-prd` upon `gh issue create`.
 
 ---
+
+## Load Memory (runs first)
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 0: Brainstorm (Optional)
 
@@ -30,7 +33,7 @@ timestamp: 2026-07-09
 
 ## Phase 1: Precondition & Scope
 
-1. Confirm `.memory/BACKLOG_MAP.md` is loaded — else stop and prompt /0a_start-session.
+1. Ensure `.memory/BACKLOG_MAP.md` is loaded; if the Load Memory step skipped it (no active task yet), read it directly.
 2. Read `.memory/GLOSSARY.md` to avoid re-definitions.
 3. Capture raw ask verbatim. Restate in one sentence. If multiple independent problems, ask: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
 4. Scan BACKLOG_MAP for overlaps.

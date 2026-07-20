@@ -2,17 +2,20 @@
 name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.1.6"
-timestamp: 2026-07-10
+trigger: manual
+version: "1.2.0"
+timestamp: 2026-07-17
 ---
 
 # Write PRD
 
 **Hand-off contract:** `/2b_interface-design` is next (designs interface). `/3b_create-issue` reads §1, §6, §7, §8.
 
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+
 ## Phase 1: Precondition & Mode
-1. Confirm `.memory/BACKLOG_MAP.md` is loaded — else stop and prompt `/0a_start-session`.
+1. Ensure `.memory/BACKLOG_MAP.md` is loaded; if Phase 0 skipped it (no active task yet), read it directly.
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
@@ -25,7 +28,7 @@ Execute `gh issue create` to create parent GitHub issue — capture exact return
 > **ATOMIC MINTING RULE:** Never predict or guess next issue number by scanning `BACKLOG_MAP.md`. GitHub shares numbering across issues/PRs; local guesses collide. Numeric ID `BT-<padded>` is born strictly at creation time from the return value of `gh issue create`. If offline, use prefix `BT-LOCAL-<slug>` until synced.
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
-- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:in progress`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
+- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
 - **Labels (never apply):** `size:*`, `mode:*`.
 - **Body:** one-line summary + link to `docs/prds/BT-<padded>-<name>.md`.
 
@@ -72,15 +75,17 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF `type: prd` per `.agents/rules/okf-protocol.md`. Set frontmatter status: UI feature → `ready-for-design` (run `/2b_interface-design`); non-UI → `ready-for-slicing`.
-2. Update parent issue body: summary + doc link + §10 Open Questions.
-3. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`):
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF `type: prd` per `.agents/rules/okf-protocol.md`. Set frontmatter `bt: BT-<padded>` and editorial `status: approved` (the PRD passed Phase 4 validation; editorial status is `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
+2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b_interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
+3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a_version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
+4. Update parent issue body: summary + doc link + §10 Open Questions.
+5. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`) — 9-column schema, Status `needs_spec`, epic carries `Parent = —` and `Blocked by = —`:
    ```
-   | BT-<padded> | <Feature name> | in progress | area:<x>, tier:epic, type:feature | v1.0.0 | - | ICE: - | [[L-xxx]], [[A-xxx]] |
+   | BT-<padded> | <Feature name> | needs_spec | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
-   Note: Use ASCII hyphens `-`. Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a_version-planning` owns MAJOR.MINOR and may reassign, `/3c_sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
-4. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render `docs/prds/BT-<padded>-<feature-name>.html`.
-5. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip 2b prompt if feature is non-UI).
+   Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a_version-planning` owns MAJOR.MINOR and may reassign, `/3c_sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
+6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render `docs/prds/BT-<padded>-<feature-name>.html`.
+7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it)."*
 
 ---
 

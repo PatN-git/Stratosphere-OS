@@ -1,9 +1,10 @@
 ---
+trigger: always_on
 type: rule
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
-timestamp: 2026-07-10
-version: "1.0.3"
+timestamp: 2026-07-17
+version: "1.0.4"
 ---
 
 # Output Mode Protocol

@@ -1,9 +1,10 @@
 ---
+trigger: always_on
 type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-07-09
-version: "1.0.5"
+timestamp: 2026-07-17
+version: "1.0.6"
 ---
 
 # Memory Protocol
@@ -46,7 +47,7 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 
 **ID Format:** Real entries use numeric IDs (`[[L-001]]`); `-XXX` suffixes are reserved placeholders the validator ignores. Never ship a real entry with a non-numeric ID.
 
-- `[[ID]]` is ONLY for memory-to-memory links (L/A/DR/G ↔ L/A/DR/G), which the validator resolves and checks for reciprocity. BT/issue IDs are always BARE — first column, Dependencies, and the `Source:` field (e.g. `Source: BT-007`, never `Source: [[BT-007]]`) — because provenance is a one-directional external pointer, not a peer concept-link.
+- `[[ID]]` is ONLY for memory-to-memory links (L/A/DR/G ↔ L/A/DR/G), which the validator resolves and checks for reciprocity. BT/issue IDs are always BARE — first column, the `Parent`/`Blocked by` columns, and the `Source:` field (e.g. `Source: BT-007`, never `Source: [[BT-007]]`) — because provenance is a one-directional external pointer, not a peer concept-link.
 
 ### EXAMPLES Bidirectional linking
 
@@ -90,4 +91,4 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 ## 8. Backlog ID Minting (Late Binding)
 - **Pre-creation (`/1b` briefs, draft PRDs):** Identify strictly by semantic slug (`docs/discovery/<slug>.md`). Never guess or assign `BT-<n>` before creation.
 - **Creation (`/2a`, `/3b`):** Never compute `MAX(BT_ID) + 1` (GitHub shares IDs with PRs). Bind `BT-<padded>` strictly from `gh issue create` output (or `BT-LOCAL-<n>` if offline).
-- **Flat IDs only:** Backlog IDs must be zero-padded flat integers (matching `^BT-[0-9]{3,}$` or `BT-LOCAL-\w+`). Hierarchical sub-numbering (`BT-059-01`) is strictly forbidden; parent-child hierarchy is tracked exclusively via the `Dependencies` column.
+- **Flat IDs only:** Backlog IDs must be zero-padded flat integers (matching `^BT-[0-9]{3,}$` or `BT-LOCAL-\w+`). Hierarchical sub-numbering (`BT-059-01`) is strictly forbidden; parent-child hierarchy is tracked exclusively via the `Parent` column (single-valued, on the child only), and blocking relations via the separate `Blocked by` column.

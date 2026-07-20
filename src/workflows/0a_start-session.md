@@ -2,32 +2,31 @@
 name: 0a_start-session
 description: Initialize session and load context from memory layer.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.6"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.1.0"
+timestamp: 2026-07-17
 ---
 
 # START SESSION
 
 ## Goal
-Reconstruct necessary context without reading full repository. Surface crystallization opportunities before starting.
+Restore session context (read-only), then activate: restore the branch and transition the active slice's status.
 
-## Procedure
-1. Read `.memory/STATUS.md`. If no active task, output "No active task — next: /1a_research or /1b_concept-framing" and "Needs verification: none", then halt.
-2. Read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. (Note: Defer branch creation to 3c; only restore existing branches).
-3. Read active task source (prompt, issue, PRD, spec) for objective, constraints, dependencies (unless from 3b_create-issue.md).
-   - **State Transition:** Set target issue (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub (`gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --add-label "status:in progress"`). If sub-issue, also set parent epic (`BT-<parent>`) to `status:in progress` (removing prior statuses). Update `Active issue` in `.memory/STATUS.md`.
-4. Read `.memory/LEARNINGS.md` (Active only — skip ## Superseded).
-5. If task involves PRD, discovery brief, or domain feature — read `.memory/GLOSSARY.md` (Active only).
-6. Read `.memory/ARCHITECTURE.md` if task affects structure, state flow, boundaries, or cross-feature behavior.
-7. Read `.memory/BACKLOG_MAP.md` to check conflicts with work-in-progress.
-8. Only if task touches DB queries, schema, migrations, or RLS — read `.memory/DATABASE_SCHEMA.md`.
-9. Only if task touches `.tsx`, UI, layout, or styling — read `.memory/DESIGN.md` (brand tokens) and `.memory/DESIGN_RULES.md` (structural rules).
-10. Read only relevant code files — not whole codebase.
+## Phase A — Hydrate (read-only)
+1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues in `.memory/BACKLOG_MAP.md`/GitHub: exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task. (`.memory/STATUS.md` may hint the last focus but is not authoritative.)
+2. Run `.agents/skills/load-memory/SKILL.md` for that task.
+
+## Phase B — Activate (side effects)
+1. If no task resolved (`Session Status: no-active-task`) → output next-step guidance (`/1a_research` or `/1b_concept-framing`) and HALT before any side effect.
+2. **Branch restore:** read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. **NEVER create a branch** — `3d` owns branch creation; `0a` only restores an existing one.
+3. **State transition (first-slice rule):** set the target slice (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub:
+   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`.
+   If it is a sub-issue, promote the parent epic (`BT-<parent>`) `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). Update `.memory/STATUS.md` as this session's resume hint (not the authoritative active set).
 
 ## Output Pattern
 Context synced.
 - Objective:
 - Current state:
+- Current branch:
 - Next step:
 - Needs verification:

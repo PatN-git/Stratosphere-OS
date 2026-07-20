@@ -2,9 +2,9 @@
 name: 3d_implement-issue
 description: TDD implementation of vertical slices with token-efficient Fast-Tracks.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "2.0.13"
-timestamp: 2026-07-09
+trigger: manual
+version: "2.1.0"
+timestamp: 2026-07-17
 ---
 
 # Implement issue
@@ -12,8 +12,9 @@ timestamp: 2026-07-09
 Apply strictly to backend logic, database operations, hooks, and state functions. Run `.agents/skills/code-simplifier/SKILL.md` at end.
 
 ## Phase 0: Branch & Context Intake
+**Hydrate first:** run `.agents/skills/load-memory/SKILL.md` to restore context (read-only); the steps below own all side effects.
 1. **Branch Isolation:** Resolve parent BT (via parent link/dependencies; if none, use slice ID). feature branch: `<type>/BT-<parentPadded>-<slug>` (using parent `type:`). Checkout/pull if exists, else create from default. If parent ambiguous, prompt (if AFK, default to slice branch). Never work on `main`. Update `.memory/STATUS.md` `Current Branch`/`Active issue`.
-2. Read slice issue. Check if design reference in issue/BACKLOG_MAP Ref. Set slice & parent epic to `status:in progress` in `BACKLOG_MAP.md` and via: `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --add-label "status:in progress"`.
+2. Read slice issue. Check if design reference in issue/BACKLOG_MAP Ref. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`. Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic).
 3. **Conditional Read:** If UX blueprint referenced, read: frozen blueprint `docs/design/BT-<padded>-interface.md`, brand tokens `.memory/DESIGN.md`, and design rules `.memory/DESIGN_RULES.md` §3. UI slices must implement design *only* from these files via Fast-Track B; never access/re-read the live generator. Re-express layout (reference only, not copy-source) in shadcn/ui [[DR-004]] + semantic HTML [[DR-006]], binding to `DESIGN.md` tokens [[DR-002]]/[[DR-003]] per `.agents/workflows/.reference/shadcn-build-guide.md`.
 4. If no design reference, proceed to Phase 1.
 5. **Regenerate Theme Tokens:** If design tokens/styling involved, run:

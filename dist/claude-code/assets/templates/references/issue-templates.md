@@ -1,7 +1,7 @@
 ---
 description: Canonical templates for StratOS backlog issues (Template A for spikes/discovery, Template B for normal vertical slices).
-version: "1.0.1"
-timestamp: 2026-07-10
+version: "1.0.2"
+timestamp: 2026-07-17
 ---
 
 # Issue Templates
@@ -55,7 +55,8 @@ Must cite the governing design/architectural laws violated (e.g. violates `[[A-x
 - [ ] **Stress Cases:** Implements the handling for relevant adverse conditions in the Stress Matrix (from design doc).
 
 ### Dependencies
-- **[[ID]] first** (blocks/blocked-by).
+- **Parent:** `BT-<padded>` — the epic this slice belongs to (bare ID; `—` if standalone). Mirrors the GitHub sub-issue parent and the BACKLOG `Parent` column.
+- **Blocked by:** `BT-<padded>, …` — slices that must land first (bare IDs; `—` if none). Mirrors GitHub blocked-by and the BACKLOG `Blocked by` column.
 
 ### Notes
 Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.

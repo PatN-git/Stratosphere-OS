@@ -2,11 +2,15 @@
 name: 4b_audit-architecture-drift
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
-version: "1.0.7"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.8"
+timestamp: 2026-07-20
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
+
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Scope
 
@@ -22,10 +26,11 @@ _CONSTRAINTS:_
 
 ## Phase 2: Deep Scan & Confidence
 **Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) for Phase 2.
+- **Resolve targets first:** in the parent, enumerate the target directory's files and pass the explicit list; the subagent reads the named files and must not sweep to locate them (never ingest the whole repo).
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
 
-_INPUT:_ Target directory files, all files in `.memory/`, and `.agents/workflows/.reference/confidence-scale.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, and `.agents/workflows/.reference/confidence-scale.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix

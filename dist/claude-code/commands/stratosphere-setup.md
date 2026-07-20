@@ -2,8 +2,8 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.11"
-timestamp: 2026-07-15
+version: "1.0.12"
+timestamp: 2026-07-17
 ---
 
 # Instantiate StratosphereOS
@@ -196,7 +196,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 ### Checkpoint 5.2: Secret hygiene
 
-- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, and common credential files; if missing, **propose** adding them (don't silently edit).
+- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files; if missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
 
 ## Checkpoint 6: Label Reconciliation (both paths)
 

@@ -1022,9 +1022,16 @@ def main():
     for src in sorted((ASSETS / "memory").glob("*.md")):
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
 
-    # 4. Rules -> .agents/rules/
+    # 4. Rules -> .agents/rules/ (Antigravity-native: reads trigger/globs here).
+    #    glob-triggered rules ALSO -> .claude/rules/ so Claude Code activates them
+    #    natively via their `paths:` frontmatter (Claude only reads .claude/rules/).
+    #    always_on/model_decision rules stay pointer-referenced on Claude (AGENTS.md
+    #    §8) to preserve token efficiency — not duplicated. Host-agnostic: always dual
+    #    -place glob rules regardless of which host ran the installer.
     for src in sorted((ASSETS / "rules").glob("*.md")):
         place(src, project / ".agents" / "rules" / src.name, res, dry, update=update, tier="managed")
+        if re.search(r'^trigger:\s*glob\b', src.read_text(encoding="utf-8"), re.M):
+            place(src, project / ".claude" / "rules" / src.name, res, dry, update=update, tier="managed")
 
     # 5. Workflow references -> .agents/workflows/.reference/
     if (ASSETS / "references").exists():

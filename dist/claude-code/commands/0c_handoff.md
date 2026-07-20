@@ -2,9 +2,9 @@
 name: 0c_handoff
 description: Compact conversation into handoff document for next session.
 type: workflow HITL
-trigger: User. Do not run autonomously.
-version: "1.0.2"
-timestamp: 2026-07-09
+trigger: manual
+version: "1.0.3"
+timestamp: 2026-07-17
 ---
 
 Save handoff summarizing current session to `.tmp/handoff_<date>_<name>.md`.

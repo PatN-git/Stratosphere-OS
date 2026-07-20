@@ -43,7 +43,14 @@ workflows_to_check = {
     "src/workflows/4a_verify-and-ship.md": [
         "Context Isolation Rule",
         "invoke an independent Strict Business-Logic Auditor subagent",
-        "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4."
+        "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4.",
+        # Lock in the two-separate-subagents requirement (the Standards Auditor must be a
+        # distinct dispatch, never folded into the Business-Logic Auditor).
+        "two separate, independent subagents in two isolated contexts",
+        "a second, separate subagent",
+        # Lock in the anti-discovery dispatch semantic: the parent resolves audit targets and
+        # the subagent is forbidden from repo-wide discovery. Assert the meaning, not a heading.
+        "the subagent must never run repo-wide discovery"
     ],
     "src/workflows/4b_audit-architecture-drift.md": [
         "Context Isolation Rule",
