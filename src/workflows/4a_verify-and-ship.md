@@ -3,8 +3,8 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: manual
-version: "1.1.2"
-timestamp: 2026-07-17
+version: "1.1.3"
+timestamp: 2026-07-20
 ---
 
 # Verify and Ship
@@ -23,11 +23,12 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
 
 ## Phase 2: Execution (Context Isolation)
+- **Resolve audit targets first (token discipline):** before invoking any auditor, resolve the concrete changed-file set in this (parent) context and pass it in — **the subagent must never run repo-wide discovery** (`grep -r`, directory sweeps) to locate its inputs. Compute the changed set against a base ref via a **non-fatal fallback chain**: prefer the merge-base with the tracked upstream (`git diff --name-only "$(git merge-base HEAD origin/<default>)"...HEAD`); if `origin/<default>` is unfetched or absent, fall back to the local default branch; if neither resolves (offline / AFK `BT-LOCAL`), fall back to files changed on this branch. **Never abort the audit** because the base ref is unresolvable — degrade to the best available file list. Adapt `<default>` to `main`/`master` and to the host.
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d_implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
-    1. **Strict Business-Logic Auditor:** invoke an independent Strict Business-Logic Auditor subagent (via `invoke_subagent` or `Task` tool). Input: Issue/PRD, design doc, tests, implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
-    2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: slice diff (new/modified files only), coding standards, `.agents/workflows/.reference/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
+    1. **Strict Business-Logic Auditor:** invoke an independent Strict Business-Logic Auditor subagent (via `invoke_subagent` or `Task` tool). Input — **explicit full-file paths, not a diff** (it maps AC↔tests and needs whole-file context; do not restrict it to changed lines): the Issue/PRD (`docs/prds/BT-<padded>-<name>.md`), design doc (`docs/design/BT-<padded>-interface.md`), the resolved test and implementation files, `.memory/LEARNINGS.md`, `.agents/workflows/.reference/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
+    2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input — the resolved changed-file list plus the **scoped diff command to run** (`git diff <base>...HEAD -- <changed paths>`) as its review surface, coding standards, `.agents/workflows/.reference/code-smell-baseline.md`. (Pass the command, not pasted diff content; inline the diff only if it is trivially small.) Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
 
 ### Clean Exit Rule
 If no spec issues (confidence ≥ 80) and no standards violations → proceed directly to Phase 5: Isolated Ship Gate. Output: `[PASS] Slice verified.`

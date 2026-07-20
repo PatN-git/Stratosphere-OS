@@ -47,7 +47,10 @@ workflows_to_check = {
         # Lock in the two-separate-subagents requirement (the Standards Auditor must be a
         # distinct dispatch, never folded into the Business-Logic Auditor).
         "two separate, independent subagents in two isolated contexts",
-        "a second, separate subagent"
+        "a second, separate subagent",
+        # Lock in the anti-discovery dispatch semantic: the parent resolves audit targets and
+        # the subagent is forbidden from repo-wide discovery. Assert the meaning, not a heading.
+        "the subagent must never run repo-wide discovery"
     ],
     "src/workflows/4b_audit-architecture-drift.md": [
         "Context Isolation Rule",
