@@ -3,7 +3,7 @@ name: 3z_afk-loop
 description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: manual
-version: "1.0.12"
+version: "1.0.13"
 timestamp: 2026-07-17
 ---
 
@@ -31,7 +31,7 @@ _Done when:_ orchestrator context synced.
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d_implement-issue + /4a_verify-and-ship manually").
      - Neither `mode:AFK` nor `mode:HITL` (missing mode, or `status:needs_spec`) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
-3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A slice whose every `Blocked by` entry is at `status:in review` or `status:done` is treated as **unblocked** (blocker satisfied — such entries should already have been cleared by 4a/merge); do not hold it as blocked on a shipped prerequisite.
+3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.

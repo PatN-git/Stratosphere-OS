@@ -3,14 +3,14 @@ name: 4b_audit-architecture-drift
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
 trigger: manual
-version: "1.0.9"
+version: "1.0.10"
 timestamp: 2026-07-17
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Scope
 

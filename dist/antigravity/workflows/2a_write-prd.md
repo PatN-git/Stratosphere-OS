@@ -3,7 +3,7 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: manual
-version: "1.2.1"
+version: "1.2.2"
 timestamp: 2026-07-17
 ---
 
@@ -11,11 +11,11 @@ timestamp: 2026-07-17
 
 **Hand-off contract:** `/2b_interface-design` is next (designs interface). `/3b_create-issue` reads §1, §6, §7, §8.
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Precondition & Mode
-1. Confirm `.memory/BACKLOG_MAP.md` is loaded. Phase 0 only loads it when an active task already exists; minting a brand-new feature (the common case here) has none yet, so Phase 0 short-circuits at `no-active-task` without reading it — in that case, read `.memory/BACKLOG_MAP.md` directly now (re-running the skill would just no-op again).
+1. Ensure `.memory/BACKLOG_MAP.md` is loaded; if Phase 0 skipped it (no active task yet), read it directly.
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
@@ -28,7 +28,7 @@ Execute `gh issue create` to create parent GitHub issue — capture exact return
 > **ATOMIC MINTING RULE:** Never predict or guess next issue number by scanning `BACKLOG_MAP.md`. GitHub shares numbering across issues/PRs; local guesses collide. Numeric ID `BT-<padded>` is born strictly at creation time from the return value of `gh issue create`. If offline, use prefix `BT-LOCAL-<slug>` until synced.
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
-- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:needs_spec` (epic is minted un-specced; the PRD — and design, if UI — are not yet complete); default priority to `priority:medium` if unknown. Never invent non-registry labels.
+- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
 - **Labels (never apply):** `size:*`, `mode:*`.
 - **Body:** one-line summary + link to `docs/prds/BT-<padded>-<name>.md`.
 

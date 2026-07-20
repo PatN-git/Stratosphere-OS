@@ -3,7 +3,7 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: manual
-version: "2.2.0"
+version: "2.2.1"
 timestamp: 2026-07-17
 ---
 
@@ -11,8 +11,8 @@ timestamp: 2026-07-17
 
 **Hand-off contract:** Assigns leaf slices to sprint milestone `vX.Y.Z` (Z ≥ 1). Reads active release `X.Y` from parent `vX.Y.0` release milestone; defaults to `v1.0`. Sprint planning owns Z. Never invent `X.Y`.
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Context Intake & Triage Scan
 1. Read `.memory/BACKLOG_MAP.md`.

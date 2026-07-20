@@ -3,7 +3,7 @@ name: 3a_version-planning
 description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
 type: workflow HITL
 trigger: manual
-version: "1.0.6"
+version: "1.0.7"
 timestamp: 2026-07-17
 ---
 
@@ -26,7 +26,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b_create-issue`.
 - Version planning creates `vX.Y.0` for parents; sprint planning creates `vX.Y.Z` (Z ≥ 1) for slices.
 
 ## Phase 0: Precondition
-1. **Hydrate (self-gated, read-only):** run `.agents/skills/load-memory/SKILL.md` to restore session context (no-op if already loaded; never transitions state or touches branches), then confirm `.memory/BACKLOG_MAP.md` is loaded.
+1. **Hydrate:** run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only), then confirm `.memory/BACKLOG_MAP.md` is loaded.
 2. Confirm ≥ 1 `tier:epic` parent feature exists in BACKLOG_MAP. Else halt: *"No parent features to roadmap — run `/2a_write-prd` first."*
 
 ## Phase 1: Read Current State (no writes)

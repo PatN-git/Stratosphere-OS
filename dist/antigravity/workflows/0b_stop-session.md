@@ -3,7 +3,7 @@ name: 0b_stop-session
 description: Conclude session by codifying progress, updating memory, and linting.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-07-17
 ---
 
@@ -13,9 +13,6 @@ timestamp: 2026-07-17
 Leave next session with context to resume immediately. Ensure new entries are tagged, cross-referenced, and lint-clean.
 
 > Trust tags, supersession, cross-reference, and lint protocols → `.agents/rules/memory-protocol.md`.
-
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 
 ## Procedure
 

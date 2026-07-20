@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: manual
-version: "1.1.1"
+version: "1.1.2"
 timestamp: 2026-07-17
 ---
 
@@ -13,8 +13,8 @@ timestamp: 2026-07-17
 
 ---
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` in `memory-only` mode (skip code reads) to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Value-Add Gate
 *Input:* GitHub Issue/PRD.

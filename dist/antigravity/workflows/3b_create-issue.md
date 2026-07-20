@@ -3,7 +3,7 @@ name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: manual
-version: "2.1.0"
+version: "2.1.1"
 timestamp: 2026-07-17
 ---
 
@@ -13,8 +13,8 @@ timestamp: 2026-07-17
 
 **Hand-off contract:** Upstream: `/3a_version-planning` gates current-release parent features to slice. Sourced from PRD → reads §1, §6, §7, §8 and coverage-checks against §6 + §8. Else checks against captured intent. Template A spikes skip coverage.
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Intake & Scope
 1. **Intake:** Receive raw idea or MVI.

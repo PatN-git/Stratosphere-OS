@@ -3,7 +3,7 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-07-17
 ---
 
@@ -13,8 +13,8 @@ timestamp: 2026-07-17
 
 ---
 
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
+## Phase 0: Load Memory
+Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
 ## Phase 1: Surface & Scope Gate
 *Resume check: if docs/design/BT-<padded>-interface.md exists with status: draft, recover path/branch (from surface/body) and resume: Path B/C at Phase 4 (or 2.5); Path A at Phase 4 if "## Design Brief" exists, else Phase 3 (or 2.5).*

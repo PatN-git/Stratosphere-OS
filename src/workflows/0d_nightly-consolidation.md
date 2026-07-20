@@ -3,7 +3,7 @@ name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
 trigger: manual
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-07-17
 ---
 
@@ -11,9 +11,6 @@ timestamp: 2026-07-17
 
 ## Constraint
 Do not modify files without user approval.
-
-## Phase 0: Context Hydration (self-gated, read-only)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context. Self-gated (no-op if already loaded this session). Read-only: never transitions issue state or touches branches.
 
 ## Phase 1: Review Sessions
 - Review sessions across models from past 24 hours.
