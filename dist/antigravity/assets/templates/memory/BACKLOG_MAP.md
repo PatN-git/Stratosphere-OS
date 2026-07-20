@@ -3,7 +3,7 @@ type: backlog
 title: Backlog Map
 description: Authoritative registry and status mapping of all project issues.
 timestamp: 2026-07-17
-version: "1.2.0"
+version: "1.2.1"
 ---
 # BACKLOG MAP
 
@@ -13,13 +13,13 @@ Authoritative, high-density reference for project issues and their status.
 > Cross-reference rules → `.agents/rules/memory-protocol.md`.
 
 ## Rules
-<!-- SOS:BLOCK id=backlog-rules v=1.2.0 -->
+<!-- SOS:BLOCK id=backlog-rules v=1.2.1 -->
 - **PRESERVATION RULE:** Do NOT delete or modify operational instructions under Rules (such as Label source of truth syncing rules) or the `Milestone` definition line under Label Registry during setup or backlog updates. They must remain permanently as operational guidance.
 - When writing the first entry, populate the Label Registry with all labels used in this GitHub project.
 - **BT-id padding & Atomic Minting:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format. **CRITICAL:** Never predict or pre-allocate `BT-<n>` IDs offline by scanning existing entries and calculating `MAX(BT_ID) + 1`. Because GitHub shares sequence numbers across both Issues and Pull Requests, guessing numbers locally guarantees collisions. IDs must be atomically captured strictly upon executing `gh issue create`.
 - Update when GitHub issues are created, closed, or change status.
 - Include only ID, Title, Status, Labels, Milestone, Parent, Blocked by, ICE, Ref — nothing else.
-- **Identity contract:** the 7 columns `ID, Title, Status, Labels, Milestone, Parent, Blocked by` are byte-identical mirrors of GitHub's structured fields; `ICE` and `Ref` are the only sanctioned local-only augmentation. A closed issue ≡ `status:done`. Drift is surfaced (not auto-fixed) by `/0d` Phase 3.6, GitHub authoritative.
+- **Identity contract:** the 7 columns `ID, Title, Status, Labels, Milestone, Parent, Blocked by` mirror GitHub's structured fields; `ICE` and `Ref` are local-only. A closed issue ≡ `status:done`.
 - **Parent / Blocked by:** `Parent` holds a single `BT-<padded>` on the child only (`—` for epics/standalone); the reverse edge (an epic's children) is a query (`filter Parent = BT-<epic>`), never a stored list. `Blocked by` is a comma-list of bare `BT-<padded>` (`—` if none). A blocker is cleared from `Blocked by` once it reaches `status:in review` or `status:done`.
 - Use the Label Registry; do not invent labels.
 - The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., L-012, A-003, DR-020, G-005). Doc paths (PRD/design) live in the GitHub issue body, not in Ref.

@@ -3,7 +3,7 @@ name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: manual
-version: "2.1.1"
+version: "2.1.2"
 timestamp: 2026-07-17
 ---
 
@@ -18,7 +18,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 
 ## Phase 1: Intake & Scope
 1. **Intake:** Receive raw idea or MVI.
-2. **Defensive epic promotion (idempotent guard):** If the parent epic is still `status:needs_spec` (a 2a/2b promotion was missed), promote it `needs_spec → planned` now: `gh issue edit <parent> --remove-label "status:needs_spec" --add-label "status:planned"` and update its BACKLOG Status. No-op if already `planned` or further; skip for standalone slices with no parent.
+2. **Defensive epic promotion (idempotent guard):** If the parent epic is still `status:needs_spec` (a 2b promotion was missed or 2b was skipped), promote it `needs_spec → planned` now: `gh issue edit <parent> --remove-label "status:needs_spec" --add-label "status:planned"` and update its BACKLOG Status. No-op if already `planned` or further; skip for standalone slices with no parent.
 3. **Scope:** PRD-sourced → load `docs/prds/BT-<padded>-<name>.md` and frozen design doc `docs/design/BT-<padded>-interface.md`. Scope is PRD §6 + §8 and design blueprint. Else raw idea/MVI is scope.
 
 ## Phase 2: Vertical Slice Quiz & Prioritization

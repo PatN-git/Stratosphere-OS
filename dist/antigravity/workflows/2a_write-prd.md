@@ -3,7 +3,7 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: manual
-version: "1.2.2"
+version: "1.2.3"
 timestamp: 2026-07-17
 ---
 
@@ -76,18 +76,16 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 
 ## Phase 5: Publish & Sync
 1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF `type: prd` per `.agents/rules/okf-protocol.md`. Set frontmatter `bt: BT-<padded>` and editorial `status: approved` (the PRD passed Phase 4 validation; editorial status is `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
-2. **Epic status transition (single writer for this edge):**
-   - **Non-UI feature** → promote epic `needs_spec → planned` (spec complete, no design step): `gh issue edit <n> --remove-label "status:needs_spec" --add-label "status:planned"`. BACKLOG Status = `planned`.
-   - **UI feature** → epic stays `status:needs_spec` (design not yet frozen; `/2b_interface-design` promotes it to `planned` at freeze). BACKLOG Status = `needs_spec`.
+2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b_interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a_version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. Update parent issue body: summary + doc link + §10 Open Questions.
-5. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`) — 9-column schema, epic carries `Parent = —` and `Blocked by = —`:
+5. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`) — 9-column schema, Status `needs_spec`, epic carries `Parent = —` and `Blocked by = —`:
    ```
-   | BT-<padded> | <Feature name> | <needs_spec|planned> | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |
+   | BT-<padded> | <Feature name> | needs_spec | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
-   Status column: `needs_spec` (UI) or `planned` (non-UI), matching step 2. Note: Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a_version-planning` owns MAJOR.MINOR and may reassign, `/3c_sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
+   Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a_version-planning` owns MAJOR.MINOR and may reassign, `/3c_sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
 6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render `docs/prds/BT-<padded>-<feature-name>.html`.
-7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design."* (Skip 2b prompt if feature is non-UI — it is already `planned` and ready for `/3b_create-issue`).
+7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b_interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it)."*
 
 ---
 

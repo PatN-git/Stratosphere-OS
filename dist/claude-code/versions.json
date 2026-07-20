@@ -21,9 +21,9 @@
       "version": "1.0.4"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "4dec1bd5d0aed63b560dcb4a225593428842ae873092f8c1659285f3523b0b40",
+      "sha256": "2e6a2dda547b49e3c94c8266b414dc293ab2fdfd34d0af25f15224eb043e98ff",
       "timestamp": "2026-07-17",
-      "version": "1.2.0"
+      "version": "1.2.1"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
@@ -186,9 +186,9 @@
       "version": "1.0.6"
     },
     "commands/2a_write-prd.md": {
-      "sha256": "3be0c2852a6508222064e15b381800217533d78c30fbfb13a020fbc74759540f",
+      "sha256": "490b0575fa2b6a30534bff872e047d92321eb5b6904eef6876cd67e02f62f573",
       "timestamp": "2026-07-17",
-      "version": "1.2.2"
+      "version": "1.2.3"
     },
     "commands/2b_interface-design.md": {
       "sha256": "151703117a1dd7271247b8040b6d93d309466dbb563e0226fd2867768e992750",
@@ -201,9 +201,9 @@
       "version": "1.0.7"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "e46e9c3672146404d023add4e33bfa1190cd5492035483796a1236c484a27076",
+      "sha256": "d3216f0d658036a359f6fd5de04e29a5cfc0bcc4946da3e08a9b4df34b6120df",
       "timestamp": "2026-07-17",
-      "version": "2.1.1"
+      "version": "2.1.2"
     },
     "commands/3c_sprint-planning.md": {
       "sha256": "056d98363b6659194c91c59741863a7707c02a57b37e68df2994839ce426d23c",

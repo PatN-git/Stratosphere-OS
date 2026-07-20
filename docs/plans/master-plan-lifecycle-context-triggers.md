@@ -124,7 +124,7 @@ For **every** workflow file, apply the union of its Plan A/B/C edits in one pass
 `trigger: manual`, set `timestamp: 2026-07-17`, and bump `version:` exactly once.
 
 ### 3.1 Status lifecycle + review state (Plan C Workstream A)
-- **2a** — Phase 2 mint epic `status:needs_spec` (was `in progress`); Phase 5 PRD `status: draft`, non-UI → epic `needs_spec→planned`; BACKLOG Status accordingly; epic BACKLOG row `Parent = —`.
+- **2a** — Phase 2 mint epic `status:needs_spec` (was `in progress`); Phase 5 PRD `status: approved`; **epic stays `needs_spec` — 2a never promotes it** (2b is the sole promoter; PR-review correction — 2b Path C covers non-UI interfaces, so 2a can't decide "non-UI → planned"); BACKLOG Status `needs_spec`; epic BACKLOG row `Parent = —`.
 - **2b** — replace `status → ready-for-slicing` with design `status → approved` **and** epic `needs_spec→planned`; Phase 2 init keeps `draft`; **Phase 1 step-2 skip/handoff path also promotes epic `needs_spec→planned`**.
 - **3b** — slices born `status:planned` (Template A spike → `needs_spec`, milestone-exempt); **Phase 1 entry: defensively promote parent epic `needs_spec→planned`** (idempotent guard); Phase 3 step 4 write `Parent`/`Blocked by` columns (was free-text `Dependencies`).
 - **3c** — operate on `tier:slice AND status:planned` only; never auto-flip `needs_spec`→`planned`; update row-shape refs to 9-column header.
