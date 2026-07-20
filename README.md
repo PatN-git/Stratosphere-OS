@@ -41,7 +41,7 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 ├── AGENTS.md / CLAUDE.md / GEMINI.md  ← Core constitution and layer rules
 ├── .agents/                          ← Orchestration engine (rules, workflows, skills)
 ├── .memory/                          ← Authoritative project memory
-│   ├── STATUS.md                     ← Active session health and build status
+│   ├── STATUS.md                     ← Per-session resume hint (not the authoritative active set)
 │   ├── BACKLOG_MAP.md                ← Feature slices and issue tracking
 │   ├── LEARNINGS.md                  ← Accumulated architectural traps and fixes
 │   ├── GLOSSARY.md                   ← Project domain vocabulary
@@ -64,7 +64,7 @@ StratosphereOS provides structured slash commands spanning the entire developmen
 | **2. Design** | `/2a_write-prd`<br/>`/2b_interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
 | **3. Planning** | `/3a_version-planning`<br/>`/3b_create-issue`<br/>`/3c_sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
 | **3d. Execution** | `/3d_implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
-| **3z. Orchestration** | `/3z_afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
+| **3z. Orchestration** | `/3z_afk-loop` | Runs the autonomous end-to-end loop for `mode:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
 | **4. Ship** | `/4a_verify-and-ship`<br/>`/4b_audit-architecture-drift` | Audits acceptance criteria against automated test coverage and audits structural drift. | Issue, tests, `.memory/*` | Quality gap report, traceable PR |
 | **0. Session Stop** | `/0b_stop-session`<br/>`/0c_handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
