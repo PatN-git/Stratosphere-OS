@@ -3,7 +3,7 @@ type: backlog
 title: Backlog Map
 description: Authoritative registry and status mapping of all project issues.
 timestamp: 2026-07-17
-version: "1.2.1"
+version: "1.2.0"
 ---
 # BACKLOG MAP
 

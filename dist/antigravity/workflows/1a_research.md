@@ -3,7 +3,7 @@ name: 1a_research
 description: Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations.
 type: workflow HITL
 trigger: manual
-version: "1.0.7"
+version: "1.0.5"
 timestamp: 2026-07-17
 ---
 

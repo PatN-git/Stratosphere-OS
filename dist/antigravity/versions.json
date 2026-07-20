@@ -23,7 +23,7 @@
     "assets/templates/memory/BACKLOG_MAP.md": {
       "sha256": "2e6a2dda547b49e3c94c8266b414dc293ab2fdfd34d0af25f15224eb043e98ff",
       "timestamp": "2026-07-17",
-      "version": "1.2.1"
+      "version": "1.2.0"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
@@ -138,12 +138,12 @@
     "assets/templates/rules/memory-protocol.md": {
       "sha256": "003e4cf2ebc42eef2b8b8a5c174567c1df1c58c58620e11f9c61e43ce0a00950",
       "timestamp": "2026-07-17",
-      "version": "1.0.7"
+      "version": "1.0.6"
     },
     "assets/templates/rules/okf-protocol.md": {
       "sha256": "b94dcdc36f9eca7c99c7030227d7888a95235ebf443ebf95fdb1e8f74160eefd",
       "timestamp": "2026-07-17",
-      "version": "1.0.4"
+      "version": "1.0.3"
     },
     "assets/templates/rules/output-mode.md": {
       "sha256": "64012987d54a3d308db92778cd2f5104c3cce34c69d9c56d68011a1d5aad0401",
@@ -153,7 +153,7 @@
     "skills/load-memory/SKILL.md": {
       "sha256": "62b31f78274f799386477812af2301559fe3b41a423dbed2c433cabbd4249316",
       "timestamp": "2026-07-17",
-      "version": "1.2.0"
+      "version": "1.0.0"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "43546b9af5d28e3eeb008b8f974c5c610fa5b50a7e47e49566389a36971c6082",
@@ -193,82 +193,82 @@
     "workflows/0a_start-session.md": {
       "sha256": "3d27e8aa10263e11b2b7186990ad0d32ca5926c4c9a1c607b14240084e44cd90",
       "timestamp": "2026-07-17",
-      "version": "1.2.0"
+      "version": "1.1.0"
     },
     "workflows/0b_stop-session.md": {
       "sha256": "9381f00664bba346d1f09e83c97ca4752582aca2decea41062566646164eb9ff",
       "timestamp": "2026-07-17",
-      "version": "1.2.1"
+      "version": "1.1.0"
     },
     "workflows/0c_handoff.md": {
       "sha256": "fa1d43f9c45b4e5edb2f8d8c0d4ffe8039b6304ed090de0f191b0fa2adba3b87",
       "timestamp": "2026-07-17",
-      "version": "1.0.5"
+      "version": "1.0.3"
     },
     "workflows/0d_nightly-consolidation.md": {
       "sha256": "f6dd12d7b94baf849d88fdb76242aaa177458cb429ed8b865710a778b3968b99",
       "timestamp": "2026-07-17",
-      "version": "1.1.1"
+      "version": "1.1.0"
     },
     "workflows/1a_research.md": {
       "sha256": "df7329a60673c3c537c126a6357fff4a7f114beb585e27ddc1f8d026620626bc",
       "timestamp": "2026-07-17",
-      "version": "1.0.7"
+      "version": "1.0.5"
     },
     "workflows/1b_concept-framing.md": {
       "sha256": "5280f8bbed19c475ae5d9c157992e3f7611b22901774a7732af7857ce3d1f5d7",
       "timestamp": "2026-07-17",
-      "version": "1.0.14"
+      "version": "1.0.11"
     },
     "workflows/1c_concept-map.md": {
       "sha256": "caade13ff32883e0785b1d426de350c5574913322ea5bcfb29754bc233115bf3",
       "timestamp": "2026-07-17",
-      "version": "1.0.6"
+      "version": "1.0.4"
     },
     "workflows/2a_write-prd.md": {
       "sha256": "490b0575fa2b6a30534bff872e047d92321eb5b6904eef6876cd67e02f62f573",
       "timestamp": "2026-07-17",
-      "version": "1.2.3"
+      "version": "1.2.0"
     },
     "workflows/2b_interface-design.md": {
       "sha256": "151703117a1dd7271247b8040b6d93d309466dbb563e0226fd2867768e992750",
       "timestamp": "2026-07-17",
-      "version": "1.2.1"
+      "version": "1.2.0"
     },
     "workflows/3a_version-planning.md": {
       "sha256": "f70381f3d9657e5b72d821c85b28fe9524002e8e9fb4738a17180ccdc4624324",
       "timestamp": "2026-07-17",
-      "version": "1.0.7"
+      "version": "1.0.5"
     },
     "workflows/3b_create-issue.md": {
       "sha256": "d3216f0d658036a359f6fd5de04e29a5cfc0bcc4946da3e08a9b4df34b6120df",
       "timestamp": "2026-07-17",
-      "version": "2.1.2"
+      "version": "2.1.0"
     },
     "workflows/3c_sprint-planning.md": {
       "sha256": "056d98363b6659194c91c59741863a7707c02a57b37e68df2994839ce426d23c",
       "timestamp": "2026-07-17",
-      "version": "2.2.1"
+      "version": "2.1.0"
     },
     "workflows/3d_implement-issue.md": {
       "sha256": "eea7a1d0efd3881481495d88a7d24ef477f76c07e155dbf34524e86989f24c1a",
       "timestamp": "2026-07-17",
-      "version": "2.1.1"
+      "version": "2.1.0"
     },
     "workflows/3z_afk-loop.md": {
       "sha256": "60fae723d6ba761a5417af1dc5586ee7654da285ca64f1e2d97f971efccc149e",
       "timestamp": "2026-07-17",
-      "version": "1.0.14"
+      "version": "1.0.10"
     },
     "workflows/4a_verify-and-ship.md": {
       "sha256": "5ac5adb7699d4b9be30c7500b6bd1d0e6229e02b268f51e1f0e707cb2e377067",
       "timestamp": "2026-07-20",
-      "version": "1.1.4"
+      "version": "1.1.0"
     },
     "workflows/4b_audit-architecture-drift.md": {
       "sha256": "2eef18d93dc2b7db0774645dc16f81f7c6b0118c3e405135690fb8155df432b0",
       "timestamp": "2026-07-20",
-      "version": "1.0.12"
+      "version": "1.0.8"
     },
     "workflows/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
@@ -278,7 +278,7 @@
     "workflows/x_jules-dispatch.md": {
       "sha256": "6a5d0aff7a6501f00d17383e47bd1753bb96c9242b362a1787e88b3528db4bf3",
       "timestamp": "2026-07-17",
-      "version": "0.1.4"
+      "version": "0.1.2"
     }
   },
   "plugin_version": "3.0.0"

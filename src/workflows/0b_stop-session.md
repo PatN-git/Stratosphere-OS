@@ -3,7 +3,7 @@ name: 0b_stop-session
 description: Conclude session by codifying progress, updating memory, and linting.
 type: workflow HITL
 trigger: manual
-version: "1.2.1"
+version: "1.1.0"
 timestamp: 2026-07-17
 ---
 

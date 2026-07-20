@@ -4,7 +4,7 @@ type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
 timestamp: 2026-07-17
-version: "1.0.7"
+version: "1.0.6"
 ---
 
 # Memory Protocol

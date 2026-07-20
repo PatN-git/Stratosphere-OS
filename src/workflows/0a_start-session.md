@@ -3,7 +3,7 @@ name: 0a_start-session
 description: Initialize session and load context from memory layer.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
+version: "1.1.0"
 timestamp: 2026-07-17
 ---
 

@@ -3,7 +3,7 @@ name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
 trigger: manual
-version: "1.1.1"
+version: "1.1.0"
 timestamp: 2026-07-17
 ---
 

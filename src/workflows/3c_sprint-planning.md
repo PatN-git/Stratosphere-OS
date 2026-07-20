@@ -3,7 +3,7 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: manual
-version: "2.2.1"
+version: "2.1.0"
 timestamp: 2026-07-17
 ---
 

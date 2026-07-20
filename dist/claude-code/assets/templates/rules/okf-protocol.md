@@ -7,7 +7,7 @@ paths:
 type: rule
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.1 conformance.
-version: "1.0.4"
+version: "1.0.3"
 timestamp: 2026-07-17
 ---
 

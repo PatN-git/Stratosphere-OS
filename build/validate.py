@@ -194,6 +194,27 @@ for mr in [root/"src", root/"dist/claude-code", root/"dist/antigravity"]:
             pass
 
 # 5. Version format and bump-guard validation
+# Baseline for the per-file bump check is the PR fork point (merge-base with the
+# default branch), so a changed file needs only ONE bump above the last-released
+# state per PR — not a fresh bump on every commit. Falls back to last release tag, then HEAD.
+def _bump_baseline_ref():
+    def _sh(*a):
+        return subprocess.check_output(["git", "-C", str(root), *a], stderr=subprocess.DEVNULL).decode().strip()
+    try:
+        default = _sh("symbolic-ref", "refs/remotes/origin/HEAD").rsplit("/", 1)[-1]
+    except Exception:
+        default = "main"
+    for cand in (f"origin/{default}", default):
+        try:
+            return _sh("merge-base", "HEAD", cand)
+        except Exception:
+            continue
+    try:
+        return _sh("describe", "--tags", "--match", "v[0-9]*", "--abbrev=0")
+    except Exception:
+        return "HEAD"
+
+bump_baseline = _bump_baseline_ref()
 for plat in ["dist/claude-code", "dist/antigravity"]:
     versions_file = root / plat / "versions.json"
     if not versions_file.exists():
@@ -208,7 +229,7 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         
     try:
         git_path = versions_file.relative_to(root).as_posix()
-        prev_json = subprocess.check_output(["git", "-C", str(root), "show", f"HEAD:{git_path}"], stderr=subprocess.STDOUT).decode("utf-8")
+        prev_json = subprocess.check_output(["git", "-C", str(root), "show", f"{bump_baseline}:{git_path}"], stderr=subprocess.STDOUT).decode("utf-8")
         prev = json.loads(prev_json).get("artifacts", {})
     except Exception:
         prev = {}

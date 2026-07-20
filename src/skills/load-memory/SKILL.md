@@ -2,7 +2,7 @@
 name: load-memory
 type: skill
 description: Read-only session-context reconstruction from the `.memory/` layer. Invoked inline by lifecycle workflows and /0a to restore context without re-reading the repo. Do not fire autonomously or on general requests; never mutates state.
-version: "1.2.0"
+version: "1.0.0"
 timestamp: 2026-07-17
 ---
 

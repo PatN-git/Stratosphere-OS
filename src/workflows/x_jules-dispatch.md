@@ -3,7 +3,7 @@ name: x_jules-dispatch
 description: EXPERIMENTAL launcher — run the opt-in jules-dispatch skill (offload bounded mode:AFK slices to Google Jules async agent). Thin delegator; the skill holds all logic and guardrails.
 type: workflow HITL
 trigger: manual
-version: "0.1.4"
+version: "0.1.2"
 timestamp: 2026-07-17
 ---
 

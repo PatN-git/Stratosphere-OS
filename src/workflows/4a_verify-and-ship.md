@@ -3,7 +3,7 @@ name: 4a_verify-and-ship
 description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
 type: workflow HITL
 trigger: manual
-version: "1.1.4"
+version: "1.1.0"
 timestamp: 2026-07-20
 ---
 

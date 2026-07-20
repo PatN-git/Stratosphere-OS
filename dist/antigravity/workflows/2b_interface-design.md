@@ -3,7 +3,7 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: manual
-version: "1.2.1"
+version: "1.2.0"
 timestamp: 2026-07-17
 ---
 

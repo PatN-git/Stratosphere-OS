@@ -3,7 +3,7 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: manual
-version: "1.2.3"
+version: "1.2.0"
 timestamp: 2026-07-17
 ---
 
