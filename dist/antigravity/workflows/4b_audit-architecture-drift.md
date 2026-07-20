@@ -3,7 +3,7 @@ name: 4b_audit-architecture-drift
 description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
 type: workflow
 trigger: manual
-version: "1.0.11"
+version: "1.0.12"
 timestamp: 2026-07-20
 ---
 
@@ -26,7 +26,7 @@ _CONSTRAINTS:_
 
 ## Phase 2: Deep Scan & Confidence
 **Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) for Phase 2.
-- **Resolve targets first (token discipline):** enumerate the target directory's files in this (parent) context and pass the explicit file list to the subagent — the subagent reads the named files directly and must not run a discovery sweep to locate them. (Still never ingest the whole repository; scope stays the target directory.)
+- **Resolve targets first:** in the parent, enumerate the target directory's files and pass the explicit list; the subagent reads the named files and must not sweep to locate them (never ingest the whole repo).
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
 
