@@ -28,6 +28,7 @@ Propose breakdown to user:
    - **Logic/user story:** end-to-end path.
    - **Blocked by:** prerequisite slices.
    - **Inheritance:** inherits scope-class and ODI score from PRD §6. No slices for `[DEFERRED]` stories.
+   - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
 2. **Prioritization Metrics (Template A spikes: skip):**
    - **Impact from ODI:** Map story ODI score to Impact:
      - `ODI < 5` → `0.25`

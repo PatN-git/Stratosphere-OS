@@ -3,7 +3,7 @@ name: 0d_nightly-consolidation
 description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
 type: workflow HITL
 trigger: manual
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-07-17
 ---
 
@@ -17,7 +17,8 @@ Do not modify files without user approval.
 - Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes.
 
 ## Phase 2: Distill Plan
-- Output high-density proposal to `.tmp/nightly_[date].md` for session/workflow optimizations.
+- Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/workflow optimizations.
+- **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
 ## Phase 3: Crystallize Memory
 - Scan `.memory/*` (except `DESIGN.md`) for:
@@ -32,7 +33,7 @@ Do not modify files without user approval.
 - Do not scan codebase for `Avoid:` terms.
 
 ## Phase 3.5: Rebuild Directory Indices
-- Rebuild `index.md` for `.memory/` and `docs/` subdirectories (`prds/`, `discovery/`, `research/`, `design/`, `knowledge/`):
+- Rebuild `index.md` for `.memory/` and `docs/` subdirectories (`prds/`, `discovery/`, `research/`, `design/`, `knowledge/`, `nightly/`):
   - Read frontmatter `title` and `description` from each `.md` file.
   - Rebuild `index.md` as `* [Title](/path.md) - description` grouped under `# [Directory Name]`.
   - **Special-case `docs/knowledge/`**: List one entry per source bundle (`docs/knowledge/<source>/` subdirectory).
@@ -46,7 +47,7 @@ Recommend the next planning workflow from backlog state. Read-only; never run a 
      - milestones + open issues: `gh issue list --state open --json number,milestone,labels`; open milestones via `gh api repos/{owner}/{repo}/milestones`.
      - epic children: for each `tier:epic`, `gh issue view <n> --json subIssues` (numeric `<n>`, matching the repo's existing read convention) — count child slices.
      - a base-state row whose mapped issue is **absent from the open list** is *closed* on GitHub, not milestone-cleared — reconcile it as done for the advisory and do **not** emit `[DRIFT]`.
-     - only when the mapped issue is **present (open)** and any of its **7 mirror fields** — status, milestone, `Labels`, `Parent`, `Blocked by` — disagrees with GitHub → emit `[DRIFT] BT-<padded>: <field> map=<x> github=<y>` and trust GitHub for the advisory (compare bare `status` token to the `Status` column, non-status labels to `Labels`, sub-issue parent to `Parent`, blocked-by to `Blocked by`).
+     - only when the mapped issue is **present (open)** and any of its **5 mirror fields** — status, milestone, `Labels`, `Parent`, `Blocked by` — disagrees with GitHub → emit `[DRIFT] BT-<padded>: <field> map=<x> github=<y>` and trust GitHub for the advisory (compare bare `status` token to the `Status` column, non-status labels to `Labels`, sub-issue parent to `Parent`, blocked-by to `Blocked by`).
      - **stale-blocker check:** if a row's `Blocked by` names a blocker already at `status:in review` or `status:done` → emit `[DRIFT] BT-<padded>: stale blocker <id> should be cleared` (4a/merge should have removed it).
    - **Absent/unauth** → compute from `.memory/BACKLOG_MAP.md` only; tag the outlook `[local-only — GitHub not checked]`.
 3. **Recommendation (evaluate in this order — finish in-flight work before starting new planning; first match wins):**

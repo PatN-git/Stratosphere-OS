@@ -171,9 +171,9 @@
       "version": "1.0.3"
     },
     "commands/0d_nightly-consolidation.md": {
-      "sha256": "f6dd12d7b94baf849d88fdb76242aaa177458cb429ed8b865710a778b3968b99",
+      "sha256": "272818c0ef89e35764fa0679e36d71e0d2191dfaaf87c9b40c1849785813a2aa",
       "timestamp": "2026-07-17",
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     "commands/1a_research.md": {
       "sha256": "df7329a60673c3c537c126a6357fff4a7f114beb585e27ddc1f8d026620626bc",
@@ -206,7 +206,7 @@
       "version": "1.0.6"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "b2220064ce6ddfbe34d4b0f94bf51b29e91a785cf52d982fe5a2bfce5a13166a",
+      "sha256": "88946f198f25742b62fd335a1cfa23b4fac7c4da731332b26ad24b0591652cc6",
       "timestamp": "2026-07-17",
       "version": "2.1.1"
     },
@@ -221,7 +221,7 @@
       "version": "2.1.1"
     },
     "commands/3z_afk-loop.md": {
-      "sha256": "c235cae1d3b54d35d7f4b059e2381c8741eddb9531670fa413cbd8ff267cbe1b",
+      "sha256": "6a910ce2f2dfe01a654a44dcf4b574bc65dab699c2e2efc9858232364271dd82",
       "timestamp": "2026-07-17",
       "version": "1.0.11"
     },
