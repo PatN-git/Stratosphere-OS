@@ -443,6 +443,30 @@ def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "pre
     res["created"].append(rel)
 
 
+def place_project_scripts(project: Path, res, dry, update: bool):
+    """Copy project-local deterministic scripts into `.agents/scripts/`. Runs on BOTH
+    fresh install and `--update` — scripts are outside `versions.json`, so the
+    manifest-diff update loop never sees them; without this an existing project would
+    never receive a new script (e.g. `reconcile.py`) or a changed one on update.
+    `place(tier='managed')` refreshes a changed file and creates a missing one."""
+    for name in ("validate_memory.py", "reconcile.py", "okf_view.py"):
+        src = PLUGIN_ROOT / "scripts" / name
+        if src.exists():
+            place(src, project / ".agents" / "scripts" / name, res, dry, update=update, tier="managed")
+    design_dir = PLUGIN_ROOT / "scripts" / "design"
+    if design_dir.is_dir():
+        for src in sorted(design_dir.rglob("*")):
+            if src.is_file() and "test" not in src.parts:
+                place(src, project / ".agents" / "scripts" / "design" / src.relative_to(design_dir),
+                      res, dry, update=update, tier="managed")
+    viewer_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
+    if viewer_dir.is_dir():
+        for src in sorted(viewer_dir.rglob("*")):
+            if src.is_file():
+                place(src, project / ".agents" / "scripts" / "okf_viewer" / src.relative_to(viewer_dir),
+                      res, dry, update=update, tier="managed")
+
+
 def main():
     plugin_root = Path(__file__).resolve().parent.parent
     plugin_root_resolved = plugin_root.resolve()
@@ -996,6 +1020,14 @@ def main():
             verb = "WOULD RECONCILE" if dry else "RECONCILED"
             print(f"{verb} .gitattributes: added {', '.join(ga_added)}")
                 
+        # Refresh project-local scripts (outside versions.json — the manifest loop above
+        # never sees them, so a new/changed script like reconcile.py would otherwise never
+        # reach an existing project on update).
+        script_res = {k: [] for k in ("exists", "unchanged", "refreshed", "stale", "needs_review", "would", "created")}
+        place_project_scripts(project, script_res, dry, update=True)
+        for rel in script_res["created"] + script_res["refreshed"]:
+            print(f"{'WOULD REFRESH' if dry else 'REFRESHED'} script: {rel}")
+
         lock_data["installed_plugin_version"] = plugin_version
         lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print("Updated .stratosphere-lock.json successfully.")
@@ -1045,35 +1077,8 @@ def main():
             if LIFECYCLE_RE.match(src.name) or src.name in EXTRA_WORKFLOWS:
                 place(src, project / ".agents" / "workflows" / src.name, res, dry, update=update, tier="managed")
 
-    # 6b. Project-local deterministic scripts (memory lint runs from the project)
-    vm = PLUGIN_ROOT / "scripts" / "validate_memory.py"
-    if vm.exists():
-        place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry, update=update, tier="managed")
-
-    # 6c. Project-local design token scripts (design-theme, linter package.json)
-    design_src_dir = PLUGIN_ROOT / "scripts" / "design"
-    if design_src_dir.exists() and design_src_dir.is_dir():
-        for src in sorted(design_src_dir.rglob("*")):
-            if src.is_file():
-                # Skip any path containing a 'test' segment
-                if 'test' in src.parts:
-                    continue
-                rel_parts = src.relative_to(design_src_dir)
-                dst = project / ".agents" / "scripts" / "design" / rel_parts
-                place(src, dst, res, dry, update=update, tier="managed")
-
-    # Copy OKF viewer files
-    viewer_src_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
-    if viewer_src_dir.exists() and viewer_src_dir.is_dir():
-        for src in sorted(viewer_src_dir.rglob("*")):
-            if src.is_file():
-                rel_parts = src.relative_to(viewer_src_dir)
-                dst = project / ".agents" / "scripts" / "okf_viewer" / rel_parts
-                place(src, dst, res, dry, update=update, tier="managed")
-
-    view_script = PLUGIN_ROOT / "scripts" / "okf_view.py"
-    if view_script.exists():
-        place(view_script, project / ".agents" / "scripts" / "okf_view.py", res, dry, update=update, tier="managed")
+    # 6b. Project-local deterministic scripts (validate_memory, reconcile, design, okf viewer/view)
+    place_project_scripts(project, res, dry, update=update)
 
     # 8. .gitignore & .gitattributes Reconciliation
     gi_added = reconcile_gitignore(project, dry)
