@@ -4,7 +4,7 @@ type: rule
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
 timestamp: 2026-07-17
-version: "1.0.4"
+version: "1.0.5"
 ---
 
 # Output Mode Protocol
@@ -45,5 +45,6 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **No fillers:** delete any phrase whose removal loses no information — acknowledgements (e.g. "Sure", "Great"), flattery (e.g. "Great question"), self-narration (e.g. "Let me…"), and sign-offs (e.g. "Hope this helps").
 - **Surgical narrative:** explain *why*, not *how*.
 - **Direct verification:** show results, not process.
+- **Disclose omissions:** if you cap, sample, truncate, or withhold anything (top-N, "and more", sub-threshold findings, an unread source), state the count and what was dropped. Never present a partial set as complete.
 - **No preamble or recap:** open on content, not by restating the question; don't close with unnecessary summary if answer is short.
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.

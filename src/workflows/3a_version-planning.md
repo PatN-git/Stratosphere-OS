@@ -3,7 +3,7 @@ name: 3a_version-planning
 description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
 type: workflow HITL
 trigger: manual
-version: "1.0.5"
+version: "1.0.6"
 timestamp: 2026-07-17
 ---
 
@@ -61,9 +61,10 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b_create-issue`.
 1. **Write `docs/ROADMAP.md`:** instantiate `.agents/workflows/.reference/ROADMAP-template.md`. Prepend OKF `type: roadmap`. Merge and preserve prose. Update release tags (`[PLANNED] / [ACTIVE] / [SHIPPED <date>]`), update Live product marker, and collapse newly-shipped releases to a single line in Shipped section (never delete shipped).
 2. **GitHub:** if disconnected, skip. Create milestones vX.Y.0 in GitHub, assign parent issues, and update BACKLOG_MAP Milestone column (do not touch leaf slices).
 3. **Comment:** post release placement and rationale on each assigned parent feature issue.
-4. **Render:** invoke `plan-html` using `board` or `plan-document` to render read-only `docs/ROADMAP.html`.
-5. **Cleanup:** delete `docs/.roadmap.work.md`.
-6. **Hand-off:** *"Roadmap updated. Current release features ready to slice (run `/3b_create-issue`)."*
+4. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of assigned parent BT-<padded>> --fields milestone` per `.agents/workflows/.reference/terminal-sync-invariant.md` (verifies each roadmapped epic's milestone mirror only — 3a writes no other field). Non-zero → heal per the reference and re-run until `[MIRROR-OK]`.
+5. **Render:** invoke `plan-html` using `board` or `plan-document` to render read-only `docs/ROADMAP.html`.
+6. **Cleanup:** delete `docs/.roadmap.work.md`.
+7. **Hand-off:** *"Roadmap updated. Current release features ready to slice (run `/3b_create-issue`)."*
 
 ## Re-run Notes
 - Skipping version planning defaults features to `v1.0` (with Z managed by 3c).

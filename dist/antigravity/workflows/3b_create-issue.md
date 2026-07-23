@@ -3,7 +3,7 @@ name: 3b_create-issue
 description: Standardize feature ideas into vertical slices with ICE prioritization.
 type: workflow HITL
 trigger: manual
-version: "2.1.0"
+version: "2.1.1"
 timestamp: 2026-07-17
 ---
 
@@ -69,7 +69,8 @@ Halt until user approves breakdown.
    - **Sub-issue Linkage:** If derived from parent epic (`#parent`), link sub-issue (`gh sub-issue add <parent> <N>`).
    - **Dependencies:** If supported, pass `--blocked-by` or run `gh issue edit <N> --add-blocked-by <ids>`. Maintain "Blocked by: [IDs]" in issue body and BACKLOG_MAP.
 4. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` (first real entry: purge placeholders) — 9-column schema. Write bucketed priority, size, type, execution mode, tier, and scope label to the Labels column (never the status), the bare status token (`planned`/`needs_spec`) to the Status column, and ICE details to ICE. In the **`Parent`** column write the single `BT-<parentPadded>` (or `—` for a standalone slice); in the **`Blocked by`** column write the comma-list of bare sibling blocker IDs (or `—`). Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`; Template A spikes are milestone-exempt → `—`). sprint digit Z assigned by 3c.
-5. **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence, or `/3d_implement-issue` for single ready slice.
+5. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of created BT-<padded>>` (all fields — these are freshly created rows) per `.agents/workflows/.reference/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run until `[MIRROR-OK]` before hand-off.
+6. **Hand-off:** Slices created. Run `/3c_sprint-planning` to sequence, or `/3d_implement-issue` for single ready slice.
 
 ---
 

@@ -1050,6 +1050,11 @@ def main():
     if vm.exists():
         place(vm, project / ".agents" / "scripts" / "validate_memory.py", res, dry, update=update, tier="managed")
 
+    # 6b-ii. Terminal-sync gate (reconcile.py runs from the project during sync phases)
+    rc = PLUGIN_ROOT / "scripts" / "reconcile.py"
+    if rc.exists():
+        place(rc, project / ".agents" / "scripts" / "reconcile.py", res, dry, update=update, tier="managed")
+
     # 6c. Project-local design token scripts (design-theme, linter package.json)
     design_src_dir = PLUGIN_ROOT / "scripts" / "design"
     if design_src_dir.exists() and design_src_dir.is_dir():

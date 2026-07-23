@@ -3,7 +3,7 @@ name: 3z_afk-loop
 description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: manual
-version: "1.0.10"
+version: "1.0.11"
 timestamp: 2026-07-17
 ---
 
@@ -41,11 +41,11 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement (Subagent)
-1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/0a_start-session` for `BT-<padded>` (loads it, sets slice `status:in progress` + first-slice epic promotion, restores branch — `3d` creates it if absent), then `/3d_implement-issue`. If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"needs_manual_qa\": false}`. Do NOT push; do NOT open PR."
+1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/0a_start-session` for `BT-<padded>` (loads it, sets slice `status:in progress` + first-slice epic promotion, restores branch — `3d` creates it if absent), then `/3d_implement-issue`. If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd). Do NOT push; do NOT open PR."
 _Done when:_ subagent returns valid JSON and git status is clean.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch:** "Run `/0a_start-session` (read-only; do NOT transition status or checkout branch), then `/4a_verify-and-ship` Phases 1–4 ONLY with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run Phase 5. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"needs_manual_qa\": false}` (confidence ≥ 80)."
+1. **Dispatch:** "Run `/0a_start-session` (read-only; do NOT transition status or checkout branch), then `/4a_verify-and-ship` Phases 1–4 ONLY with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run Phase 5. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
 _Done when:_ auditor returns valid JSON verdict.
 
 ### Step 2C: Decision Gate (Orchestrator)
@@ -69,7 +69,7 @@ _Done when:_ every all-passed feature has open/updated PR (or flagged), and no m
 _Done when:_ mergeability and path overlaps scanned.
 
 ## Phase 4: Final Report [output]
-Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, and manual-test checklist for slices with `needs_manual_qa` set to true.
+Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, **the reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc)**, and manual-test checklist for slices with `needs_manual_qa` set to true.
 - **Manual QA Gating:** `needs_manual_qa` is advisory; verified by human before merge, does not block push/PR ship.
 _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.

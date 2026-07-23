@@ -135,6 +135,11 @@
       "timestamp": "2026-06-17",
       "version": "1.0.2"
     },
+    "assets/templates/references/terminal-sync-invariant.md": {
+      "sha256": "a61d1d8249a28ae6c1ade67d8c00c9293cb25f5cde7ed1940122d84e902d92fb",
+      "timestamp": "2026-07-23",
+      "version": "1.0.0"
+    },
     "assets/templates/rules/memory-protocol.md": {
       "sha256": "003e4cf2ebc42eef2b8b8a5c174567c1df1c58c58620e11f9c61e43ce0a00950",
       "timestamp": "2026-07-17",
@@ -146,9 +151,9 @@
       "version": "1.0.3"
     },
     "assets/templates/rules/output-mode.md": {
-      "sha256": "64012987d54a3d308db92778cd2f5104c3cce34c69d9c56d68011a1d5aad0401",
+      "sha256": "4fbfa16f568cf68bf5542854f2b198fc5bee3e6253a4d083494acafdfca29346",
       "timestamp": "2026-07-17",
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     "commands/0a_start-session.md": {
       "sha256": "3d27e8aa10263e11b2b7186990ad0d32ca5926c4c9a1c607b14240084e44cd90",
@@ -196,19 +201,19 @@
       "version": "1.2.0"
     },
     "commands/3a_version-planning.md": {
-      "sha256": "f70381f3d9657e5b72d821c85b28fe9524002e8e9fb4738a17180ccdc4624324",
+      "sha256": "4738510fd7c0c6bd98b9ae9a2f5c48d94455cf80ed45274dcc5e4de203004691",
       "timestamp": "2026-07-17",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
     "commands/3b_create-issue.md": {
-      "sha256": "d3216f0d658036a359f6fd5de04e29a5cfc0bcc4946da3e08a9b4df34b6120df",
+      "sha256": "b2220064ce6ddfbe34d4b0f94bf51b29e91a785cf52d982fe5a2bfce5a13166a",
       "timestamp": "2026-07-17",
-      "version": "2.1.0"
+      "version": "2.1.1"
     },
     "commands/3c_sprint-planning.md": {
-      "sha256": "056d98363b6659194c91c59741863a7707c02a57b37e68df2994839ce426d23c",
+      "sha256": "703fe471675410769d9fbc096141eadeaa7ad396bff589978dd5b211b5ad39f7",
       "timestamp": "2026-07-17",
-      "version": "2.1.0"
+      "version": "2.1.1"
     },
     "commands/3d_implement-issue.md": {
       "sha256": "aad3ddaf9af248a409a847e1364f3b0d4a4d0974a404bbbd0f061ffbdf9cc9ba",
@@ -216,14 +221,14 @@
       "version": "2.1.1"
     },
     "commands/3z_afk-loop.md": {
-      "sha256": "60fae723d6ba761a5417af1dc5586ee7654da285ca64f1e2d97f971efccc149e",
+      "sha256": "c235cae1d3b54d35d7f4b059e2381c8741eddb9531670fa413cbd8ff267cbe1b",
       "timestamp": "2026-07-17",
-      "version": "1.0.10"
+      "version": "1.0.11"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "5ac5adb7699d4b9be30c7500b6bd1d0e6229e02b268f51e1f0e707cb2e377067",
-      "timestamp": "2026-07-20",
-      "version": "1.1.0"
+      "sha256": "dea402650e0485054037f6b17f370b06a3dd04a51c5c967801bd1d1e4704b48f",
+      "timestamp": "2026-07-23",
+      "version": "1.1.1"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "2eef18d93dc2b7db0774645dc16f81f7c6b0118c3e405135690fb8155df432b0",
@@ -256,9 +261,9 @@
       "version": "1.0.0"
     },
     "skills/micro-tdd/SKILL.md": {
-      "sha256": "43546b9af5d28e3eeb008b8f974c5c610fa5b50a7e47e49566389a36971c6082",
+      "sha256": "a0c2310740ad569c4726e22792b182408fe1e5636465fc86503b2cf65a9f5dc0",
       "timestamp": "2026-07-15",
-      "version": "1.1.1"
+      "version": "1.1.2"
     },
     "skills/plan-html/SKILL.md": {
       "sha256": "70c3aac263e061ec549fe91fecc6caa2298f7a7ac50734ca0b973a5febf8fa2e",
