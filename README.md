@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
