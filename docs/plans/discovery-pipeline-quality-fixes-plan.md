@@ -1,6 +1,6 @@
 # Plan — Discovery→Design pipeline quality fixes (tracker)
 
-**Status:** **IMPLEMENTED on branch** (2026-07-24) — all F1–F12 + Q1–Q4 edited in `src/`, `dist/` rebuilt, `build/validate.py` + reconcile / terminal-sync / 3z-orchestrator tests green. 12 files bumped (OKF once each). Awaiting review + human merge (workflows never self-merge).
+**Status:** **IMPLEMENTED on branch** (2026-07-24) — all F1–F12 + Q1–Q4 edited in `src/`, `dist/` rebuilt, `build/validate.py` + reconcile / terminal-sync / 3z-orchestrator tests green. 12 files bumped (OKF once each); plugin **VERSION 3.0.1 → 3.1.0** (minor, derived by `scripts/release.py` — biggest-change-wins over the artifact bumps) + README badge; `bump_guard` green (3.1.0 > released tag v3.0.1). Awaiting review + human merge (workflows never self-merge).
 **Target:** Branch `claude/v3-polish-discovery-pipeline-kn3h6l` (base `main`), v3.0.x line. **One PR, all items** (D5).
 **Source of truth:** [`docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`](../proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1.0) for the *why/evidence*. This file is the *tracker* — state, decisions, and the two designs (Q2 rewrite, Q4 adaptive grill) that were settled after the proposal was written.
 
