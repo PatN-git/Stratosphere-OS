@@ -3,8 +3,8 @@ name: 2b_interface-design
 description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
-timestamp: 2026-07-17
+version: "1.3.0"
+timestamp: 2026-07-24
 ---
 
 # Interface Design
@@ -29,7 +29,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 
 ## Phase 2: Design Doc Initialization
 1. Create `docs/design/BT-<padded>-interface.md` from template. Prepend OKF `type: interface-design`.
-2. Populate metadata (slug, bt, prd, surface, status: draft, updated). Map: Path A -> ui-generator-page|ui-generator-feature; Path B -> ui-manual; Path C -> non-ui.
+2. Populate metadata (slug, bt, prd, surface, status: draft, timestamp). Map: Path A -> ui-generator-page|ui-generator-feature; Path B -> ui-manual; Path C -> non-ui.
 3. **Define Aha Moment & Time-to-Value:** identify aha moment (value in <30s). Design flow backward from it: no intro sliders, drop user straight into core flow. (Path C: aha = "time to first successful API call").
 4. Fill narrative sections from PRD. Keep one body block.
 5. Classify: bootstrap (empty/placeholder `.memory/DESIGN.md`) vs steady-state. If bootstrap, apply Phase 4 Greenfield Bootstrap Deltas.
@@ -57,6 +57,8 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 
 ## Phase 4: Harmonize & Freeze
 *Steady-state flow. If bootstrap, apply Greenfield Bootstrap Deltas.*
+
+**Full-stack rule (Path A/B):** if the feature also introduces a new non-UI `seam` (API/schema/adapter contract) not already covered elsewhere, additionally produce a `## Interface Contract` block per Path C step 1 — a full-stack slice freezes **both** its UI blueprint and its backend contract here, so `3d` never improvises the seam. Downstream readers (3b, 3d Phase 0, 4a) read whichever blocks are present.
 
 ### Path A (Generator-assisted):
 1. Ingest layout:

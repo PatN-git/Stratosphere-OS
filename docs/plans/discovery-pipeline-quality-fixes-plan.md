@@ -1,6 +1,6 @@
 # Plan — Discovery→Design pipeline quality fixes (tracker)
 
-**Status:** Scoped + decisions locked (2026-07-24). Awaiting review — **no implementation yet**.
+**Status:** **IMPLEMENTED on branch** (2026-07-24) — all F1–F12 + Q1–Q4 edited in `src/`, `dist/` rebuilt, `build/validate.py` + reconcile / terminal-sync / 3z-orchestrator tests green. 12 files bumped (OKF once each). Awaiting review + human merge (workflows never self-merge).
 **Target:** Branch `claude/v3-polish-discovery-pipeline-kn3h6l` (base `main`), v3.0.x line. **One PR, all items** (D5).
 **Source of truth:** [`docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`](../proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1.0) for the *why/evidence*. This file is the *tracker* — state, decisions, and the two designs (Q2 rewrite, Q4 adaptive grill) that were settled after the proposal was written.
 
@@ -16,15 +16,15 @@ Ordered lowest-risk-first. All items are now unblocked.
 
 | # | Item | File(s) | Sev | Status |
 |---|------|---------|-----|--------|
-| F4 | `[MEDIUM]` → `[MED]` tag | `1a` | P3 | ☐ ready |
-| F5 | add `Est. setup time` to brief template | `discovery_brief_template.md` (+`1b` if contract touched) | P3 | ☐ ready |
-| F1 | freshness gate `updated:` → `timestamp:` | `1b:73` | **P1** | ☐ ready |
-| F2 | `1c` glossary write needs confirmation gate | `1c:74` | P2 | ☐ ready |
-| F3 | `1c` Converge self-review + user gate (**hard HITL stop, mirror `1b` Phase 6**) | `1c:68–76` | P2 | ☐ ready (D1) |
-| Q3 | `1b`→`2a` handover fidelity (4 fixes) | `2a` (+`1b`/brief link) | — | ☐ ready |
-| Q2 | `1b` grill stop-conditions — **full rewrite** (all 4 fixes) | `1b` | — | ☐ ready (D2) |
-| Q4 | frontier-batched grill + inference-collapse (dependency-driven) | `1b` | — | ☐ ready (D3, §2.1) |
-| Q1 | `2b` full-stack path coverage (additive Interface Contract) | `2b` (+readers `3b`/`3d`/`4a`) | — | ☐ ready — **do last** (blast radius) |
+| F4 | `[MEDIUM]` → `[MED]` tag | `1a` | P3 | ☑ ready |
+| F5 | add `Est. setup time` to brief template | `discovery_brief_template.md` (+`1b` if contract touched) | P3 | ☑ ready |
+| F1 | freshness gate `updated:` → `timestamp:` | `1b:73` | **P1** | ☑ ready |
+| F2 | `1c` glossary write needs confirmation gate | `1c:74` | P2 | ☑ ready |
+| F3 | `1c` Converge self-review + user gate (**hard HITL stop, mirror `1b` Phase 6**) | `1c:68–76` | P2 | ☑ ready (D1) |
+| Q3 | `1b`→`2a` handover fidelity (4 fixes) | `2a` (+`1b`/brief link) | — | ☑ ready |
+| Q2 | `1b` grill stop-conditions — **full rewrite** (all 4 fixes) | `1b` | — | ☑ ready (D2) |
+| Q4 | frontier-batched grill + inference-collapse (dependency-driven) | `1b` | — | ☑ ready (D3, §2.1) |
+| Q1 | `2b` full-stack path coverage (additive Interface Contract) | `2b` (+readers `3b`/`3d`/`4a`) | — | ☑ ready — **do last** (blast radius) |
 
 **Implementation order within the PR:** F4 → F5 → F1 → F2 → F3 → Q3 → **Q2 → Q4** (Q2 before Q4 so the batch stop-condition lands on the confirmation gate, not the coverage checkboxes) → Q1 last.
 

@@ -6,7 +6,7 @@ timestamp: <YYYY-MM-DD>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 slug: <topic-slug> # MUST be semantic slug only. Do NOT include or pre-allocate a BT-<n> ID.
 linked-prd: —
-version: "1.0.3"
+version: "1.0.4"
 ---
 
 # Discovery: <one-line problem statement in agreed vocabulary>
@@ -56,6 +56,7 @@ version: "1.0.3"
 - **Riskiest Assumption:** <The single fatal assumption; e.g., "both sides of marketplace show up">
 - **Why Fatal:** <Why the concept fails if this assumption is wrong>
 - **Cheapest Test:** <cheapest_test ∈ {landing page + waitlist | N DMs | fake-door button | rough mock shown to 5}>
+- **Est. setup time:** <≤2 weeks — the cheapest test must not exceed this>
 - **Status:** untested | running | survived | failed
 
 ## Recommended Next Step
