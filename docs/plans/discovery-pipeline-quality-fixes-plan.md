@@ -89,6 +89,31 @@ Plus StratOS adds §3 Goals, §5 Success Signals, §7 Constraints+ADR, §8 Defin
 
 ---
 
+## 5. Wider workflow audit — remaining workflows (F6–F12)
+
+Same source-audit method as F1–F5, run across the 14 non-Discover workflows (0a–0d, 2a, 2b, 3a–3d, 3z, 4a, 4b, x_jules-dispatch) via 4 parallel auditors, each finding independently re-verified against source by the orchestrator. Session-lifecycle group (`0a/0b/0c/0d/x_jules-dispatch`) came back **clean**. Seven verified defects elsewhere:
+
+| # | Sev | File | Class | One-line |
+|---|-----|------|-------|----------|
+| F8 | **P1** | `3b:69` | mirror-drift | `priority:*` label written to the BACKLOG mirror + reconciled, but **never applied to the GitHub issue** → `3b`'s own terminal-sync gate fails deterministically on every non-Template-A slice. |
+| F6 | P2 | `2b:32` | C1 (F1-recurrence) | Metadata step writes `updated` instead of OKF `timestamp:` — the exact F1 defect, recurring in `2b`. |
+| F7 | P2 | `3a` Phase 4 | C5 | Phase 4 is named *"Commit & Sync"* and writes `docs/ROADMAP.md`, but `3a` has **no `git` commit anywhere**, unlike siblings `2a:80`/`2b:95` → the product roadmap is lost on a fresh clone. |
+| F9 | P2 | `3c:63,67` | mirror-drift | `3c` updates `priority` in GitHub (ICE recalc can shift the band) but omits `labels` from the reconcile gate and never re-mirrors priority → silent BACKLOG drift. |
+| F10 | P2 | `3z` Step 3A | C5 | `3z` runs `4a` Phase 5 **once per feature**, but `4a` Phase 5 is single-slice → only one sibling flips to `in review`, so `4a:70`'s "all siblings in review" never fires and the feature PR stays a draft forever. |
+| F11 | P2 | `4b:4` | C4 | Frontmatter `type: workflow` omits the OKF-required `HITL`/`AFK` qualifier (`okf-protocol.md:66`); body declares HITL, every sibling carries it (`4a:4`, `3z:4`). |
+| F12 | P3 | `3z:54` | C4 | `gh issue edit <padded>` passes a zero-padded BT-id where every other call uses the raw issue number `<n>` (`4a:68`, `0a:23`) → wrong argument / likely failure on the blocked-label transition. |
+
+**Evidence highlights (re-verified):**
+- **F8** — `3b:65-68` computes the priority label; `3b:69` `gh issue create` assigns `type+mode+tier+size+status+scope` but **not** priority; `3b:72` writes priority to the Labels column; `3b:73` reconciles *all fields*; `reconcile.py:84-87` diffs non-status labels → `labels map_only=['priority:X']`. Deterministic.
+- **F9** — `3c:63` "Update issue priority … in GitHub"; `3c:32` allows ICE recalc; gate at `3c:67` is `--fields status,milestone,blocked_by` (no `labels`); no Phase-5 step writes the Labels column. `terminal-sync-invariant.md:20`: `--fields` = only fields this phase wrote — but priority *was* written.
+- **F10** — `3z:60` "For each feature whose queued slices are all VERIFIED" → `3z:62` one `4a` Phase 5 call, no per-slice loop, no slice id passed; `4a:66` flips "the slice", `4a:70` gates the epic on *all* siblings.
+
+**Notes:** F6 corrects `design-doc-template.md:5` uses `timestamp`. F11 line is `4b:4` (auditor said :6). One sub-threshold item disclosed + discarded: `0d:50` lists `Blocked by` among 5 mirror fields but its `gh` fetches don't retrieve blocked-by data (scored ~75 — blocked-by is "where supported" and a separate stale-blocker heuristic covers it).
+
+**Fixes (all surgical):** F8 add `priority:*` to `3b:69` GitHub labels · F6 `updated`→`timestamp` in `2b:32` · F7 add a `git add/commit` (+push if connected) for ROADMAP in `3a` Phase 4 · F9 add `labels` to `3c:67 --fields` + a step re-mirroring priority · F10 loop `4a` Phase 5 per VERIFIED slice in `3z` Step 3A · F11 `type: workflow HITL` in `4b:4` · F12 `<padded>`→`<n>` in `3z:54`.
+
+**Packaging:** these are the same family of surgical workflow-source edits; recommend folding into the one PR (D5) — F8 especially, since it breaks `3b`'s own gate today. Or split as a second "workflow-drift" PR if you'd rather keep the Discover-phase PR focused. **Your call (new decision D7).**
+
 ## 4. Sources (benchmark research)
 
 - [The /grilling Skill](https://www.aihero.dev/skills-grilling) · [grilling/SKILL.md](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md)
