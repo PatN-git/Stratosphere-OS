@@ -31,7 +31,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 1. Create `docs/design/BT-<padded>-interface.md` from template. Prepend OKF `type: interface-design`.
 2. Populate metadata (slug, bt, prd, surface, status: draft, timestamp). Map: Path A -> ui-generator-page|ui-generator-feature; Path B -> ui-manual; Path C -> non-ui.
 3. **Define Aha Moment & Time-to-Value:** identify aha moment (value in <30s). Design flow backward from it: no intro sliders, drop user straight into core flow. (Path C: aha = "time to first successful API call").
-4. Fill narrative sections from PRD. Keep one body block.
+4. Fill narrative sections from PRD. Keep one body block (a full-stack Path A/B slice adds a second `## Interface Contract` block at Phase 4 — see the full-stack rule).
 5. Classify: bootstrap (empty/placeholder `.memory/DESIGN.md`) vs steady-state. If bootstrap, apply Phase 4 Greenfield Bootstrap Deltas.
 
 ## Phase 2.5: Diverge & Select Direction

@@ -221,7 +221,7 @@
       "version": "1.0.6"
     },
     "workflows/1b_concept-framing.md": {
-      "sha256": "85bc7ac31b02051e0c77422694d40a2dab2ca415a7ab5cc9f4640574fe91d825",
+      "sha256": "c05f394b2e233916e1c4cb1a630a31252b9c2d8c2222953de8f2b39bfee93f63",
       "timestamp": "2026-07-24",
       "version": "1.1.0"
     },
@@ -236,7 +236,7 @@
       "version": "1.3.0"
     },
     "workflows/2b_interface-design.md": {
-      "sha256": "3fa37e05cd3d131db38304efe5ecff96badf13cb25c9b23d51b7fb132fa61327",
+      "sha256": "0716bbb13c859b95160accb3311936d13cd732970f60004e5234dee930f8a8a6",
       "timestamp": "2026-07-24",
       "version": "1.3.0"
     },
