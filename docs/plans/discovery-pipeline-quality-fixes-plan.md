@@ -4,7 +4,7 @@
 **Target:** Branch `claude/v3-polish-discovery-pipeline-kn3h6l` (base `main`), v3.0.x line. **One PR, all items** (D5).
 **Source of truth:** [`docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`](../proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1.0) for the *why/evidence*. This file is the *tracker* — state, decisions, and the two designs (Q2 rewrite, Q4 adaptive grill) that were settled after the proposal was written.
 
-> **Decisions locked:** D1 `1c` = hard HITL stop like `1b`. · D2 `1b` stop-conditions = **full rewrite** (all 4 fixes). · D3 Q4 = **frontier-batched grilling with inference-collapse** (dependency-driven, no structural tier — §2.1). · D4 = **no** `2a` spec reframe; coverage sufficient once Q1 lands (§2.2). · D5 = one PR + OKF version bumps. · D6 = ship via `improve-workflows-skills` → edit `src/` → rebuild `dist/` → `/4a`.
+> **Decisions locked:** D1 `1c` = hard HITL stop like `1b`. · D2 `1b` stop-conditions = **full rewrite** (all 4 fixes). · D3 Q4 = **frontier-batched grilling with inference-collapse** (dependency-driven, no structural tier — §2.1). · D4 = **no** `2a` spec reframe; coverage sufficient once Q1 lands (§2.2). · D5 = one PR + OKF version bumps. · D6 = ship via `improve-workflows-skills` → edit `src/` → rebuild `dist/` → `/4a`. · D7 = fold the wider-audit fixes (F6–F12, §5) into the **same one PR**.
 >
 > Line numbers drift — re-anchor every edit by content.
 
@@ -86,6 +86,7 @@ Plus StratOS adds §3 Goals, §5 Success Signals, §7 Constraints+ADR, §8 Defin
 | D4 | Spec reframe / coverage | **No reframe.** Coverage sufficient once Q1 lands; Q1 is the load-bearing coverage fix. (§2.2) |
 | D5 | Packaging | **One PR**, all items, OKF version bumps per touched file. |
 | D6 | Ship path | Confirmed: `improve-workflows-skills` → edit `src/` (never `dist/`/`.agents/`) → rebuild `dist/` → `/4a_verify-and-ship`. |
+| D7 | Packaging of F6–F12 | **Fold into the one PR** with F1–F5 + Q1–Q4 (same edit family; F8 breaks `3b`'s gate today). Grep sweep confirmed F1/F6 are the only `updated`-field instances. |
 
 ---
 
@@ -112,7 +113,9 @@ Same source-audit method as F1–F5, run across the 14 non-Discover workflows (0
 
 **Fixes (all surgical):** F8 add `priority:*` to `3b:69` GitHub labels · F6 `updated`→`timestamp` in `2b:32` · F7 add a `git add/commit` (+push if connected) for ROADMAP in `3a` Phase 4 · F9 add `labels` to `3c:67 --fields` + a step re-mirroring priority · F10 loop `4a` Phase 5 per VERIFIED slice in `3z` Step 3A · F11 `type: workflow HITL` in `4b:4` · F12 `<padded>`→`<n>` in `3z:54`.
 
-**Packaging:** these are the same family of surgical workflow-source edits; recommend folding into the one PR (D5) — F8 especially, since it breaks `3b`'s own gate today. Or split as a second "workflow-drift" PR if you'd rather keep the Discover-phase PR focused. **Your call (new decision D7).**
+**Packaging (D7 — resolved):** F6–F12 fold into the **one PR** alongside F1–F5 + Q1–Q4 (D5). Same family of surgical workflow-source edits; F8 ships with them since it breaks `3b`'s own gate today.
+
+**Grep sweep for the F1/F6 `updated`-field class (done):** searched all of `src/` — the only two metadata-field occurrences are `1b:73` (F1) and `2b:32` (F6). Every other `updated` hit is prose ("Roadmap updated", "open/updated PR", "registered/updated"). **No further instances** — F1+F6 are the complete set of this defect.
 
 ## 4. Sources (benchmark research)
 
