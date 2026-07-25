@@ -3,8 +3,8 @@ name: 2a_write-prd
 description: Turn project ideas into impactful PRDs.
 type: workflow HITL
 trigger: manual
-version: "1.2.0"
-timestamp: 2026-07-17
+version: "1.3.0"
+timestamp: 2026-07-24
 ---
 
 # Write PRD
@@ -21,6 +21,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
    - **Expand** — read file, fill thin sections and `> open:` markers.
 3. If feature warrants 2+ PRDs, suggest splitting first.
 4. One clarifying question only if blocking. Else → `> open:` into §10.
+5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
 Execute `gh issue create` to create parent GitHub issue — capture exact returned issue number `#N` and zero-pad to 3 digits (e.g. `BT-059`).
@@ -34,8 +35,12 @@ Execute `gh issue create` to create parent GitHub issue — capture exact return
 
 Record issue URL and minted ID for PRD front matter.
 
+**Close the discovery link (if a brief was located in Phase 1):** write the minted `BT-<padded>` into the brief's `linked-prd:` frontmatter, so the discovery→PRD link is bidirectional.
+
 ## Phase 3: Draft
-Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
+Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
+
+**Discovery-brief ingestion (if a brief was located):** seed §1/§2/§4/§6/§7 from its Problem, Vocabulary, Actor, Chosen Framing, and Non-Goals, and absorb its Open Questions into §10 — do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.
@@ -78,7 +83,7 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF `type: prd` per `.agents/rules/okf-protocol.md`. Set frontmatter `bt: BT-<padded>` and editorial `status: approved` (the PRD passed Phase 4 validation; editorial status is `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
 2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b_interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a_version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
-4. Update parent issue body: summary + doc link + §10 Open Questions.
+4. Update parent issue body: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).
 5. Append to `.memory/BACKLOG_MAP.md` (first real entry: delete dummy row `BT-XXX`) — 9-column schema, Status `needs_spec`, epic carries `Parent = —` and `Blocked by = —`:
    ```
    | BT-<padded> | <Feature name> | needs_spec | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |

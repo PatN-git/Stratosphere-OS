@@ -3,8 +3,8 @@ name: 3a_version-planning
 description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
 type: workflow HITL
 trigger: manual
-version: "1.0.6"
-timestamp: 2026-07-17
+version: "1.1.0"
+timestamp: 2026-07-24
 ---
 
 # Version Planning
@@ -63,8 +63,9 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b_create-issue`.
 3. **Comment:** post release placement and rationale on each assigned parent feature issue.
 4. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of assigned parent BT-<padded>> --fields milestone` per `.agents/workflows/.reference/terminal-sync-invariant.md` (verifies each roadmapped epic's milestone mirror only — 3a writes no other field). Non-zero → heal per the reference and re-run until `[MIRROR-OK]`.
 5. **Render:** invoke `plan-html` using `board` or `plan-document` to render read-only `docs/ROADMAP.html`.
-6. **Cleanup:** delete `docs/.roadmap.work.md`.
-7. **Hand-off:** *"Roadmap updated. Current release features ready to slice (run `/3b_create-issue`)."*
+6. **Commit & Push Doc:** `git add docs/ROADMAP.md docs/ROADMAP.html && git commit -m "docs: roadmap"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). The roadmap is the cross-feature product changelog re-read by `/3a_version-planning` on default (Phase 2 "Live product" marker) — committing here keeps its `[SHIPPED]`/numbering baseline durable across a fresh clone or session. Never sweep unrelated drift into this commit.
+7. **Cleanup:** delete `docs/.roadmap.work.md`.
+8. **Hand-off:** *"Roadmap updated. Current release features ready to slice (run `/3b_create-issue`)."*
 
 ## Re-run Notes
 - Skipping version planning defaults features to `v1.0` (with Z managed by 3c).

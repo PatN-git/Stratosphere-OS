@@ -3,8 +3,8 @@ name: 1c_concept-map
 description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
 trigger: manual
-version: "1.0.4"
-timestamp: 2026-07-17
+version: "1.1.0"
+timestamp: 2026-07-24
 ---
 
 # Concept Map Workflow
@@ -71,6 +71,7 @@ timestamp: 2026-07-17
 2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`).
 3. **RAT Audit:** Invoke a subagent to challenge brief:
    - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
-4. **Crystallize Vocabulary:** Write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`.
-5. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `BACKLOG_MAP.md` to `status:done`.
-6. **Hand-off:** Expose brief. Trigger `/2a_write-prd` or exit ramps.
+4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist — terms used appear in Vocabulary; actor is specific (not "users"); problem contains no solution language; chosen framing notes rejected alternatives; RAT + cheapest test documented with status; no unfiled Open Questions — then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.
+5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`.
+6. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `BACKLOG_MAP.md` to `status:done`.
+7. **Hand-off:** Expose brief. Trigger `/2a_write-prd` or exit ramps.

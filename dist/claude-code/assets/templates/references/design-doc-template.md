@@ -8,7 +8,7 @@ slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-generator-page | ui-generator-feature | ui-manual | non-ui
-version: "1.0.4"
+version: "1.0.5"
 ---
 
 # Design: BT-<padded> - <Feature Name>
@@ -42,7 +42,7 @@ version: "1.0.4"
 
 ---
 
-<!-- SELECT AND KEEP EXACTLY ONE OF THE FOLLOWING BODY BLOCKS BASED ON THE SURFACE GATE; DELETE THE OTHERS -->
+<!-- KEEP ONE UI BLOCK (Path A OR Path B) OR THE NON-UI BLOCK (Path C) BASED ON THE SURFACE GATE; DELETE THE UNUSED ONES. FULL-STACK EXCEPTION: a UI slice that also introduces a new non-UI seam ADDITIONALLY keeps the Path C Interface Contract block (per 2b Phase 4 full-stack rule). -->
 
 ### [Path A · Generator-assisted] Frozen Layout Blueprint
 *Ingested once at design time and frozen here. Do not read live generator after this step.*

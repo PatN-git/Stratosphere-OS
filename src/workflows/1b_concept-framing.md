@@ -3,8 +3,8 @@ name: 1b_concept-framing
 description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
 type: workflow HITL
 trigger: manual
-version: "1.0.11"
-timestamp: 2026-07-17
+version: "1.1.0"
+timestamp: 2026-07-24
 ---
 
 # Concept framing
@@ -20,16 +20,13 @@ timestamp: 2026-07-17
 ## Load Memory (runs first)
 Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
-## Phase 0: Brainstorm (Optional)
+## Phase 0: Brainstorm Gate
 
-1. Infer intent:
-   - **Sharpen:** concrete concept → skip Phase 0 and proceed directly to Phase 1.
-   - **Generate:** vague/exploratory → run Phase 0 brainstorm steps below:
-2. **Extract constraints:** target user, timeline, tech constraints, boundaries. Confirm. If fuzzy, use CHAIN from `.agents/workflows/.reference/brainstorm-techniques.md`.
-3. **Check Backlog:** Scan `.memory/BACKLOG_MAP.md` for matching `BT-<n>`. If active, prompt to resume or pivot. If done, note as prior art. (If resuming, skip Phase 0 steps 4-6 and proceed directly to Phase 1: Precondition & Scope).
-4. **Diverge:** PM/Designer/Engineer lenses, 3-5 ideas per lens in one table. Load `.agents/workflows/.reference/brainstorm-techniques.md` only if stalled.
-5. **Pre-ICE Triage:** Rank top 5 ideas by Impact (1-5) and Confidence (1-5). Do not write combined ICE score.
-6. **Validate:** Ask: *"Is building this the right approach, or would a simpler solution work?"* Frame winner: Outcome → Opportunity → Solution → Experiments. Await approval.
+*Gate: If the concept is already concrete and specific, skip to Phase 1.*
+*Gate: If the concept is vague, exploratory, or the user asks for ideas, run the `concept-brainstorm` skill.*
+
+1. Run the `concept-brainstorm` skill (read `.agents/skills/concept-brainstorm/SKILL.md` for instructions).
+2. Once the winning idea is validated and approved by the user, proceed to Phase 1.
 
 ## Phase 1: Precondition & Scope
 
@@ -49,18 +46,25 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 
 ## Phase 2: Grill
 
-Grill one question at a time. State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
+State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
+
+**Grill mode (facts looked up, decisions asked — batched by dependency):**
+- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up first; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user.
+- **Sharpen / short path:** grill one decision at a time.
+- **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with your recommended answer (per G1). A decision waits for a later round only if its answer depends on a sibling still open this round (per G3). Where you can confidently infer an answer (common on brownfield), present it as a batch-confirm — *"here's what I inferred; correct any that are wrong"* — never a silent assumption. Collect → mark settled on `## Coverage` → recompute the frontier → next round.
 
 - **G1 — Recommend when grounded, open when not:** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
 - **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
-- **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependencies one at a time. Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
+- **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependency edges in order (a decision waits until its prerequisites are settled). Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
 
 **Stop conditions:**
-1. User signals done ("enough", "write it up").
-2. Next question would not change the brief.
-3. Focus areas covered at minimum depth.
+1. **Primary gate — confirmed shared understanding:** stop only when you can restate actor, problem, and chosen framing back to the user and they confirm it is correct and complete. The user — never the agent — declares "enough"; do not stop merely because the next question "wouldn't change the brief" (that lets the agent answer its own questions).
+2. User explicitly signals done ("enough", "write it up").
+3. Focus areas covered **and** the confirmation in (1) obtained.
 
-**Check-in every ~5 questions:** *"Want to keep grilling, or do I have enough to draft the brief?"*
+A thorough grill is typically 20–50 questions; do not target brevity. There is no fixed question budget — depth is bounded by shared understanding, not count.
+
+**Check-in every ~5 questions (direction check, not an off-ramp):** *"Here's what's still fuzzy: [X, Y]. Keep drilling these, or are they intentionally open?"*
 
 **Focus areas — probe in order of ambiguity; skip if clear:**
 - **Actor identity** — role, segment, context (not "users").
@@ -70,7 +74,7 @@ Grill one question at a time. State synthesis of known facts and confirm — do 
   - **V2 (Code-Contradiction Check):** Check terms against actual naming in code.
   - **V3 (Glossary-Conflict Callout):** Verify terms do not clash with `GLOSSARY.md` `[[G-xxx]]`.
 - **Internal Prior Art** — code touching this, or prior attempts.
-- **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `updated:` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <updated>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a_research. Multiple matches → list filenames, user selects.
+- **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `timestamp:` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <timestamp>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a_research. Multiple matches → list filenames, user selects.
 - **Success state** — observable, measurable outcomes.
 - **Hard constraints** — fixed boundaries.
 - **Non-goals (early)** — explicit exclusions.
