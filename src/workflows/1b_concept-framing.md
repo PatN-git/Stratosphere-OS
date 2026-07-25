@@ -20,16 +20,13 @@ timestamp: 2026-07-24
 ## Load Memory (runs first)
 Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
 
-## Phase 0: Brainstorm (Optional)
+## Phase 0: Brainstorm Gate
 
-1. Infer intent:
-   - **Sharpen:** concrete concept → skip Phase 0 and proceed directly to Phase 1.
-   - **Generate:** vague/exploratory → run Phase 0 brainstorm steps below:
-2. **Extract constraints:** target user, timeline, tech constraints, boundaries. Confirm. If fuzzy, use CHAIN from `.agents/workflows/.reference/brainstorm-techniques.md`.
-3. **Check Backlog:** Scan `.memory/BACKLOG_MAP.md` for matching `BT-<n>`. If active, prompt to resume or pivot. If done, note as prior art. (If resuming, skip Phase 0 steps 4-6 and proceed directly to Phase 1: Precondition & Scope).
-4. **Diverge:** PM/Designer/Engineer lenses, 3-5 ideas per lens in one table. Load `.agents/workflows/.reference/brainstorm-techniques.md` only if stalled.
-5. **Pre-ICE Triage:** Rank top 5 ideas by Impact (1-5) and Confidence (1-5). Do not write combined ICE score.
-6. **Validate:** Ask: *"Is building this the right approach, or would a simpler solution work?"* Frame winner: Outcome → Opportunity → Solution → Experiments. Await approval.
+*Gate: If the concept is already concrete and specific, skip to Phase 1.*
+*Gate: If the concept is vague, exploratory, or the user asks for ideas, run the `concept-brainstorm` skill.*
+
+1. Run the `concept-brainstorm` skill (read `.agents/skills/concept-brainstorm/SKILL.md` for instructions).
+2. Once the winning idea is validated and approved by the user, proceed to Phase 1.
 
 ## Phase 1: Precondition & Scope
 

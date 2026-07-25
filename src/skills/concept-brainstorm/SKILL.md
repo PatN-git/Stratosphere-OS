@@ -1,12 +1,24 @@
 ---
+name: concept-brainstorm
 description: Library of brainstorming techniques and selection guide for concept framing.
+type: skill
 version: "1.0.2"
 timestamp: 2026-06-18
 ---
 
-# Brainstorm Technique Library
+# Concept Brainstorming Skill
 
-Techniques for Phase 0 concept framing, organized by the brainstorm pass they serve. The orchestrator (`1b_concept-framing.md` Phase 0) sets the default path; consult this file for depth or to pick a situational technique. Pick ONE optional technique per pass — do not run all.
+Use this skill to help a user brainstorm ideas and pick a winning concept when they arrive with a vague problem.
+
+## Execution Steps
+1. **Extract constraints:** Run Pass 1 (e.g. CHAIN) to pin target user, timeline, tech constraints, and boundaries. Confirm with the user.
+2. **Diverge:** Run Pass 2 (e.g. Multi-Perspective Ideation) to generate 3-5 ideas. Present them to the user.
+3. **Pre-ICE Triage:** Run Pass 3 Pre-ICE Triage to rank the top ideas by Impact (1-5) and Confidence (1-5).
+4. **Validate:** Ask: *"Is building this the right approach, or would a simpler solution work?"* Hand off the winner using Pass 4 (Opportunity Solution Tree) to feed the grill phase. Await approval.
+
+## Technique Library
+
+Techniques organized by the brainstorm pass they serve. The Execution Steps above define the default path; consult this library to pick a situational technique if the default doesn't fit. Pick ONE technique per pass — do not run all.
 
 ## Selection Guide
 
