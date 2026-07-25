@@ -66,9 +66,9 @@
       "version": "1.0.1"
     },
     "assets/templates/references/brainstorm-techniques.md": {
-      "sha256": "de1e17967dd42383d449517ce34ce7e00217b66a983352a32127c9ed53e6bf4d",
-      "timestamp": "2026-06-18",
-      "version": "1.0.2"
+      "sha256": "1bd08b83915b02a7e7c265918aa2685c0e0df2713d9720a84096f152e4c8bb06",
+      "timestamp": "2026-07-24",
+      "version": "1.0.3"
     },
     "assets/templates/references/code-smell-baseline.md": {
       "sha256": "82635afe0e650328475b98cd01f247cd45164f22692c43d13e13f6d0f93c32ec",
@@ -181,7 +181,7 @@
       "version": "1.0.6"
     },
     "commands/1b_concept-framing.md": {
-      "sha256": "c05f394b2e233916e1c4cb1a630a31252b9c2d8c2222953de8f2b39bfee93f63",
+      "sha256": "8b4a7f7b0f58d2625633ea35bb8f6a5ded99c72eea5c6c8b585ee91485a540ad",
       "timestamp": "2026-07-24",
       "version": "1.1.0"
     },
@@ -254,6 +254,16 @@
       "sha256": "6a5d0aff7a6501f00d17383e47bd1753bb96c9242b362a1787e88b3528db4bf3",
       "timestamp": "2026-07-17",
       "version": "0.1.2"
+    },
+    "skills/concept-brainstorm/SKILL.md": {
+      "sha256": "feb5a5107114e3a8687574f9667efc365d172794928b9718d8d125d9ca18ac99",
+      "timestamp": "2026-07-24",
+      "version": "1.4.1"
+    },
+    "skills/concept-brainstorm/references/techniques.md": {
+      "sha256": "00cf966dd2c058066bebc05aa08a3876048775393ab2cb81200e6c73631e06f4",
+      "timestamp": "2026-07-24",
+      "version": "1.0.0"
     },
     "skills/load-memory/SKILL.md": {
       "sha256": "62b31f78274f799386477812af2301559fe3b41a423dbed2c433cabbd4249316",
