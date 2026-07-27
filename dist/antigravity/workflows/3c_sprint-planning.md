@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: manual
-version: "2.2.0"
-timestamp: 2026-07-24
+version: "2.2.1"
+timestamp: 2026-07-27
 ---
 
 # Sprint planning
@@ -24,7 +24,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
    - List leaf issues labeled `[NEEDS_SPEC]`.
 
 ## Phase 2: Filter & Sort Engine
-1. **Dependency Sorting:** Evaluate dependencies. Parse native GitHub dependencies (`gh issue view <#> --json blockedBy`) if supported; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
+1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
    - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
    - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.

@@ -105,6 +105,16 @@
       "timestamp": "<YYYY-MM-DD>",
       "version": "1.0.4"
     },
+    "assets/templates/references/health-audit-report-template.md": {
+      "sha256": "906525441d3a4ccad789162c07274d32d83dcd3c5a15b603ee39a33d030bb431",
+      "timestamp": "2026-07-27",
+      "version": "1.0.0"
+    },
+    "assets/templates/references/health-audit-scan-matrix.md": {
+      "sha256": "41b89444b3e727f14e2b27dafb4e25b72ca214098f6347690040fca163d75b98",
+      "timestamp": "2026-07-27",
+      "version": "1.0.0"
+    },
     "assets/templates/references/issue-templates.md": {
       "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
       "timestamp": "2026-07-17",
@@ -196,9 +206,9 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "2f0ca7e852a9139f4ab18a9a848953eb786cad9024ea91f4d04841440a299046",
+      "sha256": "f66e028f9b2b8275d0deaa6efde2a0424bf15b4dcb89f1933e99e6f0735981fd",
       "timestamp": "2026-07-17",
-      "version": "1.0.12"
+      "version": "1.0.13"
     },
     "skills/stratosphere-update/SKILL.md": {
       "sha256": "8db553dc0330f9bd3b80c04813cc19c3053a320c573f188582d8331f5a764429",
@@ -221,9 +231,9 @@
       "version": "1.0.3"
     },
     "workflows/0d_nightly-consolidation.md": {
-      "sha256": "272818c0ef89e35764fa0679e36d71e0d2191dfaaf87c9b40c1849785813a2aa",
-      "timestamp": "2026-07-17",
-      "version": "1.1.1"
+      "sha256": "165c0d6ad91e4bf5b6d9b86f3dd8b79d99a886fd7ef20a29e030354121a4b1b6",
+      "timestamp": "2026-07-27",
+      "version": "1.1.2"
     },
     "workflows/1a_research.md": {
       "sha256": "712533eb0cb0634c69da015bd32367cf6b21e17c2f8c4b778eb312955a9ba35d",
@@ -261,9 +271,9 @@
       "version": "2.2.0"
     },
     "workflows/3c_sprint-planning.md": {
-      "sha256": "9dd7f3842e39183f2e3fcb6e9445da26e0d2b5407642df2c4371dae27400fc17",
-      "timestamp": "2026-07-24",
-      "version": "2.2.0"
+      "sha256": "1a78f4c09d75608932828d18867930183661d9cb450834fb5ae2900ffd0b468d",
+      "timestamp": "2026-07-27",
+      "version": "2.2.1"
     },
     "workflows/3d_implement-issue.md": {
       "sha256": "aad3ddaf9af248a409a847e1364f3b0d4a4d0974a404bbbd0f061ffbdf9cc9ba",
@@ -276,14 +286,19 @@
       "version": "1.1.0"
     },
     "workflows/4a_verify-and-ship.md": {
-      "sha256": "dea402650e0485054037f6b17f370b06a3dd04a51c5c967801bd1d1e4704b48f",
-      "timestamp": "2026-07-23",
-      "version": "1.1.1"
+      "sha256": "e518812c4aa384c9498b0ff1bc5b29d70092db9b9fa9aa97d865f791d9f14d79",
+      "timestamp": "2026-07-27",
+      "version": "1.1.2"
     },
     "workflows/4b_audit-architecture-drift.md": {
       "sha256": "f49eea254291d1d416bcf64a9e108f944450b86f6c200e6ba7cdd8fab12b3e00",
       "timestamp": "2026-07-24",
       "version": "1.0.9"
+    },
+    "workflows/4c_codebase-health-audit.md": {
+      "sha256": "f6761501086a07e3ab4db12e072f58acb68633ff15a459f777d83c743aa28fdb",
+      "timestamp": "2026-07-27",
+      "version": "1.0.0"
     },
     "workflows/sync-skills.md": {
       "sha256": "08c733c258b0f3b25b0ce6bd53306019b370343bd28cefa0fe2f0bc5321f206c",
@@ -296,5 +311,5 @@
       "version": "0.1.2"
     }
   },
-  "plugin_version": "3.1.0"
+  "plugin_version": "3.2.0"
 }
