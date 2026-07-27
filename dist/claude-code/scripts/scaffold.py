@@ -19,7 +19,7 @@ Plugin assets/templates and lifecycle workflows are resolved relative to the
 script's own location; the project is resolved from the current directory.
 
 Why this matters on Antigravity: a plugin's workflows/ are NOT registered as
-slash commands, so the lifecycle workflows (0a–4b, sync-skills) are copied into
+slash commands, so the lifecycle workflows (0a–4c, sync-skills) are copied into
 the project's `.agents/workflows/`, where Antigravity DOES surface them as `/`
 commands. On Claude Code the plugin commands already register globally; the
 project copies are inert there.

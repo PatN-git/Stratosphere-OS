@@ -2,7 +2,7 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.12"
+version: "1.0.13"
 timestamp: 2026-07-17
 ---
 
@@ -34,7 +34,7 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-The lifecycle workflows (`0a`–`4b`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
+The lifecycle workflows (`0a`–`4c`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
 
 ## Existing Installation Detection
 
