@@ -171,9 +171,9 @@
       "version": "1.0.3"
     },
     "commands/0d_nightly-consolidation.md": {
-      "sha256": "272818c0ef89e35764fa0679e36d71e0d2191dfaaf87c9b40c1849785813a2aa",
-      "timestamp": "2026-07-17",
-      "version": "1.1.1"
+      "sha256": "165c0d6ad91e4bf5b6d9b86f3dd8b79d99a886fd7ef20a29e030354121a4b1b6",
+      "timestamp": "2026-07-27",
+      "version": "1.1.2"
     },
     "commands/1a_research.md": {
       "sha256": "712533eb0cb0634c69da015bd32367cf6b21e17c2f8c4b778eb312955a9ba35d",
@@ -211,9 +211,9 @@
       "version": "2.2.0"
     },
     "commands/3c_sprint-planning.md": {
-      "sha256": "9dd7f3842e39183f2e3fcb6e9445da26e0d2b5407642df2c4371dae27400fc17",
-      "timestamp": "2026-07-24",
-      "version": "2.2.0"
+      "sha256": "1a78f4c09d75608932828d18867930183661d9cb450834fb5ae2900ffd0b468d",
+      "timestamp": "2026-07-27",
+      "version": "2.2.1"
     },
     "commands/3d_implement-issue.md": {
       "sha256": "aad3ddaf9af248a409a847e1364f3b0d4a4d0974a404bbbd0f061ffbdf9cc9ba",
@@ -226,9 +226,9 @@
       "version": "1.1.0"
     },
     "commands/4a_verify-and-ship.md": {
-      "sha256": "dea402650e0485054037f6b17f370b06a3dd04a51c5c967801bd1d1e4704b48f",
-      "timestamp": "2026-07-23",
-      "version": "1.1.1"
+      "sha256": "e518812c4aa384c9498b0ff1bc5b29d70092db9b9fa9aa97d865f791d9f14d79",
+      "timestamp": "2026-07-27",
+      "version": "1.1.2"
     },
     "commands/4b_audit-architecture-drift.md": {
       "sha256": "f49eea254291d1d416bcf64a9e108f944450b86f6c200e6ba7cdd8fab12b3e00",
