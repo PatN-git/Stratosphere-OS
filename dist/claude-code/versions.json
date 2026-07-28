@@ -195,6 +195,11 @@
       "timestamp": "2026-07-17",
       "version": "1.2.0"
     },
+    "commands/2c_reconcile-specs.md": {
+      "sha256": "e657aaeba3a88e402d4df6ada55a9ff7285dc11e0f8a96b15136cd19ce81540b",
+      "timestamp": "2026-07-28",
+      "version": "1.0.0"
+    },
     "commands/3a_version-planning.md": {
       "sha256": "f70381f3d9657e5b72d821c85b28fe9524002e8e9fb4738a17180ccdc4624324",
       "timestamp": "2026-07-17",
