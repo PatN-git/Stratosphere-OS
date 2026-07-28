@@ -3,8 +3,8 @@ name: 3c_sprint-planning
 description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
 type: workflow HITL
 trigger: manual
-version: "2.1.0"
-timestamp: 2026-07-17
+version: "2.2.1"
+timestamp: 2026-07-27
 ---
 
 # Sprint planning
@@ -24,7 +24,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
    - List leaf issues labeled `[NEEDS_SPEC]`.
 
 ## Phase 2: Filter & Sort Engine
-1. **Dependency Sorting:** Evaluate dependencies. Parse native GitHub dependencies (`gh issue view <#> --json blockedBy`) if supported; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
+1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
    - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
    - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.
@@ -60,8 +60,9 @@ Verify labels in registry.
 ## Phase 5: Commit & Sync
 
 Halt for confirmation. When confirmed:
-1. Update issue priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low), milestone, and status in GitHub.
+1. Update issue priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low), milestone, and status in GitHub. If ICE recalculation shifted the priority band, mirror the new `priority:*` into the `BACKLOG_MAP.md` Labels column — it is gate-checked in step 5.
 2. Create sprint milestone `vX.Y.Z` in GitHub if absent. Assign leaf slices, moving them from `vX.Y.0`. Update Milestone column in `BACKLOG_MAP.md`. Set status to `status:planned`.
 3. **Record confirmed dependencies (amend-only, user-confirmed):** for each `[NEW-DEP]` the user confirmed at the halt, add the edge on GitHub (`gh issue edit <n> --add-blocked-by <prereq>`) and append the bare `BT-<prereq>` to that slice's `Blocked by` column in `BACKLOG_MAP.md`. 3c may only **add** a blocker edge here, and only with explicit confirmation — `3b` remains the birth writer for `Blocked by`, and blocker **clearing** stays with 4a (at `in review`) / 0b / merge. Never remove a `Blocked by` entry in 3c. Skip any proposed edge the user declined.
 4. Comment on each updated issue: 'Sprint vX.Y.Z sync: ICE <score> → priority:<priority>; milestone vX.Y.Z; status:planned.'
-5. Output: 'Sprint vX.Y.Z locked. Run `/3d_implement-issue` to build.'
+5. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of sequenced BT-<padded>> --fields status,milestone,labels,blocked_by` per `.agents/workflows/.reference/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run until `[MIRROR-OK]`.
+6. Output: 'Sprint vX.Y.Z locked. Run `/3d_implement-issue` to build.'

@@ -3,8 +3,8 @@ name: 3z_afk-loop
 description: Autonomous end-to-end runner for mode:AFK slices — chains 0a→3d→4a→0b across one slice or a sprint queue via isolated subagent sessions, self-healing on audit gaps, opening PRs for fully-passed features (never merges). Sole AFK orchestrator permitted to invoke other workflows.
 type: workflow AFK
 trigger: manual
-version: "1.0.10"
-timestamp: 2026-07-17
+version: "1.1.0"
+timestamp: 2026-07-24
 ---
 
 # AFK END-TO-END LOOP
@@ -41,17 +41,17 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement (Subagent)
-1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/0a_start-session` for `BT-<padded>` (loads it, sets slice `status:in progress` + first-slice epic promotion, restores branch — `3d` creates it if absent), then `/3d_implement-issue`. If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"needs_manual_qa\": false}`. Do NOT push; do NOT open PR."
+1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/3d_implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory`, creates/restores the branch, and runs the first-slice `status:in progress` + epic promotion — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd). Do NOT push; do NOT open PR."
 _Done when:_ subagent returns valid JSON and git status is clean.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch:** "Run `/0a_start-session` (read-only; do NOT transition status or checkout branch), then `/4a_verify-and-ship` Phases 1–4 ONLY with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run Phase 5. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"needs_manual_qa\": false}` (confidence ≥ 80)."
+1. **Dispatch:** "Run `/4a_verify-and-ship` Phases 1–4 ONLY (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Keep the auditor independent (fresh context), but for a clearly small slice pass the slice diff + ACs + named test files inline and skip broad re-reads. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run Phase 5. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
 _Done when:_ auditor returns valid JSON verdict.
 
 ### Step 2C: Decision Gate (Orchestrator)
 Evaluate subagent response:
 - Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details; log to `.tmp/3z-loop.work.md` (if batch); next slice.
-- Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <padded> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
+- Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, or `status:blocked`).
 
 ## Phase 3: Ship & Conflict Scan
@@ -59,8 +59,8 @@ _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VER
 ### Step 3A: Ship Pass (Orchestrator; auto-PR mode only)
 For each feature whose queued slices are all `VERIFIED`:
 1. **Branch checkout:** Run `git checkout <feature_branch>`.
-2. **Execute Ship:** Run `/4a_verify-and-ship` Phase 5: branch-safety + design-drift gate, push, open/update feature PR, comment PR link on slice issues. Design-drift or branch-safety failure → leave local + flag `[BLOCKED-ship]`. Log outcome to `.tmp/3z-loop.work.md`.
-_Done when:_ every all-passed feature has open/updated PR (or flagged), and no merge.
+2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a_verify-and-ship` Phase 5 passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue. 4a Phase 5 is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass. Design-drift or branch-safety failure → leave local + flag `[BLOCKED-ship]`. Log each outcome to `.tmp/3z-loop.work.md`.
+_Done when:_ every all-passed feature has all its slices `in review` on an open/updated PR (or flagged), and no merge.
 - Features with `status:blocked` slices stay local.
 
 ### Step 3B: Conflict Scan (Orchestrator; flag only)
@@ -69,7 +69,7 @@ _Done when:_ every all-passed feature has open/updated PR (or flagged), and no m
 _Done when:_ mergeability and path overlaps scanned.
 
 ## Phase 4: Final Report [output]
-Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, and manual-test checklist for slices with `needs_manual_qa` set to true.
+Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, **the reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc)**, and manual-test checklist for slices with `needs_manual_qa` set to true.
 - **Manual QA Gating:** `needs_manual_qa` is advisory; verified by human before merge, does not block push/PR ship.
 _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.

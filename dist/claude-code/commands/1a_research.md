@@ -3,8 +3,8 @@ name: 1a_research
 description: Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations.
 type: workflow HITL
 trigger: manual
-version: "1.0.5"
-timestamp: 2026-07-17
+version: "1.0.6"
+timestamp: 2026-07-24
 ---
 
 # Research
@@ -27,7 +27,7 @@ timestamp: 2026-07-17
    - Select **Primary Domain** (Competitive or Problem-Space).
    - Add **Optional Annex** of other type if hybrid.
 5. **Route by Depth:**
-    - **Quick Search:** single-iteration search. Applies citation rules; bypasses Phase 2 deep loop, work file, and refutation. Quick claims cap at `[MEDIUM]` (no refutation pass) unless load-bearing and triangulated across ≥2 source types, justified inline.
+    - **Quick Search:** single-iteration search. Applies citation rules; bypasses Phase 2 deep loop, work file, and refutation. Quick claims cap at `[MED]` (no refutation pass) unless load-bearing and triangulated across ≥2 source types, justified inline.
     - **Deep Research:** execute Phase 2 native loop with working file.
 6. **Propose-and-Confirm Gate:**
    - **Inference:** Agent infers domain and depth from prompt; states choice with one-line rationale.

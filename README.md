@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -65,7 +65,7 @@ StratosphereOS provides structured slash commands spanning the entire developmen
 | **3. Planning** | `/3a_version-planning`<br/>`/3b_create-issue`<br/>`/3c_sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
 | **3d. Execution** | `/3d_implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
 | **3z. Orchestration** | `/3z_afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
-| **4. Ship** | `/4a_verify-and-ship`<br/>`/4b_audit-architecture-drift` | Audits acceptance criteria against automated test coverage and audits structural drift. | Issue, tests, `.memory/*` | Quality gap report, traceable PR |
+| **4. Ship & Audit** | `/4a_verify-and-ship`<br/>`/4b_audit-architecture-drift`<br/>`/4c_codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, health audit report |
 | **0. Session Stop** | `/0b_stop-session`<br/>`/0c_handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
@@ -129,25 +129,3 @@ An optional pack that offloads bounded `mode:AFK` slices to **Google Jules** (an
 - **Setup:** `JULES_API_KEY` in `.env.local` (sent as the `X-Goog-Api-Key` header); install the Jules GitHub app on the repo and configure its environment once in Jules's UI (Initial Setup → Run and Snapshot); keep a root `AGENTS.md` (Jules auto-reads it for conventions).
 - **Data egress:** Jules clones the repo into a Google-managed VM and opens a PR on origin. Reconcile via PR review — nothing is pushed from your local tree.
 - Status: `v0.1`, experimental. Source: `src/experimental/jules-dispatch/`; plan: `docs/plans/jules-afk-dispatch-implementation-plan.md`.
-
----
-
-### Maintainer Notes: Single Source Build & Release Pipeline
-This repository is the single source of truth (`src/`) that compiles into both Claude Code and Google Antigravity plugin distributions (`dist/`).
-
-#### How to Build
-```bash
-python build/build.py
-```
-
-#### How to Release
-1. **Bump Version:** Update the `VERSION` variable inside `build/build.py` and the version badge in `README.md` in lockstep.
-2. **Rebuild plugins:** Run `python build/build.py` to regenerate the `dist/` artifacts and `versions.json`.
-3. **Commit & Tag:** Commit the updated version files and create a git release tag:
-   ```bash
-   git add .
-   git commit -m "release: vX.Y.Z"
-   git tag vX.Y.Z
-   git push origin main --tags
-   ```
-4. **Publish:** Create a GitHub Release referencing the tag `vX.Y.Z` on GitHub.

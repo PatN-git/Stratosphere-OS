@@ -2,7 +2,7 @@
 name: Micro-TDD Execution
 type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
-version: "1.1.1"
+version: "1.1.2"
 timestamp: 2026-07-15
 ---
 
@@ -28,7 +28,7 @@ Apply strictly to all pure logic, state updates, API mutations, hooks, and backe
 1. **Isolate & Specify (RED):**
    - Write exactly one minimal, target-focused unit test asserting the exact change or new capability.   
    - Run the single target test file natively. Type-check regularly during the loop to catch compilation or type definition issues early.
-   - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos.
+   - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
      - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
      - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
 2. **Implement & Pass (GREEN):**

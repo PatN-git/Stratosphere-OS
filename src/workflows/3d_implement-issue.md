@@ -3,13 +3,13 @@ name: 3d_implement-issue
 description: TDD implementation of vertical slices with token-efficient Fast-Tracks.
 type: workflow HITL
 trigger: manual
-version: "2.1.0"
-timestamp: 2026-07-17
+version: "2.1.1"
+timestamp: 2026-07-23
 ---
 
 # Implement issue
 
-Apply strictly to backend logic, database operations, hooks, and state functions. Run `.agents/skills/code-simplifier/SKILL.md` at end.
+Apply strictly to backend logic, database operations, hooks, and state functions.
 
 ## Phase 0: Branch & Context Intake
 **Hydrate first:** run `.agents/skills/load-memory/SKILL.md` to restore context (read-only); the steps below own all side effects.
@@ -32,10 +32,11 @@ Run `micro-tdd` for RED→GREEN→REFACTOR (Fast-Track A/B, stuck protocol, anti
 
 ## Phase 2: Refactoring & Architecture Checks
 Adhere to:
-1. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
-2. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`.
-3. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
-4. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
+1. **Simplify:** run `.agents/skills/code-simplifier/SKILL.md` on the slice diff under green tests — simplify/refine without changing behavior; re-run the suite after and keep it green.
+2. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
+3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`.
+4. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
+5. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
 
 ## Phase 3: Slice Completion Gate
 Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no writes).

@@ -37,6 +37,12 @@ jobs:
       - name: Validate subagent instructions
         run: python tests/test_subagent_spawning.py
 
+      - name: Validate terminal-sync wiring
+        run: python tests/test_terminal_sync.py
+
+      - name: Unit-test reconcile.py
+        run: python tests/test_reconcile.py
+
       - name: Validate plan-html workflow delegation
         run: python tests/test_plan_html_delegation.py
 

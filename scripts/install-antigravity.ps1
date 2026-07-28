@@ -66,4 +66,26 @@ foreach ($item in Get-ChildItem -Force -Path $buildDir) {
     }
 }
 
+# Record provenance so /stratosphere-update can self-update this copy-based install.
+# The plugin dir is not a git checkout; without a recorded source, the update workflow
+# cannot locate what to pull/fetch and falls back to manual instructions.
+$sourceRepo = $null
+try { $sourceRepo = (& git -C $repoRoot remote get-url origin 2>$null) } catch {}
+if (-not $sourceRepo) { $sourceRepo = "https://github.com/PatN-git/Stratosphere-OS" }
+$pluginVersion = ""
+$versionsFile = Join-Path $buildDir "versions.json"
+if (Test-Path $versionsFile) {
+    try { $pluginVersion = (Get-Content $versionsFile -Raw | ConvertFrom-Json).plugin_version } catch {}
+}
+$provenance = [ordered]@{
+    source_repo       = "$sourceRepo".Trim()
+    source_clone      = "$repoRoot"
+    plugin_dir        = "$pluginDir"
+    scope             = $scope
+    installer         = "install-antigravity.ps1"
+    installed_version = $pluginVersion
+}
+# BOM-less UTF-8 so any strict JSON parser can read it (Out-File -Encoding utf8 emits a BOM on PS 5.1).
+[System.IO.File]::WriteAllText((Join-Path $pluginDir ".install-source.json"), ($provenance | ConvertTo-Json), (New-Object System.Text.UTF8Encoding($false)))
+
 Write-Host "Successfully installed to $pluginDir. Restart Google Antigravity (or start a new agent session), then run /stratosphere-setup in your project."

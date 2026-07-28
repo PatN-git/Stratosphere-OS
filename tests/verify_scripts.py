@@ -300,6 +300,8 @@ def test_orphan_guard():
                 proj_rel_path = scaffold.map_bundled_to_project(rel_str)
             elif rel_str == "scripts/validate_memory.py":
                 proj_rel_path = ".agents/scripts/validate_memory.py"
+            elif rel_str == "scripts/reconcile.py":
+                proj_rel_path = ".agents/scripts/reconcile.py"
             elif rel_str == "scripts/okf_view.py":
                 proj_rel_path = ".agents/scripts/okf_view.py"
             elif rel_str.startswith("scripts/design/"):

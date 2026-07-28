@@ -38,9 +38,16 @@ def test_preflight_instructions():
             "marketplace update",
             "HALT"
         ],
-        "Antigravity copy update pathway": [
+        "Antigravity copy self-update pathway": [
+            ".install-source.json",
+            "source_repo",
+            "git clone --depth 1 --branch v<latest_version> <source_repo>",
             "install-antigravity",
-            "clone"
+            "--target <project-root>",
+            "predates auto-update",
+            "actual",
+            "reload plugins and re-run",
+            "HALT"
         ],
         "In-place git pull pathway": [
             ".git",

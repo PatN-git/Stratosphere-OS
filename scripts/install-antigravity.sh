@@ -82,4 +82,20 @@ for item in "$SRC"/*; do
     fi
 done
 
+# Record provenance so /stratosphere-update can self-update this copy-based install.
+# The plugin dir is not a git checkout; without a recorded source, the update workflow
+# cannot locate what to pull/fetch and falls back to manual instructions.
+SOURCE_REPO="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || echo "https://github.com/PatN-git/Stratosphere-OS")"
+PLUGIN_VERSION="$(sed -n 's/.*"plugin_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$SRC/versions.json" 2>/dev/null | head -1)"
+cat > "$PLUGIN_DIR/.install-source.json" <<EOF
+{
+  "source_repo": "$SOURCE_REPO",
+  "source_clone": "$REPO_ROOT",
+  "plugin_dir": "$PLUGIN_DIR",
+  "scope": "$SCOPE",
+  "installer": "install-antigravity.sh",
+  "installed_version": "$PLUGIN_VERSION"
+}
+EOF
+
 echo "Successfully installed to $PLUGIN_DIR. Restart Google Antigravity (or start a new agent session), then run /stratosphere-setup in your project."
