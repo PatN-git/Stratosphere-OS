@@ -13,9 +13,7 @@ def test_preflight_instructions():
     repo_root = test_dir.parent
     filepath = repo_root / "src" / "commands/update/Stratosphere-Update.md"
     
-    if not filepath.exists():
-        print(f"FAIL: {filepath} does not exist.")
-        sys.exit(1)
+    assert filepath.exists(), f"{filepath} does not exist."
 
     content = filepath.read_text(encoding='utf-8')
 
@@ -76,11 +74,8 @@ def test_preflight_instructions():
         else:
             print(f"PASS: [{check_name}] verified.")
 
-    if failed:
-        sys.exit(1)
-    else:
-        print("\nAll preflight instruction checks PASSED.")
-        sys.exit(0)
+    print("\nAll preflight instruction checks PASSED." if not failed else "\nSome preflight instruction checks FAILED.")
+    assert not failed, "preflight instruction checks failed (see output above)"
 
 if __name__ == "__main__":
     test_preflight_instructions()

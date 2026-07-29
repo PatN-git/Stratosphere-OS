@@ -1,15 +1,13 @@
 import os
 import sys
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 def check_workflow(filepath, required_phrases):
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(os.path.join(ROOT, filepath), 'r', encoding='utf-8') as f:
         content = f.read()
-    
-    missing = []
-    for phrase in required_phrases:
-        if phrase not in content:
-            missing.append(phrase)
-            
+
+    missing = [phrase for phrase in required_phrases if phrase not in content]
     if missing:
         print(f"FAIL: {filepath} is missing required phrases:")
         for m in missing:
@@ -18,7 +16,7 @@ def check_workflow(filepath, required_phrases):
     print(f"PASS: {filepath} matches subagent conventions.")
     return True
 
-workflows_to_check = {
+WORKFLOWS = {
     "src/workflows/1a_research.md": [
         "Invoke a subagent",
         "remaining = 24 - issued",
@@ -59,13 +57,16 @@ workflows_to_check = {
     ]
 }
 
-all_passed = True
-for filepath, phrases in workflows_to_check.items():
-    if not check_workflow(filepath, phrases):
-        all_passed = False
+def run():
+    all_passed = True
+    for filepath, phrases in WORKFLOWS.items():
+        if not check_workflow(filepath, phrases):
+            all_passed = False
+    print("\nAll subagent instruction checks PASSED." if all_passed else "\nSome subagent instruction checks FAILED.")
+    return all_passed
 
-if all_passed:
-    print("\nAll subagent instruction checks PASSED.")
-else:
-    print("\nSome subagent instruction checks FAILED.")
-    sys.exit(1)
+def test_subagent_conventions():
+    assert run(), "subagent instruction checks failed (see output above)"
+
+if __name__ == "__main__":
+    sys.exit(0 if run() else 1)
