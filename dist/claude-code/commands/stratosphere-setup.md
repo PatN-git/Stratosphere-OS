@@ -2,8 +2,8 @@
 name: stratosphere-setup
 type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
-version: "1.0.13"
-timestamp: 2026-07-17
+version: "1.0.14"
+timestamp: 2026-07-28
 ---
 
 # Instantiate StratosphereOS
@@ -202,12 +202,6 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 > [!NOTE]
 > **GitHub CLI Fallback:** If the GitHub CLI (`gh`) is unavailable or unauthenticated (because the user declined setup in the Version Control Setup step), skip all automated remote GitHub operations (Steps 1-4). Instead, skip directly to Step 5 using the template's canonical labels for the local registry, and inform the user they will need to manage remote labels manually on GitHub.
-
-0. **Ensure GitHub CLI extensions:** If `gh` is available and authenticated, ensure that the `gh-sub-issue` extension is installed in order to manage map sub-issue trees:
-   ```bash
-   gh extension install yahsan2/gh-sub-issue
-   ```
-   (If it is already installed, this is a safe no-op or reports already installed).
 
 GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `mode:`, `tier:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
 

@@ -1,19 +1,18 @@
 import os
 import sys
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 def check_workflow(filepath, required_substrings):
-    if not os.path.exists(filepath):
+    full = os.path.join(ROOT, filepath)
+    if not os.path.exists(full):
         print(f"FAIL: {filepath} does not exist.")
         return False
-        
-    with open(filepath, 'r', encoding='utf-8') as f:
+
+    with open(full, 'r', encoding='utf-8') as f:
         content = f.read()
-    
-    missing = []
-    for substring in required_substrings:
-        if substring not in content:
-            missing.append(substring)
-            
+
+    missing = [substring for substring in required_substrings if substring not in content]
     if missing:
         print(f"FAIL: {filepath} is missing plan-html delegation instructions:")
         for m in missing:
@@ -22,7 +21,7 @@ def check_workflow(filepath, required_substrings):
     print(f"PASS: {filepath} contains explicit plan-html delegation.")
     return True
 
-workflows_to_check = {
+WORKFLOWS = {
     "src/workflows/1b_concept-framing.md": [
         "plan-html",
         "plan-document"
@@ -40,14 +39,16 @@ workflows_to_check = {
     ]
 }
 
-all_passed = True
-for filepath, substrings in workflows_to_check.items():
-    if not check_workflow(filepath, substrings):
-        all_passed = False
+def run():
+    all_passed = True
+    for filepath, substrings in WORKFLOWS.items():
+        if not check_workflow(filepath, substrings):
+            all_passed = False
+    print("\nAll plan-html delegation checks PASSED." if all_passed else "\nSome plan-html delegation checks FAILED.")
+    return all_passed
 
-if all_passed:
-    print("\nAll plan-html delegation checks PASSED.")
-    sys.exit(0)
-else:
-    print("\nSome plan-html delegation checks FAILED.")
-    sys.exit(1)
+def test_plan_html_delegation():
+    assert run(), "plan-html delegation checks failed (see output above)"
+
+if __name__ == "__main__":
+    sys.exit(0 if run() else 1)

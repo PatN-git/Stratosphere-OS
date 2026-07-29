@@ -3,8 +3,8 @@ name: 0b_stop-session
 description: Conclude session by codifying progress, updating memory, and linting.
 type: workflow HITL
 trigger: manual
-version: "1.1.0"
-timestamp: 2026-07-17
+version: "1.1.1"
+timestamp: 2026-07-28
 ---
 
 # STOP SESSION
@@ -20,7 +20,7 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 
 1. Compare completed vs. planned:
     - Comment plan, completed, and open steps on active GitHub issues, and note which issues were updated/closed.
-    - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed. For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (safety net for the 4a in-review clearing). Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge. If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`.
+    - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed. For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (`removeBlockedBy` mutation per `.agents/workflows/.reference/github-issue-relations.md`; safety net for the 4a in-review clearing). Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge. If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`.
 2. Update `.memory/STATUS.md` (last sync, current branch, active issue, current focus, completed, blockers, next step).
 3. Evaluate session reasoning for inefficiencies. If systemic tool/agent failure, flag the specific `.agents/skills/` or `.agents/workflows/` path for optimization (do not log learning).
 4. If durable lesson discovered, add to `.memory/LEARNINGS.md` (assign next `[[L-xxx]]`, apply default tag `[ASSUMED]`, cross-reference `Source: BT-xxx`).
