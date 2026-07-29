@@ -37,8 +37,8 @@ workflows_to_check = {
         "Report the audit findings only; do not edit any file, create milestones, or modify the roadmap."
     ],
     "src/workflows/3b_create-issue.md": [
-        "Invoke a Coverage Auditor subagent",
-        "Report the coverage map only; do not create issues or edit any file."
+        "Slice Draft Auditor subagent",
+        "Report findings + one proposed fix each; do not create issues or edit any file."
     ],
     "src/workflows/4a_verify-and-ship.md": [
         "Context Isolation Rule",
