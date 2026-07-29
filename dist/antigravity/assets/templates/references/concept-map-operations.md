@@ -2,16 +2,16 @@
 type: reference
 name: concept-map-operations
 description: CLI verbs and local fallbacks for executing concept map tracker operations.
-timestamp: 2026-07-09
-version: "1.0.0"
+timestamp: 2026-07-28
+version: "1.0.1"
 ---
 
 # Concept Map Tracker Operations
 
 This reference documents the CLI operations (reusing `3b` primitives) and their disconnected local fallbacks (`BT-LOCAL`) for charting, working, and querying a concept map issue tree.
 
-## Native dependency verification
-Before running dependency commands, run `gh issue create --help` to check for native dependency flags (`--blocked-by`). If the flags are absent, fall back to encoding blocking as the text `Blocked by: [IDs]` field in the issue body, matching the `BT-LOCAL` fallback.
+## Issue relations
+Wire sub-issue and blocked-by relations via `.agents/workflows/.reference/github-issue-relations.md` (native `gh api graphql`). Disconnected: encode `Blocked by: [IDs]` text in the issue body, matching the `BT-LOCAL` fallback.
 
 ---
 
@@ -39,14 +39,7 @@ Blocked by:
 <!-- SOS:/BLOCK id=concept-ticket -->"
      ```
      *(Where `<type>` is research, grilling, prototype, or task)*
-  2. Link as sub-issue:
-     ```bash
-     gh sub-issue add <map#> <ticket#>
-     ```
-  3. Wire native dependencies (if blocked by other tickets, and native support is present):
-     ```bash
-     gh issue edit <ticket#> --add-blocked-by <blocked_by_ticket_ids>
-     ```
+  2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `.agents/workflows/.reference/github-issue-relations.md`).
 - **BT-LOCAL Fallback:**
   Add a new `BT-LOCAL-<n>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, and `Blocked by: [BT-LOCAL-ids]` text field.
 

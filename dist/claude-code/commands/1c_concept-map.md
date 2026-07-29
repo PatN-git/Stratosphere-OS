@@ -3,8 +3,8 @@ name: 1c_concept-map
 description: Chart decisions as tickets on tracker and converge them to discovery brief.
 type: workflow HITL
 trigger: manual
-version: "1.1.0"
-timestamp: 2026-07-24
+version: "1.1.1"
+timestamp: 2026-07-28
 ---
 
 # Concept Map Workflow
@@ -35,8 +35,7 @@ timestamp: 2026-07-24
    - **BT-LOCAL Fallback:** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`).
-   - Link as sub-issues (`gh sub-issue add <map#> <N>`).
-   - Wire dependencies (`gh issue edit <N> --add-blocked-by <ids>`) if blocked.
+   - Link as sub-issues and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `.agents/workflows/.reference/github-issue-relations.md`.
 5. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
 ---

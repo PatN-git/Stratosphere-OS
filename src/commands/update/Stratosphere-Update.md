@@ -2,8 +2,8 @@
 name: stratosphere-update
 type: workflow
 description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
-version: "1.0.7"
-timestamp: 2026-07-13
+version: "1.0.8"
+timestamp: 2026-07-28
 ---
 
 # StratosphereOS Update Flow
@@ -142,7 +142,6 @@ For each constitution file that has changed:
    This will:
    - Synchronize/add any newly introduced canonical labels (such as `concept:*`).
    - Re-reconcile project boards and sync actions.
-   - Verify/install necessary tools (such as the `gh-sub-issue` extension).
    - Skip gracefully if GitHub CLI is absent or unauthenticated.
 
 ---
