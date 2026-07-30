@@ -11,7 +11,8 @@ version: "1.1.0"
 # Concept Map: <one-line destination statement>
 
 <!-- Open tickets are NOT listed here — they are open child issues, found by the frontier query
-     (concept-map-operations.md §4). Exception: BT-LOCAL mode's `## Tickets` table IS the tracker. -->
+     (.agents/workflows/.reference/concept-map-operations.md §4).
+     Exception: BT-LOCAL mode's `## Tickets` table IS the tracker. -->
 
 ## Destination
 <Define the concrete boundary of what this concept is aiming to accomplish. This fixes the scope of the discovery phase.>
@@ -31,6 +32,6 @@ version: "1.1.0"
 <In-scope areas you can tell are coming but cannot yet phrase as a precise question. Test for ticket vs fog: can you state the question precisely NOW — not answer it? Sharp → ticket, even if blocked. Not phraseable that sharply → leave here. Do not pre-slice fog into ticket-sized pieces; one patch may graduate into several tickets, or none. On graduation, clear the patch from this section so it lives only as its new ticket.>
 
 ## Out of scope
-<Work consciously ruled beyond this destination — scope, not sharpness, lands it here. The ticket is closed; one line each: gist + why + link. Never graduates; a redrawn destination starts a fresh map.>
+<Work consciously ruled beyond this destination — scope, not sharpness, lands it here. A ruled-out ticket is closed; a ruled-out fog patch moves here from Not yet specified with no ticket. One line each: gist + why + link. Never graduates; a redrawn destination starts a fresh map.>
 
 - [<ticket title>](<#/link>) — <gist> — out of scope: <why>

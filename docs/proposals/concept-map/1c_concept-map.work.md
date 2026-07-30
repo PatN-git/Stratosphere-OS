@@ -13,7 +13,7 @@ timestamp: 2026-07-30
 
 **Hand-off contract:** Composes `/1a_research` and tracker operations in `.agents/workflows/.reference/concept-map-operations.md`. Converges to discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`).
 
-**Invocation:** `/1c_concept-map [<map>] [<ticket>]`. `<map>` skips Phase 0 discovery; `<ticket>` also skips frontier selection.
+**Invocation:** `/1c_concept-map [<map>] [<ticket>]`. `<map>` skips Phase 0 discovery; `<ticket>` preselects the frontier ticket.
 
 > [!NOTE]
 > Use when effort exceeds one session **and** route is foggy. Route out instead: already clear → `/1b_concept-framing`; framed, ready to specify → `/2a_write-prd`; understood plan needing slices → `/3c_sprint-planning`.
@@ -22,72 +22,79 @@ timestamp: 2026-07-30
 
 ## Invariants
 
-- **Plan, don't do.** A ticket resolves a **decision**, never a build slice. Map is done when nothing remains to decide before someone builds. The pull to build is the edge of the map — hand off. Override only via explicit map `Notes` entry. Implementation tickets belong downstream to `/3b_create-issue` + `/3c_sprint-planning`.
+- **Plan, don't do.** A ticket resolves a **decision**, never a build slice. Map is done when nothing remains to decide before someone builds. The pull to build is the edge of the map — hand off. Override only via explicit map `Notes` entry. `1c` never edits production code and never creates a branch; implementation belongs downstream to `/3b_create-issue` + `/3d_implement-issue`.
 - **Index, not store.** A decision lives in exactly one place — its ticket. Map gists and links; never restates.
 - **Refer by name.** Name maps and tickets by title in all user-facing output; link rides inside name. Never a bare `#<n>`.
-- **One ticket per session** — `research` excepted (AFK; burned down in parallel).
+- **One dependency step per session** — `research` excepted (AFK; burned down in parallel). Never batch two decision tickets into one session.
 
 ---
 
 ## Phase 0: Resume & Route
 
 1. **Hydrate:** Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
-2. **Detect tracker mode** — once per session, then hold: run `gh auth status`. Success → **GitHub mode**; failure or absent → **BT-LOCAL mode**. State chosen mode. On an existing map, adopt the mode recorded in its `Tracker mode` field rather than re-deciding — a map charted in one mode and worked in the other splits its decisions across two stores.
-3. **Discover open maps** (skip if `<map>` passed):
-   - **GitHub:** `gh issue list --label concept:map --state open`
-   - **BT-LOCAL:** scan `docs/discovery/*.map.md`.
-4. **Map selection:** present open maps by title. Resume → Phase 2. New → step 5.
-5. **Fog-or-flat:** single-session and no dependencies → redirect `/1b_concept-framing`; else Phase 1.
+2. **Detect tracker mode** per `.agents/workflows/.reference/concept-map-operations.md` (Tracker mode). State the mode; hold it for the session.
+3. **Discover open maps** — skip when `<map>` was passed: resolve `<map>` by title or URL, adopt its recorded mode per step 5, then Phase 2.
+   - **GitHub mode:** `gh issue list --label concept:map --state open`
+   - **BT-LOCAL mode:** scan `docs/discovery/*.map.md`.
+4. **Map selection:** present open maps by title. Resume → step 5. New → step 6.
+5. **Adopt recorded mode:** on a resumed map take the mode from its `Tracker mode` field, overriding step 2 — never re-decide. Then Phase 2.
+6. **Fog-or-flat:** single-session and no dependencies → redirect `/1b_concept-framing`; else Phase 1.
 
 ---
 
 ## Phase 1: Chart
 
 1. **Name destination.** Grill per `.agents/workflows/.reference/grilling-protocol.md` to pin what this map is finding its way to, plus its **destination type**: `discovery-brief` (default) | `locked-decision` | `in-place-change`. Destination fixes scope — settle it first.
-2. **Map frontier — breadth-first.** Grill again, fanning across the whole space rather than deep on one thread; surface open decisions and steps takeable now. No fog surfaced → route is already clear: redirect `/1b_concept-framing`.
+2. **Map frontier — breadth-first.** Grill again, fanning across the whole space rather than deep on one thread; surface open decisions and steps takeable now. No fog surfaced → route is already clear: compile the brief inline per Phase 3, step 2, or redirect `/1b_concept-framing`.
 3. **Register map:**
-   - **GitHub:** create `concept:map` issue from `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (`status:in progress`, milestone-exempt).
-   - **BT-LOCAL:** create `docs/discovery/<slug>.map.md` from template; row in `.memory/BACKLOG_MAP.md`.
+   - **GitHub mode:** create `concept:map` issue from `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (Status `in progress`, `concept:map` label, milestone-exempt).
+   - **BT-LOCAL mode:** create `docs/discovery/<slug>.map.md` from template; row in `.memory/BACKLOG_MAP.md`.
 
-   Fill Destination, destination type, `Tracker mode`, Notes; sketch fog into `Not yet specified`; leave `Decisions so far` empty. **Map body never lists open tickets** — they are open child issues, found by frontier query. Exception: BT-LOCAL's `## Tickets` table *is* the tracker, so it lists them.
-4. **Create-and-wire decision tickets.** Create every ticket specifiable now as a child issue, then wire blockers in a **second pass** (issues need ids before referencing each other):
+   Fill Destination, destination type, `Tracker mode`, Notes; sketch fog into `Not yet specified`; leave `Decisions so far` empty. **Map body never lists open tickets** — per `.agents/workflows/.reference/concept-map-operations.md` §1.
+4. **Create-and-wire decision tickets.** Create every ticket specifiable now as a child issue, then wire blockers in a **second pass** (issues need ids before referencing each other) — capture each returned issue number from `gh issue create`; never predict one:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`).
    - Body per `.agents/workflows/.reference/concept-map-operations.md` §2 — `## Question`, sized to one agent session.
    - **Fog-or-ticket test:** can you state the question precisely **now** — not answer it? Sharp → ticket, **even if blocked**. Not phraseable that sharply → leave in `Not yet specified`. Never pre-slice fog into ticket-sized pieces: one patch may graduate into several tickets, or none.
    - Prefer `prototype` over `grilling` when the open question is "how should it look / behave".
    - Link sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `.agents/workflows/.reference/github-issue-relations.md`.
-5. **Fire research subagents.** For each unblocked `concept:research` ticket just created, invoke a `/1a_research` subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) — in parallel, one per ticket. Research is AFK: charting does not stop and read. Per subagent — Input: ticket `## Question` + map Destination, inline. Guardrail: *"Run the research loop and write only `docs/research/<map-slug>-<question-slug>.md`. Do not edit the map, the ticket, or any other file. Do not create branches, commit, or push. Report the findings path + gist."* Output: findings path + 3-line gist. The parent — never the subagent — comments the resolution and closes the ticket per Phase 2, step 5.
+5. **Fire research subagents.** For each unblocked `concept:research` ticket just created, invoke a research subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) — in parallel, one per ticket. Research is AFK: charting does not stop and read. Per ticket the **parent** first derives `1a` Phase 1 inline from the ticket `## Question` — topic sentence, canonical slug, 3–5 research questions, Primary Domain, Depth — stating the choice with a one-line rationale, and skips `1a`'s Propose-and-Confirm Gate (the map already gated scope). The subagent runs `1a`'s Phase 2 research loop only; `1c` never invokes the `/1a_research` workflow itself (AGENTS.md §1).
+   - **Input:** that derived brief + the ticket `## Question` + map Destination, passed inline — the parent resolves every input; the subagent never sweeps the repo to locate them.
+   - **Guardrail:** *"Run the research loop and write only `docs/research/<map-slug>-<question-slug>.md`. Do not edit the map, the ticket, or any other file. Do not create branches, commit, or push. Report the findings path + gist."*
+   - **Output:** findings path + 3-line gist.
+
+   The parent — never the subagent — comments the resolution and closes the ticket per Phase 2, step 5.
 6. **Halt charting.** Resolve no HITL ticket while charting; hand the map to the user by name.
 
 ---
 
 ## Phase 2: Work
 
-1. **Load map (low-res).** Read the map body once — Destination, Notes, `Decisions so far`, `Not yet specified`, `Out of scope` — never every ticket body. Orient to Destination before choosing a ticket. Invoke the skills Notes names. **Zoom as needed:** fetch a related or closed ticket's full body on demand, never up front.
-2. **Select & claim ticket.** Query tracker for frontier (open, unblocked, unassigned tickets) per `concept-map-operations.md` §4. Present frontier by title. Precedence: passed `<ticket>` → user's pick → **lowest open issue number** (creation order). **Claim first, before any work:** `gh issue edit <n> --add-assignee @me` (BT-LOCAL: `assigned: @me` on the row). The assignee *is* the claim — an open, unassigned ticket is unclaimed. Expect concurrent sessions on other unblocked tickets.
+1. **Load map (low-res).** Read the map body once — Destination, Notes, `Decisions so far`, `Not yet specified`, `Out of scope` — never every ticket body. Orient to Destination before choosing a ticket. Invoke every skill named in the map's `Notes` section. **Zoom as needed:** fetch a related or closed ticket's full body on demand, never up front.
+2. **Select & claim ticket.** Query tracker for frontier (open, unblocked, unassigned tickets) per `.agents/workflows/.reference/concept-map-operations.md` §4. Present frontier by title. Precedence: passed `<ticket>` → user's pick → tie-break per that reference. **Claim first, before any work** (§3 of the same reference). Expect concurrent sessions on other unblocked tickets.
 3. **Grill** per `.agents/workflows/.reference/grilling-protocol.md` (G1–G3 grilling guidelines + V1–V3 vocabulary discipline).
 4. **Resolve by type.** **HITL** tickets resolve only through live exchange with the user; never stand in for the user's side — an agent that answers its own grilling question has broken this:
-   - **`research` (AFK):** invoke the `/1a_research` subagent per Phase 1, step 5 — same Input / Guardrail / Output contract.
+   - **`research` (AFK):** invoke a research subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose), parent-derived brief per Phase 1, step 5. Input: that brief + ticket `## Question` + map Destination, passed inline — the parent resolves every input; the subagent never sweeps the repo. Guardrail: *"Run the research loop and write only `docs/research/<map-slug>-<question-slug>.md`. Do not edit the map, the ticket, or any other file. Do not create branches, commit, or push. Report the findings path + gist."* Output: findings path + 3-line gist.
    - **`grilling` (HITL):** grill to resolve the decision.
-   - **`prototype` (HITL):** run `plan-html` (UI) or Template A spike (logic). Link the artifact from the ticket; never paste it in.
-   - **`task` (HITL or AFK):** execute the action unblocking the decision (e.g. provision access). Drive it alone where you can (AFK); else hand the user a precise checklist. Resolution records what was done plus facts later tickets depend on — credential location, URLs, row counts.
+   - **`prototype` (HITL):** run `plan-html` (UI) or an `.agents/workflows/.reference/issue-templates.md` Template A spike (logic). Link the artifact from the ticket; never paste it in.
+   - **`task` (HITL or AFK):** execute the action unblocking the decision (e.g. provision access). Drive it alone where you can (AFK); else hand the user a precise checklist. Resolution records what was done plus facts later tickets depend on — the credential's env-var name (never its value or file path), URLs, row counts.
 5. **Commit resolution:** comment the resolution on the ticket; close the ticket.
 6. **Update map** — **re-read the map body immediately before writing** (parallel sessions edit it concurrently):
    - Index the closed ticket under `Decisions so far`: `- [<ticket title>](<link>) — <gist>`.
    - **Graduate fog:** create-then-wire tickets the answer made specifiable, and **clear each graduated patch from `Not yet specified`** so it lives only as its new ticket.
-   - **Rule out of scope** any ticket the answer reveals sits past the destination: **close** it (a closed ticket is unambiguously off the frontier) and add one line to `Out of scope` — gist + why + link. Keep it **out of** `Decisions so far`, which records only the route walked. Out-of-scope work never graduates.
+   - **Rule out of scope** anything the answer reveals sits past the destination — a ticket **or** a fog patch — per `.agents/workflows/.reference/concept-map-operations.md` §6.
    - If the resolution invalidates other tickets, update or delete them.
-7. **Halt work.** One dependency step per session — independent `research` tickets excepted (they run in parallel; cheap independent frontier tickets may be batched only if they fit the context limit). Then emit the next-session invocation verbatim for the user to paste: `/1c_concept-map "<map title>" "<next frontier ticket title>"`. Compact via `/0c_handoff` if the session needs a fuller record.
+7. **Halt work.** One dependency step per session — `research` tickets excepted (they run in parallel). **Release the claim** on any ticket you halt without resolving (`gh issue edit <n> --remove-assignee @me`; BT-LOCAL: clear `assigned:`) — an assigned open ticket is off the frontier, so an unreleased claim strands it. Then emit the next-session invocation verbatim for the user to paste: `/1c_concept-map "<map title>" "<next frontier ticket title>"`. Offer `/0c_handoff` if the session needs a fuller record — the user invokes it.
 
 ---
 
 ## Phase 3: Converge
 
-1. **Convergence condition:** run Phase 3 only when frontier and fog are both empty.
-2. **Synthesize brief:** compile resolutions and research into `docs/discovery/<slug>.md` via `.agents/workflows/.reference/discovery_brief_template.md` (type: `discovery-brief`). Populate `## Decision Trail` from `Decisions so far` — map link plus every resolved ticket by name, link, and gist — so `/2a_write-prd` can zoom to the primary source instead of trusting the summary.
-3. **RAT Audit:** Invoke a subagent to challenge brief:
+1. **Convergence condition:** run Phase 3 only when frontier and fog are both empty — fog empties by graduating to tickets or by being ruled out of scope (§6 of the operations reference), never by being dropped silently.
+2. **Synthesize brief:** compile resolutions and research into `docs/discovery/<slug>.md` via `.agents/workflows/.reference/discovery_brief_template.md` (type: `discovery-brief`). Populate `## Decision Trail` from `Decisions so far` — map link plus every resolved ticket by name, link, and gist — so a reader can reach the primary source instead of trusting the summary.
+3. **RAT Audit:** invoke a Skeptical Challenger subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) to challenge brief. Input: the drafted brief (`docs/discovery/<slug>.md`) + map Destination, passed inline.
    - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
+   - Output: findings list, each naming the brief section it lands on.
 4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist — terms used appear in Vocabulary; actor is specific (not "users"); problem contains no solution language; chosen framing notes rejected alternatives; RAT + cheapest test documented with status; Decision Trail links the map and every resolved ticket; no unfiled Open Questions — then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.
 5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`.
-6. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `.memory/BACKLOG_MAP.md` to `status:done`. Abandoned map → close + `status:dropped`. A redrawn destination starts a **fresh** map, never a resumption.
-7. **Hand-off:** Expose brief by name. Route by destination type: `discovery-brief` → `/2a_write-prd`; `locked-decision` → `/3b_create-issue` Template A/B; `in-place-change` → the change itself. Or exit ramps.
+6. **Archive Lifecycle:** Close `concept:map` issue. Set map row Status in `.memory/BACKLOG_MAP.md` to `done`. Abandoned map → close the issue with the abandon reason, set Status `done` (closed ≡ done), and note `abandoned: <why>` on the row. A redrawn destination starts a **fresh** map, never a resumption.
+7. **Hand-off:** Expose brief by name. Route by destination type: `discovery-brief` → `/2a_write-prd`; `locked-decision` → `/3b_create-issue` Template A/B; `in-place-change` → `/3b_create-issue` Template B, then `/3d_implement-issue`. Or exit ramps.

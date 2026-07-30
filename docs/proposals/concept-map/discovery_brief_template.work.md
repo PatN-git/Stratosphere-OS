@@ -42,7 +42,7 @@ version: "1.1.0"
 ## Decision Trail
 *(`1c_concept-map`-produced briefs only — omit for a `1b_concept-framing` brief.)*
 
-This brief is a **summary**; the decision tickets are the **primary source**. Zoom a link below rather than trusting a gist.
+Links below are the **primary source** for each decision — zoom one when a gist is not enough.
 
 - **Map:** [<map title>](<#/link>)
 - [<ticket title>](<#/link>) — <gist of the decision>

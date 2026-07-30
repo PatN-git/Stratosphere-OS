@@ -448,8 +448,8 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 
 **SC-38 — abandon ramp (#20).**
 - Setup: a throwaway copy of the post-B sandbox; user says *"drop this, we're not doing 5a."*
-- Pass **[M]**: map closed **and** BACKLOG row `status:dropped`; no brief written; open child tickets are closed or explicitly noted; the transcript states a redrawn destination would start a **fresh** map, not a resumption.
-- Fail signal: `status:done` used for an abandoned map (pollutes the done set); or the map left open forever.
+- Pass **[M]**: map closed with the abandon reason **and** BACKLOG row Status `done` carrying an `abandoned: <why>` note; no brief written; open child tickets are closed or explicitly noted; the transcript states a redrawn destination would start a **fresh** map, not a resumption.
+- Fail signal: an invented `status:*` token that is absent from the `BACKLOG_MAP.md` Label Registry (the registry vocabulary is `needs_spec, planned, in progress, in review, blocked, done` — `3b` forbids inventing labels); a closed map with no abandon reason recorded; or the map left open forever.
 - Tier: [M]
 
 ---
@@ -559,7 +559,7 @@ findings about the work copies, not test gaps.
 | 17 | Destination **type** named at charting, routing by it at hand-off | SC-07, SC-37 | [M] |
 | 18 | Index, not store — one place per decision | SC-30 | [M] heuristic (length + non-restatement); **[PARTIAL]** — "one place" is judged, not proved |
 | 19 | Template section order (`Decisions so far` above the fog sections) | SC-09 | [M] order check; cosmetic |
-| 20 | Abandon ramp → close + `status:dropped`; redrawn destination = fresh map | SC-38 | [M] |
+| 20 | Abandon ramp → close with reason + Status `done` + `abandoned:` note; redrawn destination = fresh map | SC-38 | [M] |
 | 21 | Tracker precondition detected once, recorded on the map, inherited later | SC-04, SC-05, **SC-06** | [M]/[L]; SC-06 is the split-brain proof |
 | 22 | Header `> [!NOTE]` upstream/when-not-to-use routing | SC-01, SC-02, SC-03 | [M] |
 | — | Refactor: G1–G3/V1–V3 extracted to `grilling-protocol.md`, cited not re-pasted | SC-00 static gate: `grep -c 'G1 — Recommend when grounded' $R/.agents/workflows/1c_concept-map.md` = 0 and the pointer path `.agents/workflows/.reference/grilling-protocol.md` appears; `build/validate.py` green; every pointer path in the work copies resolves inside `$R` | [M] |

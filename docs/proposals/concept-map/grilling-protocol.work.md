@@ -8,7 +8,7 @@ timestamp: 2026-07-30
 
 # Grilling Protocol
 
-Shared by `/1b_concept-framing` (Phase 2) and `/1c_concept-map` (Phase 2). Single source of truth for G1–G3 + V1–V3 — cite this file; never re-paste these rules into a workflow body.
+Shared by `/1b_concept-framing` (Phase 2) and `/1c_concept-map` (Phases 1–2). Single source of truth for G1–G3 + V1–V3 — cite this file; never re-paste these rules into a workflow body.
 
 ## Grilling guidelines (G1–G3)
 
