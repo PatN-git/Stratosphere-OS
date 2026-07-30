@@ -15,3 +15,5 @@ __pycache__/
 .env.local
 *.stratosphere-new
 *.work.md
+# proposal work copies are reviewable deliverables, not ephemeral scratch
+!docs/proposals/**/*.work.md
