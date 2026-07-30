@@ -23,6 +23,8 @@ timestamp: 2026-07-30
 | `discovery_brief_template.work.md` | `src/references/discovery_brief_template.md` | 1.0.4 → **1.1.0** (new section) |
 | `grilling-protocol.work.md` | `src/references/grilling-protocol.md` (**new file**) | **1.0.0** |
 | `1b_concept-framing.work.md` | `src/workflows/1b_concept-framing.md` | 1.1.0 → **1.2.0** (repoint only) |
+| `AGENTS.work.md` | `AGENTS.md` (**constitution**) | 1.0.4 → **1.1.0** (§1 bounded-AFK clause, §6 standing authorization) |
+| `3z_afk-loop.work.md` | `src/workflows/3z_afk-loop.md` | 1.1.0 → **1.2.0** (orchestrator rule) |
 | `agentic-test-plan.work.md` | not applied — test plan, stays in `docs/` | — |
 
 ### Apply-time gates (all four are mandatory)
@@ -90,6 +92,38 @@ Two known non-blockers, deliberately not fixed here: `type: reference` / `type: 
 | #21 tracker-mode detection, held for session, recorded on map | `1c` Phase 0.2, `concept-map-operations` preflight, template |
 | #22 upstream routing `> [!NOTE]` | `1c` header |
 | extraction | `grilling-protocol.work.md`; `1b` + `1c` repointed |
+
+## AFK posture (A1–A6)
+
+Second pass, driven by StratOS's shift toward AFK workflows and agent-invoked workflows (`3z_afk-loop`, `x_jules-dispatch`). `1c` goes to **1.3.0**.
+
+Governing idea: **AFK does not replace HITL tickets, it front-loads them.** Every HITL ticket has an AFK half — a `grilling` ticket's G2 facts and G1 recommendation, a `prototype` ticket's build — and draining that half means a human session opens on decisions only, never on legwork.
+
+| | Change | Where |
+|---|---|---|
+| **A1** | Execution mode is a **label**, not prose: every ticket carries `mode:AFK` or `mode:HITL`, set per ticket and **never inferred from type** (`task` is genuinely either). An unlabelled ticket is never drained. This is what makes the frontier machine-partitionable, the same way `BACKLOG_MAP` is for `3z`. | `1c` Phase 1.4 + 2.6; ops §2, §4a; template |
+| **A2** | **Attention, not context, is the bound.** One `mode:HITL` ticket per session; the AFK sub-frontier drains in parallel to exhaustion. This *reverses* the one-ticket-per-session rule adopted from Wayfinder two versions ago — that bound was about context economy in a human-attended session, which is not this system's constraint. | `1c` Invariants, Phase 2.7 |
+| **A3** | New **Phase 2A: AFK Drain** — partition frontier → authorize once → drain in parallel → recompute → repeat until the frontier is human-only. Shaped after `3z` Step 1B: one gate up front, autonomous execution after, a report at the end. | `1c` Phase 2A |
+| **A4** | **Terminal states + bounded attempts + demotion.** Exhaustive per-ticket states (`resolved` / `prepped` / `blocked-needs-human` / `out-of-scope`), max 3 attempts, and exhaustion **demotes** to `mode:HITL` instead of retrying or dropping. Fixes a real hang in the previous draft, which had no failure handling for a research subagent returning garbage. | `1c` Phase 2A.4–5 |
+| **A5** | **Bounded AFK surface** `--drain` (Phase 0 + 2A only) — the sole entry point `3z` or a Routine may call. Same shape as `x_jules-dispatch`: thin, bounded, guardrails restated at the boundary. `1c` stays `type: workflow HITL`, matching `3z`, which is `workflow AFK` yet carries a HITL gate — `type` tracks dominant posture, not purity. | `1c` Invocation; `AGENTS` §1; `3z` orchestrator rule |
+| **A6** | **Serialize map writes** — one write after the whole batch, not per ticket; parallel passes would race. | `1c` Phase 2A.6 |
+
+### What hardened rather than softened
+
+Autonomy makes two rules load-bearing that were previously only stylistic:
+
+- **An AFK pass may prepare a `mode:HITL` ticket; it may never resolve or close one.** Direct analogue of `3z:15` ("never autonomously execute non-`mode:AFK` slices"). Without it, the agent answering its own grilling question stops being a bug and becomes the default path — and the map degenerates into a hallucinated spec.
+- **Phase 3's convergence gate stays a hard HITL stop.** AFK may draft the brief and run the RAT; it may not pass the gate or close the map. This is what the prior proposal's F3 fixed — `--drain` stops at Phase 3 step 1 and reports the map is ready to converge.
+
+### Constitution change — needs explicit approval
+
+`AGENTS.work.md` amends the **constitution**, the top of the precedence order, so it carries more risk than the rest of this set:
+
+- **§1** previously sanctioned exactly one form of workflow-invoking-workflow (a user-invoked orchestrator). It now sanctions a second — a **bounded AFK surface** — behind five conditions that all must hold: `mode:AFK`-only; never resolves/closes/approves `mode:HITL` work; never passes a hard HITL gate, writes `.memory/` content, or merges; every unit reaches a stated terminal state with bounded attempts and demotion on exhaustion; guardrails restated at the boundary. Unlabelled work is never AFK-eligible.
+- **§6** gains **standing authorization** — durable consent scoped to one artifact (a map's `AFK drain: authorized`), which explicitly cannot license resolving `mode:HITL` work, passing a hard gate, or merging.
+- **`3z:13`** no longer claims sole autonomous-orchestrator status; it is now sole autonomous orchestrator *of the build lifecycle*, and may call `/1c_concept-map --drain` but none of `1c`'s HITL phases.
+
+A1–A4 and A6 need none of this — they sit inside `1c`'s own authorized run. If you reject the constitution change, drop `AGENTS.work.md`, `3z_afk-loop.work.md`, and the `--drain` flag; Phase 2A still works, just user-invoked only.
 
 ## Deliberately not adopted
 

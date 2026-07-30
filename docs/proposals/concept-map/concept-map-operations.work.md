@@ -39,7 +39,7 @@ Create a child decision ticket and link it as a sub-issue. Size each ticket to *
 - **GitHub mode:**
   1. Create the issue:
      ```bash
-     gh issue create --title "<Type>: <Title>" --label "concept:<type>" --body "<!-- SOS:BLOCK id=concept-ticket v=1.1.0 -->
+     gh issue create --title "<Type>: <Title>" --label "concept:<type>" --label "mode:AFK|mode:HITL" --body "<!-- SOS:BLOCK id=concept-ticket v=1.1.0 -->
 ## Question
 
 <the decision or investigation this ticket resolves — one question, sized to one agent session>
@@ -47,10 +47,10 @@ Create a child decision ticket and link it as a sub-issue. Size each ticket to *
 Blocked by: 
 <!-- SOS:/BLOCK id=concept-ticket -->"
      ```
-     *(Where `<type>` is research, grilling, prototype, or task)*
+     *(Where `<type>` is research, grilling, prototype, or task. Exactly one execution mode — `mode:AFK` or `mode:HITL` — set per ticket, never inferred from type. Both labels are already in the `BACKLOG_MAP.md` Label Registry.)*
   2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `.agents/workflows/.reference/github-issue-relations.md`).
 - **BT-LOCAL mode:**
-  Add a new `BT-LOCAL-<n>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, `## Question` text, and `Blocked by: [BT-LOCAL-ids]` text field.
+  Add a new `BT-LOCAL-<n>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, `mode:` (`AFK` or `HITL`), status, `## Question` text, and `Blocked by: [BT-LOCAL-ids]` text field.
 
 The answer is **not** part of the body — it is posted on resolution (§5). Assets created while resolving are **linked** from the issue, never pasted in.
 
@@ -94,6 +94,17 @@ Identify the set of open, unblocked, unassigned decision tickets (the "frontier"
   Parse `docs/discovery/<slug>.map.md`'s ticket table, selecting rows where `status == open`, no listed `Blocked by` local IDs are open, and `assignee` is empty. Only `status == open` is on the frontier — `done` and `out-of-scope` rows are excluded by that predicate, not by convention.
 
 Tie-break when no ticket is named: **lowest open issue number** (creation order). BT-LOCAL: lowest `BT-LOCAL-<n>`.
+
+### 4a. Partition the frontier by mode
+Split the frontier on the execution-mode label — `1c` Phase 2A drains the first set, Phase 2 works the second:
+
+- **Drainable:** `mode:AFK` tickets, plus the build half of `mode:HITL` `prototype` tickets and the prep half of `mode:HITL` `grilling` tickets.
+- **Human:** every other frontier ticket, **including any ticket carrying no mode label** — an unlabelled ticket is never drained.
+
+```bash
+gh issue view <ticket#> --json labels   # read the mode label alongside concept:<type>
+```
+BT-LOCAL: read the `mode:` column of the ticket row.
 
 ---
 

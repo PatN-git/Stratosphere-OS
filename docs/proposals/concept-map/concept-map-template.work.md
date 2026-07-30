@@ -19,6 +19,7 @@ version: "1.1.0"
 
 **Destination type:** `discovery-brief` | `locked-decision` | `in-place-change`
 **Tracker mode:** `github` | `bt-local`  <!-- set at charting; every later session adopts it, never re-decides -->
+**AFK drain:** `per-pass confirmation` (default) | `authorized`  <!-- `authorized` is standing consent: Phase 2A skips its confirmation gate for this map. It never licenses resolving or closing a `mode:HITL` ticket. -->
 
 ## Notes
 <Domain context, relevant code areas, key resources, and lists of skills or experts to consult. Every working session reads this and invokes the skills named here. An explicit override of the "plan, don't do" invariant belongs here.>
