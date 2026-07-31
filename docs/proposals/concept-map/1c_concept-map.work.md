@@ -13,7 +13,9 @@ timestamp: 2026-07-30
 
 **Hand-off contract:** Composes `/1a_research` and tracker operations in `.agents/workflows/.reference/concept-map-operations.md`. Converges to discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`).
 
-**Invocation:** `/1c_concept-map [<map>] [<ticket>] [--drain]`. `<map>` skips Phase 0 discovery; `<ticket>` preselects the frontier ticket. `--drain` runs **Phase 0 + Phase 2A only** — the sole AFK-safe surface, callable by `/3z_afk-loop` or a scheduled routine (AGENTS.md §1).
+**Invocation:** `/1c_concept-map [<map>] [<ticket>] [--drain]`. `<map>` skips Phase 0 discovery; `<ticket>` preselects the frontier ticket. `--drain` runs **Phase 0 + Phase 2A only** — the sole AFK-safe surface, callable without a user present by a scheduled routine (AGENTS.md §1). `--drain` ignores `<ticket>`.
+
+**Requires an authenticated `gh`.** The map *is* a tracker issue: the shared URL and the tracker's native blocking (which renders the frontier visually, without opening the map) are the artifact's value, not an implementation detail. There is no local fallback.
 
 > [!NOTE]
 > Use when effort exceeds one session **and** route is foggy. Route out instead: already clear → `/1b_concept-framing`; framed, ready to specify → `/2a_write-prd`; understood plan needing slices → `/3c_sprint-planning`.
@@ -33,13 +35,13 @@ timestamp: 2026-07-30
 ## Phase 0: Resume & Route
 
 1. **Hydrate:** Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
-2. **Detect tracker mode** per `.agents/workflows/.reference/concept-map-operations.md` (Tracker mode). State the mode; hold it for the session.
-3. **Discover open maps** — skip when `<map>` was passed: resolve `<map>` by title or URL, adopt its recorded mode per step 5, then Phase 2A.
-   - **GitHub mode:** `gh issue list --label concept:map --state open`
-   - **BT-LOCAL mode:** scan `docs/discovery/*.map.md`.
-4. **Map selection:** present open maps by title. Resume → step 5. New → step 6.
-5. **Adopt recorded mode:** on a resumed map take the mode from its `Tracker mode` field, overriding step 2 — never re-decide. Then Phase 2A.
-6. **Fog-or-flat:** single-session and no dependencies → redirect `/1b_concept-framing`; else Phase 1. (`--drain` never charts: an invocation with no resumable map exits with `[SKIP] no map to drain`.)
+2. **Preflight:** `gh auth status`. Fails, or `gh` absent → halt with `[BLOCKED] 1c requires an authenticated gh`. Never degrade to a local map.
+3. **Discover open maps** — skip when `<map>` was passed: resolve `<map>` by title or URL, then Phase 2A.
+   ```bash
+   gh issue list --label concept:map --state open
+   ```
+4. **Map selection:** present open maps by title. Resume → Phase 2A. New → step 5. (`--drain` never charts: with no resumable map it exits `[SKIP] no map to drain`.)
+5. **Fog-or-flat:** single-session and no dependencies → redirect `/1b_concept-framing`; else Phase 1.
 
 ---
 
@@ -47,11 +49,7 @@ timestamp: 2026-07-30
 
 1. **Name destination.** Grill per `.agents/workflows/.reference/grilling-protocol.md` to pin what this map is finding its way to, plus its **destination type**: `discovery-brief` (default) | `locked-decision` | `in-place-change`. Destination fixes scope — settle it first.
 2. **Map frontier — breadth-first.** Grill again, fanning across the whole space rather than deep on one thread; surface open decisions and steps takeable now. No fog surfaced → route is already clear: compile the brief inline per Phase 3, step 2, or redirect `/1b_concept-framing`.
-3. **Register map:**
-   - **GitHub mode:** create `concept:map` issue from `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (Status `in progress`, `concept:map` label, milestone-exempt).
-   - **BT-LOCAL mode:** create `docs/discovery/<slug>.map.md` from template; row in `.memory/BACKLOG_MAP.md`.
-
-   Fill Destination, destination type, `Tracker mode`, `AFK drain`, Notes; sketch fog into `Not yet specified`; leave `Decisions so far` empty. **Map body never lists open tickets** — per `.agents/workflows/.reference/concept-map-operations.md` §1.
+3. **Register map:** create `concept:map` issue from `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (Status `in progress`, `concept:map` label, milestone-exempt). Fill Destination, destination type, `AFK drain`, Notes; sketch fog into `Not yet specified`; leave `Decisions so far` empty. **Map body never lists open tickets** — they are open child issues, found by the frontier query.
 4. **Create-and-wire decision tickets.** Create every ticket specifiable now as a child issue, then wire blockers in a **second pass** (issues need ids before referencing each other) — capture each returned issue number from `gh issue create`; never predict one:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`) **and** an execution mode — `mode:AFK` or `mode:HITL`. **Set mode per ticket; never infer it from type.** `research` is normally `mode:AFK`; `grilling` is always `mode:HITL`; `prototype` is `mode:HITL` (its build half still drains — Phase 2A); `task` is either, decided by whether the agent can drive it alone. A ticket with no mode label is excluded from the drain and stays on the human frontier.
    - Body per `.agents/workflows/.reference/concept-map-operations.md` §2 — `## Question`, sized to one agent session.
@@ -66,21 +64,22 @@ timestamp: 2026-07-30
 
 Clears everything the agent can clear without the user, so Phase 2 opens on decisions only. Runs after charting and at the start of every working session.
 
-1. **Partition frontier.** Query tracker for frontier (open, unblocked, unassigned tickets) per `.agents/workflows/.reference/concept-map-operations.md` §4, then split by mode label: **drainable** (`mode:AFK`, plus the build/prep half of `mode:HITL` tickets) and **human** (everything else).
-2. **Authorize once [HITL gate].** Present the drain plan by ticket title: what each pass will do and what it will write. Halt for confirmation before executing. **Skip this gate only** when the map's `AFK drain` field reads `authorized` (standing authorization) or the invocation is `--drain` (the caller already authorized it).
-3. **Drain in parallel** — one pass per drainable ticket:
+1. **Partition frontier.** Query tracker for frontier (open, unblocked, unassigned tickets) per `.agents/workflows/.reference/concept-map-operations.md` §4, then split by mode label (§4a): **drainable** (`mode:AFK`, plus the build/prep half of `mode:HITL` tickets) and **human** (everything else).
+2. **Skip what is already done.** A `mode:HITL` ticket already carrying a prep comment or a linked prototype artifact is **not re-prepped** unless a blocker closed since that comment — otherwise a scheduled drain re-posts the same prep every run. Prep is idempotent per frontier state, not per invocation.
+3. **Authorize once [HITL gate].** Present the drain plan by ticket title: what each pass will do and what it will write. Halt for confirmation before executing. **Skip this gate only** when the map's `AFK drain` field reads `authorized` (standing authorization) or the invocation is `--drain` (the caller already authorized it).
+4. **Drain in parallel** — one pass per drainable ticket:
    - **`research` (`mode:AFK`):** invoke a research subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose). Per ticket the **parent** first derives `1a` Phase 1 inline from the ticket `## Question` — topic sentence, canonical slug, 3–5 research questions, Primary Domain, Depth — stating the choice with a one-line rationale, and skips `1a`'s Propose-and-Confirm Gate (the map already gated scope). The subagent runs `1a`'s Phase 2 research loop only; `1c` never invokes the `/1a_research` workflow itself (AGENTS.md §1).
      - **Input:** that derived brief + the ticket `## Question` + map Destination, passed inline — the parent resolves every input; the subagent never sweeps the repo to locate them.
      - **Guardrail:** *"Run the research loop and write only `docs/research/<map-slug>-<question-slug>.md`. Do not edit the map, the ticket, or any other file. Do not create branches, commit, or push. Report the findings path + gist."*
-     - **Output:** findings path + 3-line gist.
+     - **Output:** findings path + 3-line gist. Parent owns the filename — pass it in, so parallel passes cannot collide.
    - **`task` (`mode:AFK`):** execute the action unblocking the decision. Resolution records what was done plus facts later tickets depend on — the credential's env-var name (never its value or file path), URLs, row counts.
    - **`prototype` (`mode:HITL`) — build half only:** produce the artifact via `plan-html` (UI) or an `.agents/workflows/.reference/issue-templates.md` Template A spike (logic) and link it from the ticket. **Leave the ticket open** — the user's reaction is the resolution.
    - **`grilling` (`mode:HITL`) — prep half only:** look up every G2-discoverable fact and post one prep comment carrying those facts plus your G1 recommendation and its rationale, labelled *"proposal — awaiting the user's decision"*. **Leave the ticket open.** Posting a prep comment is not resolving; per the Invariants, only the live exchange resolves it.
-4. **Terminal state per ticket (exhaustive — every drained ticket reaches exactly one):** `resolved` (`mode:AFK` only — comment the resolution and close per Phase 2, step 5) | `prepped` (`mode:HITL`; artifact or prep comment posted, ticket still open) | `blocked-needs-human` | `out-of-scope` (per §6 of the operations reference). Never leave a drained ticket unstated.
-5. **Bounded attempts:** max 3 per ticket per run. On exhaustion **demote** it — relabel `mode:HITL`, comment what failed and what it needs, leave it open on the human frontier. Never retry past 3; never silently drop a ticket.
-6. **Write the map once, after the batch.** Apply every Phase 2 step 6 map update for the whole drain in a single write — parallel passes make per-ticket writes race. Re-read the map body immediately before writing.
-7. **Recompute and repeat** from step 1 while any drainable frontier ticket remains unattempted this run — a resolution graduates fog, which can surface fresh `mode:AFK` tickets. Stop when the frontier is human-only, or frontier and fog are both empty (→ Phase 3).
-8. **Report** per ticket: title, terminal state, artifacts written. Then `--drain` exits; an interactive run continues to Phase 2.
+5. **Terminal state per ticket (exhaustive — every drained ticket reaches exactly one):** `resolved` (`mode:AFK` only — comment the resolution and close per Phase 2, step 5) | `prepped` (`mode:HITL`; artifact or prep comment posted, ticket still open) | `blocked-needs-human` | `out-of-scope` (per §6 of the operations reference). Never leave a drained ticket unstated.
+6. **Bounded attempts:** max 3 per ticket per run. On exhaustion **demote** it — relabel `mode:HITL`, comment what failed and what it needs, leave it open on the human frontier. Never retry past 3; never silently drop a ticket.
+7. **Write the map once, after the batch.** Apply every Phase 2 step 6 map update for the whole drain in a single write — parallel passes make per-ticket writes race. Re-read the map body immediately before writing.
+8. **Recompute and repeat** from step 1 while any drainable frontier ticket remains unattempted this run — a resolution graduates fog, which can surface fresh `mode:AFK` tickets. Stop when the frontier is human-only, or frontier and fog are both empty (→ Phase 3).
+9. **Report** per ticket: title, terminal state, artifacts written. Then `--drain` exits; an interactive run continues to Phase 2.
 
 ---
 
@@ -101,7 +100,7 @@ The human frontier — one `mode:HITL` ticket per session.
    - **Graduate fog:** create-then-wire tickets the answer made specifiable — label each with `concept:<type>` **and** a mode per Phase 1, step 4 — and **clear each graduated patch from `Not yet specified`** so it lives only as its new ticket.
    - **Rule out of scope** anything the answer reveals sits past the destination — a ticket **or** a fog patch — per `.agents/workflows/.reference/concept-map-operations.md` §6.
    - If the resolution invalidates other tickets, update or delete them.
-7. **Halt work.** One `mode:HITL` ticket per session. **Release the claim** on any ticket you halt without resolving (`gh issue edit <n> --remove-assignee @me`; BT-LOCAL: clear `assigned:`) — an assigned open ticket is off the frontier, so an unreleased claim strands it. If the resolution surfaced fresh `mode:AFK` tickets, return to Phase 2A to drain them before halting. Then emit the next-session invocation verbatim for the user to paste: `/1c_concept-map "<map title>" "<next frontier ticket title>"`. Offer `/0c_handoff` if the session needs a fuller record — the user invokes it.
+7. **Halt work.** One `mode:HITL` ticket per session. **Release the claim** on any ticket you halt without resolving (`gh issue edit <n> --remove-assignee @me`) — an assigned open ticket is off the frontier, so an unreleased claim strands it. If the resolution surfaced fresh `mode:AFK` tickets, return to Phase 2A to drain them before halting. Then emit the next-session invocation verbatim for the user to paste: `/1c_concept-map "<map title>" "<next frontier ticket title>"`. Offer `/0c_handoff` if the session needs a fuller record — the user invokes it.
 
 ---
 

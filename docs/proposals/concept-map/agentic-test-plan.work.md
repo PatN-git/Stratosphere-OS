@@ -24,7 +24,7 @@ Verified on this repo, 2026-07-30:
 
 | Fact | Consequence for the test |
 |---|---|
-| `gh` is **not installed** and not authenticated | BT-LOCAL is the *native* mode here. GitHub mode is only reachable via a mock `gh` shim (§3.3). |
+| `gh` is **not installed** and not authenticated | `1c` v1.3.0 has **one** tracker mode and halts without an authenticated `gh`, so the mock `gh` shim (§3.3) is **mandatory**, not an option — it is the only way any scenario past SC-04 runs at all. Every mechanical assertion is a query over the shim's log + store. |
 | `.memory/` **does not exist** (gitignored; only `src/memory-templates/` ships) | The harness must seed `.memory/` or Phase 0 hydrate + BACKLOG row + glossary write have nowhere to land. Teardown deletes it. |
 | `.agents/` **does not exist** (gitignored) | The SUT's own pointers (`.agents/workflows/.reference/…`) resolve nowhere. The work copies **must be staged** into a sandbox `.agents/` tree — running them in place tests a broken pointer, not the workflow. |
 | `docs/discovery/` exists and holds a real file (`codebase-health-audit.md`) | Run in a sandbox root, not the repo root, so a stray write cannot collide; assert the real file is byte-identical at teardown. |
@@ -52,19 +52,21 @@ activation), it exceeds one session, and the axes have dependency edges.
 
 ### 2.1 The cast (fixed so assertions can name things)
 
-GitHub-mode numbers are fixture-assigned; BT-LOCAL ids are `BT-LOCAL-<n>`.
+Issue numbers are fixture-assigned by the shim's store.
 
 | Ref | gh # | Title | Label | Blocked by | Role in the test |
 |---|---|---|---|---|---|
-| T1 | 502 | `research: How do agent-framework playbooks structure a GTM/growth step?` | `concept:research` | — | fired in parallel at charting |
-| T2 | 503 | `research: Which StratOS artifacts already carry growth or distribution content?` | `concept:research` | — | second parallel fire; proves the one-per-session research exception |
-| T3 | 504 | `grilling: Is 5a a bundled skill, a workflow, or a skill fronted by a workflow launcher?` | `concept:grilling` | — | structural first decision; lowest-number tie-break pick |
-| T4 | 505 | `grilling: Which artifact does 5a emit, and which downstream workflow consumes it?` | `concept:grilling` | T3 | sharp **but blocked** → must be a ticket; later the self-answer trap |
-| T5 | 506 | `prototype: What does the growth-plan artifact look like on the page?` | `concept:prototype` | T4 | prototype bias over grilling |
-| T6 | 507 | `task: Record the registry surface a growth artifact needs (Label Registry, scaffold EXTRA_WORKFLOWS, validate.py guard)` | `concept:task` | — | AFK task; gets **invalidated in part** by T3 |
-| T7 | 508 | `grilling: Should growth metrics gate 3a version planning?` | `concept:grilling` | — | charted in good faith, later **ruled out of scope** |
-| T8 | 509 | `grilling: Where does the loop-enabling feature enter the slice list — 2a §6 or 3c?` | `concept:grilling` | T4 | **graduated** from fog F1 |
-| T9 | 510 | `grilling: What minimum signal shows a growth loop is spinning?` | `concept:grilling` | T5 | **graduated** from fog F2 |
+| T1 | 502 | `research: How do agent-framework playbooks structure a GTM/growth step?` | `concept:research` `mode:AFK` | — | drained in parallel at charting |
+| T2 | 504 | `research: Which StratOS artifacts already carry growth or distribution content?` | `concept:research` `mode:AFK` | — | second parallel drain; proves the research exception to the one-per-session bound |
+| T3 | 505 | `grilling: Is 5a a bundled skill, a workflow, or a skill fronted by a workflow launcher?` | `concept:grilling` `mode:HITL` | — | structural first decision; lowest-number tie-break pick; gets a prep comment in Phase 2A |
+| T4 | 506 | `grilling: Which artifact does 5a emit, and which downstream workflow consumes it?` | `concept:grilling` `mode:HITL` | T3 | sharp **but blocked** → must be a ticket; later the self-answer trap (SC-23, SC-43) |
+| T5 | 507 | `prototype: What does the growth-plan artifact look like on the page?` | `concept:prototype` `mode:HITL` | T4 | prototype bias over grilling; its **build half** drains (SC-44) |
+| T6 | 508 | `task: Record the registry surface a growth artifact needs (Label Registry, scaffold EXTRA_WORKFLOWS, validate.py guard)` | `concept:task` `mode:AFK` | — | AFK task the agent can drive alone; gets **invalidated in part** by T3 |
+| T7 | 509 | `grilling: Should growth metrics gate 3a version planning?` | `concept:grilling` `mode:HITL` | — | charted in good faith, later **ruled out of scope** |
+| T8 | 512 | `grilling: Where does the loop-enabling feature enter the slice list — 2a §6 or 3c?` | `concept:grilling` `mode:HITL` | T4 | **graduated** from fog F1 (created in session D, not at charting) |
+| T9 | 513 | `grilling: What minimum signal shows a growth loop is spinning?` | `concept:grilling` `mode:HITL` | T5 | **graduated** from fog F2 (created in session E) |
+| T10 | 510 | `research: Which analytics events do comparable frameworks emit for activation?` | `concept:research` `mode:AFK` | — | **rigged to fail** — its subagent stub always returns malformed output, driving bounded-attempts + demotion (SC-42) |
+| T11 | 511 | `research: What does the StratOS install harness already report post-scaffold?` | `concept:research`, **no mode label** | — | proves an unlabelled ticket is never drained (SC-40) |
 
 Fog at charting (`Not yet specified`):
 
@@ -97,7 +99,7 @@ cp src/references/github-issue-relations.md $R/.agents/workflows/.reference/
 cp -r src/skills/load-memory src/skills/plan-html $R/.agents/skills/
 cp src/rules/*.md $R/.agents/rules/
 cp src/memory-templates/{BACKLOG_MAP,GLOSSARY,STATUS,LEARNINGS,ARCHITECTURE}.md $R/.memory/
-cp AGENTS.md $R/AGENTS.md
+cp $P/AGENTS.work.md $R/AGENTS.md   # the amended constitution — SC-47 asserts its §1 bounded-AFK clause
 
 # Read-only snapshot of the real repo, so G2 fact-lookups have real facts (no branch, no commit)
 git archive HEAD | tar -x -C $R/subject
@@ -134,7 +136,7 @@ answered its own question.
 3. implements exactly the verbs the SUT names: `auth status`, `issue list`, `issue create`,
    `issue view --json <fields>`, `issue edit --add-assignee`, `issue comment`, `issue close`,
    `api graphql` for `addSubIssue` / `addBlockedBy` / `removeBlockedBy`;
-4. honours `STRAT_TEST_GH=off` → `auth status` exits 1 (drives BT-LOCAL detection);
+4. honours `STRAT_TEST_GH=off` → `auth status` exits 1 (drives the SC-04 preflight halt);
 5. **never contacts the network** — no `api.github.com` host is reachable from it, so no real issue,
    label, or PR can be created by a runaway session.
 
@@ -167,21 +169,21 @@ Each session is a **separate agent process with a fresh context window**. State 
 files. Transcript to `.tmp/1c-test/transcripts/<S>.md`; file manifest
 (`find $R -type f -newer …` + sha256) snapshotted pre/post as `manifest-<S>-{pre,post}`.
 
-| S | Mode | Invocation (cwd `$R`) | Work done | Scenarios riding here |
-|---|---|---|---|---|
-| **A** | BT-LOCAL | `/1c_concept-map` | Phase 0 → fog-or-flat → chart map, create T1–T7, wire, fire T1+T2, parent closes them | SC-04, 07–15, 29, 31 |
-| **A′** | GitHub | `STRAT_TEST_GH=on … /1c_concept-map` | Same chart against mock `gh` | SC-05, 09b, 10b, 14b |
-| **B** | BT-LOCAL | `/1c_concept-map "Concept Map: Activate 5a distribution-and-growth in the StratOS lifecycle"` | Resume, frontier, claim T3, grill, resolve, invalidate part of T6, halt | SC-16–20, 22, 26, 27, 28, 30 |
-| **B′** | BT-LOCAL | same, launched concurrently with B | Races B for T3 | SC-21 |
-| **C** | **fresh session, `gh` present + authed** | `/1c_concept-map "<map title>"` | Must adopt `bt-local` from the map; claims T7; grill reveals it sits past the destination → out of scope | SC-06, 25, 32 |
-| **D** | BT-LOCAL | `/1c_concept-map "<map title>" "grilling: Which artifact does 5a emit, and which downstream workflow consumes it?"` | **Run D1** with an off-script user (trap); **Run D2** with an answer → resolve T4, graduate F1→T8 | SC-23, 24 |
-| **E** | BT-LOCAL | `/1c_concept-map "<map title>"` | T5 prototype (link, don't paste); F2 graduates → T9 | SC-13b, 24b |
-| **F** | BT-LOCAL | `/1c_concept-map "<map title>"` ×2 | Burn down T6, T8, T9 (one per session) | SC-27 loop |
-| **G** | BT-LOCAL | `/1c_concept-map "<map title>"` | Phase 3: brief, Decision Trail, RAT, HITL gate, glossary, archive | SC-33–37, 39 |
-| **X** | either | ad-hoc | Redirect + abandon variants on throwaway map copies | SC-01–03, 38 |
+All sessions run with the shim on `PATH` and `STRAT_TEST_GH=on`, except SC-04 which sets it `off`.
 
-Run **A′** on a copy of the sandbox (`$R.gh`) so the two modes never share a store — that is the whole
-point of #21.
+| S | Invocation (cwd `$R`) | Work done | Scenarios riding here |
+|---|---|---|---|
+| **A₀** | `STRAT_TEST_GH=off … /1c_concept-map` | Preflight halt — no map, no issue, no local file | SC-04 |
+| **A** | `/1c_concept-map` | Phase 0 → fog-or-flat → chart map, create T1–T9, wire, then Phase 2A drains T1/T4/T7 and preps T2/T3/T5 | SC-05, 07–15, 29, 31, 39–41, 44–46 |
+| **B** | `/1c_concept-map "Concept Map: Activate 5a distribution-and-growth in the StratOS lifecycle"` | Resume, frontier, claim T3, grill, resolve, invalidate part of T6, halt | SC-16–20, 22, 26, 27, 28, 30 |
+| **B′** | same, launched concurrently with B | Races B for T3 | SC-21 |
+| **C** | `/1c_concept-map "<map title>"` | Fresh session; claims T7; grill reveals it sits past the destination → out of scope | SC-25, 32 |
+| **D** | `/1c_concept-map "<map title>" "grilling: Which artifact does 5a emit, and which downstream workflow consumes it?"` | **Run D1** with an off-script user (trap); **Run D2** with an answer → resolve T4, graduate F1→T8 | SC-23, 24 |
+| **E** | `/1c_concept-map "<map title>"` | T5 prototype (link, don't paste); F2 graduates → T9 | SC-13b, 24b |
+| **F** | `/1c_concept-map "<map title>"` ×2 | Burn down T6, T8, T9 (one HITL ticket per session) | SC-27 loop |
+| **G** | `/1c_concept-map "<map title>"` | Phase 3: brief, Decision Trail, RAT, HITL gate, glossary, archive | SC-33–37 |
+| **H** | `/1c_concept-map --drain "<map title>"` — **no user process attached** | Bounded AFK surface; run twice to prove idempotence | SC-42, 43, 47, 48, 41b |
+| **X** | ad-hoc | Redirect + abandon variants on throwaway map copies | SC-01–03, 38 |
 
 ---
 
@@ -221,29 +223,25 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 - Fail signal: registers a map with an empty `Not yet specified` and zero tickets.
 - Tier: [M]
 
-### Tracker mode
+### Tracker preflight
 
-**SC-04 — BT-LOCAL detection (native).**
-- Setup: `PATH` without the shim (`gh` genuinely absent).
-- Invoke: session A.
-- Pass **[M]**: transcript states the chosen mode with the token `BT-LOCAL` before any tracker write; `grep -c '^\*\*Tracker mode:\*\* `bt-local`' $R/docs/discovery/5a-growth-activation.map.md` = 1; a `## Tickets` table exists (BT-LOCAL's table *is* the tracker).
-- Fail signal: mode never stated; or `Tracker mode` left as the template's `github | bt-local` placeholder.
+`1c` v1.3.0 has a single tracker mode. There is no local fallback and therefore no mode fork,
+no `Tracker mode` field, and no split-brain hazard — SC-06 was retired when the fallback was cut.
+
+**SC-04 — preflight halts without an authenticated `gh` (#21).**
+- Setup: `STRAT_TEST_GH=off` (shim's `auth status` exits 1). Also run a variant with `PATH` stripped of the shim, so `gh` is genuinely absent — both must behave identically.
+- Invoke: session A₀.
+- Pass **[M]**: transcript contains `[BLOCKED]` and names `gh`; **and the run creates nothing** — `$R/docs/discovery/` gained no file, `store.json` is byte-identical, `.memory/BACKLOG_MAP.md` is byte-identical, `gh-calls.log` holds only the `auth status` line.
+- Fail signal: any degradation to a local map (a `docs/discovery/*.map.md` appears, or the transcript proposes a markdown-file tracker) — the fallback is gone and reinventing it is the regression this scenario exists to catch. Also fails if it halts *after* mutating anything.
 - Tier: [M]
 
-**SC-05 — GitHub mode, full mutation set.**
-- Setup: `$R.gh` sandbox, `STRAT_TEST_GH=on`, shim first on `PATH`.
-- Invoke: session A′.
-- Pass **[L]**: over `gh-calls.log` — exactly one `auth status`; one `issue create --label concept:map`; 7 `issue create --label concept:<type>`; 7 `addSubIssue` mutations; 2 `addBlockedBy` mutations (T4←T3, T5←T4); zero `gh issue create` for anything else. Over `store.json` **[M]**: `jq '[.[]|select(.labels[]?|startswith("concept:"))]|length == 8'`.
-- Pass **[M]**: the map body contains **no** ticket list — `! grep -qE '^\|.*BT-LOCAL|^- \[?(research|grilling|prototype|task):' <map body>` outside `Decisions so far`.
-- Fail signal: wiring skipped (0 `addSubIssue`), or blockers encoded as body text while `gh` is authenticated, or the map body lists open tickets.
+**SC-05 — full mutation set on an authenticated tracker.**
+- Setup: `STRAT_TEST_GH=on`, shim first on `PATH`.
+- Invoke: session A.
+- Pass **[L]**: over `gh-calls.log` — exactly one `auth status`; one `issue create --label concept:map`; 9 `issue create` carrying both a `concept:<type>` and a `mode:*` label; 9 `addSubIssue` mutations; 2 `addBlockedBy` mutations (T4←T3, T5←T4); zero `issue create` for anything else. Over `store.json` **[M]**: `jq '[.[]|select(.labels[]?|startswith("concept:"))]|length == 10'`.
+- Pass **[M]**: the map body contains **no** ticket list — `! grep -qE '^- \[?(research|grilling|prototype|task):' <map body>` outside `Decisions so far`.
+- Fail signal: wiring skipped (0 `addSubIssue`), blockers encoded as body text while `gh` is authenticated, a ticket created without a mode label (see SC-39), or the map body listing open tickets.
 - Tier: [L] + [M]
-
-**SC-06 — split-brain: charted BT-LOCAL, session sees an authed `gh` (#21).**
-- Setup: after session B. Put the shim on `PATH` with `STRAT_TEST_GH=on`; truncate `gh-calls.log`.
-- Invoke: `/1c_concept-map "<map title>"`
-- Pass **[L]**: `gh-calls.log` contains **at most** `auth status` and **zero** `issue *` / `api graphql` lines; transcript states it is adopting the map's recorded `bt-local` mode. All writes land in the `.map.md`.
-- Fail signal: any `gh issue create|edit|close|comment` line — the decision store just split in two.
-- Tier: [L]
 
 ### Phase 1 — chart
 
@@ -291,7 +289,7 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 - Setup: research subagent stub installed; snapshot the manifest immediately before the fire.
 - Pass **[L]**: two subagent dispatches appear **in one assistant turn** (Claude Code: two `Task` calls in one block; Antigravity: two `invoke_subagent` calls). `subagent-writes.log` shows each stub wrote exactly one path matching `docs/research/5a-growth-activation-<question-slug>.md` and **zero** other paths.
 - Pass **[M]**: manifest diff between fire and return contains only those two research files — the map file's sha256 is unchanged across the subagent window.
-- Pass **[L]**: the `issue comment` + `issue close` for T1/T2 occur in the **parent** transcript, after the stubs return (BT-LOCAL: the `.map.md` edit that flips their rows to `done` is a parent edit).
+- Pass **[L]**: the `issue comment` + `issue close` for T1/T4 occur in the **parent** transcript, after the stubs return; the subagent-write log shows no attempt to comment or close.
 - Pass **[M]**: the guardrail text was actually passed — the dispatch prompt contains `Do not create branches, commit, or push` and names the single allowed output path.
 - Fail signal: sequential dispatch (two separate turns with a read in between); the stub asked to write the map; the ticket closed by the subagent; the parent blocking on findings before continuing to charting's halt.
 - Tier: [L] + [M]
@@ -305,7 +303,7 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 
 **SC-16 — invocation with args skips Phase 0 discovery (#15).**
 - Invoke: session B with `<map>` only.
-- Pass **[L]**: `gh-calls.log` (GitHub variant) contains **no** `issue list --label concept:map`; BT-LOCAL variant: the transcript contains no map-selection prompt and no glob over `docs/discovery/*.map.md`. With `<map> <ticket>` (session D): no frontier query either — the named ticket is claimed directly.
+- Pass **[L]**: `gh-calls.log` contains **no** `issue list --label concept:map`, and the transcript shows no map-selection prompt. With `<map> <ticket>` (session D): the named ticket is claimed directly.
 - Fail signal: the map-selection menu is presented anyway.
 - Tier: [L]
 
@@ -328,16 +326,16 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 - Tier: [M]
 
 **SC-20 — claim before any work.**
-- Pass **[L]**: the `issue edit --add-assignee @me` line precedes the first grilling question in the transcript and precedes any `issue comment`. BT-LOCAL: the `assigned: @me` edit to the row precedes the first question.
+- Pass **[L]**: the `issue edit --add-assignee @me` line precedes the first grilling question in the transcript and precedes any `issue comment`.
 - Fail signal: grilling starts, then the claim lands (or never lands) — the window where two sessions duplicate work.
 - Tier: [L]
 
 **SC-21 — two sessions race the same frontier ticket.**
 - Setup: restore the post-A snapshot. Launch B and B′ against the **same** sandbox. Force the interleave: the shim (or a wrapper on the `.map.md` write) sleeps 3s inside `--add-assignee` so both sessions read an unassigned T3. In GitHub mode the shim's store is the arbiter: the second `--add-assignee` on an already-assigned issue exits non-zero with `already assigned`.
 - Pass **[M]**: exactly one of {B, B′} posts a resolution on T3 (`jq '[.["504"].comments]|length==1'`); T3 has exactly one assignee. The loser's transcript shows it detected the claim and either moved to the next unclaimed frontier ticket (T6) or halted — it did **not** grill T3.
-- Pass **[M]** BT-LOCAL variant: same, plus the map file contains exactly one `Decisions so far` line for T3 (no duplicate) and no interleaved/corrupted row.
+- Pass **[M]**: the map body contains exactly one `Decisions so far` line for T3 — no duplicate, no interleaved or half-written line.
 - Fail signal: two resolutions on T3; two assignees; a `Decisions so far` line duplicated; the map row half-written.
-- Honest limit: in BT-LOCAL the claim is **advisory** (`concept-map-operations.md` §3 says so). The pass bar here is "detects and yields", not "cannot happen". Record a lost race as a *known* BT-LOCAL limitation, not a workflow bug.
+- With a single authenticated tracker the remote arbitrates the assignee, so the bar here is genuine mutual exclusion: the loser must detect the claim and pick a different frontier ticket or halt. A double-resolve is a workflow bug, not an accepted limitation — that is what cutting the local fallback bought.
 - Tier: [M]
 
 **SC-22 — lost-update guard: re-read the map before writing (#9).**
@@ -366,7 +364,7 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 - Setup: session C claims T7. The user script confirms growth-metric gating is a `3a` decision, past this destination.
 - Invoke: `/1c_concept-map "<map title>"` then pick T7.
 - Pass **[M]**, all four:
-  1. T7 is **closed** (`jq '.["508"].state=="CLOSED"'`; BT-LOCAL: row `status: out-of-scope`);
+  1. T7 is **closed** (`jq '.["508"].state=="CLOSED"'`);
   2. `Out of scope` gained **exactly one** line matching `^- \[.*\]\(.*\) — .* — out of scope: `;
   3. T7's title/gist is **absent** from `Decisions so far` — `! grep -q 'Should growth metrics gate 3a' <Decisions so far section>`;
   4. no ticket graduated from T7 and `Decisions so far` line count is unchanged from end of B.
@@ -425,7 +423,7 @@ Format per scenario: **Setup** / **Invoke** / **Pass** / **Fail signal** / tier.
 **SC-34 — brief + Decision Trail with working links (#4).**
 - Invoke: session G, after frontier and fog are both empty.
 - Pass **[M]**: `$R/docs/discovery/5a-growth-activation.md` exists with `type: discovery-brief`, no `BT-<n>` in the filename (strict late binding); `## Decision Trail` contains one `**Map:**` line plus **exactly one line per closed non-out-of-scope ticket** — count equals `Decisions so far` line count; the out-of-scope T7 is **absent** from the Decision Trail.
-- Pass **[M]** link check: every markdown link target in `## Decision Trail` resolves — BT-LOCAL: the target file exists and, if an anchor, `grep -q '^#.*<anchor>'` in it; GitHub: the number is present in `store.json` and its state is `CLOSED`. Script: extract `\]\(([^)]+)\)`, resolve each, exit non-zero on the first miss.
+- Pass **[M]** link check: every markdown link target in `## Decision Trail` resolves — the issue number is present in `store.json` and its state is `CLOSED`. Script: extract `\]\(([^)]+)\)`, resolve each, exit non-zero on the first miss.
 - Fail signal: a Decision Trail line whose link 404s / points to a nonexistent anchor; a missing ticket; T7 present.
 - Tier: [M]
 
@@ -516,7 +514,7 @@ git diff --quiet -- src/ build/ scripts/ tests/
 
 Additional cleanup, per mode:
 
-- **BT-LOCAL:** nothing outside `.tmp/`; the map, brief, research and `.memory/` writes all lived in the sandbox. Verify no `docs/discovery/5a-growth-activation*` and no `docs/research/5a-growth-activation-*` exist at repo root.
+- Nothing outside `.tmp/`: the map, brief, research and `.memory/` writes all lived in the sandbox. Verify no `docs/discovery/5a-growth-activation*` and no `docs/research/5a-growth-activation-*` exist at repo root.
 - **Mock GitHub:** `store.json` dies with `.tmp/`. Nothing to clean remotely because the shim has no network path.
 - **The one manual live smoke** (§7 row 1): performed in a **throwaway repo only**. Cleanup = delete the repo. Never run it against this repo — it would leave `concept:*` issues and labels behind, and issue numbers are unrecoverable.
 - **`.claude/rules/` staged for the Claude Code host run:** `.claude/*` is gitignored except `.claude/skills/`, so remove any staged `.claude/rules/` explicitly.
@@ -531,8 +529,8 @@ findings about the work copies, not test gaps.
 1. **Fog that turns out to be out of scope.** Phase 3.1 requires fog to be **empty** to converge, but the `Out of scope` procedure (Phase 2.6, ops §6) operates on **tickets** — it closes an issue. There is no stated way to retire a fog patch that is past the destination without first inventing a ticket for it just to close it. SC-24b works around this by graduating F2; a real run may need the missing ramp.
 2. **Claim release on halt.** SC-23's correct behaviour leaves T4 claimed but unresolved. Nothing says whether the assignee should be cleared when a session halts without resolving — so a HITL ticket can sit claimed and off the frontier indefinitely.
 3. **Batching bound.** "Cheap independent frontier tickets may be batched only if they fit the context limit" (Phase 2.7) has no checkable bound, so SC-27's batching half is judge-only.
-4. **BT-LOCAL claim is advisory.** Ops §3 says so plainly; SC-21's BT-LOCAL variant can therefore only assert "detects and yields".
-5. **Out-of-scope in BT-LOCAL.** Ops §6 sets `status: out-of-scope` on the row, but §4's frontier predicate filters on `status == open`; a row that is neither `open` nor `done` is off the frontier by luck of the predicate rather than by rule.
+4. ~~BT-LOCAL claim is advisory.~~ **Resolved** by cutting the local fallback in v1.3.0 — claims are now always remote-arbitrated, so SC-21 asserts real mutual exclusion.
+5. ~~Out-of-scope in BT-LOCAL.~~ **Resolved** by cutting the local fallback — an out-of-scope ticket is a closed issue, so it leaves the frontier by the `state == "OPEN"` predicate itself.
 
 ---
 
@@ -541,7 +539,7 @@ findings about the work copies, not test gaps.
 | # | Plan item | Proving scenario(s) | Strength |
 |---|---|---|---|
 | 1 | Ticket body contract (`## Question`) + one-session sizing bound | SC-11 | [M] both halves (F3 forces the split) |
-| 2 | Phase 2.1 low-res map load, orient to Destination, honour Notes, zoom on demand | SC-17, SC-32 | [M]/[L]; the *zoom* half is only exactly assertable in GitHub mode (`--json body` ordering) — **[PARTIAL]** in BT-LOCAL, where the map is one file |
+| 2 | Phase 2.1 low-res map load, orient to Destination, honour Notes, zoom on demand | SC-17, SC-32 | [L]; the *zoom* half is asserted by `--json body` call ordering in `gh-calls.log` — now exact in the only mode there is, so no longer **[PARTIAL]** |
 | 3 | Research fired in parallel at charting; one-per-session restated with the research exception | SC-14, SC-27 | [L] parallel dispatch, [M] both research closed in one session |
 | 4 | `## Decision Trail` in the brief, populated from `Decisions so far` | SC-34 | [M] incl. link resolution |
 | 5 | Fog-or-ticket test; ticket when sharp even if blocked; never pre-slice fog | SC-12 | [M] both directions |
@@ -550,7 +548,7 @@ findings about the work copies, not test gaps.
 | 8 | Graduation clears the fog patch; invalidated tickets updated or deleted | SC-24, SC-24b, SC-26 | [M] |
 | 9 | Expect concurrency; re-read the map immediately before writing | SC-22, SC-21 | [M] |
 | 10 | Refer by title, never a bare `#n` | SC-29 | [M] regex over all transcripts |
-| 11 | Map body never lists open tickets; BT-LOCAL `## Tickets` is the exception | SC-05 (GitHub), SC-04 (BT-LOCAL table present) | [M] |
+| 11 | Map body never lists open tickets (no exception — the local fallback is gone) | SC-05 | [M] |
 | 12 | Plan, don't do — the pull to build is the edge of the map | SC-31 | [M] via the read-only `subject/` snapshot |
 | 13 | Deterministic pick: lowest open issue number | SC-19 | [M], 3 identical runs |
 | 14 | Paste-ready next-session invocation | SC-28 | [M] literal `grep -F` |
@@ -560,7 +558,7 @@ findings about the work copies, not test gaps.
 | 18 | Index, not store — one place per decision | SC-30 | [M] heuristic (length + non-restatement); **[PARTIAL]** — "one place" is judged, not proved |
 | 19 | Template section order (`Decisions so far` above the fog sections) | SC-09 | [M] order check; cosmetic |
 | 20 | Abandon ramp → close with reason + Status `done` + `abandoned:` note; redrawn destination = fresh map | SC-38 | [M] |
-| 21 | Tracker precondition detected once, recorded on the map, inherited later | SC-04, SC-05, **SC-06** | [M]/[L]; SC-06 is the split-brain proof |
+| 21 | Tracker precondition: halts without an authenticated `gh`, never degrades to a local map | **SC-04** (both variants) | [M] |
 | 22 | Header `> [!NOTE]` upstream/when-not-to-use routing | SC-01, SC-02, SC-03 | [M] |
 | — | Refactor: G1–G3/V1–V3 extracted to `grilling-protocol.md`, cited not re-pasted | SC-00 static gate: `grep -c 'G1 — Recommend when grounded' $R/.agents/workflows/1c_concept-map.md` = 0 and the pointer path `.agents/workflows/.reference/grilling-protocol.md` appears; `build/validate.py` green; every pointer path in the work copies resolves inside `$R` | [M] |
 
@@ -577,9 +575,10 @@ assertion** — a judge-only pass is worthless when no human is watching the run
 the scripted responder, the `gh` shim's argv log, the subagent write log, and the read-only `subject/`
 snapshot all apply unchanged.
 
-Fixture change: relabel the T1–T9 cast so the map has a mixed frontier — T1/T4 `mode:AFK research`,
-T7 `mode:AFK task`, T2/T5 `mode:HITL grilling`, T3 `mode:HITL prototype`, T6 `mode:HITL task`,
-T8 `mode:AFK research` (rigged to fail, see SC-42), T9 unlabelled (see SC-40).
+Mode labels and the two extra tickets are already in the §2.1 cast: drainable at charting are T1, T2,
+T6 (`mode:AFK`) plus T10 (`mode:AFK`, rigged to fail — SC-42); T11 carries **no** mode label (SC-40);
+T3 is the `mode:HITL grilling` that gets a prep comment; T5 is the `mode:HITL prototype` whose build
+half drains. No relabelling is needed — the cast was written for this.
 
 **SC-39 — mode label set per ticket at charting (A1).**
 - Pass **[M]**: every ticket created in session B carries exactly one of `mode:AFK` / `mode:HITL` in the `gh` argv log; no ticket carries both; `grilling` tickets are all `mode:HITL`.
@@ -587,14 +586,14 @@ T8 `mode:AFK research` (rigged to fail, see SC-42), T9 unlabelled (see SC-40).
 - Tier: [M]
 
 **SC-40 — unlabelled ticket is never drained (A1).**
-- Setup: T9 exists with `concept:research` and no mode label.
-- Pass **[M]**: T9 appears in the human partition; zero drain passes touch it; no comment or close on T9 in the argv log.
-- Fail signal: T9 drained because its type "looked AFK".
+- Setup: T11 exists with `concept:research` and no mode label.
+- Pass **[M]**: T11 appears in the human partition; zero drain passes touch it; no comment or close on T11 in the argv log.
+- Fail signal: T11 drained because its type "looked AFK" — mode must come from the label, never from `concept:research`.
 - Tier: [M]
 
 **SC-41 — drain authorizes once, then runs unattended (A3).**
-- Setup: map `AFK drain: per-pass confirmation`; frontier holds T1, T4, T7 drainable.
-- Pass **[M]**: exactly **one** confirmation prompt before any mutation; the drain plan names all three tickets and what each writes; after confirmation zero further prompts until the report; all three reach a terminal state.
+- Setup: map `AFK drain: per-pass confirmation`; frontier holds T1, T2, T6 drainable.
+- Pass **[M]**: exactly **one** confirmation prompt before any mutation; the drain plan names all three tickets (T1, T2, T6) and what each writes; after confirmation zero further prompts until the report; all three reach a terminal state.
 - Fail signal: a prompt per ticket (defeats the purpose); or any mutation logged before the confirmation.
 - Tier: [M]
 
@@ -605,21 +604,21 @@ T8 `mode:AFK research` (rigged to fail, see SC-42), T9 unlabelled (see SC-40).
 - Tier: [M]
 
 **SC-42 — bounded attempts then demotion (A4).** *The key AFK regression.*
-- Setup: T8's research subagent stub is rigged to return malformed output every time.
-- Pass **[M]**: exactly **3** dispatch attempts for T8 in the subagent log — not 2, not 4, not unbounded; then T8 is relabelled `mode:HITL`, carries a comment naming what failed, and is **left open** on the human frontier; the run continues to completion rather than hanging.
-- Fail signal: a 4th attempt; an infinite retry; T8 closed as resolved despite garbage output; T8 silently dropped from the report; or the whole drain aborting because one ticket failed.
+- Setup: T10's research subagent stub is rigged to return malformed output every time.
+- Pass **[M]**: exactly **3** dispatch attempts for T10 in the subagent log — not 2, not 4, not unbounded; then T10 is relabelled `mode:HITL`, carries a comment naming what failed, and is **left open** on the human frontier; the run continues to completion rather than hanging.
+- Fail signal: a 4th attempt; an infinite retry; T10 closed as resolved despite garbage output; T10 silently dropped from the report; or the whole drain aborting because one ticket failed.
 - Tier: [M]
 
 **SC-43 — HITL prep never becomes HITL resolution (A2/A4 + the hardened invariant).** *The highest-value scenario in this plan.*
-- Setup: frontier holds T2 (`mode:HITL grilling`); the scripted responder is **absent** — no user is present at all.
-- Pass **[M]**: T2 gains exactly one prep comment containing looked-up facts and a recommendation labelled as a proposal; T2 remains **open** and **unassigned-as-resolved**; the argv log contains **no** `issue close` and no resolution comment for T2; `Decisions so far` does not mention T2.
-- Fail signal: T2 closed; T2 indexed under `Decisions so far`; the prep comment phrased as a settled decision rather than a proposal. Any of these means the agent decided for the absent human — treat as a release blocker, not a warning.
+- Setup: frontier holds T3 (`mode:HITL grilling`); the scripted responder is **absent** — no user is present at all.
+- Pass **[M]**: T3 gains exactly one prep comment containing looked-up facts and a recommendation labelled as a proposal; T3 remains **open**; the argv log contains **no** `issue close` and no resolution comment for T3; `Decisions so far` does not mention T3. Run session H twice: the second run adds **no** second prep comment (idempotence, Phase 2A step 2).
+- Fail signal: T3 closed; T3 indexed under `Decisions so far`; the prep comment phrased as a settled decision rather than a proposal; or a duplicate prep comment on the second run. The first three mean the agent decided for the absent human — release blocker, not a warning.
 - Tier: [M]
 
 **SC-44 — prototype build half drains, react half does not (A1/A3).**
-- Setup: frontier holds T3 (`mode:HITL prototype`).
-- Pass **[M]**: the artifact file exists and is linked from T3; T3 is still open; no resolution comment; the next interactive session's transcript opens by presenting that artifact rather than building it.
-- Fail signal: T3 closed on the strength of the agent's own opinion of the artifact.
+- Setup: frontier holds T5 (`mode:HITL prototype`).
+- Pass **[M]**: the artifact file exists and is linked from T5; T5 is still open; no resolution comment; the next interactive session's transcript opens by presenting that artifact rather than building it. A second drain run does not rebuild it (idempotence).
+- Fail signal: T5 closed on the strength of the agent's own opinion of the artifact.
 - Tier: [M]
 
 **SC-45 — one map write per batch (A6).**
@@ -628,7 +627,7 @@ T8 `mode:AFK research` (rigged to fail, see SC-42), T9 unlabelled (see SC-40).
 - Tier: [M]
 
 **SC-46 — drain loops on graduated fog, then stops (A3.7).**
-- Setup: T1's resolution graduates fog patch F1 into a fresh `mode:AFK research` ticket.
+- Setup: T1's resolution graduates a fog patch into a fresh `mode:AFK research` ticket (distinct from F1→T8, which is HITL).
 - Pass **[M]**: the drain recomputes the frontier and drains the new ticket in the same run; it terminates when the frontier is human-only; loop count is finite and reported.
 - Fail signal: the new AFK ticket left for the human; or an unbounded loop.
 - Tier: [M]

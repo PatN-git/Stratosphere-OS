@@ -11,15 +11,13 @@ version: "1.1.0"
 # Concept Map: <one-line destination statement>
 
 <!-- Open tickets are NOT listed here — they are open child issues, found by the frontier query
-     (.agents/workflows/.reference/concept-map-operations.md §4).
-     Exception: BT-LOCAL mode's `## Tickets` table IS the tracker. -->
+     (.agents/workflows/.reference/concept-map-operations.md §4). -->
 
 ## Destination
 <Define the concrete boundary of what this concept is aiming to accomplish. This fixes the scope of the discovery phase.>
 
 **Destination type:** `discovery-brief` | `locked-decision` | `in-place-change`
-**Tracker mode:** `github` | `bt-local`  <!-- set at charting; every later session adopts it, never re-decides -->
-**AFK drain:** `per-pass confirmation` (default) | `authorized`  <!-- `authorized` is standing consent: Phase 2A skips its confirmation gate for this map. It never licenses resolving or closing a `mode:HITL` ticket. -->
+**AFK drain:** `per-pass confirmation` (default) | `authorized`  <!-- Set by the USER only; an agent never grants itself standing authorization. `authorized` is standing consent: Phase 2A skips its confirmation gate for this map. It never licenses resolving or closing a `mode:HITL` ticket, passing a hard HITL gate, or merging. -->
 
 ## Notes
 <Domain context, relevant code areas, key resources, and lists of skills or experts to consult. Every working session reads this and invokes the skills named here. An explicit override of the "plan, don't do" invariant belongs here.>

@@ -53,7 +53,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **ASK:** Ambiguity affects architecture, destructive changes, external cost, or security.
 - **DEFAULT:** Choose the smallest reversible action.
 - **CONFLICTS:** If instructions conflict and precedence does not fully resolve the issue, choose the smallest reversible action and state the ambiguity briefly.
-- **STANDING AUTHORIZATION:** An artifact may record durable consent for a repeatable AFK pass over its own scope (e.g. a concept map's `AFK drain: authorized`), replacing the per-pass gate. It is scoped to that artifact, never global, and never extends to the invariants in §1's bounded-AFK clause — a standing authorization cannot license resolving `mode:HITL` work, passing a hard HITL gate, or merging.
+- **STANDING AUTHORIZATION:** An artifact may record durable consent for a repeatable AFK pass over its own scope (e.g. a concept map's `AFK drain: authorized`), replacing the per-pass gate. **Only the user sets it — an agent never grants itself standing authorization.** It is scoped to that artifact, never global, and never extends to the invariants in §1's bounded-AFK clause — a standing authorization cannot license resolving `mode:HITL` work, passing a hard HITL gate, or merging.
  
 ## 7. Self-Annealing & Learning
 - **The Loop:** When something fails: diagnose, fix, verify.
