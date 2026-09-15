@@ -85,6 +85,34 @@ Before running the local scaffolding update, verify if the installed Stratospher
 
 ---
 
+## Phase 0.5: Pre-v4 Layout Detection (blocking)
+
+Before computing scope, detect whether this project predates v4.0.0.
+
+1. **Check:** does `.agents/workflows/` exist, or does `.gitignore` contain a bare `.agents/skills/` line?
+2. **If neither:** the project is already on the v4 layout. Continue to Phase 1.
+3. **If either:** HALT and instruct the user. `stratosphere-update` **cannot** complete this migration on its own:
+   - `reconcile_gitignore()` only *adds* entries, so the stale `.agents/skills/` line survives and every skill installed by this update lands in an ignored directory — silently untracked.
+   - This flow has no removal phase, so the superseded `.agents/workflows/*.md` remain. Until 2026-11-01 Antigravity indexes both trees, and `/0a_start-session` and `/0a-start-session` both resolve, to different versions of the same skill.
+   - `.memory/` and `docs/` are `preserved` tier, so their OKF frontmatter is never migrated to v0.2.
+
+   Emit verbatim:
+
+   ```
+   [PRE-V4] This project uses the retired .agents/workflows/ layout.
+   Run the one-shot migration first, from the project root:
+
+     python <plugin>/scripts/migrations/migrate_v3_to_v4.py            # dry run
+     python <plugin>/scripts/migrations/migrate_v3_to_v4.py --apply
+
+   It is idempotent, spares user-authored workflow files, and reports
+   anything it leaves behind. Then re-run /stratosphere-update.
+   ```
+
+   Do not proceed to Phase 1 until the migration has run.
+
+_Completion criterion:_ either the project is confirmed v4-shaped, or the user has been given the migration command and this run has stopped.
+
 ## Phase 1: Compute Update Scope
 
 1. **Run the preview dry-run:**

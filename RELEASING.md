@@ -54,11 +54,13 @@ sufficient: `reconcile_gitignore()` only adds entries, so an upgraded project ke
 
 ```bash
 # from the target project root, after updating the plugin
-python <plugin>/scripts/migrations/migrate_v3_to_v4.py --dry-run   # review the diff
-python <plugin>/scripts/migrations/migrate_v3_to_v4.py
+python <plugin>/scripts/migrations/migrate_v3_to_v4.py            # dry run (default)
+python <plugin>/scripts/migrations/migrate_v3_to_v4.py --apply
 ```
 
 It rewrites the stale `.gitignore` entry, removes the superseded `.agents/workflows/`
 tree (sparing user-authored files), and migrates the project's own `.memory/` and
-`docs/` frontmatter to OKF v0.2. It is idempotent and defaults to `--dry-run`, in the
-same shape as `scripts/migrations/migrate_agent_to_agents.py`.
+`docs/` frontmatter to OKF v0.2. It is idempotent and **defaults to a dry run** — unlike
+`migrate_agent_to_agents.py`, which only renames a file, this one deletes, so the
+safe default is inverted. It spares user-authored workflow files and reports
+anything it leaves behind.
