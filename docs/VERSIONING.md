@@ -1,9 +1,19 @@
+---
+type: reference
+title: StratosphereOS Artifact Versioning Standard
+description: Per-file semantic versioning and content-hash rules for distributed artifacts.
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
+version: "1.0.0"
+---
+
 # StratosphereOS Artifact Versioning Standard
 
 StratosphereOS utilizes a robust, per-file versioning system combined with content hashing to selectively update distributed artifacts (workflows, templates, rules, constitution files) without clobbering a user's local edits.
 
 ## 1. Version Format & Semantics
-All distributed artifacts MUST carry a semantic version `x.y.z` and a `timestamp` date `YYYY-MM-DD`. The plugin version sets the baseline (e.g., `1.0.0`).
+All distributed artifacts MUST carry a semantic version `x.y.z`. The change-date field differs by scope: framework artifacts under `src/` carry `timestamp: YYYY-MM-DD` (a build field); in-scope OKF documents under `docs/` and `.memory/` carry `generated: {by, at}` instead (`okf-protocol.md` §2). The plugin version sets the baseline (e.g., `1.0.0`).
 
 - **PATCH** (`x.y.Z`): Wording changes, formatting, typos.
 - **MINOR** (`x.Y.0`): Additive/backward-compatible changes (new optional sections, new guidance).

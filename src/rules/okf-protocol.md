@@ -15,6 +15,10 @@ timestamp: 2026-09-15
 This protocol defines how StratosphereOS implements the Open Knowledge Format (OKF) v0.2.
 
 ## 1. Conformance Scope
+
+> **Known gap:** `validate_memory.py` returns early when `.memory/` is absent, so the
+> `docs/` conformance walk never runs in the framework repo itself. Slice 12 decouples
+> them. Until then, `docs/` conformance here is enforced by review, not by the linter.
 The OKF bundle scope is **exactly** the `.memory/` and `docs/` directories, and within them **only `.md` files**. Every concept document in that scope (excluding reserved files and foreign content) must conform to this protocol.
 
 **Out of scope — these carry no OKF `type:`:** the repo-root constitution files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`), `.agents/rules/*`, `.agents/skills/*`, `src/*`. Framework artifacts are governed by `metadata.stratos.*` (see `AGENTS.md` §2), not by OKF. Their `version:` and `timestamp:` are **build fields** stamped by `build/build.py`, not OKF change-records.
@@ -101,6 +105,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
+| `reference` | in-scope reference material under `docs/` (e.g. `docs/okf-spec-essentials.md`, `docs/improve-workflows-skills/*`) | — |
 
 ## 4. Reserved Files
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.

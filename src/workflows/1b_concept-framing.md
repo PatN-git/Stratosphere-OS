@@ -74,7 +74,7 @@ A thorough grill is typically 20–50 questions; do not target brevity. There is
   - **V2 (Code-Contradiction Check):** Check terms against actual naming in code.
   - **V3 (Glossary-Conflict Callout):** Verify terms do not clash with `GLOSSARY.md` `[[G-xxx]]`.
 - **Internal Prior Art** — code touching this, or prior attempts.
-- **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `timestamp:` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <timestamp>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a_research. Multiple matches → list filenames, user selects.
+- **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `generated.at` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <generated.at>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a_research. Multiple matches → list filenames, user selects.
 - **Success state** — observable, measurable outcomes.
 - **Hard constraints** — fixed boundaries.
 - **Non-goals (early)** — explicit exclusions.

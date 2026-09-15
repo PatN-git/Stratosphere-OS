@@ -3,7 +3,9 @@ type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
 version: "2.0.0"
-timestamp: 2026-09-15
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
 ---
 
 # Improving Workflows & Skills

@@ -3,7 +3,9 @@ type: plan
 title: Future-Proofing StratOS — v4.0.0 Execution Plan
 description: Migrate StratOS workflows to spec-conformant Agent Skills across six hosts, adopt OKF v0.2, before Antigravity retires workflow indexing on 2026-11-01.
 version: "6.0.0"
-timestamp: 2026-09-15
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
 ---
 
 # v4.0.0 — Spec Conformance, Host Expansion, OKF v0.2

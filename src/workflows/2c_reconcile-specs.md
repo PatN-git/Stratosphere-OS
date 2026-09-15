@@ -55,7 +55,7 @@ Score each finding 0–100 per `.agents/workflows/.reference/confidence-scale.md
 ## Phase 4: Resolve & Apply
 1. **Present** the report; HALT. All findings apply by default; the user **Skips** exceptions (a skipped finding dies with the ephemeral report).
 2. **Apply** each non-skipped `PROPOSAL` as a surgical edit — change only the reconciled claim, never adjacent prose. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** (durable; `3b` slices it as a Template A spike). A missing-contract P0 → record as a required pre-Slice-1 migration in the PRD, never silently write the schema.
-3. **Version:** bump each edited doc's OKF `version` + `timestamp` once (patch = wording; minor = behavioral change) — per `.agents/rules/okf-protocol.md` §5, not per finding.
+3. **Version:** bump each edited doc's OKF `version` once and refresh `generated.at` (and `generated.by` to `2c_reconcile-specs`) (patch = wording; minor = behavioral change) — per `.agents/rules/okf-protocol.md` §5, not per finding.
 4. **Exit criteria:** zero P0 unaddressed; every finding applied, written as an Open Question, or skipped; no open `[UNCOVERED]`. Never mark complete on a "looks consistent" judgment.
 
 ## Phase 5: Handoff

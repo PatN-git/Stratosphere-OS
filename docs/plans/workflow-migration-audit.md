@@ -3,7 +3,9 @@ type: plan
 title: Workflow Migration — In-Body Edit Inventory
 description: Per-file inventory of body edits required by the v4.0.0 workflows-to-skills migration. Companion to future-proofing-spec-conformance-plan.md Slice 9.
 version: "3.0.0"
-timestamp: 2026-09-15
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
 ---
 
 # Workflow Migration — In-Body Edit Inventory

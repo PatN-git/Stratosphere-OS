@@ -2,9 +2,10 @@
 name: discovery-pipeline-quality-fixes-proposal
 description: Quality fixes to the discovery→design pipeline (1a/1b/1c/2a/2b) — five audit-verified correctness/protocol defects plus three depth improvements benchmarked against Matt Pocock's current skills.
 type: proposal
-trigger: User. Do not run autonomously.
 version: "1.1.0"
-timestamp: 2026-07-24
+generated:
+  by: Claude
+  at: 2026-07-24
 ---
 
 # Workflow Proposal: discovery→design pipeline quality fixes (1a / 1b / 1c / 2a / 2b)

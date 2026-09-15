@@ -2,9 +2,10 @@
 name: planning-soundness-and-impact-check-proposal
 description: Upstream scaffolding to make a weaker long-horizon planner produce sound plans — headed by a planning-time Impact/Interdependency check (subagent).
 type: proposal
-trigger: User. Do not run autonomously.
 version: "1.0.0"
-timestamp: 2026-06-23
+generated:
+  by: PatN-git
+  at: 2026-06-23
 ---
 
 # Workflow Proposal: planning soundness via upstream scaffolding (+ an impact check)

@@ -1114,7 +1114,7 @@ def main():
         else:
             root_index_content = (
                 "---\n"
-                "okf_version: \"0.1\"\n"
+                "okf_version: \"0.2\"\n"
                 "---\n\n"
                 "# StratosphereOS Knowledge Bundle\n\n"
                 "Conforms to Open Knowledge Format (OKF) v0.1.\n\n"

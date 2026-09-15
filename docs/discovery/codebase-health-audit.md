@@ -2,7 +2,9 @@
 type: discovery-brief
 title: "Discovery: Codebase health silently degrades without periodic broad screening"
 description: "Implementation-ready concept brief for workflow 4c — a periodic, read-only health audit across security, reliability, maintainability, correctness, performance, and dependency health."
-timestamp: 2026-07-27
+generated:
+  by: PatN-git
+  at: 2026-07-27
 status: ready-for-prd
 slug: codebase-health-audit
 linked-prd: —

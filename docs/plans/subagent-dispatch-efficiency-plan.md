@@ -1,3 +1,12 @@
+---
+type: plan
+title: Subagent Dispatch Efficiency Plan
+generated:
+  by: PatN-git
+  at: 2026-09-15
+version: "1.0.0"
+---
+
 # Plan — Subagent-Dispatch Token Efficiency
 
 **Status:** Reviewed (critic feedback folded in) — ready to execute.

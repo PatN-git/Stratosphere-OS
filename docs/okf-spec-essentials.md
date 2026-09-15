@@ -1,8 +1,11 @@
 ---
+type: reference
 title: OKF Spec Essentials
 description: Condensed capture of the normative OKF spec for diffing StratosphereOS conformance against future releases.
 version: "2.0.0"
-timestamp: 2026-09-15
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
 ---
 
 # OKF v0.2 — Spec Essentials (reference)
