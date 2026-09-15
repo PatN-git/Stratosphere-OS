@@ -24,7 +24,7 @@ At completion, on a clean scaffolded project:
 
 - All **22** skills resolve as `/<name>` on Claude Code, Antigravity, Cursor, Codex, Devin, OpenClaw — 19 lifecycle plus the 3 drivers (`stratosphere-setup`, `stratosphere-update`, `sync-skills`).
 - `.agents/workflows/` is not written.
-- No skill body exists twice in `dist/`.
+- Skill bodies are **byte-identical across hosts** (C3: one canonical set, no content fork).
 - No file outside `.memory/` + `docs/` carries an OKF `type:`.
 - A v3 project upgrades without losing data or retaining stale artifacts.
 
@@ -223,7 +223,7 @@ The per-template defects below are what the restructure must eliminate:
 | `.agents/skills/` | Cursor, Codex, Antigravity, Devin, OpenClaw |
 | `.claude/skills/` | Claude Code (also Devin) |
 
-**DONE WHEN:** a scaffolded project surfaces all 22 as `/<name>` on Antigravity; `.agents/workflows/` not written; `git status` shows skill directories **tracked**; no skill body twice in `dist/`.
+**DONE WHEN:** a scaffolded project surfaces all 22 as `/<name>` on Antigravity; `.agents/workflows/` not written; `git status` shows skill directories **tracked**; `diff -rq dist/antigravity/skills dist/claude-code/skills` reports no differing files.
 
 ## Slice 8 — Cross-host HITL
 
@@ -369,7 +369,7 @@ Migrate **one** workflow end-to-end through Slices 6–9 and invoke it on all si
 | Skill dirs resolve under `.agents/skills/` and `.claude/skills/` | 7 |
 | `.agents/workflows/` absent | 7 |
 | `git status` shows skill directories tracked | 7.1 |
-| No skill body duplicated across `dist/` | 7.5 |
+| `diff -rq dist/antigravity/skills dist/claude-code/skills` reports no differing files | 7.5 |
 | Every shared reference present in each consuming skill | 7.4 |
 | `grep -rE '[0-4][a-z]_\|x_jules-dispatch' --exclude-dir=archive --exclude-dir=.archive --exclude-dir=plans src docs build .github tests *.md` = 0 | 6 |
 | `grep -rn "^timestamp:" docs --exclude-dir=plans` = 0 | 4 |
