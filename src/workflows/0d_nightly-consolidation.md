@@ -17,7 +17,7 @@ Do not modify files without user approval.
 - Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes.
 
 ## Phase 2: Distill Plan
-- Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/workflow optimizations.
+- Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
 ## Phase 3: Crystallize Memory

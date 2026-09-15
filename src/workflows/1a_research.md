@@ -45,8 +45,8 @@ timestamp: 2026-07-24
 Maintain work file to track progress.
 
 ### 1. Durability Mechanism (The Work File)
-- **Start-of-Run Cleanup:** Delete stale `docs/research/.<slug>.work.md` at start.
-- **Path:** `docs/research/.<slug>.work.md`
+- **Start-of-Run Cleanup:** Delete stale `.tmp/1a-research-<slug>.work.md` at start.
+- **Path:** `.tmp/1a-research-<slug>.work.md`
 - **Format:**
   ```markdown
   # Research Work File: <slug>
@@ -88,15 +88,15 @@ Terminate loop when:
 
 ## Phase 3: Synthesis & Publication
 
-1. **Read Working File:** If Deep Research run, read `docs/research/.<slug>.work.md` once.
+1. **Read Working File:** If Deep Research run, read `.tmp/1a-research-<slug>.work.md` once.
 2. **Select Template:** Use `.agents/workflows/.reference/research-competitive-template.md` (Competitive) or `.agents/workflows/.reference/research-problem-template.md` (Problem-Space).
 3. **Format & Write:** Create `docs/research/<slug>.md`.
-   - Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: research`.
+   - Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: research` — do not prepend a second one.
    - **Question Coverage Map:** include one-line map (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown]`).
    - **Opportunity Scoring & Gap Matrix:** for Competitive runs (or Annex), build Gap Matrix and Opportunity table. A pure problem-space run records Pain + Served: [Unknown] (Opportunity lower bound). Sourced only from reviews/docs and confidence-tagged before synthesis.
    - **Cost & Viability Signals:** capture pricing and market signals (e.g., paid products, freelancer hires, keyword ad spend) under `## Cost & Viability Signals`.
    - **Synthesis Contract:** synthesize strictly from `.work.md`; no uncited/un-persisted claims.
    - **Annex:** render Optional Annex within same file (structure of the other template), not a second file. When it precedes concept framing (no candidate product yet), omit the Dunford Positioning Lens and the Us (Candidate) matrix column; include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
    - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `.agents/workflows/.reference/research-evidence-standards.md` rules.
-4. **Cleanup:** Delete `docs/research/.<slug>.work.md`.
+4. **Cleanup:** Delete `.tmp/1a-research-<slug>.work.md`.
 5. **Handoff:** Notify user: *"Research compiled at `docs/research/<slug>.md`. Run `/1b_concept-framing` to define concept."*

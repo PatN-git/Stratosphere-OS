@@ -80,7 +80,7 @@ Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Prepend OKF `type: prd` per `.agents/rules/okf-protocol.md`. Set frontmatter `bt: BT-<padded>` and editorial `status: approved` (the PRD passed Phase 4 validation; editorial status is `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>` and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
 2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b_interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a_version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. Update parent issue body: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).

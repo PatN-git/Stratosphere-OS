@@ -1,13 +1,33 @@
 ---
+description: Template for a discovery brief - locked vocabulary, problem statement and framing.
+version: "2.0.0"
+timestamp: 2026-09-15
+---
+
+# Discovery Brief Template
+
+Instantiate into `docs/discovery/<slug>.md`: write the **artifact frontmatter** below
+(substituting every `<placeholder>`), then the **artifact body** verbatim.
+
+This file is not itself an OKF document - it carries no `type:`. The `type:` in
+the block below is the *artifact's*.
+
+## Artifact frontmatter
+
+```yaml
 type: discovery-brief
 title: "Discovery: <one-line problem statement>"
 description: ""
-timestamp: <YYYY-MM-DD>
+generated:
+  by: 1b-concept-framing
+  at: <ISO 8601>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 slug: <topic-slug> # MUST be semantic slug only. Do NOT include or pre-allocate a BT-<n> ID.
 linked-prd: —
-version: "1.0.4"
----
+version: <plugin version>   # stamped at generation (okf-protocol §5)
+```
+
+## Artifact body
 
 # Discovery: <one-line problem statement in agreed vocabulary>
 

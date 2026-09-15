@@ -1,7 +1,7 @@
 ---
 description: Report template and impact categorization for 4c_codebase-health-audit.
-version: "1.0.0"
-timestamp: 2026-07-27
+version: "2.0.0"
+timestamp: 2026-09-15
 ---
 
 # Health Audit — Report Template
@@ -31,7 +31,10 @@ Write to `docs/audits/health-<YYYY-MM-DD>.md`:
 ---
 type: audit-report
 title: "Health Audit — <YYYY-MM-DD>"
-timestamp: <YYYY-MM-DD>
+status: stable
+generated:
+  by: 4c-codebase-health-audit
+  at: <ISO 8601>
 ---
 
 # Health Audit — <YYYY-MM-DD>

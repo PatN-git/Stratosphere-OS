@@ -1,15 +1,35 @@
 ---
+description: Template for a path-aware interface design document under docs/design/.
+version: "2.0.0"
+timestamp: 2026-09-15
+---
+
+# Design Doc Template
+
+Instantiate into `docs/design/BT-<padded>-interface.md`: write the **artifact frontmatter** below
+(substituting every `<placeholder>`), then the **artifact body** verbatim.
+
+This file is not itself an OKF document - it carries no `type:`. The `type:` in
+the block below is the *artifact's*.
+
+## Artifact frontmatter
+
+```yaml
 type: interface-design
 title: "Design: BT-<padded> - <Feature Name>"
 description: ""
-timestamp: <YYYY-MM-DD>
-status: draft | approved | superseded
+generated:
+  by: 2b-interface-design
+  at: <ISO 8601>
+status: draft | stable   # draft until the layout is frozen
 slug: <slug>
 bt: BT-<padded>
 prd: <path to PRD>
 surface: ui-generator-page | ui-generator-feature | ui-manual | non-ui
-version: "1.0.5"
----
+version: <plugin version>   # stamped at generation (okf-protocol §5)
+```
+
+## Artifact body
 
 # Design: BT-<padded> - <Feature Name>
 

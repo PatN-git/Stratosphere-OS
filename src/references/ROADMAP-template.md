@@ -1,10 +1,31 @@
 ---
-name: ROADMAP-template
-type: roadmap
-description: Release roadmap mapping product releases to parent features with MVP cut-line rationale and shipped history.
-version: "1.0.1"
-timestamp: 2026-07-10
+description: Template for docs/ROADMAP.md - releases mapped to parent features with MVP cut-line rationale.
+version: "2.0.0"
+timestamp: 2026-09-15
 ---
+
+# Roadmap Template
+
+Instantiate into `docs/ROADMAP.md`: write the **artifact frontmatter** below
+(substituting every `<placeholder>`), then the **artifact body** verbatim.
+
+This file is not itself an OKF document - it carries no `type:`. The `type:` in
+the block below is the *artifact's*.
+
+## Artifact frontmatter
+
+```yaml
+type: roadmap
+title: Product Roadmap
+description: Release roadmap mapping product releases to parent features with MVP cut-line rationale and shipped history.
+version: <plugin version>   # stamped at generation (okf-protocol §5)
+generated:
+  by: 3a-version-planning
+  at: <ISO 8601>
+```
+
+## Artifact body
+
 # Product Roadmap
 
 > Maintained by `/3a_version-planning`. Milestone format `vX.Y.Z` (MAJOR.MINOR.sprint). This file owns the release rows (`vX.Y`); sprint numbers (`Z`) are assigned by `/3c_sprint-planning`. Active/planned releases first; shipped releases collapse into `## Shipped` at the bottom.

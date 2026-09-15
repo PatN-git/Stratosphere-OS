@@ -28,7 +28,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
    - Unset → ask user, write choice back to §2, branch.
 
 ## Phase 2: Design Doc Initialization
-1. Create `docs/design/BT-<padded>-interface.md` from template. Prepend OKF `type: interface-design`.
+1. Create `docs/design/BT-<padded>-interface.md` from the template: write its **Artifact frontmatter** block verbatim (already carries `type: interface-design`), then the **Artifact body**.
 2. Populate metadata (slug, bt, prd, surface, `status: draft`, `generated: {by: 2b_interface-design, at: <ISO 8601>}`). Map: Path A -> ui-generator-page|ui-generator-feature; Path B -> ui-manual; Path C -> non-ui.
 3. **Define Aha Moment & Time-to-Value:** identify aha moment (value in <30s). Design flow backward from it: no intro sliders, drop user straight into core flow. (Path C: aha = "time to first successful API call").
 4. Fill narrative sections from PRD. Keep one body block (a full-stack Path A/B slice adds a second `## Interface Contract` block at Phase 4 — see the full-stack rule).
@@ -68,19 +68,19 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 3. Immortal Components: A1 → propose new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. A2 → discard any generator changes to global shell components (DR-008/DR-010).
 4. Run design-theme: python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css. Import theme.tokens.css below @import "tailwindcss" (or bottom of stylesheet).
 5. Run UX / System Stress Test.
-6. Freeze layout into Path A body block. design doc `status → approved` (editorial).
+6. Freeze layout into Path A body block. design doc `status → stable` (editorial).
 7. Generator output is read once/frozen. Downstream workflows (3b, 3d, 4a) read only frozen doc/DESIGN.md; 4b audits .memory/. Never access live generator.
 
 ### Path B (Reference-driven native):
 1. Conform to frozen `DESIGN.md` + §3 Immortal Components.
 2. Immortal Components: new page → propose registering new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. feature → conform to / shield existing components.
 3. Run UX / System Stress Test.
-4. Write blueprint into Path B body block. design doc `status → approved` (editorial).
+4. Write blueprint into Path B body block. design doc `status → stable` (editorial).
 
 ### Path C (Non-UI interface contract):
 1. Define the interface and seam boundaries, API signatures, schemas, adapter layers (if mapping domains), I/O params, behavioral invariants, and the input edge-case matrix; evaluate interface depth (deep vs. shallow) and write into the Path C body block.
 2. Run UX / System Stress Test.
-3. Set design doc `status → approved` (editorial).
+3. Set design doc `status → stable` (editorial).
 
 ### UX / System Stress Test
 1. Subagent - "Stress Tester": Invoke a subagent. Input: actors/flows/states, resolved blueprint. Reads: design doc fresh from the filesystem. Guardrail: "Report the matrix only; do not edit any file." Output: adverse condition -> failure mode -> handling (UI: bad signal/low battery/distracted; Path C: network partition/malformed payload/DB lock/retry storm).

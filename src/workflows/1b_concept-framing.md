@@ -38,8 +38,8 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 6. If complex/foggy, recommend `/1c_concept-map`.
 7. **Multi-sided check:** Ask: *"Is this a multi-sided product?"* If yes, read `.agents/workflows/.reference/multi-sided-discovery.md` and append focus areas. RAT tests both sides (10 DMs each). `1b` grills and flags both sides but does not assign per-side opportunity scores — scoring is a `/1a_research` activity (it has the evidence source; `1b` does not).
 8. **Discovery Work File:**
-   - Use for longer/generate path. Delete stale `docs/discovery/.<slug>.work.md` at start.
-   - Path: `docs/discovery/.<slug>.work.md`.
+   - Use for longer/generate path. Delete stale `.tmp/1b-discovery-<slug>.work.md` at start.
+   - Path: `.tmp/1b-discovery-<slug>.work.md`.
    - Structure: ## Coverage checklist (Actor, Problem, Vocabulary, Prior Art, Research, Success, Constraints, Non-goals) with status [ ]/[~]/[x]/[skip], plus ## Ask (verbatim), ## Candidate vocabulary, and ## Candidate/Chosen framing sections.
    - Resume: continue from first open/in-progress checklist item.
    - Write: update distilled nuggets on checklist change or decision lock (never transcripts; keep it lean). Check-in every 5 questions.
@@ -109,7 +109,7 @@ Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT
 
 ## Phase 5: Write Discovery Brief
 
-Create `docs/discovery/<slug>.md` using `.agents/workflows/.reference/discovery_brief_template.md`. Prepend OKF frontmatter per `.agents/rules/okf-protocol.md` using `type: discovery-brief`.
+Create `docs/discovery/<slug>.md` using `.agents/workflows/.reference/discovery_brief_template.md`. Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: discovery-brief` — do not prepend a second one.
 
 **Rules:**
 - Synthesis Contract: Build brief from work file and live transcript. Capture approved vocabulary and chosen framing durably at lock-time.
@@ -136,7 +136,7 @@ Present brief for approval.
 2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder), each with its `Avoid:` list. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
 3. If framing decision is reusable, propose `[[L-xxx]]` for `.memory/LEARNINGS.md`.
 4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render `docs/discovery/<slug>.html`.
-5. Delete `docs/discovery/.<slug>.work.md`.
+5. Delete `.tmp/1b-discovery-<slug>.work.md`.
 6. Guide user to next step: `/2a_write-prd`, `/3b_create-issue` (Template A/B), or dropped.
 
 ---

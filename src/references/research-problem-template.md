@@ -1,12 +1,32 @@
 ---
+description: Template for a problem-space research brief under docs/research/.
+version: "2.0.0"
+timestamp: 2026-09-15
+---
+
+# Research Problem Template
+
+Instantiate into `docs/research/<slug>.md`: write the **artifact frontmatter** below
+(substituting every `<placeholder>`), then the **artifact body** verbatim.
+
+This file is not itself an OKF document - it carries no `type:`. The `type:` in
+the block below is the *artifact's*.
+
+## Artifact frontmatter
+
+```yaml
 type: research
 title: "Research: <Problem Space / Topic>"
 description: ""
-timestamp: <YYYY-MM-DD>
-status: active | stale | superseded
+generated:
+  by: 1a-research
+  at: <ISO 8601>
+status: stable | deprecated   # deprecated once superseded or past its freshness window
 slug: <kebab-case-core-topic>
-version: "1.0.2"
----
+version: <plugin version>   # stamped at generation (okf-protocol §5)
+```
+
+## Artifact body
 
 # Research: <Problem Space / Topic>
 

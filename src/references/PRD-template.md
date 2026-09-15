@@ -1,13 +1,33 @@
 ---
+description: Template for a Product Requirements Document under docs/prds/.
+version: "2.0.0"
+timestamp: 2026-09-15
+---
+
+# Prd Template
+
+Instantiate into `docs/prds/BT-<padded>-<feature-name>.md`: write the **artifact frontmatter** below
+(substituting every `<placeholder>`), then the **artifact body** verbatim.
+
+This file is not itself an OKF document - it carries no `type:`. The `type:` in
+the block below is the *artifact's*.
+
+## Artifact frontmatter
+
+```yaml
 type: prd
 title: "BT-<padded>: <Feature name>"
 description: ""
 bt: BT-<padded>
-timestamp: <YYYY-MM-DD>
+generated:
+  by: 2a-write-prd
+  at: <ISO 8601>
 resource: <GitHub Issue URL>
-status: draft | approved | superseded
-version: "1.0.3"
----
+status: draft | stable   # draft while unvalidated; stable once Phase 4 passes
+version: <plugin version>   # stamped at generation (okf-protocol §5)
+```
+
+## Artifact body
 
 # BT-<padded>: <Feature name>
 
