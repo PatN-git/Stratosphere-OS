@@ -1,6 +1,8 @@
 ---
 name: improve-workflows-skills
 description: Dev-time discipline for authoring, editing, or pruning StratOS's OWN lifecycle skills (src/workflows/) and execution skills (src/skills/). Fires when creating/editing a StratOS skill, running a pruning/refactor pass, or reviewing framework artifacts. Repo-local and dev-only — NOT a product skill; never advise consumer projects with it.
+metadata:
+  stratos.layer: execution
 version: "2.0.0"
 timestamp: 2026-09-15
 ---

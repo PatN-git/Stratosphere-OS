@@ -8,12 +8,12 @@
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
       "timestamp": "2026-07-15",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     "assets/templates/constitution/GEMINI.md": {
       "sha256": "cfbf783d541a9abca6f7b2eb2eebddaee4969aabbd68ba6bd3b8178988c0c841",
       "timestamp": "2026-07-15",
-      "version": "1.1.0"
+      "version": "1.2.0"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
       "sha256": "b7b82515c46995c6172e75deda06ee4b858e7d1b5689c61f660e614272f5a35f",
@@ -23,7 +23,7 @@
     "assets/templates/memory/BACKLOG_MAP.md": {
       "sha256": "93ecb65da96ce340add1452133470a53eb7db7b97af87419996e56d3f42a09e8",
       "timestamp": "2026-07-17",
-      "version": "1.2.0"
+      "version": "1.3.0"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
@@ -323,7 +323,7 @@
     "skills/concept-brainstorm/SKILL.md": {
       "sha256": "624e09595f2d8dbb94854f4318a558ff373cd8223a662aad0f63002c30f7e66c",
       "timestamp": "2026-07-24",
-      "version": "1.4.1"
+      "version": "1.5.0"
     },
     "skills/concept-brainstorm/references/techniques.md": {
       "sha256": "00cf966dd2c058066bebc05aa08a3876048775393ab2cb81200e6c73631e06f4",
@@ -333,17 +333,17 @@
     "skills/load-memory/SKILL.md": {
       "sha256": "c1449c0dcac8957287c5a5916dcfb4ff7f6ab688b900f386c97829cf91261ecc",
       "timestamp": "2026-07-17",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "2b5a7f1f347794087ca3059e08e6f5897b34ba72cafe5467a25a1d6148b4ac29",
       "timestamp": "2026-07-15",
-      "version": "1.1.2"
+      "version": "1.2.0"
     },
     "skills/plan-html/SKILL.md": {
       "sha256": "3c472473264a00c6c540bfcbca25946596e44fabeea5ad2419e8670b5dc5f6ef",
       "timestamp": "2026-06-25",
-      "version": "1.1.4"
+      "version": "1.2.0"
     },
     "skills/plan-html/assets/templates/index.md": {
       "sha256": "25849d50081b1a81bef868c540d2a6cd401ecdb5a9c1cec259f3a60b4dd06351",
@@ -363,7 +363,7 @@
     "skills/stratosphere-setup/SKILL.md": {
       "sha256": "a1bf0e8a4c9dea2cfd301f3f9e85601b03f46c2c381f2fdd985fffc7b71ce6d6",
       "timestamp": "2026-07-28",
-      "version": "1.0.14"
+      "version": "1.1.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
@@ -373,7 +373,7 @@
     "skills/stratosphere-update/SKILL.md": {
       "sha256": "1f8761272a91fc513fb48b270d773f3e783ef8b1514692bbeb4d6361422fc587",
       "timestamp": "2026-07-28",
-      "version": "1.0.8"
+      "version": "1.1.0"
     },
     "skills/sync-skills/SKILL.md": {
       "sha256": "608446665c47980ff8970952ef4852a6dd4ba9ec94dd247047346ef0d09a74d3",

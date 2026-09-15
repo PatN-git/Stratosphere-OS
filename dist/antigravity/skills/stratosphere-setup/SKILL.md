@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.14"
+version: "1.1.0"
 timestamp: 2026-07-28
 ---
 
