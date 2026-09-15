@@ -123,7 +123,12 @@ Carve `docs/discovery/*.map.md` out of `discovery-brief`'s `docs/discovery/*.md`
 - `.memory/`: `status`, `backlog`, `learnings`, `glossary`, `architecture`, `database-schema`, `design-rules`, `design`
 - `docs/`: `prd`, `discovery-brief`, `research`, `interface-design`, `design-doc`, `roadmap`, `audit-report`, `concept-map`, `plan`, `proposal`
 
-**Template exception (discovered in execution).** A template that *mints* an in-scope document carries the **emitted document's** `type:` — `src/memory-templates/*` and `src/references/*template*`. That is the artifact's type, not the template's, and it stays. Only framework artifacts lose `type:`: constitution, rules, skills, the 3 drivers, and the 3 non-template references.
+**Seed vs skeleton (discovered in execution).** Two template families, only one of which legitimately carries `type:`:
+
+- **Seeds — `src/memory-templates/*`:** real values (`title: Status`, real dates), copied wholesale into `.memory/` and valid documents on landing. The template **is** the artifact's first version. `type:` stays. ✅ done in this slice.
+- **Skeletons — `src/references/*template*`:** placeholder values (`timestamp: <YYYY-MM-DD>`, `status: draft | approved | superseded` — an enum listing, not a value). Never valid documents, and out of bundle scope, so their `type:` asserts something false. **Restructured in Slice 5**, not here.
+
+Only framework artifacts lose `type:` in this slice: constitution, rules, skills, the 3 drivers, and the 3 non-template references.
 
 `src/workflows/*` keep `type: workflow HITL|AFK` until **Slice 8** converts them to `metadata.stratos.layer`+`.mode`; Slice 1 names that field as the conversion source.
 
@@ -296,6 +301,8 @@ Add a detection phase to `src/commands/stratosphere-update/` directing the user 
 2. **Assert a non-zero file count** so an empty walk fails loudly.
 3. Update **both** `required` sets — lines 60 **and** 68.
 4. Spec-name check: regex + `name` == parent dir.
+4b. **Validate `type:` against the 18-entry registry.** `validate_memory.py:425` only checks presence — an unregistered value passes clean, which is how 8 unregistered types accumulated while `okf-protocol.md` §3 said *"Agents must never invent or use a type silently."* Without this, Slice 3 decays the same way.
+4c. Wire `python scripts/place-dev-skills.py --check` into CI so the dev-skill copies cannot drift from `src/dev-skills/`.
 5. **Link integrity resolved from the skill directory**, not repo root, or it passes paths broken at runtime (Slice 9 §B).
 6. `skills-ref validate` ([agentskills/agentskills](https://github.com/agentskills/agentskills/tree/main/skills-ref)). Confirm install method before wiring in.
 7. Reserved-name guard in `sync_skills.py`.
