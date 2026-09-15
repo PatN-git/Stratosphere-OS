@@ -2,8 +2,8 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "1.5.0"
-timestamp: 2026-07-15
+version: "2.0.0"
+timestamp: 2026-09-15
 ---
 
 # Improving Workflows & Skills
@@ -16,45 +16,48 @@ Consult it when: writing a new skill/workflow, editing one, or running a pruning
 
 ---
 
-## 1. Two artifact types — know which you're editing
+## 1. Two artifact kinds — know which you're editing
 
-The single most important distinction, because the rules below (especially §2 extraction) depend on it. A **skill** is self-sustaining discipline; a **workflow** is a user-driven orchestrator.
+Both install to the same place. The distinction is **frontmatter, never location**. A **lifecycle skill** orchestrates a phase and is user-driven; an **execution skill** is self-sustaining discipline.
 
-| | **Skill** (`src/skills/`) | **Workflow** (`src/workflows/`) |
+| | **Lifecycle skill** (`src/workflows/`) | **Execution skill** (`src/skills/`) |
 |---|---|---|
-| Installs as | `dist/*/skills/` — **registers globally** | a `/` **command** (`commands/`; Antigravity surfaces `.agents/workflows/`) |
-| Invoked by | model **or** user, via its `description` | **user only** — the channel enforces it |
-| Runs where | **any** project, even unscaffolded | only inside a **scaffolded** StratOS project |
-| Dependencies | **must be self-contained** — no project-local refs | **may cite** `.agents/workflows/.reference/*` |
-| Role | self-contained discipline; reusable everywhere | orchestrates a phase; **may delegate to skills** |
-| `disable-model-invocation` | **not used in this repo** (a Claude Code field) — tune auto-fire via `description`; front a user-only skill with a workflow launcher | N/A — a command is already user-only |
-| `trigger:` frontmatter | inert — the **`description`** drives invocation | inert — documentation only |
+| Installs as | `.agents/skills/<name>/SKILL.md` (+ `.claude/skills/`) — `/<name>` on every host | same path, same shape |
+| `metadata.stratos.layer` | `lifecycle` | `execution` |
+| `metadata.stratos.mode` | `HITL` or `AFK` | — |
+| Invoked by | **user only** — enforced by frontmatter, not by channel | model **or** user, via its `description` |
+| Runs where | only inside a **scaffolded** StratOS project | **any** project, even unscaffolded |
+| Dependencies | ships its own `references/` (fanned out at build) | **must be self-contained** |
+| Role | orchestrates a phase; **may delegate to** execution skills | reusable discipline |
 
 **Consequences you'll keep hitting:**
-- A skill can fire in a project that was never scaffolded, so it **cannot depend on a scaffolded file** — bundle its discipline inline.
-- A workflow always runs in a scaffolded project, so it **can and should** point at shared references instead of duplicating them.
-- Don't add `disable-model-invocation` at all — no artifact in this repo uses it; to tune whether a *skill* auto-fires, edit its **`description`**, not `trigger:` (see the Frontmatter contract below).
+- An execution skill can fire in an unscaffolded project, so it **cannot depend on a scaffolded file** — bundle its discipline inline.
+- Both kinds live in `.agents/skills/`. To tell them apart, read `metadata.stratos.layer`. Never infer from the path.
+- `AGENTS.md` §2 precedence keys off `layer`. An artifact without one cannot be placed in the precedence order.
 
 ### Frontmatter contract
 
-Every artifact declares OKF frontmatter. Required keys and the invocation levers:
-
-| | Skill | Workflow |
+| | Lifecycle skill | Execution skill |
 |---|---|---|
-| Required keys | `name`, `type: skill`, `description`, `version`, `timestamp` | those + `type: workflow <MODE>` and `trigger:` |
-| `type` value | `skill` (plain) | `workflow HITL` or `workflow AFK` — the execution **mode**, not a status |
-| Invocation lever | the **`description`** — the model reads it to decide whether to fire | the command **channel** (user-only) + a documentary `trigger:` line |
+| Required | `name` (== parent dir, `^[a-z0-9]+(-[a-z0-9]+)*$`), `description` (≤ 1024 chars) | same |
+| Invocation | `disable-model-invocation: true` + `triggers: ["user"]` + `agents/openai.yaml` sidecar | omit all three |
+| `metadata` | `stratos.layer: lifecycle`, `stratos.mode: HITL\|AFK`, `stratos.version` | `stratos.layer: execution`, `stratos.version` |
 
-- **This repo does not use `disable-model-invocation`.** It's a real Claude Code field, but here a skill's auto-fire is tuned entirely through its **`description`**: write it to say when the skill should — and shouldn't — fire. To make a skill user-only, say so in the description (e.g. *"invoke only on explicit user request — never autonomously"*) and front it with a **workflow** launcher (below). Don't add the field.
-- **`trigger:` is documentary/inert** but conventional on every workflow: `trigger: User. Do not run autonomously.` The command channel is what enforces user-only.
-- **Status/maturity (e.g. "experimental") lives in the `description`, never in `type`.** `type` is artifact-kind + mode only.
+- **This repo DOES use `disable-model-invocation`.** It was previously unnecessary because workflows compiled to slash commands, which the model could not auto-fire. Claude Code has since merged commands into skills, so the field is now **the only thing enforcing user-only invocation** on Claude Code, Cursor and OpenClaw. Devin needs `triggers: ["user"]`; Codex needs the `agents/openai.yaml` sidecar. Emit all three.
+- **Antigravity honours none of them.** It reads only `name` and `description`. Every lifecycle skill's `description` must restate its user-only status — a prompt-level signal, **not enforcement**. See `AGENTS.md` §8.
+- **No OKF `type:` on either kind.** `src/` is outside the OKF bundle scope (`okf-protocol.md` §1). Status/maturity lives in the `description`.
+- **`trigger:` is retired on skills.** It survives only on `.agents/rules/*` files.
+
+### Shared references fan out — that is not duplication
+
+A reference used by several skills is authored **once** in `src/references/` and **copied into each consuming skill's `references/`** at build time. `confidence-scale.md` lands in five skill directories; `github-issue-relations.md` in five. This satisfies §2's single-source-of-truth rule — the source is single, the copies are generated and never hand-edited. Editing an emitted copy is the error, not the copy's existence.
 
 ### Distribution — bundled vs on-demand (and where a launcher must live)
 
 - **Bundled skills** live in `src/skills/` → build → `dist/*/skills/`; they ship with the plugin and register globally.
 - **On-demand packs** (opt-in / experimental) live in `src/experimental/<name>/`, are registered in `external-skills.json`, and are fetched by **`sync-skills`** into `.agents/skills/<name>/`. `build/validate.py` guards that no `experimental/` path leaks into `dist/`.
-- **`sync_skills.py` installs by *name* under `.agents/skills/<name>/` only** — its `targetPath` field is cosmetic and it *cannot* place a file into `.agents/workflows/`. A skill fetched this way is invocable by name but has **no slash command on Antigravity**.
-- **A slash-command launcher must therefore be a bundled workflow in `src/workflows/`** that delegates to the skill (workflows may delegate to skills — §1; point, don't duplicate — §2). Claude Code registers the plugin command globally; for Antigravity, add the workflow's basename to `scaffold.py`'s `EXTRA_WORKFLOWS` so it's copied into the project's `.agents/workflows/`.
+- **`sync_skills.py` installs by *name* under `.agents/skills/<name>/`** — the same namespace bundled lifecycle skills occupy. A fetched pack is therefore `/<name>`-invocable on every host, including Antigravity. `sync_skills.py` carries a **reserved-name guard**: it must never overwrite a bundled skill directory.
+- **A bundled launcher is now optional, not structural.** An on-demand pack is directly invocable once fetched, so a launcher earns its place only by existing when the pack does **not** — e.g. `3x-jules-dispatch`, which tells the user to run `/sync-skills`. Name it distinctly from the pack it fronts.
 
 ## 2. Shared components over duplication — propose the refactor
 
@@ -69,8 +72,8 @@ Keep each meaning in **one place** (**single source of truth**). Duplication cos
 3. **Propose the refactoring — don't silently rewrite.** State *what* to extract, *where* it lives, *who points at it*; get approval (especially for load-bearing content); then extract, repoint consumers, rebuild.
 
 ### Where it lives — and which artifact may use it (ties to §1)
-- **Shared reference → `src/references/*`** → builds/scaffolds to `.agents/workflows/.reference/<name>.md`. **Workflows** cite it by that installed path; consumers **point, never re-paste, never cross-read another workflow's body**. Fix a weak **context pointer**'s *wording*, don't inline.
-- **Skills can't use that path** (they run unscaffolded — §1). Instead of extracting a skill's content to a project-local file, **have the workflow delegate to the skill** and keep the skill self-contained.
+- **Shared reference → `src/references/*`** → fans out to `.agents/skills/<consumer>/references/<name>.md`. Skills cite it by that path; consumers **point, never re-paste, never cross-read another skill's body**. Fix a weak **context pointer**'s *wording*, don't inline. **When the citation is passed to an isolated subagent, use the absolute `.agents/skills/<name>/references/<file>.md`** — a relative path resolves against repo-root cwd and fails silently.
+- **Execution skills can't rely on a scaffolded path** (§1). Instead of extracting their content to a project-local file, **have the lifecycle skill delegate to the execution skill** and keep the latter self-contained.
 
 ### Worked examples in this repo
 - ✅ `confidence-scale.md` — one rubric shared by `4a` + `4b` (each adds a one-line audit-scope; the bands live once).
@@ -102,14 +105,14 @@ They read like over-statement but are the lever. Do **not** cut, dilute, summari
 - **Safety / irreversible-action invariants** — branch checks, "don't modify production code", PR-dup guards. Keep them universal — don't narrow one to sub-agent scope only.
 - **Sub-agent guardrails** (§2) — a dispatched sub-agent runs isolated and never sees surrounding prose; the guardrail is its **entire contract**. Keep every copy, verbatim.
 - **Leading-word tokens** — `[UNCOVERED]`, `seam`, `depth`, `[[G-xxx]]`/`[[A-xxx]]`/`[[DR-xxx]]`. Keep the **exact token**, never a synonym; never drop a `[[…]]` reference.
-- **Context-pointer paths** — cite the full installed path (`.agents/workflows/.reference/<name>.md`, `.agents/rules/okf-protocol.md`), not a bare basename.
+- **Context-pointer paths** — cite the full installed path (`.agents/skills/<name>/references/<file>.md`, `.agents/rules/okf-protocol.md`), not a bare basename.
 
 ### Over-prune — the anti-pattern (guard against each)
 **Over-prune** = cutting or diluting a protected class under the guise of economy. Real regressions seen in practice:
 - deleting a sub-agent guardrail because it "looks redundant";
 - collapsing an exhaustive output/completion contract to a summary fragment ("map every X…" → "check coverage");
 - swapping a leading-word token for a synonym, or dropping a `[[…]]` reference;
-- shortening a context-pointer to a bare basename (`per .agents/…/okf-protocol.md` → `per okf-protocol`);
+- shortening a context-pointer to a bare basename (`per .agents/rules/okf-protocol.md` → `per okf-protocol`);
 - narrowing a universal safety invariant to sub-agent scope only;
 - rewriting a file from a **stale base** (version moves sideways/backward) instead of editing in place — clobbers newer content;
 - introducing an inaccuracy while compressing (a claim the body contradicts, e.g. describing a HITL-gated loop as "without human gating");
@@ -138,5 +141,5 @@ Perform a systematic, word-level economy pass on every sentence. Prune words tha
 
 ## 5. Mechanics
 
-- Edit `src/` only — never hand-edit `dist/`. Rebuild via `python build/build.py`; confirm `build/validate.py` + the install-harness are green. Bump OKF `version` + `timestamp` on every changed file.
+- Edit `src/` only — never hand-edit `dist/`. Rebuild via `python build/build.py`; confirm `build/validate.py` + the install-harness are green. Bump `version` once per PR on every changed file. `timestamp:` stays on `src/` files (build field); in-scope `.memory/`+`docs/` documents use `generated: {by, at}` instead (`okf-protocol.md` §2).
 - This folder is `docs/`-only: it never ships, so it may need not be self-contained against the repo — but it **is** self-contained as a pair (playbook + `glossary.md`), so an author needs nothing else open.

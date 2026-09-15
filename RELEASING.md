@@ -41,3 +41,24 @@ This document describes how to release a new version of the StratosphereOS plugi
 - **Derived Bumps:** Because most routine framework updates consist of bug fixes and minor logic corrections, they will result in `PATCH` bumps. Most derived plugin releases will therefore be patch (`Z`) bumps (e.g., `v1.1.0` -> `v1.1.1`), which is the expected and correct behavior.
 - **Non-Artifact Framework Changes:** Changes to non-`.md` framework files (e.g. `scaffold.py`, `.github` Action workflows, build configurations, and scripts under `build/` or `scripts/`) are not versioned via YAML frontmatter. Therefore, `release.py` will not derive an automatic version bump from them. When making such changes, you MUST manually bump the `VERSION` variable in `build/build.py` (and the README.md version badge) to ensure a new release is cut and preflight checks flag it for downstream projects.
 - **First Release Note:** The very first release of the project (`v1.1.0`) was cut manually to establish a baseline. All subsequent versions must be derived and staged via `release.py` prior to merging to `main`.
+
+## v4.0.0 — breaking release
+
+v4.0.0 renames every lifecycle artifact to Agent Skills spec form (`_` → `-`) and moves
+them from `.agents/workflows/*.md` to `.agents/skills/<name>/SKILL.md`. **There are no
+alias shims** — `/0a_start-session` stops resolving; use `/0a-start-session`.
+
+Existing projects need a one-shot migration. `stratosphere-update` alone is **not**
+sufficient: `reconcile_gitignore()` only adds entries, so an upgraded project keeps
+`.agents/skills/` in its `.gitignore` and silently ignores every migrated skill.
+
+```bash
+# from the target project root, after updating the plugin
+python <plugin>/scripts/migrations/migrate_v3_to_v4.py --dry-run   # review the diff
+python <plugin>/scripts/migrations/migrate_v3_to_v4.py
+```
+
+It rewrites the stale `.gitignore` entry, removes the superseded `.agents/workflows/`
+tree (sparing user-authored files), and migrates the project's own `.memory/` and
+`docs/` frontmatter to OKF v0.2. It is idempotent and defaults to `--dry-run`, in the
+same shape as `scripts/migrations/migrate_agent_to_agents.py`.

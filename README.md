@@ -13,7 +13,7 @@
 ## Table of Contents
 - [Why StratosphereOS?](#why-stratosphereos)
 - [Workspace Directory Structure](#workspace-directory-structure)
-- [Lifecycle Commands Matrix](#lifecycle-commands-matrix)
+- [Lifecycle Skills Matrix](#lifecycle-skills-matrix)
 - [Getting Started (Installation)](#getting-started-installation)
 - [Architecture & Governance](#architecture--governance)
 
@@ -53,9 +53,9 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 
 ---
 
-## Lifecycle Commands Matrix
+## Lifecycle Skills Matrix
 
-StratosphereOS provides structured slash commands spanning the entire development lifecycle.
+StratosphereOS provides structured lifecycle skills spanning the entire development lifecycle. Each installs to `.agents/skills/<name>/SKILL.md` and is invoked as `/<name>` on Claude Code, Antigravity, Cursor, Codex, Devin and OpenClaw.
 
 | Stage | Command | Purpose & Rationale | Reads | Produces |
 |:---|:---|:---|:---|:---|
@@ -98,7 +98,7 @@ After installing the plugin, restart your app or agent session, navigate to your
 ```text
 /stratosphere-setup
 ```
-This interactive command bootstraps the initial `.memory/` state layer, constitution files, and domain skills for new projects.
+This interactive skill bootstraps the initial `.memory/` state layer, constitution files, and domain skills for new projects.
 
 ### 3. Upgrading Framework Files (Updating)
 To upgrade an already-instantiated project to later plugin versions, run:

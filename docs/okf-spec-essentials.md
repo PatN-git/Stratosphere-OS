@@ -1,24 +1,44 @@
 ---
 title: OKF Spec Essentials
 description: Condensed capture of the normative OKF spec for diffing StratosphereOS conformance against future releases.
-version: "1.0.1"
-timestamp: 2026-06-18
+version: "2.0.0"
+timestamp: 2026-09-15
 ---
 
-# OKF v0.1 — Spec Essentials (reference)
+# OKF v0.2 — Spec Essentials (reference)
 
 > **Why this file exists:** a faithful, condensed capture of the normative parts of
-> Open Knowledge Format **v0.1** so that StratosphereOS's OKF conformance can be
+> Open Knowledge Format **v0.2** so that StratosphereOS's OKF conformance can be
 > diffed against future spec releases. When OKF publishes a new version, compare it
 > against this file and update the "Impact on StratosphereOS" notes.
 >
-> - **Source spec:** https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf (`SPEC.md`, `README.md`)
+> - **Source spec:** https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
+>   (moved from the retired `knowledge-catalog/okf` path)
 > - **Announcement:** https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing/
-> - **Spec version captured:** `0.1`
-> - **Captured:** 2026-06-16
+> - **Spec version captured:** `0.2` (released 2026-07-25)
+> - **Captured:** 2026-09-15
 > - **Owner:** Google Cloud Data Cloud team (open, vendor-neutral spec)
 
 ---
+
+## What changed in v0.2
+
+Additive and backward-compatible, with **two deliberate supersessions**:
+
+| v0.1 | v0.2 | StratOS impact |
+|:---|:---|:---|
+| `timestamp:` (scalar) | **`generated: {by, at}`** (nested mapping) | Every in-scope doc migrates. A mechanical key rename yields invalid YAML. `by` = the invoking workflow. |
+| body `# Citations` / `## Sources` | **`sources:`** (frontmatter list) | Research templates move their `## Sources` block up into frontmatter. |
+
+**Five new optional trust-signal families.** `type` remains the only required field:
+
+- **Provenance** — `sources[]`, each requiring `resource`; optional `id`, `title`, `author`, `usage_count`, `last_modified`, `usage_window`.
+- **Trust** — `generated: {by, at}` and `verified: [{by, at}]` (multiple independent checks).
+- **Lifecycle** — `status: draft | stable | deprecated`. **v0.1 was value-agnostic here; v0.2 is not.** This is what retired StratOS's `draft | approved | superseded` enum.
+- **Freshness** — `stale_after`, an absolute ISO 8601 instant; stale when `now >= stale_after`.
+- **Attestation** — `runtime`, `parameters`, `computation`, `executor`, `attester`. **Not adopted by StratOS** — built for attested computation over data assets; no use case here. Recorded so it is not re-litigated.
+
+`okf_version` placement is unchanged: a bundle-root `index.md` MAY carry it, and nothing else may.
 
 ## Core model
 

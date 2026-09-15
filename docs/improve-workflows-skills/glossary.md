@@ -2,8 +2,8 @@
 type: reference
 title: Improving Workflows & Skills — Lexicon
 description: Self-contained lexicon for authoring StratOS skills/workflows — discipline terms + the leading-word palette (the tokens to use, and the synonyms to avoid). Companion to README.md.
-version: "1.2.0"
-timestamp: 2026-07-09
+version: "2.0.0"
+timestamp: 2026-09-15
 ---
 
 # Lexicon — Improving Workflows & Skills
@@ -18,6 +18,12 @@ Use these as **leading words**: the same term here, in your prompts, and in your
 
 The vocabulary of the playbook itself.
 
+- **Skill** — the only artifact kind StratOS ships. A directory `…/skills/<name>/` holding `SKILL.md`, optionally `references/`, `scripts/`, `assets/`. Invocable as `/<name>` on every supported host. *Avoid:* "workflow file", "command file".
+- **Lifecycle skill** — a skill with `metadata.stratos.layer: lifecycle`; orchestrates a phase, user-invoked, authored in `src/workflows/`. What older docs called a **workflow**.
+- **Execution skill** — a skill with `metadata.stratos.layer: execution`; self-contained discipline, model- or user-invoked, authored in `src/skills/`.
+- **Command** — **retired.** Claude Code merged commands into skills; `.claude/commands/x.md` and `.claude/skills/x/SKILL.md` both produce `/x`. Do not describe any StratOS artifact as a command. *Avoid:* slash command, command channel.
+- **Trigger** — now **rules-only** (`.agents/rules/*`): `always_on | glob | model_decision`. On a skill, invocation is declared by `disable-model-invocation`, `triggers: ["user"]`, and the Codex `agents/openai.yaml` sidecar — never by `trigger:`.
+- **Mode** — `metadata.stratos.mode: HITL | AFK`; how a skill runs *after* invocation. Orthogonal to **layer**, and never part of precedence.
 - **Predictability** — the agent takes the same *process* every run (not the same output). The root virtue; cost and maintainability are symptoms of it.
 - **Leading word** — a compact, pretrained concept reused as a token (never restated as a sentence); encodes a behaviour in the fewest tokens by recruiting priors the model already holds.
 - **Completion criterion** — the condition that tells the agent a step is done; strong ones are *checkable* (done vs not-done is decidable) and *exhaustive* (covers every case).
