@@ -164,6 +164,14 @@ One-off throwaway script (I7). Single PR (I6).
 
 Templates carry the frontmatter that lands in artifacts. Fix the machinery, not just existing files.
 
+**Restructure the 6 skeleton templates to the pattern `health-audit-report-template.md` already uses** — own frontmatter (`description`, `version`, `timestamp`, real build values, **no `type:`**) plus a **fenced body block** carrying the artifact's frontmatter, which the workflow instantiates. Affects `PRD-template`, `ROADMAP-template`, `concept-map-template`, `design-doc-template`, `discovery_brief_template`, `research-competitive-template`, `research-problem-template`.
+
+Solves five findings **by construction** rather than as separate patches: the `name:` leak, the hardcoded literal dates, **`version:` being dual-purpose** (`validate.py:115-121` requires it as a *build* field while the same value lands in the artifact — bumping a template silently rewrites every future PRD's version), the duplicate-key bug from "Prepend OKF `type: X`", and skeleton files failing any linter that walks `src/` (`timestamp: <YYYY-MM-DD>` is not a date).
+
+**Verified safe:** nothing locates a document by `type:` — discovery is path/glob-based throughout, and `validate_memory.py:425` checks presence without branching on the value. `type:` serves external OKF consumers only.
+
+The per-template defects below are what the restructure must eliminate:
+
 | Target | Defect | Fix |
 |:---|:---|:---|
 | `ROADMAP-template.md:1-7` | Leaks `name: ROADMAP-template`, `version: "1.0.1"`, **`timestamp: 2026-07-10` — a hardcoded literal date** | Drop `name`; add `title: Product Roadmap`; `version` → runtime plugin version (OKF §5); `timestamp` → `generated: {by, at}` |
