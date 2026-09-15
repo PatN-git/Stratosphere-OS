@@ -42,7 +42,7 @@ Do not modify files without user approval.
   - **Special-case `docs/knowledge/`**: List one entry per source bundle (`docs/knowledge/<source>/` subdirectory).
 
 ## Phase 3.6: Planning-State Advisor
-Recommend the next planning workflow from backlog state. Read-only; never run a planning workflow autonomously.
+Recommend the next planning skill from backlog state. **Read-only. Emit the recommendation as text only — never invoke the recommended skill, and never invoke any lifecycle skill from this phase.** The `/<name>` forms below are output for a human to read and type. On Antigravity nothing prevents a model from acting on them, so this guard is the only protection: recommend, then stop.
 
 1. **Base state:** parse `.memory/BACKLOG_MAP.md` rows where `status != done`.
 2. **Ground-truth against GitHub:** run `gh auth status`.
@@ -62,9 +62,9 @@ Recommend the next planning workflow from backlog state. Read-only; never run a 
    | ≥2 `tier:epic` unassigned to a release (milestone empty/`-`/`—`, or ID absent from `docs/ROADMAP.md`) | `/3a-version-planning` |
    | `docs/ROADMAP.md` absent and ≥1 `tier:epic` exists | `/3a-version-planning` — initialize roadmap |
    | none of the above | *"Backlog healthy — no planning action pending."* |
-4. **Output** the top recommended command (first match), the signal that fired it **naming every `BT-<padded>` involved**, then a one-line **"also pending:"** list of any lower-priority signals that also match (so a running sprint never hides that epics need roadmapping), plus any `[DRIFT]` lines and the `[local-only]` tag. Never summarize as "some features".
+4. **Output** the top recommended skill (first match), the signal that fired it **naming every `BT-<padded>` involved**, then a one-line **"also pending:"** list of any lower-priority signals that also match (so a running sprint never hides that epics need roadmapping), plus any `[DRIFT]` lines and the `[local-only]` tag. Never summarize as "some features".
 
-_Completion criterion:_ one top recommendation (or the healthy no-op) **plus** the also-pending list emitted; every cited signal names its `BT-<padded>` IDs; drift and local-only state surfaced. This phase invokes no planning workflow.
+_Completion criterion:_ one top recommendation (or the healthy no-op) **plus** the also-pending list emitted; every cited signal names its `BT-<padded>` IDs; drift and local-only state surfaced. This phase invokes no lifecycle skill. Emitting a `/<name>` string is not invocation.
 
 ## Phase 4: Await Direction
 Halt. Ask user: *"What aspects of the plan do you want to implement?"*

@@ -13,7 +13,7 @@ timestamp: 2026-07-24
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 
 ## Phase 0: Load Memory
-Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Scope
 
@@ -28,12 +28,12 @@ _CONSTRAINTS:_
 - Do not write refactored code.
 
 ## Phase 2: Deep Scan & Confidence
-**Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (Antigravity `invoke_subagent` or Claude Code `Task` general-purpose) for Phase 2.
+**Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (using the host's subagent mechanism) for Phase 2.
 - **Resolve targets first:** in the parent, enumerate the target directory's files and pass the explicit list; the subagent reads the named files and must not sweep to locate them (never ingest the whole repo).
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
 
-_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, and `.agents/workflows/.reference/confidence-scale.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, and `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix
@@ -56,7 +56,7 @@ _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgica
 
 ## Confidence scale & reporting threshold
 **Audit scope:** structural architectural drift, domain-boundary violations, scalability/maintainability risks, and repeated violations of documented system rules. A Report-grade (≥80) finding looks like structural drift, a leaked seam, or an ignored documented architecture rule (`[[A-xxx]]`/`[[DR-xxx]]`).
-Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.reference/confidence-scale.md`; report only ≥ 80.
+Score findings 0–100 per the **Audit scope** above and `references/confidence-scale.md`; report only ≥ 80.
 
 ## Clean Exit Rule
 - *Collision Check:* Drop any detected issue that collides with an in-progress issue in `.memory/BACKLOG_MAP.md` (same components/directory affected).
@@ -65,7 +65,7 @@ Score findings 0–100 per the **Audit scope** above and `.agents/workflows/.ref
 
 ## Phase 3: Output
 If issues ≥ 80 confidence exist:
-1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `.agents/workflows/.reference/issue-templates.md`.
+1. Generate `.tmp/refactor-proposal.md` formatted strictly as "Template B" from `references/issue-templates.md`.
 2. CONSTRAINT:
 - Generate only after confidence filtering and backlog collision checks complete.
 - Use double-bracket syntax to link back to the exact system laws violated:

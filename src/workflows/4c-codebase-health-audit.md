@@ -15,12 +15,12 @@ timestamp: 2026-07-27
 Broad periodic health screen — covers full codebase, produces impact-categorized report, halts for user review. Developer drives fixes.
 
 > [!IMPORTANT]
-> **Read-only.** Never modify production code, create issues, commit, or push. Single artifact: `docs/audits/health-<YYYY-MM-DD>.md`.
+> **Read-only outside `docs/audits/`.** Never modify production code, create issues, commit, or push. It owns exactly one directory: it writes `docs/audits/health-<YYYY-MM-DD>.md` and prunes reports there past the retention window (Phase 4). Do not describe this skill as purely read-only — it deletes files.
 
 ---
 
 ## Phase 0: Load Memory
-Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+Run the `load-memory` skill to restore session context (read-only).
 
 ---
 
@@ -69,12 +69,12 @@ Invoke 3 subagents in parallel. Parent resolves all inputs and passes explicitly
 - Explicit file list for assigned scan targets
 - `priority_files` from Phase 1.2
 - `.memory/LEARNINGS.md`
-- Confidence threshold: **≥60** (overrides default ≥80 in `.agents/workflows/.reference/confidence-scale.md`)
+- Confidence threshold: **≥60** (overrides default ≥80 in `.agents/skills/4c-codebase-health-audit/references/confidence-scale.md`)
 
 **Guardrail (inject into every subagent):**
 > "Scan and report findings only. Do not modify any file. Do not create, commit, or push. Return findings to parent."
 
-**Scan matrix:** `.agents/workflows/.reference/health-audit-scan-matrix.md`
+**Scan matrix:** `.agents/skills/4c-codebase-health-audit/references/health-audit-scan-matrix.md`
 
 | Subagent | Passes |
 |:---|:---|
@@ -94,7 +94,7 @@ Parent merges findings from all 3 subagents:
 Same file + approximate line range across passes → keep both (different diagnoses), link: `Related: [pass] finding at <file>:<line>`.
 
 ### 3.2 Categorize by Impact
-Apply impact categories from `.agents/workflows/.reference/health-audit-report-template.md` (Critical → High → Medium → Low).
+Apply impact categories from `references/health-audit-report-template.md` (Critical → High → Medium → Low).
 
 ### 3.3 Apply Recent-Change Lens
 Tag findings on `priority_files` with `[RECENT]`.
@@ -106,7 +106,7 @@ Drop findings below 60.
 
 ## Phase 4: Report Generation
 
-Follow `.agents/workflows/.reference/health-audit-report-template.md` for report structure, impact table, and `.last-run.json` schema.
+Follow `references/health-audit-report-template.md` for report structure, impact table, and `.last-run.json` schema.
 
 ### 4.1 Write Report
 Path: `docs/audits/health-<YYYY-MM-DD>.md`

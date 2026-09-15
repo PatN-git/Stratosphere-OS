@@ -151,6 +151,23 @@ def check_lockfile(skills_base, chosen_skills, lockfile_path, force):
     return True, []
 
 
+def assert_not_reserved(target_dir, skills_base):
+    """Refuse to write over a bundled lifecycle skill.
+
+    Bundled skills and on-demand packs share `.agents/skills/`. Nothing in
+    external-skills.json is trusted to stay clear of a lifecycle name, so a
+    registry entry targeting e.g. `3d-implement-issue` would clobber it.
+    A bundled skill is identifiable by its metadata.stratos.layer.
+    """
+    skill_md = target_dir / "SKILL.md"
+    if skill_md.exists():
+        head = skill_md.read_text(encoding="utf-8", errors="ignore")[:2000]
+        if "stratos.layer: lifecycle" in head:
+            raise SystemExit(
+                f"REFUSED: {target_dir.name} is a bundled lifecycle skill. "
+                f"Fix the targetPath in external-skills.json.")
+
+
 def write_pack_gitignore(skills_base, lockfile_path):
     """Ignore only on-demand packs; bundled lifecycle skills stay tracked.
 
@@ -262,6 +279,7 @@ def fetch(entry, skills_base, dry, lockfile_path):
             url = f"{base}/archive/{ref}.zip"
 
     target_dir = skills_base / name
+    assert_not_reserved(target_dir, skills_base)
     if dry:
         return "dry", f"{name}: would pull {url} [{sub}] -> {target_dir.as_posix()}"
 

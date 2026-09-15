@@ -14,13 +14,13 @@ timestamp: 2026-07-28
 
 **Purpose:** Deconstruct complex, multi-session ideas into dependency-ordered tracker tickets, resolving one per session to converge to discovery brief.
 
-**Hand-off contract:** Composes `/1a-research` and tracker operations in `.agents/workflows/.reference/concept-map-operations.md`. Converges to discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`).
+**Hand-off contract:** Composes `/1a-research` and tracker operations in `references/concept-map-operations.md`. Converges to discovery brief (`docs/discovery/<slug>.md`, type `discovery-brief`).
 
 ---
 
 ## Phase 0: Resume & Route
 
-1. **Hydrate:** Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+1. **Hydrate:** Run the `load-memory` skill to restore session context (read-only).
 2. **Discover Open Maps:** Query open concept maps:
    - **GitHub CLI:** `gh issue list --label concept:map --state open`
    - **BT-LOCAL Fallback:** Scan `docs/discovery/*.map.md` for open maps.
@@ -34,11 +34,11 @@ timestamp: 2026-07-28
 1. **Destination:** Define destination and scope.
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
 3. **Register Map:**
-   - **GitHub CLI:** Create `concept:map` issue using `.agents/workflows/.reference/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (status: `in progress`, milestone-exempt).
+   - **GitHub CLI:** Create `concept:map` issue using `references/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (status: `in progress`, milestone-exempt).
    - **BT-LOCAL Fallback:** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`).
-   - Link as sub-issues and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `.agents/workflows/.reference/github-issue-relations.md`.
+   - Link as sub-issues and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `references/github-issue-relations.md`.
 5. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
 ---

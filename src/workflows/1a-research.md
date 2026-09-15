@@ -75,7 +75,7 @@ Maintain work file to track progress.
 2. **Gather & Tag:** per sub-query: read sources, extract findings, assign confidence, append to `## Findings`, increment queries count.
 3. **Verify/Refute:** for `[HIGH]` confidence or decision-driving claims, verify citation URLs.
     - **Budget Tracking:** compute `remaining = 24 - issued`. If `remaining <= 0` → skip refutation, mark affected claims per the Loop Budget Cap rule, and do not spawn a subagent.
-    - **Audit:** Invoke a subagent (via Antigravity invoke_subagent or Claude Code Task general-purpose) for skeptical pass. Input: `[HIGH]`/decision-driving claims, sources. Constraint: "Use at most `remaining` search queries. Fetch URLs to confirm they resolve and support claims. Return verdicts + queries_used as JSON per-claim: {verdict: survived|refuted|downgraded, url_resolves: bool, content_supports_claim: yes|partial|no, supporting_excerpt: str, sources, queries_used} + total_queries_used. Do not write any file (parent owns the work file)."
+    - **Audit:** Invoke a subagent (using the host's subagent mechanism) for skeptical pass. Input: `[HIGH]`/decision-driving claims, sources. Constraint: "Use at most `remaining` search queries. Fetch URLs to confirm they resolve and support claims. Return verdicts + queries_used as JSON per-claim: {verdict: survived|refuted|downgraded, url_resolves: bool, content_supports_claim: yes|partial|no, supporting_excerpt: str, sources, queries_used} + total_queries_used. Do not write any file (parent owns the work file)."
     - **Reconciliation:** increment work file query counter by `queries_used`; write verdicts to Findings. Downgrade unresolved/404/redirected/unsupported URLs to `[LOW]`/`[Unknown]` (paywalled/403 to `[Requires trial]`). Never publish unfetched/un-persisted URLs.
     - **Decision-Driving Claim:** claim that, if wrong, changes recommendations.
     - **Triangulation:** verify ≥2 independent source types after collapsing common origins.
@@ -92,7 +92,7 @@ Terminate loop when:
 ## Phase 3: Synthesis & Publication
 
 1. **Read Working File:** If Deep Research run, read `.tmp/1a-research-<slug>.work.md` once.
-2. **Select Template:** Use `.agents/workflows/.reference/research-competitive-template.md` (Competitive) or `.agents/workflows/.reference/research-problem-template.md` (Problem-Space).
+2. **Select Template:** Use `references/research-competitive-template.md` (Competitive) or `references/research-problem-template.md` (Problem-Space).
 3. **Format & Write:** Create `docs/research/<slug>.md`.
    - Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: research` — do not prepend a second one.
    - **Question Coverage Map:** include one-line map (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown]`).
@@ -100,6 +100,6 @@ Terminate loop when:
    - **Cost & Viability Signals:** capture pricing and market signals (e.g., paid products, freelancer hires, keyword ad spend) under `## Cost & Viability Signals`.
    - **Synthesis Contract:** synthesize strictly from `.work.md`; no uncited/un-persisted claims.
    - **Annex:** render Optional Annex within same file (structure of the other template), not a second file. When it precedes concept framing (no candidate product yet), omit the Dunford Positioning Lens and the Us (Candidate) matrix column; include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
-   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `.agents/workflows/.reference/research-evidence-standards.md` rules.
+   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `references/research-evidence-standards.md` rules.
 4. **Cleanup:** Delete `.tmp/1a-research-<slug>.work.md`.
 5. **Handoff:** Notify user: *"Research compiled at `docs/research/<slug>.md`. Run `/1b-concept-framing` to define concept."*

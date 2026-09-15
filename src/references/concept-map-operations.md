@@ -10,7 +10,7 @@ version: "1.0.1"
 This reference documents the CLI operations (reusing `3b` primitives) and their disconnected local fallbacks (`BT-LOCAL`) for charting, working, and querying a concept map issue tree.
 
 ## Issue relations
-Wire sub-issue and blocked-by relations via `.agents/workflows/.reference/github-issue-relations.md` (native `gh api graphql`). Disconnected: encode `Blocked by: [IDs]` text in the issue body, matching the `BT-LOCAL` fallback.
+Wire sub-issue and blocked-by relations via `github-issue-relations.md` (native `gh api graphql`). Disconnected: encode `Blocked by: [IDs]` text in the issue body, matching the `BT-LOCAL` fallback.
 
 ---
 
@@ -40,7 +40,7 @@ Blocked by:
 <!-- SOS:/BLOCK id=concept-ticket -->"
      ```
      *(Where `<type>` is research, grilling, prototype, or task)*
-  2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `.agents/workflows/.reference/github-issue-relations.md`).
+  2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `github-issue-relations.md`).
 - **BT-LOCAL Fallback:**
   Add a new `BT-LOCAL-<n>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, and `Blocked by: [BT-LOCAL-ids]` text field.
 

@@ -12,12 +12,12 @@ timestamp: 2026-07-24
 
 # Interface Design
 
-**Hand-off contract:** Writes path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `.agents/workflows/.reference/design-doc-template.md`. Appends design path to parent GitHub issue body. Downstream workflows (`3b`, `3d` Phase 0, `4a`) read this document.
+**Hand-off contract:** Writes path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `references/design-doc-template.md`. Appends design path to parent GitHub issue body. Downstream workflows (`3b`, `3d` Phase 0, `4a`) read this document.
 
 ---
 
 ## Phase 0: Load Memory
-Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Surface & Scope Gate
 *Resume check: if docs/design/BT-<padded>-interface.md exists with status: draft, recover path/branch (from surface/body) and resume: Path B/C at Phase 4 (or 2.5); Path A at Phase 4 if "## Design Brief" exists, else Phase 3 (or 2.5).*
@@ -51,7 +51,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 
 ## Phase 3: Design Brief & Pause (PATH A ONLY)
 *(Path B and Path C skip directly to Phase 4: Harmonize & Freeze)*
-1. Assemble brief for winning direction only. Specify: scope, regions/states/breakpoints, and §3 Immortal Components as hard constraints. Do not inline tokens. Follow `.agents/workflows/.reference/design-brief-guide.md` §A.
+1. Assemble brief for winning direction only. Specify: scope, regions/states/breakpoints, and §3 Immortal Components as hard constraints. Do not inline tokens. Follow `references/design-brief-guide.md` §A.
 2. Feed design context:
    - Stitch: set .memory/DESIGN.md as Stitch Design System [[DR-011]]; Stitch MCP only pulls layout [[DR-015]].
    - Claude Design: run /design-sync first; never let Claude cold-implement (violates DR-004).

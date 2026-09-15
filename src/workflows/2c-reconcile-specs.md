@@ -15,7 +15,7 @@ TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 **Hand-off contract:** Gate between `2b-interface-design` and `3b-create-issue`. Audit a feature's spec artifacts for mutual consistency; report to `.tmp/BT-<padded>-slicing-readiness.md` (ephemeral; no workflow reads it), then apply the spec edits the user does not skip. Spec edits are the only durable output — `3b` reads PRD/design docs, never `.tmp/`.
 
 ## Phase 0: Load Memory
-Run `.agents/skills/load-memory/SKILL.md` (read-only).
+Run the `load-memory` skill (read-only).
 
 ## Phase 1: Scope
 _INPUT:_ trigger naming the feature (`BT-<padded>`). Absent → HALT, ASK: `Specify the feature. Example: /2c-reconcile-specs BT-003`.
@@ -46,7 +46,7 @@ Surface contradictions and blocking gaps only — not stylistic drift.
 **Coverage:** examine every resolved artifact and referenced contract; tag any unexamined item `[UNCOVERED]`. Do not exit with an open `[UNCOVERED]`.
 
 ### Confidence & Severity
-Score each finding 0–100 per `.agents/workflows/.reference/confidence-scale.md`. **Audit scope:** cross-artifact spec inconsistency — a referenced contract absent, or two artifacts stating a claim incompatibly. Report only ≥ 80. Assign severity:
+Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:** cross-artifact spec inconsistency — a referenced contract absent, or two artifacts stating a claim incompatibly. Report only ≥ 80. Assign severity:
 - **P0:** contract missing, or two specs impose incompatible hard requirements — blocks slicing.
 - **P1:** artifacts disagree or leave a decision unstated.
 - **P2:** incomplete but non-blocking (missing optional rule, inferable default).

@@ -15,7 +15,7 @@ timestamp: 2026-07-24
 **Hand-off contract:** `/2b-interface-design` is next (designs interface). `/3b-create-issue` reads §1, §6, §7, §8.
 
 ## Phase 0: Load Memory
-Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Precondition & Mode
 1. Ensure `.memory/BACKLOG_MAP.md` is loaded; if Phase 0 skipped it (no active task yet), read it directly.
@@ -41,7 +41,7 @@ Record issue URL and minted ID for PRD front matter.
 **Close the discovery link (if a brief was located in Phase 1):** write the minted `BT-<padded>` into the brief's `linked-prd:` frontmatter, so the discovery→PRD link is bidirectional.
 
 ## Phase 3: Draft
-Instantiate from `.agents/workflows/.reference/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
+Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
 
 **Discovery-brief ingestion (if a brief was located):** seed §1/§2/§4/§6/§7 from its Problem, Vocabulary, Actor, Chosen Framing, and Non-Goals, and absorb its Open Questions into §10 — do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 

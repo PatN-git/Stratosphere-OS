@@ -17,9 +17,9 @@ the skill is the single source of truth; this only routes to it (so it also work
 call target when a future workflow delegates here).
 
 ## Steps
-1. **Ensure the pack is installed.** If `.agents/skills/jules-dispatch/SKILL.md` is absent,
+1. **Ensure the pack is installed.** If the `jules-dispatch` pack is not installed,
    run `/sync-skills --only jules-dispatch` first — the pack is opt-in, not bundled.
-2. **Delegate to the skill.** Follow `.agents/skills/jules-dispatch/SKILL.md`, passing the
+2. **Delegate to the skill.** Follow the `jules-dispatch` skill, passing the
    user's arguments through (`--slice <id>` / `--sprint`, `--source <jules-source>`).
 3. **Hand off.** The skill dispatches and reports PR readiness only; verify each PR with
    `/4a-verify-and-ship` and merge yourself.

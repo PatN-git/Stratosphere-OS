@@ -21,14 +21,14 @@ timestamp: 2026-07-24
 ---
 
 ## Load Memory (runs first)
-Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only).
+Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 0: Brainstorm Gate
 
 *Gate: If the concept is already concrete and specific, skip to Phase 1.*
 *Gate: If the concept is vague, exploratory, or the user asks for ideas, run the `concept-brainstorm` skill.*
 
-1. Run the `concept-brainstorm` skill (read `.agents/skills/concept-brainstorm/SKILL.md` for instructions).
+1. Run the `concept-brainstorm` skill.
 2. Once the winning idea is validated and approved by the user, proceed to Phase 1.
 
 ## Phase 1: Precondition & Scope
@@ -39,7 +39,7 @@ Run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only)
 4. Scan BACKLOG_MAP for overlaps.
 5. Small items start in `1b` without ODI.
 6. If complex/foggy, recommend `/1c-concept-map`.
-7. **Multi-sided check:** Ask: *"Is this a multi-sided product?"* If yes, read `.agents/workflows/.reference/multi-sided-discovery.md` and append focus areas. RAT tests both sides (10 DMs each). `1b` grills and flags both sides but does not assign per-side opportunity scores — scoring is a `/1a-research` activity (it has the evidence source; `1b` does not).
+7. **Multi-sided check:** Ask: *"Is this a multi-sided product?"* If yes, read `references/multi-sided-discovery.md` and append focus areas. RAT tests both sides (10 DMs each). `1b` grills and flags both sides but does not assign per-side opportunity scores — scoring is a `/1a-research` activity (it has the evidence source; `1b` does not).
 8. **Discovery Work File:**
    - Use for longer/generate path. Delete stale `.tmp/1b-discovery-<slug>.work.md` at start.
    - Path: `.tmp/1b-discovery-<slug>.work.md`.
@@ -112,7 +112,7 @@ Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT
 
 ## Phase 5: Write Discovery Brief
 
-Create `docs/discovery/<slug>.md` using `.agents/workflows/.reference/discovery_brief_template.md`. Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: discovery-brief` — do not prepend a second one.
+Create `docs/discovery/<slug>.md` using `references/discovery_brief_template.md`. Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: discovery-brief` — do not prepend a second one.
 
 **Rules:**
 - Synthesis Contract: Build brief from work file and live transcript. Capture approved vocabulary and chosen framing durably at lock-time.

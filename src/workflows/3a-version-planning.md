@@ -29,7 +29,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 - Version planning creates `vX.Y.0` for parents; sprint planning creates `vX.Y.Z` (Z ≥ 1) for slices.
 
 ## Phase 0: Precondition
-1. **Hydrate:** run `.agents/skills/load-memory/SKILL.md` to restore session context (read-only), then confirm `.memory/BACKLOG_MAP.md` is loaded.
+1. **Hydrate:** Run the `load-memory` skill to restore session context (read-only), then confirm `.memory/BACKLOG_MAP.md` is loaded.
 2. Confirm ≥ 1 `tier:epic` parent feature exists in BACKLOG_MAP. Else halt: *"No parent features to roadmap — run `/2a-write-prd` first."*
 
 ## Phase 1: Read Current State (no writes)
@@ -49,7 +49,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 3. **Assemble proposal:** releases, parent features, justification, and MVP cut-line rationale.
 
 ## Phase 2.5: Release Auditor (subagent — quality gate before HITL)
-1. **Auditor:** Invoke a Release Auditor subagent (via Antigravity `invoke_subagent` or Claude Code `Task` general-purpose). Input: the assembled proposal (release→feature mapping + MAJOR/MINOR justifications) inline. Reads: `.tmp/3a-roadmap.work.md` if present (else the candidate features' BACKLOG_MAP rows + PRDs) fresh from the file system. Guardrail: *"Report the audit findings only; do not edit any file, create milestones, or modify the roadmap."* Output: a findings list, each tagged `[BLOCKER]` or `[WARN]`, covering exactly these checks:
+1. **Auditor:** Invoke a Release Auditor subagent (using the host's subagent mechanism). Input: the assembled proposal (release→feature mapping + MAJOR/MINOR justifications) inline. Reads: `.tmp/3a-roadmap.work.md` if present (else the candidate features' BACKLOG_MAP rows + PRDs) fresh from the file system. Guardrail: *"Report the audit findings only; do not edit any file, create milestones, or modify the roadmap."* Output: a findings list, each tagged `[BLOCKER]` or `[WARN]`, covering exactly these checks:
    - **Cross-release dependency:** any feature whose `Blocked by` points to a feature placed in a *later* release → `[BLOCKER]`.
    - **MAJOR/MINOR misclassification:** any release tagged MAJOR with no compatibility-breaking feature, or MINOR despite a breaking feature; **especially** flag any case where the X/Y choice appears driven by scope class rather than the §-compatibility test → `[BLOCKER]` if it changes the number, else `[WARN]`.
    - **Sequencing-rule violation:** a differentiator sequenced ahead of an unmet baseline across features, or a growth-loop-enabling feature deferred past the core go-live release → `[WARN]`.
@@ -61,10 +61,10 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 - Do not renumber active releases (Z ≥ 1 in GitHub). Only place unassigned features or apply user moves; ask if conflict arises.
 
 ## Phase 4: Commit & Sync
-1. **Write `docs/ROADMAP.md`:** instantiate `.agents/workflows/.reference/ROADMAP-template.md` — write its **Artifact frontmatter** block verbatim (already carries `type: roadmap`), then the **Artifact body**. Merge and preserve prose. Update release tags (`[PLANNED] / [ACTIVE] / [SHIPPED <date>]`), update Live product marker, and collapse newly-shipped releases to a single line in Shipped section (never delete shipped).
+1. **Write `docs/ROADMAP.md`:** instantiate `references/ROADMAP-template.md` — write its **Artifact frontmatter** block verbatim (already carries `type: roadmap`), then the **Artifact body**. Merge and preserve prose. Update release tags (`[PLANNED] / [ACTIVE] / [SHIPPED <date>]`), update Live product marker, and collapse newly-shipped releases to a single line in Shipped section (never delete shipped).
 2. **GitHub:** if disconnected, skip. Create milestones vX.Y.0 in GitHub, assign parent issues, and update BACKLOG_MAP Milestone column (do not touch leaf slices).
 3. **Comment:** post release placement and rationale on each assigned parent feature issue.
-4. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of assigned parent BT-<padded>> --fields milestone` per `.agents/workflows/.reference/terminal-sync-invariant.md` (verifies each roadmapped epic's milestone mirror only — 3a writes no other field). Non-zero → heal per the reference and re-run until `[MIRROR-OK]`.
+4. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --ids <comma-list of assigned parent BT-<padded>> --fields milestone` per `references/terminal-sync-invariant.md` (verifies each roadmapped epic's milestone mirror only — 3a writes no other field). Non-zero → heal per the reference and re-run until `[MIRROR-OK]`.
 5. **Render:** invoke `plan-html` using `board` or `plan-document` to render read-only `docs/ROADMAP.html`.
 6. **Commit & Push Doc:** `git add docs/ROADMAP.md docs/ROADMAP.html && git commit -m "docs: roadmap"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). The roadmap is the cross-feature product changelog re-read by `/3a-version-planning` on default (Phase 2 "Live product" marker) — committing here keeps its `[SHIPPED]`/numbering baseline durable across a fresh clone or session. Never sweep unrelated drift into this commit.
 7. **Cleanup:** delete `.tmp/3a-roadmap.work.md`.

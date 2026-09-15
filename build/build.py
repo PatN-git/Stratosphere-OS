@@ -142,12 +142,17 @@ def command_name(stem: str) -> str:
     return stem
 
 
-REF_CITE = re.compile(r'\.agents/(?:workflows/\.reference|skills/[a-z0-9-]+/references)/([A-Za-z0-9_.-]+\.md)')
+# Two citation forms: the relative `references/<file>.md` a skill uses for itself,
+# and the absolute `.agents/skills/<name>/references/<file>.md` required wherever a
+# path is handed to an isolated subagent (whose cwd is the repo root, not the skill).
+REF_CITE = re.compile(
+    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
 
 
-def cited_refs(text: str) -> set:
-    """Reference filenames cited by a body."""
-    return set(REF_CITE.findall(text))
+def cited_refs(text):
+    """Reference filenames cited by a body, in either citation form."""
+    return {a or b for a, b in REF_CITE.findall(text)}
 
 
 def closure_for(text: str, ref_dir) -> set:

@@ -14,16 +14,16 @@ timestamp: 2026-07-28
 
 Instantiate minimum durable context an AI agent needs to resume work on a repository without re-reading everything. Two paths: **greenfield** (scaffold empty templates) and **brownfield** (audit first, then write findings into templates).
 
-This command is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
+This skill is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
 
 ## Standalone Mode Routing
-If this command is run with the `--re-reconcile-labels` CLI flag:
+If this skill is run with the `--re-reconcile-labels` CLI flag:
 1. Skip all setup checks, git/github remote promptings, template scaffolding, vision statement settings, database audits, architecture mapping, design audits, learnings/glossary seeding, and skill synchronization.
 2. Jump directly to **Checkpoint 6: Label Reconciliation** to reconcile labels and project board, and install/verify extensions.
-3. Once Checkpoint 6 is complete, exit the workflow immediately.
+3. Once Checkpoint 6 is complete, exit immediately.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
-- `.agents/workflows/.reference/` — shared templates and guides
+- `.agents/skills/<name>/references/` — each skill's own templates and guides
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
@@ -38,7 +38,7 @@ All templates ship **bundled with the plugin** under its `assets/templates/` dir
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-The lifecycle workflows (`0a`–`4c`, `sync-skills`) are **copied into the project's `.agents/workflows/`** by the scaffolder (Checkpoint 0). This is required on **Antigravity**, which surfaces *workspace* workflows as `/` commands but does **not** register a plugin's bundled workflows. On **Claude Code** the plugin's commands register globally, so the in-project copies are inert there. Domain skills are not bundled — they are fetched on demand in Checkpoint 8.
+All 22 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`. One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`. All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert. Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
 
 ## Existing Installation Detection
 
@@ -109,11 +109,11 @@ python <plugin>/scripts/scaffold.py --update
 ```
 
 **What it creates** (skips anything already present):
-- Folders: `.memory/`, `.agents/rules/`, `.agents/workflows/` (+ `.reference/`), `docs/discovery/`, `docs/prds/`, `.tmp/`
+- Folders: `.memory/`, `.agents/rules/`, `.agents/skills/`, `.agents/scripts/`, `docs/discovery/`, `docs/prds/`, `.tmp/`
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
-- Lifecycle workflows (`0a`–`4b`, `sync-skills`) + their `.reference/` templates → `.agents/workflows/`
+- All 22 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
 - `.gitignore` (only if missing)
 
@@ -159,7 +159,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 ### Checkpoint 4.1: Brand tokens → `DESIGN.md` (spec-compliant)
 
 - **Greenfield:** skip. Leave `DESIGN.md` as the empty template; fill in as the brand develops.
-- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `.agents/workflows/.reference/design-brief-guide.md` §B (propose-only).
+- **Brownfield:** extract tokens from existing CSS variables, `tailwind.config.js`/`tailwind.config.ts`, and any theme files. If the project has UI but no DESIGN.md, derive an initial DESIGN.md from existing code per `references/design-brief-guide.md` §B (propose-only).
   1. Map color variables to the `colors:` YAML block (primary, secondary, tertiary, neutral, etc.).
   2. Map typography to the `typography:` YAML block (one entry per type level).
   3. Map spacing scale to the `spacing:` YAML block.
@@ -200,7 +200,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 ### Checkpoint 5.2: Secret hygiene
 
-- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files; if missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 22 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, if missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
 
 ## Checkpoint 6: Label Reconciliation (both paths)
 
@@ -324,7 +324,7 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    (Where `<plugin>` is the installed plugin root located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/`.)
 
 5. **Design note:** External design generators are OPTIONAL; native projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
-6. **Re-runnable:** Re-invoke this command/script with updated categories or new files anytime.
+6. **Re-runnable:** Re-invoke this skill/script with updated categories or new files anytime.
 
 ## Constraints
 

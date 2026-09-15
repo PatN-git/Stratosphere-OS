@@ -17,7 +17,7 @@ Restore session context (read-only), then activate: restore the branch and trans
 
 ## Phase A — Hydrate (read-only)
 1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues in `.memory/BACKLOG_MAP.md`/GitHub: exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task. (`.memory/STATUS.md` may hint the last focus but is not authoritative.)
-2. Run `.agents/skills/load-memory/SKILL.md` for that task.
+2. Run the `load-memory` skill for that task.
 
 ## Phase B — Activate (side effects)
 1. If no task resolved (`Session Status: no-active-task`) → output next-step guidance (`/1a-research` or `/1b-concept-framing`) and HALT before any side effect.
