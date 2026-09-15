@@ -1,5 +1,4 @@
 ---
-type: reference
 name: Code Smell Baseline
 description: Universal code-smell checklist for slice-level review
 version: "1.0.0"

@@ -123,7 +123,13 @@ Carve `docs/discovery/*.map.md` out of `discovery-brief`'s `docs/discovery/*.md`
 - `.memory/`: `status`, `backlog`, `learnings`, `glossary`, `architecture`, `database-schema`, `design-rules`, `design`
 - `docs/`: `prd`, `discovery-brief`, `research`, `interface-design`, `design-doc`, `roadmap`, `audit-report`, `concept-map`, `plan`, `proposal`
 
-**DONE WHEN:** no file outside `.memory/`+`docs/` carries `type:`; every remaining `type:` is registered; `implementation-plan` is gone.
+**Template exception (discovered in execution).** A template that *mints* an in-scope document carries the **emitted document's** `type:` — `src/memory-templates/*` and `src/references/*template*`. That is the artifact's type, not the template's, and it stays. Only framework artifacts lose `type:`: constitution, rules, skills, the 3 drivers, and the 3 non-template references.
+
+`src/workflows/*` keep `type: workflow HITL|AFK` until **Slice 8** converts them to `metadata.stratos.layer`+`.mode`; Slice 1 names that field as the conversion source.
+
+**Also:** this repo's **root** `AGENTS.md` is its own constitution (real Vision), not a copy of `src/constitution/AGENTS.md` (placeholder Vision). Slice 1's edits must be applied to **both**, or the constitution governing this repo stays stale while the shipped one moves.
+
+**DONE WHEN:** no framework artifact outside `.memory/`+`docs/` carries `type:` (templates and `src/workflows/` excepted as above); every `type:` value in use is one of the 18; `implementation-plan` is gone from live docs.
 
 ## Slice 4 — OKF v0.2 shape
 

@@ -73,6 +73,12 @@ Files in `.agents/rules/` are **out of OKF scope** (§1) but still declare when 
 
 ## 3. Type Registry
 
+**Registered types apply only inside the bundle scope (§1).** A template that *mints* an
+in-scope document carries the emitted document's `type:` — that is the artifact's type,
+not the template's, and it stays. Framework artifacts outside the scope (constitution,
+rules, skills, non-template references) carry **no** `type:` at all.
+
+
 Agents must use the following defined types. If no existing type fits, the agent must propose a new type to the user and, upon confirmation, add it to this registry. Agents must never invent or use a type silently.
 
 | `type` | Applies to | Extra fields beyond the base contract |
@@ -86,10 +92,15 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-rules` | `DESIGN_RULES.md` | — |
 | `design` | `DESIGN.md` | conforming (tolerated by the `@google/design.md` linter) |
 | `prd` | `docs/prds/*.md` | `resource` (issue URL), `status` |
-| `discovery-brief` | `docs/discovery/*.md` | `status`, `linked-prd` |
+| `discovery-brief` | `docs/discovery/*.md` (**excluding** `*.map.md`) | `status`, `linked-prd` |
 | `research` | `docs/research/*.md` | — |
 | `interface-design` | `docs/design/*.md` (interface designs) | — |
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
+| `roadmap` | `docs/ROADMAP.md` | — |
+| `audit-report` | `docs/audits/*.md` | — |
+| `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
+| `plan` | `docs/plans/*.md` | — |
+| `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
 
 ## 4. Reserved Files
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.

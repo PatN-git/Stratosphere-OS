@@ -1,6 +1,5 @@
 ---
 name: stratosphere-update
-type: workflow
 description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
 version: "1.0.8"
 timestamp: 2026-07-28

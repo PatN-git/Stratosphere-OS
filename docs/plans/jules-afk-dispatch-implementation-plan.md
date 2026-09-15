@@ -1,5 +1,5 @@
 ---
-type: implementation-plan
+type: plan
 title: Jules Dispatch — Phased Implementation Plan (v0.1, experimental)
 description: Optional, on-demand skill pack that offloads bounded StratOS slices to Google Jules (async cloud agent), preserving Claude/Antigravity tokens on the expensive implement step. Dispatches and reports; hands off at "PR opened". Distributed via sync-skills, invisible to scaffold --update, never merges, never orchestrates.
 status: COMPLETE — P0–P7 done; live E2E passed and torn down 2026-07-16

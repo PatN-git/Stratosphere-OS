@@ -1,5 +1,4 @@
 ---
-type: reference
 name: concept-map-operations
 description: CLI verbs and local fallbacks for executing concept map tracker operations.
 timestamp: 2026-07-28

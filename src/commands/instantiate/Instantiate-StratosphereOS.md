@@ -1,6 +1,5 @@
 ---
 name: stratosphere-setup
-type: workflow
 description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
 version: "1.0.14"
 timestamp: 2026-07-28

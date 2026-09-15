@@ -1,5 +1,4 @@
 ---
-type: constitution
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
 version: "3.0.0"

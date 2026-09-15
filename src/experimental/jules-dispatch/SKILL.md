@@ -1,6 +1,5 @@
 ---
 name: jules-dispatch
-type: skill
 description: EXPERIMENTAL, user-invoked only — offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatch + report; hands off at "PR opened". Never merges, never orchestrates. Invoke ONLY on an explicit user request (normally via /x_jules-dispatch) — never autonomously.
 version: "0.1.3"
 timestamp: 2026-07-15

@@ -1,7 +1,6 @@
 ---
 name: concept-brainstorm
 description: Frame vague concepts via 4-phase execution loop (Constraints → Diverge → Triage → Validate).
-type: skill
 version: "1.4.1"
 timestamp: 2026-07-24
 ---

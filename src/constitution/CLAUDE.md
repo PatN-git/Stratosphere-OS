@@ -1,5 +1,4 @@
 ---
-type: constitution
 name: CLAUDE
 description: CLAUDE
 version: "1.1.0"

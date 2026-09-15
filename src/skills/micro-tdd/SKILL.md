@@ -1,6 +1,5 @@
 ---
 name: Micro-TDD Execution
-type: skill
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
 version: "1.1.2"
 timestamp: 2026-07-15
