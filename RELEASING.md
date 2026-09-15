@@ -46,7 +46,7 @@ This document describes how to release a new version of the StratosphereOS plugi
 
 v4.0.0 renames every lifecycle artifact to Agent Skills spec form (`_` → `-`) and moves
 them from `.agents/workflows/*.md` to `.agents/skills/<name>/SKILL.md`. **There are no
-alias shims** — `/0a_start-session` stops resolving; use `/0a-start-session`.
+alias shims** — `/0a-start-session` stops resolving; use `/0a-start-session`.
 
 Existing projects need a one-shot migration. `stratosphere-update` alone is **not**
 sufficient: `reconcile_gitignore()` only adds entries, so an upgraded project keeps

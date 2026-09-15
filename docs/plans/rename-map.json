@@ -1,0 +1,33 @@
+{
+  "note": "Slice 6 rename map. Frozen; every target matches ^[a-z0-9]+(-[a-z0-9]+)*$.",
+  "workflows": {
+    "0a_start-session": "0a-start-session",
+    "0b_stop-session": "0b-stop-session",
+    "0c_handoff": "0c-handoff",
+    "0d_nightly-consolidation": "0d-nightly-consolidation",
+    "1a_research": "1a-research",
+    "1b_concept-framing": "1b-concept-framing",
+    "1c_concept-map": "1c-concept-map",
+    "2a_write-prd": "2a-write-prd",
+    "2b_interface-design": "2b-interface-design",
+    "2c_reconcile-specs": "2c-reconcile-specs",
+    "3a_version-planning": "3a-version-planning",
+    "3b_create-issue": "3b-create-issue",
+    "3c_sprint-planning": "3c-sprint-planning",
+    "3d_implement-issue": "3d-implement-issue",
+    "3z_afk-loop": "3z-afk-loop",
+    "4a_verify-and-ship": "4a-verify-and-ship",
+    "4b_audit-architecture-drift": "4b-audit-architecture-drift",
+    "4c_codebase-health-audit": "4c-codebase-health-audit",
+    "x_jules-dispatch": "3x-jules-dispatch"
+  },
+  "directories": {
+    "src/commands/instantiate": "src/commands/stratosphere-setup",
+    "src/commands/update": "src/commands/stratosphere-update"
+  },
+  "files": {
+    "src/commands/instantiate/Instantiate-StratosphereOS.md": "src/commands/stratosphere-setup/SKILL.md",
+    "src/commands/update/Stratosphere-Update.md": "src/commands/stratosphere-update/SKILL.md",
+    "src/commands/sync-skills/SKILL_sync-skills.md": "src/commands/sync-skills/SKILL.md"
+  }
+}

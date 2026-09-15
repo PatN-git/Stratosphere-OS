@@ -59,14 +59,14 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 
 | Stage | Command | Purpose & Rationale | Reads | Produces |
 |:---|:---|:---|:---|:---|
-| **0. Session Start** | `/0a_start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
-| **1. Discovery** | `/1a_research`<br/>`/1b_concept-framing`<br/>`/1c_concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
-| **2. Design** | `/2a_write-prd`<br/>`/2b_interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
-| **3. Planning** | `/3a_version-planning`<br/>`/3b_create-issue`<br/>`/3c_sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
-| **3d. Execution** | `/3d_implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
-| **3z. Orchestration** | `/3z_afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
-| **4. Ship & Audit** | `/4a_verify-and-ship`<br/>`/4b_audit-architecture-drift`<br/>`/4c_codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, health audit report |
-| **0. Session Stop** | `/0b_stop-session`<br/>`/0c_handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
+| **0. Session Start** | `/0a-start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
+| **1. Discovery** | `/1a-research`<br/>`/1b-concept-framing`<br/>`/1c-concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
+| **2. Design** | `/2a-write-prd`<br/>`/2b-interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
+| **3. Planning** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
+| **3d. Execution** | `/3d-implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
+| **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
+| **4. Ship & Audit** | `/4a-verify-and-ship`<br/>`/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, health audit report |
+| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
 ---
@@ -120,10 +120,10 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 StratosphereOS conforms to the [Open Knowledge Format (OKF) v0.1 Specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf). The `.memory/` and `docs/` directories form a structured knowledge bundle. An interactive HTML graph visualizer can be generated anytime via `python .agents/scripts/okf_view.py`.
 
 ### UI Stack & Design Tooling
-By default, UI projects assume React + Tailwind CSS + shadcn/ui. Non-UI projects rely on clean interface contracts defined during `/2b_interface-design`. Google Stitch design integration is supported automatically when enabled in workspace settings.
+By default, UI projects assume React + Tailwind CSS + shadcn/ui. Non-UI projects rely on clean interface contracts defined during `/2b-interface-design`. Google Stitch design integration is supported automatically when enabled in workspace settings.
 
 ### Experimental: Jules Dispatch (opt-in)
-An optional pack that offloads bounded `mode:AFK` slices to **Google Jules** (an async cloud coding agent) so implementation runs on Google's side, preserving Claude/Antigravity tokens. It **dispatches and reports only** — it never merges, never enables auto-merge, and never orchestrates other workflows; you verify each Jules PR with `/4a_verify-and-ship` and merge it yourself.
+An optional pack that offloads bounded `mode:AFK` slices to **Google Jules** (an async cloud coding agent) so implementation runs on Google's side, preserving Claude/Antigravity tokens. It **dispatches and reports only** — it never merges, never enables auto-merge, and never orchestrates other workflows; you verify each Jules PR with `/4a-verify-and-ship` and merge it yourself.
 
 - **Not bundled — fetched on demand:** `python <plugin>/scripts/sync_skills.py --only jules-dispatch` lands it at `.agents/skills/jules-dispatch/`. It is invisible to `/stratosphere-update` (survives byte-identical).
 - **Setup:** `JULES_API_KEY` in `.env.local` (sent as the `X-Goog-Api-Key` header); install the Jules GitHub app on the repo and configure its environment once in Jules's UI (Initial Setup → Run and Snapshot); keep a root `AGENTS.md` (Jules auto-reads it for conventions).

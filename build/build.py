@@ -10,7 +10,7 @@ Outputs:
 Skills are byte-identical between platforms; only the manifest and the
 workflow-vs-command directory naming differ. Project-instance content
 (constitution, memory templates, rules) ships as assets/templates/
-and is written into a project by the instantiate command, not on install.
+and is written into a project by the stratosphere-setup skill, not on install.
 """
 import json
 import os
@@ -169,7 +169,7 @@ def build_platform(kind: str):
     # 3. Installer entry point. Claude registers plugin commands globally, so ship
     #    it as a /command. Antigravity only surfaces skills (not plugin workflows),
     #    so ship it there as a discoverable skill instead.
-    inst = SRC / "commands" / "instantiate" / "Instantiate-StratosphereOS.md"
+    inst = SRC / "commands" / "stratosphere-setup" / "SKILL.md"
     if kind == "claude":
         copy_md_with_frontmatter(inst, invoke_dir / "stratosphere-setup.md",
                                  name="stratosphere-setup")
@@ -178,7 +178,7 @@ def build_platform(kind: str):
         sk.parent.mkdir(parents=True, exist_ok=True)
         copy_md_with_frontmatter(inst, sk, name="stratosphere-setup")
 
-    upd = SRC / "commands" / "update" / "Stratosphere-Update.md"
+    upd = SRC / "commands" / "stratosphere-update" / "SKILL.md"
     if kind == "claude":
         copy_md_with_frontmatter(upd, invoke_dir / "stratosphere-update.md",
                                  name="stratosphere-update")
@@ -188,7 +188,7 @@ def build_platform(kind: str):
         copy_md_with_frontmatter(upd, sk, name="stratosphere-update")
 
     # 4. sync-skills command + script + registry
-    sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"
+    sync_md = SRC / "commands" / "sync-skills" / "SKILL.md"
     copy_md_with_frontmatter(sync_md, invoke_dir / "sync-skills.md", name="sync-skills")
     copytree(SRC / "commands" / "sync-skills" / "scripts", out / "scripts")
     shutil.copy2(SRC / "external-skills.json", out / "external-skills.json")

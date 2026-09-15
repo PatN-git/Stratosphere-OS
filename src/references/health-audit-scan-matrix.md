@@ -1,12 +1,12 @@
 ---
-description: Scan matrix for 4c_codebase-health-audit. Defines what each of the six passes detects.
+description: Scan matrix for 4c-codebase-health-audit. Defines what each of the six passes detects.
 version: "1.0.0"
 timestamp: 2026-07-27
 ---
 
 # Health Audit — Scan Matrix
 
-Reference for `4c_codebase-health-audit`. Each subagent receives only its assigned passes.
+Reference for `4c-codebase-health-audit`. Each subagent receives only its assigned passes.
 
 ---
 

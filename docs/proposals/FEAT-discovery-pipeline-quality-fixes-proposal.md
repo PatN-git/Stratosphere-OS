@@ -17,7 +17,7 @@ generated:
 
 **Scope:** Edits to StratOS's OWN workflow source under `src/workflows/` (and one shared reference under `src/references/`); governed by the `improve-workflows-skills` discipline (per-file OKF version bump once per PR; rebuild `dist/` after edits). NOT product code.
 
-> **Suggested next skills/workflows:** `improve-workflows-skills` (authoring discipline) → edit `src/workflows/*` → build to refresh `dist/` → `4a_verify-and-ship` to open the PR. Do NOT hand-edit `dist/` or `.agents/` (build outputs).
+> **Suggested next skills/workflows:** `improve-workflows-skills` (authoring discipline) → edit `src/workflows/*` → build to refresh `dist/` → `4a-verify-and-ship` to open the PR. Do NOT hand-edit `dist/` or `.agents/` (build outputs).
 >
 > **Line numbers drift** — every edit below is anchored by content; re-confirm the line before touching it.
 
@@ -67,7 +67,7 @@ Ordered by blast radius. Each item is independent; ship as commits on one branch
 
 ## F1 — `1b` research-freshness gate keys on a nonexistent frontmatter field (P1)
 
-**Where:** [`src/workflows/1b_concept-framing.md:73`](../../src/workflows/1b_concept-framing.md) (Phase 2, "External Research" focus area).
+**Where:** [`src/workflows/1b-concept-framing.md:73`](../../src/workflows/1b-concept-framing.md) (Phase 2, "External Research" focus area).
 
 **Now:** *"One strong match → read only frontmatter `updated:` date; if <90 days old, ask: 'Research at docs/research/<slug>.md (updated <updated>)…'"*
 
@@ -81,7 +81,7 @@ Ordered by blast radius. Each item is independent; ship as commits on one branch
 
 ## F2 — `1c` writes `GLOSSARY.md` without the memory-protocol confirmation gate (P2)
 
-**Where:** [`src/workflows/1c_concept-map.md:74`](../../src/workflows/1c_concept-map.md) (Phase 3, step 4 "Crystallize Vocabulary").
+**Where:** [`src/workflows/1c-concept-map.md:74`](../../src/workflows/1c-concept-map.md) (Phase 3, step 4 "Crystallize Vocabulary").
 
 **Now:** *"Write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`."*
 
@@ -96,23 +96,23 @@ Ordered by blast radius. Each item is independent; ship as commits on one branch
 
 ## F3 — `1c` Converge has no self-review + user gate before writing the brief and closing the map (P2)
 
-**Where:** [`src/workflows/1c_concept-map.md:68–76`](../../src/workflows/1c_concept-map.md) (Phase 3: Converge).
+**Where:** [`src/workflows/1c-concept-map.md:68–76`](../../src/workflows/1c-concept-map.md) (Phase 3: Converge).
 
 **Why it is a gap (verified):**
 - `1b` gates the *same deliverable* (a `docs/discovery/<slug>.md` brief): Phase 6 "Self-Review + User Gate" (`1b:117–127`) — a 7-item checklist then *"Present brief for approval."*
 - `1c` Phase 3 synthesizes the brief (step 2), runs a **report-only** RAT audit (step 3), writes `GLOSSARY.md` (step 4), **closes the `concept:map` issue** + sets `BACKLOG_MAP` to `done` (step 5), then hands off (step 6) — with **no self-review checklist and no approval checkpoint**.
 
-**Impact:** Convergence emits a brief consumed by `/2a_write-prd` and irreversibly closes a tracked map issue, both without sign-off; the RAT audit's findings are report-only, so nothing forces resolution before ship. Strictly weaker than `1b`'s gate for an identical artifact.
+**Impact:** Convergence emits a brief consumed by `/2a-write-prd` and irreversibly closes a tracked map issue, both without sign-off; the RAT audit's findings are report-only, so nothing forces resolution before ship. Strictly weaker than `1b`'s gate for an identical artifact.
 
 **Fix:** Insert a gate between step 4 and step 5: reuse `1b` Phase 6's checklist (reference, don't copy) plus *"Present brief + RAT findings for approval; close the map only after the user confirms."*
 
 ## F4 — undefined confidence tag `[MEDIUM]` in `1a` (P3, cosmetic)
 
-**Where:** [`src/workflows/1a_research.md:30`](../../src/workflows/1a_research.md). *"Quick claims cap at `[MEDIUM]`…"* — but the file's tag set is `[HIGH|MED|LOW]` (`1a:61`, reused at `1a:73–100`). **Fix:** `[MEDIUM]` → `[MED]`.
+**Where:** [`src/workflows/1a-research.md:30`](../../src/workflows/1a-research.md). *"Quick claims cap at `[MEDIUM]`…"* — but the file's tag set is `[HIGH|MED|LOW]` (`1a:61`, reused at `1a:73–100`). **Fix:** `[MEDIUM]` → `[MED]`.
 
 ## F5 — RAT `est_setup_time` captured but has no home in the brief (P3, minor gap)
 
-**Where:** [`1b:102–103`](../../src/workflows/1b_concept-framing.md) + [`discovery_brief_template.md:55–59`](../../src/references/discovery_brief_template.md). `1b` requires the cheapest test *"not take >2 weeks"* and its subagent returns `est_setup_time`, but the template's `## Riskiest Assumption` block has no field for it, so the gate is not auditable in the shipped artifact. **Fix (preferred):** add `- **Est. setup time:** <≤2 weeks>` to the template's Riskiest Assumption block; alternatively drop `est_setup_time` from the `1b:103` contract.
+**Where:** [`1b:102–103`](../../src/workflows/1b-concept-framing.md) + [`discovery_brief_template.md:55–59`](../../src/references/discovery_brief_template.md). `1b` requires the cheapest test *"not take >2 weeks"* and its subagent returns `est_setup_time`, but the template's `## Riskiest Assumption` block has no field for it, so the gate is not auditable in the shipped artifact. **Fix (preferred):** add `- **Est. setup time:** <≤2 weeks>` to the template's Riskiest Assumption block; alternatively drop `est_setup_time` from the `1b:103` contract.
 
 ---
 
@@ -120,9 +120,9 @@ Ordered by blast radius. Each item is independent; ship as commits on one branch
 
 ## Q3 — 1b→2a handover loses information (main leak)
 
-**Finding:** Pocock's `grilling → to-spec` passes NO artifact — `to-spec` reuses the live in-session conversation. StratOS deliberately does the harder cross-session thing (durable `docs/discovery/<slug>.md`), which is correct for its architecture but inherits his `/handoff` principle: **"reference, don't duplicate; external artifacts are the source of truth."** Measured against that, four leaks (verified: `2a` reads the brief only at [`2a:57`](../../src/workflows/2a_write-prd.md) RAT Carry-Over; Phase 3 synthesizes "from **conversation**, BACKLOG_MAP, LEARNINGS, and ADR" at `2a:38`, with the brief not a named structural input):
+**Finding:** Pocock's `grilling → to-spec` passes NO artifact — `to-spec` reuses the live in-session conversation. StratOS deliberately does the harder cross-session thing (durable `docs/discovery/<slug>.md`), which is correct for its architecture but inherits his `/handoff` principle: **"reference, don't duplicate; external artifacts are the source of truth."** Measured against that, four leaks (verified: `2a` reads the brief only at [`2a:57`](../../src/workflows/2a-write-prd.md) RAT Carry-Over; Phase 3 synthesizes "from **conversation**, BACKLOG_MAP, LEARNINGS, and ADR" at `2a:38`, with the brief not a named structural input):
 
-1. **Contract declared in 1b, not honored in 2a (main leak).** [`1b`](../../src/workflows/1b_concept-framing.md)'s hand-off contract says 2a reads Vocabulary/Actor/Problem/Framing/Non-Goals. But [`2a`](../../src/workflows/2a_write-prd.md) reads the brief in ONE place only — the RAT carry-over. So the handoff silently depends on the conversation still being alive.
+1. **Contract declared in 1b, not honored in 2a (main leak).** [`1b`](../../src/workflows/1b-concept-framing.md)'s hand-off contract says 2a reads Vocabulary/Actor/Problem/Framing/Non-Goals. But [`2a`](../../src/workflows/2a-write-prd.md) reads the brief in ONE place only — the RAT carry-over. So the handoff silently depends on the conversation still being alive.
 2. **No forward pointer.** 2a detects mode from *PRD existence*, never locates `docs/discovery/<slug>.md` by slug. A brief from a prior session may never be opened.
 3. **Broken bidirectional link.** Brief carries `linked-prd: —`; 2a never writes the minted `BT-<n>` back, and never records the brief path in the PRD/issue.
 4. **Open Questions can evaporate.** 1b writes brief Open Questions "for 2a §10"; 2a's §10 handling only moves 2a's own `> open:` markers. Ingesting the brief's Open Questions is nobody's explicit step.
@@ -137,7 +137,7 @@ Sources: `aihero.dev/skills-to-spec` ("does not interview you again… synthesis
 
 ## Q2 — 1b stops grilling too early (contradicts its role model)
 
-**Finding:** [`src/workflows/1b_concept-framing.md`](../../src/workflows/1b_concept-framing.md) Phase 2 stop conditions bias toward premature completion, diverging from Matt Pocock's current `/grilling` loop (its acknowledged role model).
+**Finding:** [`src/workflows/1b-concept-framing.md`](../../src/workflows/1b-concept-framing.md) Phase 2 stop conditions bias toward premature completion, diverging from Matt Pocock's current `/grilling` loop (its acknowledged role model).
 
 | | Pocock `/grilling` (current) | StratOS 1b today |
 |---|---|---|
@@ -157,7 +157,7 @@ Already ahead of the role model: V1/V2/V3 vocabulary stress-tests ≈ his `/gril
 
 ## Q1 — 2b covers UI *or* non-UI, never both (full-stack gap)
 
-**Finding:** The [`src/workflows/2b_interface-design.md`](../../src/workflows/2b_interface-design.md) Phase 1 gate is mutually exclusive: no-UI → Path C; UI → Path A/B. Three things lock it to a single path:
+**Finding:** The [`src/workflows/2b-interface-design.md`](../../src/workflows/2b-interface-design.md) Phase 1 gate is mutually exclusive: no-UI → Path C; UI → Path A/B. Three things lock it to a single path:
 - Phase 2.2 assigns the doc ONE `type` (`ui-generator-*` | `ui-manual` | `non-ui`).
 - Phase 4 runs exactly one of the Path A / B / C sub-sections.
 - The API/schema/seam contract exists ONLY in Path C step 1.
@@ -177,13 +177,13 @@ So a genuinely full-stack slice (new screen **+** new API/schema/adapter seam) g
 - [ ] F3: should `1c` convergence be a hard HITL stop like `1b` (recommended), or was it intentionally auto-closing for AFK runs? If the latter, F3 becomes "log the skip as residual risk" (the pattern `1b:99` uses for AFK RAT declines) rather than a blocking gate. **Confirm before implementing F3.**
 - [ ] Q1: additive `## Interface Contract` step only, or also add the `hybrid` gate classification?
 - [ ] Q2: full rewrite of Phase 2 stop conditions, or minimal (fixes 1–2 only)?
-- [ ] Confirm build/dist rebuild + `4a_verify-and-ship` is the intended ship path.
+- [ ] Confirm build/dist rebuild + `4a-verify-and-ship` is the intended ship path.
 
 ## Resume instructions
 
 1. Open this repo in claude.ai/code or the Claude mobile app. Branch: `claude/v3-polish-discovery-pipeline-kn3h6l` (where this proposal lives), or cut a fresh `feat/BT-…` branch. *(Note: the original `fix/post-v3-polish` line merged as PR #102 — do not reuse it.)*
 2. Say: *"Implement the F1/F2 fixes"* or *"Implement the Q3 fixes from `docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`"* (or any subset).
-3. Edit `src/workflows/*` and `src/references/*` (never `dist/` or `.agents/`), bump each touched file's OKF `version` once per PR, rebuild `dist/`, then `/4a_verify-and-ship`.
+3. Edit `src/workflows/*` and `src/references/*` (never `dist/` or `.agents/`), bump each touched file's OKF `version` once per PR, rebuild `dist/`, then `/4a-verify-and-ship`.
 
 ## Residual risk / what remains unverified
 

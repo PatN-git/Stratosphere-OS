@@ -28,7 +28,7 @@ Authoritative, high-density reference for project issues and their status.
   - If a label appears in the **registry but not GitHub** → create it in GitHub before using it in any issue.
   - Never use a label in the Backlog table that is not in both the registry and GitHub.
 - **Single Status Invariant:** An issue must always have exactly one `status:*` label. When transitioning an issue to a new status in GitHub or the Backlog table, always remove the prior `status:*` label first.
-- **Concept Exemptions:** An issue carrying a `concept:*` label is exempt from `/3c_sprint-planning`, `[NEEDS_SPEC]` alerts, and the single-status invariant.
+- **Concept Exemptions:** An issue carrying a `concept:*` label is exempt from `/3c-sprint-planning`, `[NEEDS_SPEC]` alerts, and the single-status invariant.
 - **Concept Map Registry:** The `concept:map` row in the Backlog table carries `concept:map` + `status:*` (e.g. `status:in progress` while active, `status:done` on convergence) and is milestone-exempt. Child decision tickets (`concept:research`, `concept:grilling`, etc.) are tracked under their tracking issue as sub-issues and are NOT individually rowed in the Backlog table.
 <!-- SOS:/BLOCK id=backlog-rules -->
 
@@ -44,7 +44,7 @@ Authoritative, high-density reference for project issues and their status.
 - **Status (`status:xxx`)**: `status:needs_spec`, `status:planned`, `status:in progress`, `status:in review`, `status:blocked`, `status:done` (lifecycle order: `needs_spec → planned → in progress → in review → done`; `blocked` from any point)
 - **Concept Discovery (`concept:xxx`)**: `concept:map`, `concept:research`, `concept:grilling`, `concept:prototype`, `concept:task`
 - **Label Composition Rules**: Each leaf issue must carry exactly one `type:` + one `mode:` + `tier:slice` + one `size:`. Each epic must carry `tier:epic` + one `type:` (no `mode:`, no `size:`).
-- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a_version-planning`; `SPRINT` (Z) owned by `/3c_sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version.
+- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a-version-planning`; `SPRINT` (Z) owned by `/3c-sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version.
 <!-- SOS:/BLOCK id=label-canonical -->
 
 ## Backlog

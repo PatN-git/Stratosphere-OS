@@ -1,12 +1,12 @@
 ---
-description: Report template and impact categorization for 4c_codebase-health-audit.
+description: Report template and impact categorization for 4c-codebase-health-audit.
 version: "2.0.0"
 timestamp: 2026-09-15
 ---
 
 # Health Audit — Report Template
 
-Reference for `4c_codebase-health-audit` Phase 4.
+Reference for `4c-codebase-health-audit` Phase 4.
 
 ---
 
@@ -112,7 +112,7 @@ generated:
 - **🟡 Medium** → Batch into maintenance slice via `/3b`.
 - **⚪ Low** → Address opportunistically.
 
-For architectural analysis of flagged modules → `/4b_audit-architecture-drift`.
+For architectural analysis of flagged modules → `/4b-audit-architecture-drift`.
 Findings tagged ✓ Recent may be regressions from delta window — prioritize.
 ```
 

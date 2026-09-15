@@ -317,8 +317,8 @@ ASSETS = PLUGIN_ROOT / "assets" / "templates"
 # Lifecycle workflows live in workflows/ (Antigravity build) or commands/ (Claude build)
 WF_SRC = PLUGIN_ROOT / "workflows" if (PLUGIN_ROOT / "workflows").exists() else PLUGIN_ROOT / "commands"
 
-LIFECYCLE_RE = re.compile(r"^[0-4].*\.md$")  # 0a..4b
-EXTRA_WORKFLOWS = {"sync-skills.md", "x_jules-dispatch.md"}  # non-numbered workflows to also surface on Antigravity
+LIFECYCLE_RE = re.compile(r"^[0-4].*\.md$")  # 0a..4c, 3x
+EXTRA_WORKFLOWS = {"sync-skills.md"}  # non-numbered lifecycle skills to also surface on Antigravity
 
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",

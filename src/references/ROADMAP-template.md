@@ -28,7 +28,7 @@ generated:
 
 # Product Roadmap
 
-> Maintained by `/3a_version-planning`. Milestone format `vX.Y.Z` (MAJOR.MINOR.sprint). This file owns the release rows (`vX.Y`); sprint numbers (`Z`) are assigned by `/3c_sprint-planning`. Active/planned releases first; shipped releases collapse into `## Shipped` at the bottom.
+> Maintained by `/3a-version-planning`. Milestone format `vX.Y.Z` (MAJOR.MINOR.sprint). This file owns the release rows (`vX.Y`); sprint numbers (`Z`) are assigned by `/3c-sprint-planning`. Active/planned releases first; shipped releases collapse into `## Shipped` at the bottom.
 >
 > **Status** per release: `[PLANNED]` (no milestone yet / empty) · `[ACTIVE]` (current build target — its `vX.Y.0` milestone is open with all predecessors shipped) · `[SHIPPED <date>]` (its `vX.Y.*` milestones are all closed). Derive status from GitHub milestone open/closed state on each re-run; if GitHub is absent, set it manually.
 

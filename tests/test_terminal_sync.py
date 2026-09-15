@@ -8,12 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CHECKS = {
     # script-gated sync workflows must call the deterministic gate
-    "src/workflows/4a_verify-and-ship.md": ["reconcile.py", "terminal-sync-invariant", "--pr-id"],
-    "src/workflows/3b_create-issue.md": ["reconcile.py", "terminal-sync-invariant"],
-    "src/workflows/3c_sprint-planning.md": ["reconcile.py", "terminal-sync-invariant"],
-    "src/workflows/3a_version-planning.md": ["reconcile.py", "terminal-sync-invariant"],
+    "src/workflows/4a-verify-and-ship.md": ["reconcile.py", "terminal-sync-invariant", "--pr-id"],
+    "src/workflows/3b-create-issue.md": ["reconcile.py", "terminal-sync-invariant"],
+    "src/workflows/3c-sprint-planning.md": ["reconcile.py", "terminal-sync-invariant"],
+    "src/workflows/3a-version-planning.md": ["reconcile.py", "terminal-sync-invariant"],
     # P4: 3z surfaces the reference docs read
-    "src/workflows/3z_afk-loop.md": ["docs_read", "red_confirmed"],
+    "src/workflows/3z-afk-loop.md": ["docs_read", "red_confirmed"],
     # P1: universal disclosure rule
     "src/rules/output-mode.md": ["Disclose omissions"],
     # P3: micro-tdd records the observed RED

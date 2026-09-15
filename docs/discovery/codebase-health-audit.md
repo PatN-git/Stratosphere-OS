@@ -44,13 +44,13 @@ Code health silently degrades between feature cycles. Slice-level verification (
 - Quality drift detection: Too close to 4b's framing (architecture drift). Would blur the boundary between the two workflows.
 
 ## Prior Art
-- **4a_verify-and-ship:** Micro-audit of a single slice's diff against PRD acceptance criteria. Per-slice, not codebase-wide.
-- **4b_audit-architecture-drift:** Macro-audit of a single targeted directory for structural drift (god modules, leaked seams, dependency inversion). Requires explicit directory scope. Does not cover security, test coverage, duplication, error handling, performance, or dependency health.
+- **4a-verify-and-ship:** Micro-audit of a single slice's diff against PRD acceptance criteria. Per-slice, not codebase-wide.
+- **4b-audit-architecture-drift:** Macro-audit of a single targeted directory for structural drift (god modules, leaked seams, dependency inversion). Requires explicit directory scope. Does not cover security, test coverage, duplication, error handling, performance, or dependency health.
 - **Overlap with 4b is narrow:** Both may flag the same large file — 4b diagnoses a boundary violation, 4c diagnoses duplicated code or swallowed errors in that file. Different diseases, same symptom. 4c can cross-reference: "For deeper architectural analysis, run `/4b` on this directory."
-- **0d_nightly-consolidation:** Provides the artifact retention pattern (`docs/nightly/nightly-<date>.md`, ~90-day cleanup) that 4c adopts for `docs/audits/`.
+- **0d-nightly-consolidation:** Provides the artifact retention pattern (`docs/nightly/nightly-<date>.md`, ~90-day cleanup) that 4c adopts for `docs/audits/`.
 
 ## Non-Goals
-- Does NOT auto-fix anything. 4c is diagnostic-only — it produces a report. The developer drives fixes through `/3b_create-issue` and `/3d_implement-issue` (or micro-tdd, Jules, etc.).
+- Does NOT auto-fix anything. 4c is diagnostic-only — it produces a report. The developer drives fixes through `/3b-create-issue` and `/3d-implement-issue` (or micro-tdd, Jules, etc.).
 - Does NOT replace 4b. No architectural drift diagnosis — that remains 4b's domain.
 - Does NOT replace 4a. No slice-level acceptance-criteria verification.
 - Does NOT create GitHub issues. Outputs `docs/audits/health-<date>.md` — the developer runs `/3b` on chosen findings.
@@ -75,12 +75,12 @@ Code health silently degrades between feature cycles. Slice-level verification (
 
 # Implementation Specification
 
-> Everything below this line is the enriched implementation detail derived from the framing session. An implementer picks up this document and builds `.agents/workflows/4c_codebase-health-audit.md` from it.
+> Everything below this line is the enriched implementation detail derived from the framing session. An implementer picks up this document and builds `.agents/workflows/4c-codebase-health-audit.md` from it.
 
 ## Workflow Frontmatter
 
 ```yaml
-name: 4c_codebase-health-audit
+name: 4c-codebase-health-audit
 description: Periodic broad health screening of the full codebase across security, reliability, maintainability, correctness, performance, and dependency health.
 type: workflow HITL
 trigger: manual
@@ -340,7 +340,7 @@ For each impact category, recommend:
 - **Low:** Address opportunistically during related work.
 
 ## Cross-References
-- For architectural analysis of flagged modules, run `/4b_audit-architecture-drift` on the target directory.
+- For architectural analysis of flagged modules, run `/4b-audit-architecture-drift` on the target directory.
 - Findings tagged `[RECENT]` may be regressions from the delta window — prioritize review.
 ```
 
@@ -399,5 +399,5 @@ If no finding meets the ≥60 confidence threshold across any pass → do not ge
 ---
 
 ## Recommended Next Step
-- [x] `create-issue` — create implementation issue for `4c_codebase-health-audit.md` workflow, then implement via `/3d`.
+- [x] `create-issue` — create implementation issue for `4c-codebase-health-audit.md` workflow, then implement via `/3d`.
 - [ ] Dropped — do not build

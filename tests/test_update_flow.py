@@ -91,7 +91,7 @@ def test_pristine_update():
         "- **Size (`size:xxx`)**: `size:large` (Architectural: Multi-feature/major schema), `size:medium` (Vertical: Standard Data/Logic/UI slice), `size:small` (Surgical: Local/Single-file)\n"
         "- **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)\n"
         "- **Status (`status:xxx`)**: `status:planned`, `status:needs_spec`, `status:in progress`, `status:blocked`, `status:done`\n"
-        "- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a_version-planning`; `SPRINT` (Z) owned by `/3c_sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version."
+        "- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a-version-planning`; `SPRINT` (Z) owned by `/3c-sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version."
     )
     
     legacy_backlog = (
@@ -1590,13 +1590,13 @@ def test_managed_file_refresh():
     (tmp / ".agents" / "workflows").mkdir(parents=True, exist_ok=True)
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
     
-    wf_path = tmp / ".agents" / "workflows" / "3b_create-issue.md"
+    wf_path = tmp / ".agents" / "workflows" / "3b-create-issue.md"
     wf_path.write_text("Old workflow content", encoding="utf-8")
     
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".agents/workflows/3b_create-issue.md": {
+            ".agents/workflows/3b-create-issue.md": {
                 "version": "1.0.0",
                 "sha256_at_install": "different"
             }
@@ -1610,11 +1610,11 @@ def test_managed_file_refresh():
     shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
     
     (mock_plugin / "workflows").mkdir(parents=True, exist_ok=True)
-    (mock_plugin / "workflows" / "3b_create-issue.md").write_text("New workflow content", encoding="utf-8")
+    (mock_plugin / "workflows" / "3b-create-issue.md").write_text("New workflow content", encoding="utf-8")
     
     versions_data = {
         "artifacts": {
-            "workflows/3b_create-issue.md": {
+            "workflows/3b-create-issue.md": {
                 "version": "1.0.1",
                 "timestamp": "2026-07-09",
                 "sha256": "dummy"

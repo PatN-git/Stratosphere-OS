@@ -39,7 +39,7 @@ def test_status_pr_ready_flips_done():
         rows = status.status(c, ledger, ci_fetcher=lambda url: "SUCCESS", printer=out.append)
         assert rows[0]["state"] == "DONE" and rows[0]["pr_url"].endswith("/pull/123")
         assert any("PR ready" in line for line in out)
-        assert any("/4a_verify-and-ship" in line for line in out), "must instruct human handoff"
+        assert any("/4a-verify-and-ship" in line for line in out), "must instruct human handoff"
         # persisted
         assert dispatch.load_ledger(ledger)[0]["state"] == "DONE"
     print("PASS"); return True
@@ -113,7 +113,7 @@ def test_no_workflow_invocation_in_status():
     assert src.count("subprocess.run(") == 1, "status.py must have exactly one subprocess call"
     assert '["gh", "pr", "view"' in src, "the only subprocess must be the read-only gh pr view CI check"
     # 4a is referenced only as a printed handoff instruction, never invoked as a process
-    assert "4a_verify-and-ship" in src, "should reference the handoff instruction (as text only)"
+    assert "4a-verify-and-ship" in src, "should reference the handoff instruction (as text only)"
     print("PASS"); return True
 
 

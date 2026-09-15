@@ -22,19 +22,19 @@ def check_workflow(filepath, required_substrings):
     return True
 
 WORKFLOWS = {
-    "src/workflows/1b_concept-framing.md": [
+    "src/workflows/1b-concept-framing.md": [
         "plan-html",
         "plan-document"
     ],
-    "src/workflows/2a_write-prd.md": [
+    "src/workflows/2a-write-prd.md": [
         "plan-html",
         "plan-document"
     ],
-    "src/workflows/2b_interface-design.md": [
+    "src/workflows/2b-interface-design.md": [
         "plan-html",
         "wireframe-compare"
     ],
-    "src/workflows/3a_version-planning.md": [
+    "src/workflows/3a-version-planning.md": [
         "plan-html"
     ]
 }
