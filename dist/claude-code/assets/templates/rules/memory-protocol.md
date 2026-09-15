@@ -1,10 +1,9 @@
 ---
 trigger: always_on
-type: rule
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-07-17
-version: "1.0.6"
+timestamp: 2026-09-15
+version: "2.0.0"
 ---
 
 # Memory Protocol
@@ -12,6 +11,8 @@ version: "1.0.6"
 For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-protocol.md).
 
 ## 1. Trust Tags
+
+> **OKF v0.2 (arriving in Slice 14):** `verified: [{by, at}]` will record *who* promoted an entry and *when* — evidence the trust tag alone cannot carry. Tags stay authoritative until then.
 
 Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, and `DESIGN_RULES.md` carries exactly one trust tag.
 

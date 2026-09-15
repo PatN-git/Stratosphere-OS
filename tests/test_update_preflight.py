@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-# NOTE: Since Stratosphere-Update.md is an agentic markdown workflow file, its runtime 
+# NOTE: Since stratosphere-update's SKILL.md is an agentic markdown file, its runtime 
 # execution behavior cannot be directly validated by automated unit tests. Real validation 
 # of the preflight check is performed manually or via interactive dry-run testing.
 # This test performs a static substring check to ensure required instructions are not deleted or modified.
@@ -11,7 +11,7 @@ def test_preflight_instructions():
     # Resolve file path relative to this script's location
     test_dir = Path(__file__).resolve().parent
     repo_root = test_dir.parent
-    filepath = repo_root / "src" / "commands/update/Stratosphere-Update.md"
+    filepath = repo_root / "src" / "commands" / "stratosphere-update" / "SKILL.md"
     
     assert filepath.exists(), f"{filepath} does not exist."
 
@@ -65,7 +65,7 @@ def test_preflight_instructions():
     }
 
     failed = False
-    print("--- Verifying Stratosphere-Update.md preflight instructions ---")
+    print("--- Verifying stratosphere-update preflight instructions ---")
     for check_name, substrings in required_checks.items():
         missing = [sub for sub in substrings if sub not in content]
         if missing:

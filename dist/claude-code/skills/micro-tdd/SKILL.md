@@ -1,7 +1,8 @@
 ---
-name: Micro-TDD Execution
-type: skill
+name: micro-tdd
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
+metadata:
+  stratos.layer: execution
 version: "1.1.2"
 timestamp: 2026-07-15
 ---

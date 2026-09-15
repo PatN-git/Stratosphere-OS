@@ -15,14 +15,13 @@ Run it FROM THE PROJECT ROOT (cwd = project), e.g.:
   python <plugin>/scripts/scaffold.py --update            # refresh managed files
   python <plugin>/scripts/scaffold.py --update --dry-run  # preview the refresh
 
-Plugin assets/templates and lifecycle workflows are resolved relative to the
-script's own location; the project is resolved from the current directory.
+Plugin assets/templates and bundled skills are resolved relative to the script's
+own location; the project is resolved from the current directory.
 
-Why this matters on Antigravity: a plugin's workflows/ are NOT registered as
-slash commands, so the lifecycle workflows (0a–4c, sync-skills) are copied into
-the project's `.agents/workflows/`, where Antigravity DOES surface them as `/`
-commands. On Claude Code the plugin commands already register globally; the
-project copies are inert there.
+Every bundled artifact is an Agent Skill at `.agents/skills/<name>/SKILL.md`,
+carrying its own `references/`. That one shape is invocable as `/<name>` on
+Antigravity, Cursor, Codex, Devin and OpenClaw; Claude Code reads the same tree
+from `.claude/skills/`. There is no separate workflows/ or commands/ channel.
 """
 import argparse
 import hashlib
@@ -314,15 +313,14 @@ except ImportError:
 
 
 ASSETS = PLUGIN_ROOT / "assets" / "templates"
-# Lifecycle workflows live in workflows/ (Antigravity build) or commands/ (Claude build)
-WF_SRC = PLUGIN_ROOT / "workflows" if (PLUGIN_ROOT / "workflows").exists() else PLUGIN_ROOT / "commands"
+# Every bundled artifact is a skill: <plugin>/skills/<name>/SKILL.md (+ references/).
+SKILLS_SRC = PLUGIN_ROOT / "skills"
 
-LIFECYCLE_RE = re.compile(r"^[0-4].*\.md$")  # 0a..4b
-EXTRA_WORKFLOWS = {"sync-skills.md", "x_jules-dispatch.md"}  # non-numbered workflows to also surface on Antigravity
-
+# NOTE: `.agents/skills/` is NOT ignored. It holds the bundled lifecycle skills,
+# which must be tracked. On-demand third-party packs are ignored per-directory by
+# `.agents/skills/.gitignore`, which sync_skills.py regenerates from its lockfile.
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
-                     ".agents/skills/", "!.agents/skills/.lock.json",
                      "*.work.md", "*.stratosphere-new"]
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
@@ -335,10 +333,10 @@ def map_bundled_to_project(rel_path: str):
         if sub == "constitution": return name
         elif sub == "memory": return f".memory/{name}"
         elif sub == "rules": return f".agents/rules/{name}"
-        elif sub == "references": return f".agents/workflows/.reference/{name}"
         elif sub == "github": return f".github/workflows/{name}"
-    elif parts[0] in ("workflows", "commands") and (LIFECYCLE_RE.match(parts[-1]) or parts[-1] in EXTRA_WORKFLOWS):
-        return f".agents/workflows/{parts[-1]}"
+    elif parts[0] == "skills":
+        # skills/<name>/SKILL.md and skills/<name>/references/<file>
+        return ".agents/skills/" + "/".join(parts[1:])
     return None
 
 def reconcile_gitignore(project_dir, dry_run):
@@ -397,8 +395,7 @@ def reconcile_gitattributes(project_dir, dry_run):
 FOLDERS = [
     ".memory",
     ".agents/rules",
-    ".agents/workflows",
-    ".agents/workflows/.reference",
+    ".agents/skills",
     ".agents/scripts",
     "docs/discovery",
     "docs/prds",
@@ -1065,17 +1062,13 @@ def main():
         if re.search(r'^trigger:\s*glob\b', src.read_text(encoding="utf-8"), re.M):
             place(src, project / ".claude" / "rules" / src.name, res, dry, update=update, tier="managed")
 
-    # 5. Workflow references -> .agents/workflows/.reference/
-    if (ASSETS / "references").exists():
-        for src in sorted((ASSETS / "references").glob("*")):
+    # 5. Bundled skills -> .agents/skills/<name>/ (SKILL.md + its references/).
+    #    One canonical shape for every host; invocable as /<name>.
+    if SKILLS_SRC.exists():
+        for src in sorted(SKILLS_SRC.rglob("*")):
             if src.is_file():
-                place(src, project / ".agents" / "workflows" / ".reference" / src.name, res, dry, update=update, tier="managed")
-
-    # 6. Lifecycle workflows -> .agents/workflows/ (discoverable on Antigravity)
-    if WF_SRC.exists():
-        for src in sorted(WF_SRC.glob("*.md")):
-            if LIFECYCLE_RE.match(src.name) or src.name in EXTRA_WORKFLOWS:
-                place(src, project / ".agents" / "workflows" / src.name, res, dry, update=update, tier="managed")
+                rel = src.relative_to(SKILLS_SRC)
+                place(src, project / ".agents" / "skills" / rel, res, dry, update=update, tier="managed")
 
     # 6b. Project-local deterministic scripts (validate_memory, reconcile, design, okf viewer/view)
     place_project_scripts(project, res, dry, update=update)
@@ -1114,7 +1107,7 @@ def main():
         else:
             root_index_content = (
                 "---\n"
-                "okf_version: \"0.1\"\n"
+                "okf_version: \"0.2\"\n"
                 "---\n\n"
                 "# StratosphereOS Knowledge Bundle\n\n"
                 "Conforms to Open Knowledge Format (OKF) v0.1.\n\n"

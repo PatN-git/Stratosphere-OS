@@ -11,7 +11,7 @@ check to the single issue that received the PR comment (e.g. the shipped slice),
 so co-passed ids (cleared dependents, a flipped epic) are not required to carry it.
 
 Offline / no `gh` -> internal-consistency check only, exit 0 (`[local-only]`).
-Contract + heal protocol: .agents/workflows/.reference/terminal-sync-invariant.md
+Contract + heal protocol: .agents/skills/4a-verify-and-ship/references/terminal-sync-invariant.md
 
 Usage:
   python .agents/scripts/reconcile.py --ids BT-007[,BT-006,BT-005] \

@@ -43,6 +43,18 @@ def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
     
     # Write mock template BACKLOG_MAP.md
     (mock_plugin / "assets" / "templates" / "memory" / "BACKLOG_MAP.md").write_text(backlog_template_content, encoding="utf-8")
+
+    # Pre-place the constitution files from the plugin's own templates. These tests
+    # exercise SOS:BLOCK merging in .memory/, not constitution review; without this
+    # the update halts on AGENTS/CLAUDE/GEMINI "needs merge/review" and never
+    # reaches the backlog merge it is asserting on.
+    ctpl = mock_plugin / "assets" / "templates" / "constitution"
+    if ctpl.is_dir():
+        for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+            src_f = ctpl / name
+            if src_f.exists():
+                (tmp_dir / name).write_text(src_f.read_text(encoding="utf-8"), encoding="utf-8")
+
     return mock_plugin / "scripts" / "scaffold.py"
 
 def test_pristine_update():
@@ -1587,16 +1599,17 @@ def test_managed_file_refresh():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     
-    (tmp / ".agents" / "workflows").mkdir(parents=True, exist_ok=True)
-    (tmp / ".agents").mkdir(parents=True, exist_ok=True)
-    
-    wf_path = tmp / ".agents" / "workflows" / "3b-create-issue.md"
-    wf_path.write_text("Old workflow content", encoding="utf-8")
+    # v4: bundled artifacts are skills at .agents/skills/<name>/SKILL.md,
+    # not flat files under .agents/workflows/ (retired).
+    (tmp / ".agents" / "skills" / "3b-create-issue").mkdir(parents=True, exist_ok=True)
+
+    wf_path = tmp / ".agents" / "skills" / "3b-create-issue" / "SKILL.md"
+    wf_path.write_text("Old skill content", encoding="utf-8")
     
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".agents/workflows/3b-create-issue.md": {
+            ".agents/skills/3b-create-issue/SKILL.md": {
                 "version": "1.0.0",
                 "sha256_at_install": "different"
             }
@@ -1609,12 +1622,12 @@ def test_managed_file_refresh():
         shutil.rmtree(mock_plugin)
     shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
     
-    (mock_plugin / "workflows").mkdir(parents=True, exist_ok=True)
-    (mock_plugin / "workflows" / "3b-create-issue.md").write_text("New workflow content", encoding="utf-8")
+    (mock_plugin / "skills" / "3b-create-issue").mkdir(parents=True, exist_ok=True)
+    (mock_plugin / "skills" / "3b-create-issue" / "SKILL.md").write_text("New skill content", encoding="utf-8")
     
     versions_data = {
         "artifacts": {
-            "workflows/3b-create-issue.md": {
+            "skills/3b-create-issue/SKILL.md": {
                 "version": "1.0.1",
                 "timestamp": "2026-07-09",
                 "sha256": "dummy"
@@ -1627,8 +1640,8 @@ def test_managed_file_refresh():
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
     refreshed_content = wf_path.read_text(encoding="utf-8")
-    if refreshed_content != "New workflow content":
-        raise AssertionError("Expected managed workflow file to be refreshed/updated")
+    if refreshed_content != "New skill content":
+        raise AssertionError("Expected managed skill file to be refreshed/updated")
     print("Managed file refresh test passed!")
 
 def test_constitution_needs_review():

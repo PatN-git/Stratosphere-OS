@@ -31,6 +31,11 @@ from pathlib import Path
 PASS, FAIL = [], []
 
 
+# Derived, never hardcoded: a count literal silently rots and then fails as
+# "wrong count" rather than "layout changed".
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+EXPECTED_SKILLS = len(list((_REPO_ROOT / "dist" / "antigravity" / "skills").glob("*/SKILL.md")))
+
 def check(label, cond):
     (PASS if cond else FAIL).append(label)
     print(f"  {'PASS' if cond else 'FAIL'}  {label}")
@@ -193,13 +198,13 @@ def assert_tree(tool, scope, home, proj):
     if tool == "claude-code":
         base = Path(home) / ".claude" if scope != "local" else Path(proj) / ".claude"
         plugin = base / "plugins" / "stratosphere-os"
-        check("install: 15 commands", len(list((base / "commands").glob("*.md"))) == 15 if (base / "commands").exists() else False)
+        check("install: 26 skills", len(list((base / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS if (base / "skills").exists() else False)
         check("install: micro-tdd skill", (base / "skills" / "micro-tdd").exists())
     else:
         plugin = (Path(proj) / ".agents" / "plugins" / "stratosphere-os") if scope == "local" \
             else (Path(home) / ".gemini" / "config" / "plugins" / "stratosphere-os")
         check("install: plugin.json", (plugin / "plugin.json").exists())
-        check("install: 14 workflows", len(list((plugin / "workflows").glob("*.md"))) == 14 if (plugin / "workflows").exists() else False)
+        check("install: no legacy workflows/ dir", not (plugin / "workflows").exists())
     check("install: bundled scaffold.py", (plugin / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
     p = Path(proj)
@@ -207,7 +212,8 @@ def assert_tree(tool, scope, home, proj):
         check(f"scaffold: {f}", (p / f).exists())
     check("scaffold: 9 memory files", len(list((p / ".memory").glob("*.md"))) == 9 if (p / ".memory").exists() else False)
     check("scaffold: 3 rule files", len(list((p / ".agents" / "rules").glob("*.md"))) == 3 if (p / ".agents" / "rules").exists() else False)
-    check("scaffold: 14 workflows", len(list((p / ".agents" / "workflows").glob("*.md"))) == 14 if (p / ".agents" / "workflows").exists() else False)
+    check("scaffold: 26 skills", len(list((p / ".agents" / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS)
+    check("scaffold: no legacy workflows/ dir", not (p / ".agents" / "workflows").exists())
     check("scaffold: lockfile", (p / ".agents" / ".stratosphere-lock.json").exists())
     check("scaffold: okf_view.py", (p / ".agents" / "scripts" / "okf_view.py").exists())
     check("scaffold: okf_viewer/generator.py", (p / ".agents" / "scripts" / "okf_viewer" / "generator.py").exists())

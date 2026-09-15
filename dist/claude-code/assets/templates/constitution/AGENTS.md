@@ -1,9 +1,8 @@
 ---
-type: constitution
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "2.0.1"
-timestamp: 2026-07-17
+version: "3.0.0"
+timestamp: 2026-09-15
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -12,12 +11,13 @@ timestamp: 2026-07-17
 <project vision — set during stratosphere-setup>
  
 ## 1. Architecture
-- **Layer 1: Workflows** (`.agents/workflows`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle and are triggered only by the user. Do not execute them autonomously. A user-invoked **orchestrator** workflow may sequence other workflows as part of its authorized run; this is the only sanctioned form of workflow-invoking-workflow.
+- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously.** Enforcement is host-dependent: `disable-model-invocation` (Claude Code, Cursor, OpenClaw), `triggers: ["user"]` (Devin), `agents/openai.yaml` (Codex). **Antigravity has no manual-only field** — there the `description` is the only signal and the guarantee is advisory, not enforced (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
-- **Layer 3: Execution** (`.agents/skills/ & /execution`)-> Deterministic, autonomous (AFK) tools and specialized playbooks. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
+- **Layer 3: Execution Skills** (`.agents/skills/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
 
 ## 2. Strict Precedence
-- **Precedence:** 1. Core Rules (`.agents/rules/`) | 2. Direct User Request | 3. Active Workflow (`.agents/workflows/`) | 4. Autonomous Skill (`.agents/skills/`) | 5. Core Operating Principles.
+- **Precedence:** 1. Core Rules (`.agents/rules/`) | 2. Direct User Request | 3. Active Lifecycle Skill (`metadata.stratos.layer: lifecycle`) | 4. Autonomous Execution Skill (`metadata.stratos.layer: execution`) | 5. Core Operating Principles.
+- **Discriminator:** levels 3 and 4 both resolve to `.agents/skills/`. Read `metadata.stratos.layer` to tell them apart — never the path. `metadata.stratos.mode` (`HITL` | `AFK`) describes execution style **after** invocation and plays no part in precedence.
 - **Safety:** Core safety, security, and environment hygiene are invariant. If a user request or skill instruction violates a Core Rule or architecture constraint, stop execution immediately, surface the violation, and await user confirmation.
 
 ## 3. Files, Security & Environments
@@ -63,5 +63,7 @@ timestamp: 2026-07-17
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
-- **Host activation:** Antigravity loads these rules from `.agents/rules/` via their `trigger`/`globs` frontmatter. Claude Code loads `glob` rules (e.g. `okf-protocol`) natively from `.claude/rules/` via `paths:` when matching files are touched; `always_on` rules (`output-mode`, `memory-protocol`) load via the pointers above. Contract: `okf-protocol.md` §2.1.
+- **Host activation (rules):** Antigravity loads rules from `.agents/rules/` via `trigger`/`globs`. Claude Code loads `glob` rules (e.g. `okf-protocol`) from `.claude/rules/` via `paths:`. `always_on` rules (`output-mode`, `memory-protocol`) load via the pointers above. Cursor, Codex, Devin and Copilot reach them through this file, which they all read. Contract: `okf-protocol.md` §2.1.
+- **Host activation (skills):** skills are emitted to `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw) and `.claude/skills/` (Claude Code, also read by Devin). One canonical body; placement differs, content never does.
+- **Known gap — Antigravity HITL is advisory.** Antigravity reads only `name` and `description` from a skill; it honours no manual-only field. A Layer 1 skill can therefore be model-invoked there. Every lifecycle skill's `description` restates its user-only status, but this is a prompt-level signal, **not enforcement**. Accepted deliberately; do not describe it as a guarantee.
 ``

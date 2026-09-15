@@ -336,6 +336,14 @@ Additive; changes no existing field.
 
 ## Slice 15 — Ship
 
+**`dist/` sequencing — corrected during execution.** The plan held `dist/` at baseline
+until this slice so the PR would stay reviewable. That was wrong: many tests copy
+`dist/antigravity` as a mock plugin, so holding it stale means the suite validates an
+artifact that no longer matches `src/`. Worse, Slice 6 committed a partial `dist/`
+(a `git checkout` without `git clean`), leaving **both** namings on disk — 39 workflow
+files where baseline had 20 — which masked real failures. `dist/` is now regenerated
+and committed from Slice 11 onward; reviewers skip it as generated output.
+
 Rebuild. **Bump `build/build.py` VERSION 3.3.0 → 4.0.0 and the `README.md` version badge to match** — `validate.py:261-274` fails the build on a mismatch. Verify (§6). **Regenerate `dist/` in a single final commit** — 186 tracked files; mixed into hand-written slices the human diff disappears. Open the feature PR. A human merges.
 
 ---
