@@ -1,8 +1,11 @@
 ---
 name: 2a-write-prd
-description: Turn project ideas into impactful PRDs.
-type: workflow HITL
-trigger: manual
+description: "Turn project ideas into impactful PRDs. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.3.0"
 timestamp: 2026-07-24
 ---

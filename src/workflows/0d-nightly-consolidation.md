@@ -1,8 +1,11 @@
 ---
 name: 0d-nightly-consolidation
-description: Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health.
-type: workflow HITL
-trigger: manual
+description: "Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.2"
 timestamp: 2026-07-27
 ---

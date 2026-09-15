@@ -1,6 +1,11 @@
 ---
 name: stratosphere-update
-description: Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data.
+description: "Upgrade in-place the StratosphereOS framework templates, rules, and workflows without overwriting project data. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.8"
 timestamp: 2026-07-28
 ---

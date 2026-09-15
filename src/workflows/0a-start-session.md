@@ -1,8 +1,11 @@
 ---
 name: 0a-start-session
-description: Initialize session and load context from memory layer.
-type: workflow HITL
-trigger: manual
+description: "Initialize session and load context from memory layer. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.0"
 timestamp: 2026-07-17
 ---

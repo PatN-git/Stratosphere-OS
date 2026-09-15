@@ -1,6 +1,8 @@
 ---
 name: plan-html
 description: Use when presenting a complex or spatial plan to a human — roadmap, trade-off matrix, status dashboard, multi-section plan document, decision record, side-by-side comparison. Generates one self-contained interactive HTML file; fires on ≥~100-line or spatial human-facing output. Defaults to markdown for agent-loop content, repo docs, model input, and short/simple output.
+metadata:
+  stratos.layer: execution
 version: "1.1.4"
 timestamp: 2026-06-25
 ---

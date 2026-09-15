@@ -1,8 +1,11 @@
 ---
 name: 4a-verify-and-ship
-description: Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified.
-type: workflow HITL
-trigger: manual
+description: "Validate test suites against business requirements, acceptance criteria, and security boundaries. Open/update PR once verified. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.3"
 timestamp: 2026-07-28
 ---

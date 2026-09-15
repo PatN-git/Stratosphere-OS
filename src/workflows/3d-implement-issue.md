@@ -1,8 +1,11 @@
 ---
 name: 3d-implement-issue
-description: TDD implementation of vertical slices with token-efficient Fast-Tracks.
-type: workflow HITL
-trigger: manual
+description: "TDD implementation of vertical slices with token-efficient Fast-Tracks. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "2.1.1"
 timestamp: 2026-07-23
 ---

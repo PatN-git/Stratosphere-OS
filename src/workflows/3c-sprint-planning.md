@@ -1,8 +1,11 @@
 ---
 name: 3c-sprint-planning
-description: Sequence 10-day capacity block of leaf slices into GitHub sprint milestone.
-type: workflow HITL
-trigger: manual
+description: "Sequence 10-day capacity block of leaf slices into GitHub sprint milestone. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "2.2.2"
 timestamp: 2026-07-28
 ---

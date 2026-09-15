@@ -1,6 +1,11 @@
 ---
 name: sync-skills
-description: Fetch third-party skill packs on demand from external-skills.json into the project's .agents/skills/.
+description: "Fetch third-party skill packs on demand from external-skills.json into the project's .agents/skills/. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.1"
 timestamp: 2026-06-17
 ---

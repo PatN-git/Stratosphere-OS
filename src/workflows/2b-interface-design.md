@@ -1,8 +1,11 @@
 ---
 name: 2b-interface-design
-description: Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing.
-type: workflow HITL
-trigger: manual
+description: "Design the interface (UI layout or non-UI contract) of a feature, post-PRD and pre-slicing. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.3.0"
 timestamp: 2026-07-24
 ---

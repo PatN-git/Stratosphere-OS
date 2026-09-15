@@ -1,6 +1,11 @@
 ---
 name: stratosphere-setup
-description: Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead.
+description: "Bootstrap a project with the StratosphereOS constitution, durable memory layer, workspace rules, and the right skill packs. For upgrades, run stratosphere-update instead. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.14"
 timestamp: 2026-07-28
 ---

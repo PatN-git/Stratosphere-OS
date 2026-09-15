@@ -1,8 +1,11 @@
 ---
 name: 1b-concept-framing
-description: Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries.
-type: workflow HITL
-trigger: manual
+description: "Grill the user relentlessly about the concept to lock vocabulary, problem statement, and framing before the PRD. Produces a discovery brief and candidate [[G-xxx]] glossary entries. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.0"
 timestamp: 2026-07-24
 ---

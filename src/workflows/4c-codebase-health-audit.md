@@ -1,8 +1,11 @@
 ---
 name: 4c-codebase-health-audit
-description: Periodic broad health screening of the full codebase across security, reliability, maintainability, correctness, performance, and dependency health. Produces a durable audit report categorized by impact; the developer drives fixes via /3b and /3d.
-type: workflow HITL
-trigger: manual
+description: "Periodic broad health screening of the full codebase across security, reliability, maintainability, correctness, performance, and dependency health. Produces a durable audit report categorized by impact; the developer drives fixes via /3b and /3d. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.0"
 timestamp: 2026-07-27
 ---

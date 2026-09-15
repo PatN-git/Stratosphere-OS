@@ -1,8 +1,11 @@
 ---
 name: 3b-create-issue
-description: Standardize feature ideas into vertical slices with ICE prioritization.
-type: workflow HITL
-trigger: manual
+description: "Standardize feature ideas into vertical slices with ICE prioritization. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "2.3.0"
 timestamp: 2026-07-28
 ---

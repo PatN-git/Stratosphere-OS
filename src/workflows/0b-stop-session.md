@@ -1,8 +1,11 @@
 ---
 name: 0b-stop-session
-description: Conclude session by codifying progress, updating memory, and linting.
-type: workflow HITL
-trigger: manual
+description: "Conclude session by codifying progress, updating memory, and linting. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.1"
 timestamp: 2026-07-28
 ---

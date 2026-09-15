@@ -166,12 +166,26 @@ def closure_for(text: str, ref_dir) -> set:
     return seen
 
 
+CODEX_SIDECAR = """# Codex reads invocation policy from this fixed path, not from SKILL.md
+# frontmatter. Keep in sync with `disable-model-invocation` / `triggers`.
+policy:
+  allow_implicit_invocation: false
+"""
+
+
 def emit_skill(src_md, name, skills_dir, ref_dir):
     """Emit one self-contained skill: SKILL.md + its transitive references/."""
     dst = skills_dir / name
     dst.mkdir(parents=True, exist_ok=True)
     copy_md_with_frontmatter(src_md, dst / "SKILL.md", name=name)
     body = src_md.read_text(encoding="utf-8")
+
+    # Codex honours no frontmatter field; it reads <skill>/agents/openai.yaml by
+    # fixed convention. Emit it wherever the skill declares itself manual-only.
+    if re.search(r'^disable-model-invocation:\s*true\s*$', body, re.M):
+        (dst / "agents").mkdir(exist_ok=True)
+        write_lf(dst / "agents" / "openai.yaml", CODEX_SIDECAR)
+
     refs = closure_for(body, ref_dir)
     for rname in sorted(refs):
         (dst / "references").mkdir(exist_ok=True)

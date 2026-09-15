@@ -1,8 +1,11 @@
 ---
 name: 3a-version-planning
-description: Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone.
-type: workflow HITL
-trigger: manual
+description: "Maps parent features to releases and roadmaps; owns MAJOR.MINOR of vX.Y.Z milestone. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.0"
 timestamp: 2026-07-24
 ---

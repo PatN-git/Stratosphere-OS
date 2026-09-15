@@ -1,8 +1,11 @@
 ---
 name: 0c-handoff
-description: Compact conversation into handoff document for next session.
-type: workflow HITL
-trigger: manual
+description: "Compact conversation into handoff document for next session. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.3"
 timestamp: 2026-07-17
 ---

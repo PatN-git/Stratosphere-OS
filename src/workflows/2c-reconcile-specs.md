@@ -1,8 +1,11 @@
 ---
 name: 2c-reconcile-specs
-description: Pre-slicing spec audit. Reconciles Research/Discovery/PRD/Interface-Design (and any declared schema source) for cross-artifact contradictions; proposes resolutions, applies the spec edits the user does not skip.
-type: workflow HITL
-trigger: manual
+description: "Pre-slicing spec audit. Reconciles Research/Discovery/PRD/Interface-Design (and any declared schema source) for cross-artifact contradictions; proposes resolutions, applies the spec edits the user does not skip. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.0"
 timestamp: 2026-07-28
 ---

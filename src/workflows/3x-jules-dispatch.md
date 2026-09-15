@@ -1,8 +1,11 @@
 ---
 name: 3x-jules-dispatch
-description: EXPERIMENTAL launcher — run the opt-in jules-dispatch skill (offload bounded mode:AFK slices to Google Jules async agent). Thin delegator; the skill holds all logic and guardrails.
-type: workflow HITL
-trigger: manual
+description: "EXPERIMENTAL launcher — run the opt-in jules-dispatch skill (offload bounded mode:AFK slices to Google Jules async agent). Thin delegator; the skill holds all logic and guardrails. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "0.1.2"
 timestamp: 2026-07-17
 ---

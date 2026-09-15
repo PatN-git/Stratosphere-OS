@@ -1,8 +1,11 @@
 ---
 name: 1a-research
-description: Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations.
-type: workflow HITL
-trigger: manual
+description: "Conduct market and competitive research to produce brief on findings, trade-offs, and recommendations. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.6"
 timestamp: 2026-07-24
 ---

@@ -1,8 +1,11 @@
 ---
 name: 1c-concept-map
-description: Chart decisions as tickets on tracker and converge them to discovery brief.
-type: workflow HITL
-trigger: manual
+description: "Chart decisions as tickets on tracker and converge them to discovery brief. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.1.1"
 timestamp: 2026-07-28
 ---

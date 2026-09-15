@@ -1,8 +1,11 @@
 ---
 name: 4b-audit-architecture-drift
-description: Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals.
-type: workflow HITL
-trigger: manual
+description: "Macro Audit. Scans a targeted directory for high-confidence structural drift and generates syntax-linked refactor proposals. Invoke only on explicit user request — never autonomously."
+disable-model-invocation: true
+triggers: ["user"]
+metadata:
+  stratos.layer: lifecycle
+  stratos.mode: HITL
 version: "1.0.9"
 timestamp: 2026-07-24
 ---
