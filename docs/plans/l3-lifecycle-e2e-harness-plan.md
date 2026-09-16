@@ -2,7 +2,7 @@
 type: plan
 title: L3 — Automated Lifecycle E2E Harness
 description: Drive the full StratOS lifecycle (0a→1a→1b→2a→2b→3b→3d→4a→0b) end-to-end in a throwaway environment with no human interaction, asserting on artifacts rather than prose.
-version: "4.0.0"
+version: "5.0.0"
 generated:
   by: Claude Opus 5
   at: 2026-09-15
@@ -120,6 +120,8 @@ source. **Check the source before trusting a fact; do not assume it is still tru
 - **E7.** No `.git` under the temp root may have a remote outside the temp root. Strip every
   `origin`, set `GIT_CONFIG_GLOBAL` to a temp file redirecting pushes to a local bare repo,
   and walk **all** `.git` directories in preflight — not just the project's (fact 14).
+- **E8.** Every agent call pins its model explicitly (§6). No run inherits an ambient
+  `settings.json`, and every report records the models that produced it.
 
 ## 4. Why a shim is the default lane
 
@@ -158,6 +160,34 @@ service cannot run offline.
 
 Pin it in `tests/lifecycle-harness/fixture/topic.md`, together with the positions the
 responder defends (Slice 0), so the subject is versioned alongside the harness.
+
+## 6. Models
+
+Every agent call pins its model. Nothing inherits `~/.claude/settings.json` — a harness
+whose result depends on an ambient local setting is not reproducible on another machine or
+in CI, and the three roles are not equal work.
+
+| Role | Default | Why |
+|:---|:---|:---|
+| **Driver** — runs the lifecycle skill under test | `opus` | The thing being tested. Match what people actually run: a green run on a model nobody uses proves nothing about the one they do. |
+| **User Proxy** | `haiku` | One question against a 4KB fixture, in character. The most-called role and by far the simplest, so it is where over-provisioning costs most and buys least. |
+| **Sufficiency Auditor** | `sonnet` | Bounded judgement, returns a JSON verdict. |
+
+Overridable per run (`--model`, `--proxy-model`, `--auditor-model`). The run prints the trio
+it used and Slice 9's report records it, so a finding can never be traced to the wrong model.
+
+**Nested subagents cannot be pinned — state this, do not paper over it.** `1b`'s Skeptical
+Challenger, `2b`'s Stress Tester, `3b`'s Slice Draft Auditor and `4a`'s two auditors are
+spawned by the skills, not by the harness. No skill names a model (verified: the only
+`model` token in those files is `disable-model-invocation`), so they inherit the driver's.
+The driver choice therefore sets the cost of **six** runs, not one — which is most of why a
+full-depth lane is expensive.
+
+**What the choice decides.** The question budget calibrated in Slice 0 is model-dependent:
+a sharper model asks fewer, better questions and reaches a sufficient brief sooner.
+Calibrate on the model the lane will actually drive, or the budget does not transfer. This
+couples directly to Slice 7 — an Opus driver on every PR is not a cheap CI job, so the
+lane's model is a cost decision to make deliberately, not a default to inherit.
 
 ---
 
@@ -331,6 +361,10 @@ repo behind; `gh repo list` is unchanged before and after.
 
 - Default lane in `build-guard.yml`, behind the existing `pytest` step, gated on `claude`
   being available — skip with a clear message when it is not, never a silent pass.
+- **Choose the lane's driver model deliberately (§6).** It sets the cost of the driver and
+  of five nested subagents. If per-PR Opus is too expensive, drive the PR lane with a
+  cheaper model and **re-calibrate the question budget for it** — a budget tuned on one
+  model does not transfer to another. Nightly can drive what people actually run.
 - `--live-gh` nightly, not per PR (E4).
 - Publish `<temp>/logs/` as an artifact on failure.
 
@@ -369,8 +403,10 @@ Classify every finding, because the three classes demand different action:
 | `harness` | the assertion, shim or responder is wrong | this plan's backlog |
 | `environment` | no network, no `claude`, absent MCP server | neither — recorded so it is not re-diagnosed next run |
 
-Each finding carries: phase, class, **evidence** (file path, log line, or the exact command
-and its output), what was expected, and a proposed change. No finding ships without
+Each finding carries: phase, class, **the models that produced it** (driver/proxy/auditor,
+§6), **evidence** (file path, log line, or the exact command and its output), what was
+expected, and a proposed change. Without the model, a `stratos` finding cannot be reproduced
+— "2a omitted the cost table" means something different on Haiku than on Opus. No finding ships without
 evidence — an unevidenced observation is prose, and E3 keeps prose out of this harness.
 
 The signals already exist; Slice 9 is about capturing rather than discarding them:
@@ -391,7 +427,7 @@ reports the findings from `0a`–`2a`.
 
 ---
 
-## 6. Order
+## 7. Order
 
 ```
 0 → 1 → 2 → 3 → 4 → 5 → 9 → 6 → 7 → 8
@@ -404,7 +440,7 @@ any other slice is built. 2 blocks 4. 5 hardens 4. **9 lands after 5**, once eve
 records exists, but the collection hooks go in as each slice is built rather than being
 retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 
-## 7. Verification
+## 8. Verification
 
 | Check | Slice |
 |:---|:---|
@@ -418,6 +454,7 @@ retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 | The throwaway is scaffolded and passes `validate_memory.py` before phase 1 | 1 |
 | Temp environment removed on success, failure and SIGINT | 1 |
 | Every `gh` call served; unknown subcommand fails loudly; `[MIRROR-OK]` reached | 2 |
+| Every agent call passes an explicit `--model`; nothing inherits `settings.json` | 0 |
 | Each phase asserts an artifact + a frontmatter invariant | 4 |
 | No assertion reads agent prose | 4 |
 | `2b` completes Path C headlessly, with no generator MCP | 4 |
@@ -429,7 +466,7 @@ retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 | Every finding carries evidence and a class; a broken skill lands as `stratos` | 9 |
 | Shimmed lane runs per PR; live lane nightly | 7 |
 
-## 8. Risks
+## 9. Risks
 
 | Risk | Mitigation |
 |:---|:---|
@@ -441,12 +478,14 @@ retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 | `reconcile.py` drift loops forever with no scripted answer | `--max-heal-attempts`; shim store is authoritative for `BACKLOG_MAP` (Slice 5, fact 6) |
 | `1a`'s live searches make the lane slow or non-reproducible | Structural assertions only; `--skip-research` where there is no egress (E4) |
 | A killed live run orphans a GitHub repo | Scope preflight + atexit + signal handler; print the delete command on failure (Slice 6) |
+| A budget calibrated on one model is silently reused on another | The run prints its models and the report records them (§6); re-calibrate when the lane's driver changes (Slice 7) |
+| Nested subagents inherit the driver, multiplying its cost six ways | Stated as a limit, not hidden; it is the main reason the full lane is nightly rather than per-PR (§6) |
 | Only Claude Code is exercisable headlessly, and `ship-only` is untested | Stated as explicit limits, not papered over (Slice 8) |
 | Harness passes because a gate silently never ran | Per-phase sentinels; a missing sentinel is a failure, never a skip |
 | The report becomes a dumping ground nobody acts on | Every finding is classified and routed; `stratos` findings go to `/2c-reconcile-specs` as real work, not a list |
 | A bounded grill produces a brief too thin to be a real test | The Sufficiency Auditor, not the question count, decides; a `FAIL` with unmet gaps fails the run (Slice 0) |
 
-## 9. Lifecycle defects this planning found — and their resolution
+## 10. Lifecycle defects this planning found — and their resolution
 
 Each was verified against the source while planning the harness, then triaged with the
 maintainer. **Two of the five were not defects at all**, which is itself the lesson: a
