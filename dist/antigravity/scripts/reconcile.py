@@ -148,6 +148,9 @@ def main(argv=None):
     ap.add_argument('--fields', default=','.join(ALL_FIELDS),
                     help="mirror fields to check (default: all). Pass only the fields this phase wrote.")
     ap.add_argument('--backlog', default='.memory/BACKLOG_MAP.md')
+    ap.add_argument('--require-gh', action='store_true',
+                    help="terminal gates pass this: refuse to report success when GitHub "
+                         "cannot be reached, instead of silently not verifying")
     args = ap.parse_args(argv)
 
     ids = [i.strip() for i in args.ids.split(',') if i.strip()]
@@ -155,6 +158,11 @@ def main(argv=None):
     rows = parse_backlog(args.backlog)
 
     if not gh_available():
+        # A terminal gate must not pass on an unverified mirror. Without
+        # --require-gh this stays exit 0 so local dev runs are unaffected.
+        if args.require_gh:
+            print("[MIRROR-UNVERIFIED: gh unavailable — terminal invariant NOT checked]")
+            return 3
         print("[local-only — GitHub not checked]")
         missing = [i for i in ids if i not in rows]
         if missing:

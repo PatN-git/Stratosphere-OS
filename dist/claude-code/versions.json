@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "a763472e0ab9ddb92329c0053af67a59d809172f87df8d60526c37c3b085451a",
+      "sha256": "909ae2919550a63382155055e49439349cf455db7883810e07bb12c58950b692",
       "timestamp": "2026-09-15",
       "version": "3.0.0"
     },
@@ -186,7 +186,7 @@
       "version": "1.1.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "f20d95effecb42f4ede2c8fda04d99767448f649bd8e05c8aca8d84135aea659",
+      "sha256": "6aa9d479ba3fc7fdb2c4f5d078c16721de629ec94508849235b4e38d00a71490",
       "timestamp": "2026-07-24",
       "version": "1.1.0"
     },
@@ -201,7 +201,7 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "54ed2b92b0fa0e6aaaf54e8512d937e8d6618f28bd1ebc04ecdabad47466abf8",
+      "sha256": "f67ecb1ddb041a57084bd0526233aed8bb16ac72cce5161aa69efebfdbc33c6d",
       "timestamp": "2026-07-28",
       "version": "2.3.0"
     },
@@ -226,7 +226,7 @@
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "ebc11c30a3aa7702fae8b83518d7fc0e6ff5b859242712d0724042d1ec5cec22",
+      "sha256": "6855a191806242995e665286361c93b88eed939fb19b4072bd40b90b0ebeba79",
       "timestamp": "2026-07-28",
       "version": "2.2.2"
     },
@@ -261,7 +261,7 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "f81b59d907afdfa8b599b1c6a711b26b5f6127168825e44441e16aac50cff69b",
+      "sha256": "c55de8df14266afc1587692b1e7bd90fe6fa2d0faa51fb17d55d1043d23d286b",
       "timestamp": "2026-07-28",
       "version": "1.1.3"
     },

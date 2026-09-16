@@ -2,7 +2,7 @@
 type: plan
 title: L3 — Automated Lifecycle E2E Harness
 description: Drive the full StratOS lifecycle (0a→1a→1b→2a→2b→3b→3d→4a→0b) end-to-end in a throwaway environment with no human interaction, asserting on artifacts rather than prose.
-version: "3.0.0"
+version: "4.0.0"
 generated:
   by: Claude Opus 5
   at: 2026-09-15
@@ -184,10 +184,18 @@ failure `1b:64` forbids. Isolation is what makes this legitimate rather than a l
   `PASS`, or `FAIL` plus the specific gaps. This replaces the human's "enough" declaration
   with something checkable, so a bound truncates deliberately rather than arbitrarily.
 
+**The budget belongs to the harness, not to `1b`.** `1b`'s grill is deliberately unbounded
+and the *user* ends it (`1b:64,68`) — because agents stop too early, and an agent that
+decides it has asked enough is an agent grading its own work. That design is correct and
+stays. The harness is standing in for the user, so the bound is the harness's own stopping
+policy, expressed through the responder. **No change to `1b` follows from this.**
+
 **Question budget: 10 per round** (`--max-questions`), auditor gate, then at most one more
 round seeded by its gaps. **Hard cap 2 rounds / 20 questions**, after which the run fails
-naming the unmet gaps. `1b:68` calls 20–50 typical, so 10 yields a thin brief by design —
-the auditor decides whether thin is sufficient, and the cap guarantees termination.
+naming the unmet gaps. Default 10 in the shimmed lane keeps CI fast; the nightly
+`--live-gh` lane runs `--max-questions 30` so a realistic-depth grill is exercised at least
+once a day. A short run yields a thin brief by design — the auditor, not the count, decides
+whether thin is sufficient, and the cap guarantees termination.
 
 - **Default answer policy**, checked in and versioned with the fixture:
   - Pick-among-generated (`1b` framings, `2b` Phase 2.5 directions) → **always option 1**.
@@ -437,20 +445,22 @@ retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 | The report becomes a dumping ground nobody acts on | Every finding is classified and routed; `stratos` findings go to `/2c-reconcile-specs` as real work, not a list |
 | A bounded grill produces a brief too thin to be a real test | The Sufficiency Auditor, not the question count, decides; a `FAIL` with unmet gaps fails the run (Slice 0) |
 
-## 9. Lifecycle defects this planning already found
+## 9. Lifecycle defects this planning found — and their resolution
 
-**Not L3's to fix, and not hypothetical** — each was verified against the source while
-planning the harness. They are listed here because L3 exists to find exactly this class of
-problem, and these were found before a single line of it was written. Route to
-`/2c-reconcile-specs`.
+Each was verified against the source while planning the harness, then triaged with the
+maintainer. **Two of the five were not defects at all**, which is itself the lesson: a
+static read cannot distinguish a bug from a deliberate design without asking. All resolved
+changes are in this PR.
 
-| # | Defect | Evidence | Why it matters |
+| # | Finding | Verdict | Resolution |
 |:--|:---|:---|:---|
-| D1 | Three skills commit and push to the **default branch** as an automatic side effect | `2a-write-prd.md:88`, `2b-interface-design.md:100`, `3a-version-planning.md:69` | AGENTS.md §4 permits a push only when "(3) it is a non-`main` feature branch" and calls push "an authorized ship action, never an automatic side effect". These push to `main` with no authorization gate. |
-| D2 | `reconcile.py` **fails open** when GitHub is unreachable | `reconcile.py:157-163` — prints `[local-only — GitHub not checked]` and `return 0` | The four sync gates say "non-zero → heal". Exit 0 reads as pass, so the terminal-sync invariant is silently not enforced offline. |
-| D3 | The same gates are **unbounded loops** | `3a:67`, `3b:70`, `3c:70`, `4a:78` — "re-run until `[MIRROR-OK]`" | No attempt cap. Worse, combined with D2 the gate can never emit `[MIRROR-OK]` offline while also exiting 0 — so the instruction is unsatisfiable exactly when it fails open. A human notices; `3z-afk-loop` does not. |
-| D4 | `4a` Phase 5.2 runs `design_theme.py --check` **unconditionally** | `4a-verify-and-ship.md:66-70` — "If command exits non-zero, **halt and fail ship**" | A backend-only project has no `<app-css-dir>/theme.tokens.css`, so it can never ship. No UI-surface condition guards the check. |
-| D5 | `1b`'s grill has **no question budget** | `1b:64,68` — "no fixed question budget"; the user declares "enough" | Correct for HITL, unbounded for AFK. The skill already notes it "guards an AFK agent against grilling itself" but supplies no mechanism. Slice 0's budget + Sufficiency Auditor is the candidate fix. |
+| D1 | Three skills commit and push to the **default branch** automatically (`2a:88`, `2b:100`, `3a:69`), which AGENTS.md §4 clause (3) forbids | **Not a defect — deliberate.** The artifact must be reachable by every tool and agent that later picks up the work, not stranded in one working copy. | The constitution was silent on an intentional behaviour. §4 gains a narrow **documentation-artifact exception**: one generated document per run, never code, never swept drift, nothing else may push to the default branch. |
+| D2 | `reconcile.py` **fails open** offline — `[local-only]`, `return 0` — so a gate that says "non-zero → heal" silently verifies nothing | **Defect.** | `--require-gh` added. Terminal gates pass it and get exit `3` + `[MIRROR-UNVERIFIED]` when GitHub is unreachable. Default behaviour unchanged, so ordinary offline dev runs still work. |
+| D3 | Four gates are **unbounded loops** — "re-run until `[MIRROR-OK]`" with no cap | **Defect**, and it compounds with D2: offline the gate could never emit `[MIRROR-OK]` while also exiting 0, so the instruction was unsatisfiable exactly when it failed open. | Bounded to **3 attempts**, then halt and surface the drift. `[MIRROR-UNVERIFIED]` halts immediately. A human notices an infinite loop; `3z-afk-loop` does not. |
+| D4 | `4a` Phase 5.2 runs `design_theme.py --check` **unconditionally**, so a backend-only project can never ship | **Defect.** | The check is now scoped to UI surfaces — skipped, with the skip stated, when there is no `theme.tokens.css` and no UI block in the `2b` doc (Path C). |
+| D5 | `1b`'s grill has **no question budget** | **Not a defect — deliberate.** Agents stop too early; the user ends the line of questioning precisely so nothing is left unexplored. | Withdrawn. `1b` is unchanged. The harness bounds its *own* stopping policy in the responder (Slice 0), which is the harness acting as the user, not a change to the skill. |
 
-D2 and D3 compound: the gate that is supposed to be terminal is both unbounded and
-fail-open, and which one you get depends on whether `gh` happens to be reachable.
+**What remains for L3 to find:** D1–D5 were reachable by reading. The defects worth building
+a harness for are the ones only a full run surfaces — hand-offs that break under real
+artifacts, gates that deadlock in combination, skills whose cost makes them unusable AFK.
+That is Slice 9's job.

@@ -37,6 +37,7 @@ timestamp: 2026-09-15
 - **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
+- **Documentation-artifact exception (deliberate):** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected. This is intentional — the artifact has to be readable by every tool and agent that later picks up the work, not stranded in one machine's working copy. The carve-out is narrow and does not relax the Git Protocol for anything else: exactly one generated document per run, **never code**, never swept drift, and nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
  
 ## 5. Operating Principles
 - **Think Before Coding:** For non-trivial tasks, state assumptions, tradeoffs, and a short plan before coding.
