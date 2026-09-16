@@ -279,6 +279,19 @@ repo-copy (fact 14).
 of `~/.claude`, `~/.gemini` and the working repo matches; a run with any remote outside the
 temp root refuses to start; and the scaffolded project passes `validate_memory.py`.
 
+**DONE — 2026-09-16.** `run-L3.py` builds, proves and removes the environment, printing
+each invariant as it checks it. Two of the four were asserted nowhere and are now in
+`env.py`: the scaffolded `.memory/` is put through `validate_memory.py` — marker presence
+was never proof of coherence — and the working repo's `git status` joined the E1 manifest,
+which E1 always named but nothing recorded. `build/build.py` is idempotent (`dist/` is
+tracked and regenerates byte-identically), so a clean tree stays clean across a run and
+any drift is the run's own doing; a tree that is *already* dirty warns rather than
+refusing, or the harness cannot be developed against itself.
+
+**`code-simplifier` vendoring moves to Slice 4.** `3d` is its only consumer, it is the one
+setup step that needs network, and vendoring it here would make every Slice 1–3 run
+download a zip for nothing. Fact 13 still holds; the slice that needs it does it.
+
 ## Slice 2 — The `gh` shim
 
 `tests/lifecycle-harness/shims/gh` (+ `.cmd`), first on `PATH`.

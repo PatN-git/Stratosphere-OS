@@ -7,7 +7,7 @@ Plan: [`docs/plans/l3-lifecycle-e2e-harness-plan.md`](../../docs/plans/l3-lifecy
 
 ## Status
 
-**Slice 0 is PROVEN and calibrated.** A full-depth run drove `1b-concept-framing` to a
+**Slice 0 is PROVEN and calibrated; Slice 1 is done.** A full-depth run drove `1b-concept-framing` to a
 sufficient discovery brief with no human present, 2026-09-16:
 
 ```
@@ -79,9 +79,17 @@ and report "is not recognized" or `exists → False`. The un-virtualized copy un
 everywhere, so `_cli_roots()` searches it first. `CLAUDE_CLI` overrides discovery.
 
 ```bash
+python tests/lifecycle-harness/run-L3.py          # build/prove/remove the environment; no agent, no network
 python tests/lifecycle-harness/spike_1b.py        # exit 2 = claude unavailable, nothing proven
-python -m pytest tests/test_l3_responder.py tests/test_l3_env.py -q
+python -m pytest tests/test_l3_responder.py tests/test_l3_env.py tests/test_l3_run.py -q
 ```
+
+`run-L3.py` costs nothing to run: it drives no agent and reaches no network. It builds
+the throwaway, asserts the four things every later phase takes on trust — no GitHub
+credentials in the child environment, every remote resolving inside the temp root, the
+project scaffolded, and its `.memory/` passing `validate_memory.py` — then removes it.
+A dirty working repo warns rather than refusing, because the manifest compares before
+against after and pre-existing dirt is a constant on both sides.
 
 ## Pieces
 
@@ -92,6 +100,7 @@ python -m pytest tests/test_l3_responder.py tests/test_l3_env.py -q
 | `env.py` | Containment: temp HOME, temp project, stripped remotes, scrubbed tokens, guaranteed teardown. |
 | `fixture/topic.md` | The pinned subject. The proxy sees this and nothing else. |
 | `gates.md` | Every HALT/ASK point and its answer, so "every gate is answered" is falsifiable. |
+| `run-L3.py` | Slice 1: the CLI. Builds the contained environment, asserts E1/E7/E2 and the scaffold, tears it down. Drives no agent yet. |
 | `spike_1b.py` | Slice 0's spike: drive `1b` alone and see whether it terminates. |
 
 ## Two things worth knowing before extending this

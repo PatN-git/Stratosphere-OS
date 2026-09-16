@@ -138,6 +138,34 @@ def manifest(paths, max_depth: int = 1) -> dict[str, str]:
     return out
 
 
+def repo_status(repo_root: Path) -> str:
+    """`git status --porcelain` of the developer's real working repo (E1).
+
+    The three watched HOME directories are only half of E1. The harness builds
+    inside the real repo and the agent runs with `--dangerously-skip-permissions`,
+    so the repo's own dirt is the other half. `build/build.py` is idempotent -
+    `dist/` is tracked and regenerates byte-identically - so a clean tree stays
+    clean across a run and any change here is the run's own doing.
+
+    Unlike `manifest`, this is exact rather than coarse: `git status` already
+    ignores the live churn (`.tmp/`, `.agents/`) that forced the names-only
+    fingerprint, so there is no reason to blunt it.
+    """
+    r = subprocess.run(["git", "-C", str(repo_root), "status", "--porcelain"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return f"<git status failed: exit {r.returncode}>"
+    return r.stdout.strip()[:2000]
+
+
+def watched_manifest(real_home: Path, repo_root: Path) -> dict[str, str]:
+    """Everything E1 says must be the same after the run as before it."""
+    out = manifest([real_home / ".claude", real_home / ".gemini",
+                    real_home / ".config" / "devin"])
+    out[f"{repo_root}: git status"] = repo_status(repo_root)
+    return out
+
+
 def _walk(root: Path, max_depth: int, depth: int = 1):
     """Relative entry names down to `max_depth`. Names only - see manifest()."""
     with contextlib.suppress(OSError):
@@ -181,8 +209,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
     """Build an isolated project with StratOS installed, and tear it down."""
     repo_root = Path(repo_root).resolve()
     real_home = Path(os.path.expanduser("~"))
-    watched = [real_home / ".claude", real_home / ".gemini", real_home / ".config" / "devin"]
-    before = manifest(watched)
+    before = watched_manifest(real_home, repo_root)
     markers_before = install_markers_present(real_home)
 
     root = Path(tempfile.mkdtemp(prefix="l3-"))
@@ -245,10 +272,10 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
             if not failing:
                 raise
             print("[warn] E1: StratOS markers appeared in the real HOME", file=sys.stderr)
-        drift = diff_manifest(before, manifest(watched))
+        drift = diff_manifest(before, watched_manifest(real_home, repo_root))
         if drift:
-            msg = ("the run added or removed top-level entries under paths it must "
-                   "never touch (E1):\n  " + "\n  ".join(drift))
+            msg = ("the run changed something it must never touch - a top-level "
+                   "entry under HOME, or the working repo itself (E1):\n  " + "\n  ".join(drift))
             if failing:
                 print(f"[warn] {msg}", file=sys.stderr)
             else:
@@ -307,6 +334,7 @@ def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) ->
             f"scaffold.py failed (exit {r.returncode}):\n"
             f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-800:]}")
     assert_scaffolded(project)
+    assert_memory_valid(project, child)
 
 
 SCAFFOLD_MARKERS = (
@@ -324,6 +352,30 @@ def assert_scaffolded(project: Path) -> None:
     if missing:
         raise RuntimeError(
             "the project was not scaffolded - these are absent: " + ", ".join(missing))
+
+
+def assert_memory_valid(project: Path, child: dict) -> None:
+    """The scaffolded `.memory/` must pass its own validator before phase 1.
+
+    `assert_scaffolded` only proves the files arrived. This proves they are
+    coherent - IDs unique, cross-references resolvable, no secrets - which is
+    what every later phase reads and what `0b` re-runs at the end (Slice 4).
+    A fresh scaffold exits 0 here; exit 2 is warnings and exit 1 is errors, and
+    neither is an acceptable starting state for a run that will blame the
+    lifecycle for whatever it finds later.
+    """
+    script = project / ".agents" / "scripts" / "validate_memory.py"
+    if not script.exists():
+        raise RuntimeError(
+            f"the scaffold left no memory validator at {script} - "
+            "there is nothing to validate the run's starting state against")
+    r = subprocess.run(["python", str(script), "--path", ".memory"],
+                       cwd=str(project), env=child, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(
+            f"the scaffolded .memory/ does not pass validate_memory.py "
+            f"(exit {r.returncode}):\n"
+            f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-400:]}")
 
 
 def _teardown(root: Path, keep: bool) -> None:
