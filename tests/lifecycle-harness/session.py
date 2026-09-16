@@ -32,14 +32,51 @@ class ClaudeUnavailable(RuntimeError):
     """Neither `claude` nor `npx` is usable, so nothing can be driven."""
 
 
+def _version_key(name: str) -> tuple:
+    """Numeric version sort. Lexicographic would rank 2.1.9 above 2.1.10."""
+    parts = []
+    for chunk in re.split(r"[._-]", name):
+        parts.append((0, int(chunk)) if chunk.isdigit() else (1, 0))
+    return tuple(parts)
+
+
+def _bundled_cli() -> Path | None:
+    """The Claude desktop app ships its own CLI, off PATH.
+
+    On Windows it lands in %APPDATA%\\Claude\\claude-code\\<version>\\claude.exe. Without
+    this, a machine that plainly has Claude installed falls through to npx, which
+    downloads a different (pinned, older) build - so the harness would test a CLI the
+    developer is not using.
+    """
+    roots = [Path(os.environ.get("APPDATA", "")) / "Claude" / "claude-code",
+             Path.home() / ".claude" / "local",
+             Path(os.environ.get("LOCALAPPDATA", "")) / "Claude" / "claude-code"]
+    found = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for child in root.iterdir():
+            for exe in (child / "claude.exe", child / "claude"):
+                if exe.is_file():
+                    found.append((_version_key(child.name), exe))
+    return max(found)[1] if found else None
+
+
 def _base_cmd() -> list[str]:
+    override = os.environ.get("CLAUDE_CLI")
+    if override:
+        return [override]
     if shutil.which("claude"):
         return ["claude"]
+    bundled = _bundled_cli()
+    if bundled:
+        return [str(bundled)]
     npx = shutil.which("npx.cmd") or shutil.which("npx")
     if npx:
         return [npx, "-y", NPX_PACKAGE]
     raise ClaudeUnavailable(
-        "neither 'claude' nor 'npx' found on PATH; L3 cannot drive an agent here")
+        "no claude CLI found: not in $CLAUDE_CLI, not on PATH, not bundled with the "
+        "desktop app, and npx is unavailable")
 
 
 def probe(timeout: int = 120) -> None:

@@ -34,8 +34,13 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-SCRUB_PREFIXES = ("GH_", "GITHUB_")
-SCRUB_EXACT = {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN"}
+# GH_*/GITHUB_*: anything that could authenticate to a real GitHub.
+# CLAUDE*/ANTHROPIC_*/AI_AGENT: the PARENT agent's session identity. When the harness
+# is itself launched from a Claude session, the child inherits CLAUDECODE,
+# CLAUDE_CODE_CHILD_SESSION, CLAUDE_CODE_SESSION_ID and friends, and is no longer an
+# independent run - it believes it is a continuation of the session driving it.
+SCRUB_PREFIXES = ("GH_", "GITHUB_", "CLAUDE", "ANTHROPIC_")
+SCRUB_EXACT = {"GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "AI_AGENT"}
 
 
 @dataclass

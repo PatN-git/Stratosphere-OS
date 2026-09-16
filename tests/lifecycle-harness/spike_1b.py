@@ -98,16 +98,33 @@ def main() -> int:
         turn = chat.send(OPENING)
 
         def guard(t):
-            """An empty turn is a driver failure, not a question to answer.
+            """A failed turn is a driver failure, not a question to answer.
 
-            Feeding it to the responder produces 'proxy returned nothing', which
-            blames the wrong component and hides the real cause.
+            Two distinct traps, both hit during Slice 0:
+              * An EMPTY turn fed to the responder surfaces as "proxy returned
+                nothing", which blames the proxy for a CLI problem.
+              * A turn can carry `is_error` while still having text. "Not logged in
+                - Please run /login" is a perfectly good string, so a text-only check
+                passes it through and the harness cheerfully grills an error message
+                for ten rounds.
             """
+            # The login failure arrives EITHER as a structured error event OR as
+            # plain stderr text that never parses as JSON, so check both surfaces.
+            blob = (t.text + "\n" + "\n".join(t.raw)).lower()
+            hint = ""
+            if "not logged in" in blob or "/login" in blob:
+                hint = ("\n  The CLI is unauthenticated in the temp HOME. Seeding "
+                        "~/.claude/.credentials.json is NOT always enough; run "
+                        "`claude /login` once for the CLI this harness resolves to, "
+                        "or point CLAUDE_CLI at an already-authenticated binary.")
+            if t.is_error:
+                raise RuntimeError(
+                    f"the agent reported an error turn: {t.text[:300]!r}{hint}")
             if not t.text.strip():
                 tail = "\n".join(t.raw[-5:]) or "<no output at all>"
                 raise RuntimeError(
-                    "the agent produced an empty turn - the CLI is not driving. "
-                    f"is_error={t.is_error}; last stream lines:\n{tail}")
+                    "the agent produced an empty turn - the CLI is not driving."
+                    f"{hint}\n  last stream lines:\n{tail}")
             return t
 
         try:

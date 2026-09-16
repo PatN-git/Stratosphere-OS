@@ -7,15 +7,31 @@ Plan: [`docs/plans/l3-lifecycle-e2e-harness-plan.md`](../../docs/plans/l3-lifecy
 
 ## Status
 
-**Slice 0 built. The live spike is unproven** — the `claude` CLI is not installed on the
-development machine, so `1b` has not actually been driven yet. Everything that does not
-need the CLI is tested (29 tests, `test_l3_responder.py` and `test_l3_env.py`).
+**Slice 0 built. The live spike is BLOCKED on this machine** - for two specific,
+diagnosed reasons, not for want of trying. Everything that does not need a live agent is
+tested (30 tests, `test_l3_responder.py` and `test_l3_env.py`).
 
-That split is deliberate. The parts where a bug would be silent — a gate answered
+That split is deliberate. The parts where a bug would be silent - a gate answered
 non-deterministically, the proxy handed the draft brief, a grill that never ends, a run
-that reaches the real GitHub — are all verifiable without an agent, and are verified. What
+that reaches the real GitHub - are all verifiable without an agent, and are verified. What
 remains unproven is whether a real `1b` conversation terminates under this policy, which is
 the question Slice 0 exists to answer.
+
+### Why the live spike cannot run here
+
+1. **The desktop app's CLI is invisible to Store Python.** The app ships
+   `%APPDATA%\Claude\claude-code\<version>\claude.exe`, but the only Python installed is
+   the Microsoft Store build, whose container filesystem view hides `%APPDATA%\Claude`
+   entirely - `os.path.exists` is False, and `cmd` and `powershell` spawned *from* it
+   inherit the same blindness. `_bundled_cli()` looks for it and will find it under any
+   normal CPython.
+2. **The `npx` fallback runs but cannot authenticate.** Seeding
+   `~/.claude/.credentials.json` into the temp HOME - what `run-L2.py:282-285` does - is
+   not sufficient for it.
+
+Either fix unblocks the spike: install a non-Store CPython (the bundled CLI then resolves
+and is already authenticated), or run `claude /login` once for the CLI the harness
+resolves to. `CLAUDE_CLI` overrides discovery if you want to point at a specific binary.
 
 ```bash
 python tests/lifecycle-harness/spike_1b.py        # exit 2 = claude unavailable, nothing proven

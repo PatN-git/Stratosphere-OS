@@ -163,3 +163,15 @@ def test_assert_no_install_flags_only_what_appeared(tmp_path):
         e.assert_no_install(home, markers)
     assert "0a-start-session" in str(exc.value)
     assert "REAL home" in str(exc.value)
+
+
+def test_parent_agent_session_identity_is_scrubbed():
+    """The harness may itself be launched from a Claude session.
+
+    Inheriting CLAUDECODE / CLAUDE_CODE_SESSION_ID makes the child believe it is a
+    continuation of the run driving it, rather than an independent one.
+    """
+    out = e.scrub({"CLAUDECODE": "1", "CLAUDE_CODE_SESSION_ID": "abc",
+                   "CLAUDE_CODE_CHILD_SESSION": "1", "ANTHROPIC_API_KEY": "sk-x",
+                   "AI_AGENT": "1", "PATH": "/usr/bin"})
+    assert out == {"PATH": "/usr/bin"}
