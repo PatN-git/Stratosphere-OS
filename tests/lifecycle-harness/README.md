@@ -28,21 +28,23 @@ cannot produce a sufficient brief, and the auditor said so with specific gaps.
 The remaining question is calibration, not viability: how deep a grill produces a brief the
 auditor passes. That needs a full-depth run (`--max-questions 10 --max-rounds 2`).
 
-### The one thing still blocking the live spike
+### Running it
 
-**The CLI is not logged in.** `claude auth status` reports `loggedIn: false,
-authMethod: "none"` even though the desktop app works — the CLI is a **separate auth
-domain**, and copying `~/.claude/.credentials.json` into the temp HOME (what
-`run-L2.py:282-285` does) does not authenticate it. Run once, interactively, in your own
-terminal:
+The CLI is a **separate auth domain from the desktop app** - `claude auth status` can report
+`loggedIn: false` while the app works perfectly, and copying `~/.claude/.credentials.json`
+into the temp HOME (what `run-L2.py:282-285` does) does **not** authenticate it. If a run
+fails with "Not logged in", sign the CLI in once, interactively, from your own terminal:
 
 ```powershell
-& "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude-code.1.271\claude.exe" auth login
+$exe = Get-ChildItem "$env:LOCALAPPDATA\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code\*\claude.exe" | Sort-Object LastWriteTime | Select-Object -Last 1
+& $exe.FullName auth login
 ```
 
-Auth lands in `~/.claude`, which every build shares, so one login covers all of them.
+Auth lands in `~/.claude`, which every build shares, so one login covers all of them. The
+command is written version-agnostically on purpose: hard-coding a version breaks on the next
+app update.
 
-### Why that path looks so strange
+### Why the CLI path looks so strange
 
 The desktop app is a **packaged (MSIX) app**, so `%APPDATA%\Claude` is virtualized into its
 container. Shell tools spawned *by the app* resolve it; your own terminal and any other
