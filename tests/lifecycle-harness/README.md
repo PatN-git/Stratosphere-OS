@@ -17,21 +17,28 @@ that reaches the real GitHub - are all verifiable without an agent, and are veri
 remains unproven is whether a real `1b` conversation terminates under this policy, which is
 the question Slice 0 exists to answer.
 
-### Why the live spike cannot run here
+### The one thing still blocking the live spike
 
-1. **The desktop app's CLI is invisible to Store Python.** The app ships
-   `%APPDATA%\Claude\claude-code\<version>\claude.exe`, but the only Python installed is
-   the Microsoft Store build, whose container filesystem view hides `%APPDATA%\Claude`
-   entirely - `os.path.exists` is False, and `cmd` and `powershell` spawned *from* it
-   inherit the same blindness. `_bundled_cli()` looks for it and will find it under any
-   normal CPython.
-2. **The `npx` fallback runs but cannot authenticate.** Seeding
-   `~/.claude/.credentials.json` into the temp HOME - what `run-L2.py:282-285` does - is
-   not sufficient for it.
+**The CLI is not logged in.** `claude auth status` reports `loggedIn: false,
+authMethod: "none"` even though the desktop app works — the CLI is a **separate auth
+domain**, and copying `~/.claude/.credentials.json` into the temp HOME (what
+`run-L2.py:282-285` does) does not authenticate it. Run once, interactively, in your own
+terminal:
 
-Either fix unblocks the spike: install a non-Store CPython (the bundled CLI then resolves
-and is already authenticated), or run `claude /login` once for the CLI the harness
-resolves to. `CLAUDE_CLI` overrides discovery if you want to point at a specific binary.
+```powershell
+& "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude-code.1.271\claude.exe" auth login
+```
+
+Auth lands in `~/.claude`, which every build shares, so one login covers all of them.
+
+### Why that path looks so strange
+
+The desktop app is a **packaged (MSIX) app**, so `%APPDATA%\Claude` is virtualized into its
+container. Shell tools spawned *by the app* resolve it; your own terminal and any other
+packaged app — including Microsoft Store Python, the only Python installed here — do not,
+and report "is not recognized" or `exists → False`. The un-virtualized copy under
+`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\...` is readable and executable from
+everywhere, so `_cli_roots()` searches it first. `CLAUDE_CLI` overrides discovery.
 
 ```bash
 python tests/lifecycle-harness/spike_1b.py        # exit 2 = claude unavailable, nothing proven

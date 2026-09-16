@@ -40,19 +40,33 @@ def _version_key(name: str) -> tuple:
     return tuple(parts)
 
 
-def _bundled_cli() -> Path | None:
-    """The Claude desktop app ships its own CLI, off PATH.
+def _cli_roots() -> list[Path]:
+    """Every place a Claude CLI can live on this machine.
 
-    On Windows it lands in %APPDATA%\\Claude\\claude-code\\<version>\\claude.exe. Without
-    this, a machine that plainly has Claude installed falls through to npx, which
-    downloads a different (pinned, older) build - so the harness would test a CLI the
-    developer is not using.
+    The desktop app is a PACKAGED (MSIX) app, so `%APPDATA%\\Claude` is virtualized
+    into its container. Processes inside the container see that path; everything else
+    - your own terminal, and any other packaged app such as Store Python - does not,
+    and reports "the system cannot find the file". The un-virtualized copy lives under
+    `%LOCALAPPDATA%\\Packages\\Claude_<pubid>\\LocalCache\\Roaming\\...` and IS readable
+    and executable from outside. Search that first; it is the path that works
+    everywhere.
     """
-    roots = [Path(os.environ.get("APPDATA", "")) / "Claude" / "claude-code",
-             Path.home() / ".claude" / "local",
-             Path(os.environ.get("LOCALAPPDATA", "")) / "Claude" / "claude-code"]
+    roots: list[Path] = []
+    local = Path(os.environ.get("LOCALAPPDATA", ""))
+    packages = local / "Packages"
+    if packages.is_dir():
+        for pkg in packages.glob("Claude_*"):
+            roots.append(pkg / "LocalCache" / "Roaming" / "Claude" / "claude-code")
+    roots += [Path(os.environ.get("APPDATA", "")) / "Claude" / "claude-code",
+              Path.home() / ".claude" / "local",
+              local / "Claude" / "claude-code"]
+    return roots
+
+
+def _bundled_cli() -> Path | None:
+    """Newest CLI shipped by the desktop app, or installed by `claude install`."""
     found = []
-    for root in roots:
+    for root in _cli_roots():
         if not root.is_dir():
             continue
         for child in root.iterdir():
