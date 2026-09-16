@@ -229,8 +229,9 @@ repo-copy (fact 14).
   is visible (E1).
 - **Install StratOS into the throwaway** — `python build/build.py`, copy
   `dist/claude-code/{skills,commands}` into the temp `.claude/`, run `scaffold.py` against
-  the project, and vendor the external skills (`code-simplifier`, `plan-html`) that `3d` and
-  `2b` invoke (fact 13). Assert the scaffold tree before phase 1; without this there is no
+  the project, and vendor `code-simplifier`, which `3d` invokes and which is fetched from GitHub rather
+  than bundled (fact 13). `plan-html`, which `2b` invokes, **is** bundled and arrives with
+  the scaffold — do not fetch it. Assert the scaffold tree before phase 1; without this there is no
   `/0a-start-session`, no `.memory/`, no `references/`, no `validate_memory.py`.
 - `try/finally` teardown plus a `SIGINT`/`SIGTERM` handler; refuse to start if the temp root
   cannot be created under the OS temp dir (E2).
