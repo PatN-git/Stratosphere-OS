@@ -27,6 +27,20 @@ from pathlib import Path
 # with tests/install-harness/run-L2.py.
 NPX_PACKAGE = "@anthropic-ai/claude-code@2.1.170"
 
+# Pin the model per ROLE rather than inheriting ~/.claude/settings.json. Two reasons:
+# a harness whose result depends on an ambient setting is not reproducible between
+# machines or in CI, and the three roles are not remotely equal work.
+#
+#   DRIVER  - the agent under test. Match what people actually run; testing a
+#             different model tests a different system.
+#   PROXY   - answers one question from a 4KB fixture, in character. The most-called
+#             role by far and the simplest, so it is where over-provisioning costs
+#             most and buys least.
+#   AUDITOR - reads a brief and returns a JSON verdict. Bounded judgement.
+DRIVER_MODEL = "opus"
+PROXY_MODEL = "haiku"
+AUDITOR_MODEL = "sonnet"
+
 
 class ClaudeUnavailable(RuntimeError):
     """Neither `claude` nor `npx` is usable, so nothing can be driven."""
@@ -119,6 +133,18 @@ class Turn:
     raw: list[str] = field(default_factory=list)
 
 
+def build_cmd(prompt: str, model: str | None = None,
+              resume: str | None = None) -> list[str]:
+    """The exact argv for one headless turn. Split out so it can be asserted on."""
+    cmd = _base_cmd() + ["-p", prompt, "--output-format", "stream-json",
+                         "--verbose", "--dangerously-skip-permissions"]
+    if model:
+        cmd += ["--model", model]
+    if resume:
+        cmd += ["--resume", resume]
+    return cmd
+
+
 def _run(cmd: list[str], cwd, env, timeout: int) -> tuple[Turn, str | None]:
     proc = subprocess.Popen(cmd, cwd=str(cwd), env=env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
@@ -158,16 +184,14 @@ def _run(cmd: list[str], cwd, env, timeout: int) -> tuple[Turn, str | None]:
 class ClaudeSession:
     """One continuing conversation, resumed turn by turn."""
 
-    def __init__(self, cwd, env=None, timeout: int = 900):
+    def __init__(self, cwd, env=None, timeout: int = 900, model: str = DRIVER_MODEL):
         self.cwd, self.env, self.timeout = Path(cwd), env or dict(os.environ), timeout
+        self.model = model
         self.session_id: str | None = None
         self.turns: list[Turn] = []
 
     def send(self, prompt: str) -> Turn:
-        cmd = _base_cmd() + ["-p", prompt, "--output-format", "stream-json",
-                             "--verbose", "--dangerously-skip-permissions"]
-        if self.session_id:
-            cmd += ["--resume", self.session_id]
+        cmd = build_cmd(prompt, self.model, self.session_id)
         turn, sid = _run(cmd, self.cwd, self.env, self.timeout)
         # Only adopt the first id: --resume must keep pointing at one conversation.
         self.session_id = self.session_id or sid
@@ -175,20 +199,18 @@ class ClaudeSession:
         return turn
 
 
-def _ask_isolated(prompt: str, env, timeout: int) -> str:
+def _ask_isolated(prompt: str, env, timeout: int, model: str | None = None) -> str:
     """One throwaway session in an empty directory. No project, no history."""
     with tempfile.TemporaryDirectory(prefix="l3-isolated-") as empty:
-        cmd = _base_cmd() + ["-p", prompt, "--output-format", "stream-json",
-                             "--verbose", "--dangerously-skip-permissions"]
-        turn, _ = _run(cmd, empty, env, timeout)
+        turn, _ = _run(build_cmd(prompt, model), empty, env, timeout)
     return turn.text
 
 
 class ClaudeProxy:
     """Answers as the user, knowing only the fixture (responder.Proxy)."""
 
-    def __init__(self, env=None, timeout: int = 300):
-        self.env, self.timeout = env or dict(os.environ), timeout
+    def __init__(self, env=None, timeout: int = 300, model: str = PROXY_MODEL):
+        self.env, self.timeout, self.model = env or dict(os.environ), timeout, model
 
     def answer(self, question: str, fixture: str) -> str:
         prompt = (
@@ -200,7 +222,7 @@ class ClaudeProxy:
             "reading of the positions it does state.\n\n"
             f"=== WHAT YOU KNOW ===\n{fixture}\n=== END ===\n\n"
             f"Interviewer's question:\n{question}")
-        return _ask_isolated(prompt, self.env, self.timeout)
+        return _ask_isolated(prompt, self.env, self.timeout, self.model)
 
 
 _VERDICT = re.compile(r"\{.*\}", re.S)
@@ -209,8 +231,8 @@ _VERDICT = re.compile(r"\{.*\}", re.S)
 class ClaudeAuditor:
     """Judges whether a draft brief is good enough to proceed (responder.Auditor)."""
 
-    def __init__(self, env=None, timeout: int = 300):
-        self.env, self.timeout = env or dict(os.environ), timeout
+    def __init__(self, env=None, timeout: int = 300, model: str = AUDITOR_MODEL):
+        self.env, self.timeout, self.model = env or dict(os.environ), timeout, model
 
     def judge(self, brief: str) -> tuple[bool, list[str]]:
         prompt = (
@@ -223,7 +245,7 @@ class ClaudeAuditor:
             '{\"sufficient\": true|false, \"gaps\": [\"...\"]}. '
             "Each gap must name what is missing and be answerable in one question.\n\n"
             f"=== BRIEF ===\n{brief}\n=== END ===")
-        raw = _ask_isolated(prompt, self.env, self.timeout)
+        raw = _ask_isolated(prompt, self.env, self.timeout, self.model)
         m = _VERDICT.search(raw)
         if not m:
             # Unparseable verdict is a FAIL, never a pass: a gate that cannot be read

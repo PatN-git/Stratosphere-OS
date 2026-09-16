@@ -75,6 +75,12 @@ def main() -> int:
     ap.add_argument("--keep", action="store_true", help="keep the temp project")
     ap.add_argument("--max-questions", type=int, default=10)
     ap.add_argument("--max-rounds", type=int, default=2)
+    ap.add_argument("--model", default=session_mod.DRIVER_MODEL,
+                    help="model driving 1b - the agent under test")
+    ap.add_argument("--proxy-model", default=session_mod.PROXY_MODEL,
+                    help="model answering as the user from the fixture")
+    ap.add_argument("--auditor-model", default=session_mod.AUDITOR_MODEL,
+                    help="model judging brief sufficiency")
     args = ap.parse_args()
 
     try:
@@ -88,13 +94,17 @@ def main() -> int:
 
     with env_mod.lifecycle_env(REPO, keep=args.keep) as env:
         print(f"[env] project={env.project}")
-        proxy = session_mod.ClaudeProxy(env=env.child_env)
-        auditor = session_mod.ClaudeAuditor(env=env.child_env)
+        print(f"[models] driver={args.model} proxy={args.proxy_model} "
+              f"auditor={args.auditor_model}")
+        proxy = session_mod.ClaudeProxy(env=env.child_env, model=args.proxy_model)
+        auditor = session_mod.ClaudeAuditor(env=env.child_env,
+                                            model=args.auditor_model)
         resp = responder_mod.Responder(
             fixture=fixture, proxy=proxy,
             max_questions=args.max_questions, max_rounds=args.max_rounds)
 
-        chat = session_mod.ClaudeSession(cwd=env.project, env=env.child_env)
+        chat = session_mod.ClaudeSession(cwd=env.project, env=env.child_env,
+                                          model=args.model)
         turn = chat.send(OPENING)
 
         def guard(t):
