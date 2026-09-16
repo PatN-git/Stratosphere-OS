@@ -218,6 +218,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
 
     root = Path(tempfile.mkdtemp(prefix="l3-"))
     env_obj = None
+    seeded_credential = None
     original_handlers = {}
 
     def _bail(signum, frame):     # E2: teardown on signal, not just on return
@@ -252,6 +253,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
         assert_gh_is_shimmed(child)
 
         _seed_credentials(real_home, home)
+        seeded_credential = digest(home / ".claude" / ".credentials.json")
         if scaffold:
             _install_stratos(repo_root, home, project, child)
         if vendor:
@@ -271,7 +273,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
         # Before the temp HOME is removed: keep whatever the CLI refreshed, or the
         # next run inherits a superseded token and cannot authenticate at all.
         if env_obj is not None:
-            preserve_credentials(env_obj.home)
+            preserve_credentials(env_obj.home, seeded=seeded_credential)
         _teardown(root, keep)
         # Raising from `finally` REPLACES whatever the body was already raising, so
         # a containment warning would erase the real failure - the first spike's
@@ -459,15 +461,30 @@ def _seed_credentials(real_home: Path, temp_home: Path,
         shutil.copy2(src, dest / ".credentials.json")
 
 
-def preserve_credentials(temp_home: Path, store: Path = HARNESS_STORE) -> bool:
-    """Keep whatever the CLI refreshed, so the next run can still authenticate.
+def digest(path: Path) -> str | None:
+    with contextlib.suppress(OSError):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    return None
 
-    Only ever writes to the harness's own store - never to `~/.claude` (E1). A
-    blank file is not preserved: that is what the CLI leaves behind when a refresh
-    fails, and storing it would turn one bad run into every later run.
+
+def preserve_credentials(temp_home: Path, store: Path = HARNESS_STORE,
+                         seeded: str | None = None) -> bool:
+    """Keep whatever the CLI REFRESHED, so the next run can still authenticate.
+
+    Only ever writes to the harness's own store - never to `~/.claude` (E1). Two
+    things are deliberately not preserved:
+
+      * A blank file. That is what the CLI leaves behind when a refresh fails, and
+        storing it would turn one bad run into every later run.
+      * An unchanged file. Preserving what was merely seeded would copy the
+        developer's credential into the store whether or not it still worked, and
+        a store full of a known-stale token is worse than an empty one - it hides
+        the fact that nothing was ever refreshed.
     """
     fresh = temp_home / ".claude" / ".credentials.json"
     if not _usable(fresh):
+        return False
+    if seeded is not None and digest(fresh) == seeded:
         return False
     with contextlib.suppress(OSError):
         store.parent.mkdir(parents=True, exist_ok=True)

@@ -113,6 +113,28 @@ def test_a_blanked_credential_never_overwrites_a_good_one(tmp_path):
                       )["claudeAiOauth"]["refreshToken"] == "still-good"
 
 
+def test_a_credential_that_was_only_seeded_is_not_preserved(tmp_path):
+    """Preserving what was merely handed to the run would copy the developer's
+    credential into the store whether or not it still worked - and a store holding
+    a known-stale token is worse than an empty one, because it hides that nothing
+    was ever refreshed. Observed: an --env-only run did exactly this."""
+    temp_home = tmp_path / "temp-home"
+    fresh = creds(temp_home / ".claude" / ".credentials.json")
+    store = tmp_path / "store" / ".credentials.json"
+
+    assert e.preserve_credentials(temp_home, store, seeded=e.digest(fresh)) is False
+    assert not store.exists()
+
+
+def test_a_changed_credential_is_preserved_even_with_a_seed_recorded(tmp_path):
+    temp_home = tmp_path / "temp-home"
+    seeded = e.digest(creds(temp_home / ".claude" / ".credentials.json"))
+    creds(temp_home / ".claude" / ".credentials.json", refresh="rotated")
+    store = tmp_path / "store" / ".credentials.json"
+
+    assert e.preserve_credentials(temp_home, store, seeded=seeded) is True
+
+
 def test_nothing_to_preserve_is_not_an_error(tmp_path):
     assert e.preserve_credentials(tmp_path / "empty-home",
                                   tmp_path / "store" / ".credentials.json") is False
