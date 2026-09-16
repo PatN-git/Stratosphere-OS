@@ -55,6 +55,22 @@ Both are the class of bug this harness exists to surface, found on its own first
 
 ### Running it
 
+**Authenticate the harness's own credential store, once:**
+
+```bash
+python tests/lifecycle-harness/run-L3.py --login
+```
+
+This is not optional politeness. A run refreshes whatever credential it is given, and the
+provider **rotates the refresh token** when it does — the rotated token is written into the
+temp HOME and deleted at teardown, leaving the original superseded. On 2026-09-16 exactly
+that happened: a smoke run refreshed, the next run got *"OAuth session expired and could not
+be refreshed"*, and the CLI then blanked its copy. One run had silently invalidated the
+developer's own CLI login. The harness now keeps its own credential at
+`~/.l3-harness/.credentials.json`, writes each rotation back into it, and never writes to
+`~/.claude`. A run with no usable credential refuses in seconds, naming `--login`, rather
+than dying mid-phase.
+
 The CLI is a **separate auth domain from the desktop app** - `claude auth status` can report
 `loggedIn: false` while the app works perfectly, and copying `~/.claude/.credentials.json`
 into the temp HOME (what `run-L2.py:282-285` does) does **not** authenticate it. If a run

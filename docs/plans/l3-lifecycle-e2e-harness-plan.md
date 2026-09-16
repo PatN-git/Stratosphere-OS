@@ -418,6 +418,30 @@ fired correctly on a wrong expectation, which is the cheap version of this mista
 under the responder, `2b` reaching Path C, and `3b` completing against the shim (inherited
 from Slice 2). That needs model calls, and it is the first slice that does.
 
+### The first live chain run found a harness defect before it found a lifecycle one
+
+`0a` drove clean in a smoke run — sentinel on the first turn, assertions passed. The full
+chain, minutes later, died on `0a` with *"OAuth session expired and could not be
+refreshed"*.
+
+**Seeding a copy of the developer's credentials into a temp HOME is single-use whenever a
+refresh is due.** The smoke run refreshed; the provider rotated the refresh token; the new
+one was written into the temp HOME and deleted at teardown; the copy still sitting in the
+real `~/.claude` was now superseded. The CLI then blanked its own copy, which is why an
+expired-looking file was left behind. One run had silently invalidated the developer's CLI
+login — a containment failure in the opposite direction from the one E1 was written for:
+not the run reaching out, but the run consuming something it had borrowed.
+
+The harness now keeps its own credential at `~/.l3-harness/.credentials.json`, seeded by
+`run-L3.py --login`, and writes each rotation back into it at teardown. It never writes to
+`~/.claude`; a blanked file is never stored (that would turn one bad run into every later
+one); and a run with no usable credential refuses in seconds naming the fix, instead of
+building the whole environment and failing at phase 1.
+
+Two things this validates about the design: the driver's error-turn guard caught it as an
+infrastructure failure rather than feeding it to the responder to grill, and `--keep` left
+the evidence that made the diagnosis a five-minute read rather than a guess.
+
 ### Hand-off mode
 
 A full-depth run of all ten phases is the driver plus five nested subagents that inherit

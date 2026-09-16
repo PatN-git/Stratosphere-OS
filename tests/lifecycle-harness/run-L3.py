@@ -35,6 +35,8 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -68,6 +70,9 @@ def parse_args(argv=None):
                     help="keep the temp root on exit and print its path")
     ap.add_argument("--env-only", action="store_true",
                     help="build and prove the environment, drive no phase (free)")
+    ap.add_argument("--login", action="store_true",
+                    help="authenticate the harness's OWN credential store "
+                         "interactively, so runs never consume your CLI session")
     ap.add_argument("--phases", default=",".join(prompts_mod.PHASES),
                     help="comma-separated subset of "
                          f"{','.join(prompts_mod.PHASES)}")
@@ -204,11 +209,59 @@ def _brief_settle(env, auditor, advisory: bool = False):
     return settle
 
 
+def login() -> int:
+    """Authenticate the harness's own credential store, interactively.
+
+    The harness never handles the credentials: this hands the CLI a HOME of its
+    own and gets out of the way, so the sign-in happens between the developer and
+    the CLI exactly as it normally would. What it buys is separation - after this,
+    a run refreshes the HARNESS's token rather than consuming the developer's.
+    """
+    store = env_mod.HARNESS_STORE
+    home = store.parent
+    home.mkdir(parents=True, exist_ok=True)
+    child = dict(os.environ)
+    child.update({"HOME": str(home), "USERPROFILE": str(home)})
+    cmd = session_mod._base_cmd() + ["auth", "login"]
+    print(f"[login] authenticating the harness store at {store}")
+    print(f"[login] {' '.join(cmd)}")
+    completed = subprocess.run(cmd, env=child)
+    if completed.returncode != 0 or not env_mod._usable(store):
+        print("[login] the CLI did not leave a usable credential in the store")
+        return 1
+    print("[login] done - runs will now refresh this store, not your own session")
+    return 0
+
+
+def preflight_credentials(phases) -> int | None:
+    """Fail in seconds with the fix, rather than after building everything."""
+    if not phases:
+        return None
+    if env_mod.credentials_source(Path(os.path.expanduser("~"))) is not None:
+        return None
+    print("[refused] no usable Claude credential to give the run.\n"
+          "  The temp HOME hides the CLI's own credentials, so a run with none dies\n"
+          "  mid-phase looking like a driver bug. Authenticate the harness's own\n"
+          "  store once:\n\n"
+          "      python tests/lifecycle-harness/run-L3.py --login\n\n"
+          "  A run refreshes whatever credential it is given, and the provider\n"
+          "  ROTATES the refresh token when it does. That is why the harness keeps\n"
+          "  its own: a run that borrowed yours would invalidate your CLI session\n"
+          "  the moment a refresh fell due.")
+    return 2
+
+
 def main(argv=None) -> int:
     args = parse_args(argv)
+    if args.login:
+        return login()
     repo_root = Path(args.repo).resolve()
     preflight(repo_root)
     phases = [] if args.env_only else chosen_phases(args)
+
+    refused = preflight_credentials(phases)
+    if refused is not None:
+        return refused
 
     if phases:
         try:
@@ -277,8 +330,6 @@ def main(argv=None) -> int:
     if not args.keep and root.exists():
         print(f"[fail] the temp root survived teardown: {root}")
         return 1
-    if args.keep:
-        print(f"[kept] {root}")
 
     if failures:
         print(f"\n[fail] {len(failures)} phase(s) failed: {', '.join(failures)}")

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import json
 import os
 import shutil
 import signal
@@ -267,6 +268,10 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
         for sig, handler in original_handlers.items():
             with contextlib.suppress(ValueError, OSError):
                 signal.signal(sig, handler)
+        # Before the temp HOME is removed: keep whatever the CLI refreshed, or the
+        # next run inherits a superseded token and cannot authenticate at all.
+        if env_obj is not None:
+            preserve_credentials(env_obj.home)
         _teardown(root, keep)
         # Raising from `finally` REPLACES whatever the body was already raising, so
         # a containment warning would erase the real failure - the first spike's
@@ -401,22 +406,74 @@ def assert_gh_is_shimmed(child: dict) -> None:
             f"{(r.stdout or r.stderr or '<nothing>').strip()[:300]!r}")
 
 
-def _seed_credentials(real_home: Path, temp_home: Path) -> None:
-    """Copy the local Claude credentials into the temp HOME.
+# The harness's OWN credential, outside every path E1 watches.
+#
+# Copying the developer's credentials into a temp HOME is single-use whenever a
+# refresh is due, and that is not a theory: on 2026-09-16 a smoke run refreshed,
+# the provider ROTATED the refresh token, the new one was written into the temp
+# HOME and deleted at teardown - and the copy still sitting in the real `~/.claude`
+# was now superseded. The next run got "OAuth session expired and could not be
+# refreshed", after which the CLI blanked its copy. One run silently invalidated
+# the developer's own CLI login.
+#
+# So the harness keeps its own credential and writes the rotation back into it.
+# The developer's file is read once, to bootstrap, and never written.
+# `run-L3.py --login` authenticates this store directly, which avoids even that.
+HARNESS_STORE = Path(os.environ.get(
+    "L3_CREDENTIALS", str(Path.home() / ".l3-harness" / ".credentials.json")))
+
+
+def _usable(path: Path) -> bool:
+    """A credential file with no tokens in it is worse than none: the CLI blanks
+    the file when a refresh fails, so an empty one is the SHAPE of a live file."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    oauth = data.get("claudeAiOauth", data)
+    return bool(oauth.get("accessToken") or oauth.get("refreshToken"))
+
+
+def credentials_source(real_home: Path, store: Path = HARNESS_STORE) -> Path | None:
+    """The harness's own store first; the developer's only to bootstrap it."""
+    for candidate in (store, real_home / ".claude" / ".credentials.json"):
+        if _usable(candidate):
+            return candidate
+    return None
+
+
+def _seed_credentials(real_home: Path, temp_home: Path,
+                      store: Path = HARNESS_STORE) -> None:
+    """Put a usable credential in the temp HOME, or the run dies mid-phase.
 
     Redirecting HOME is what contains the run, but it also hides the CLI's own
-    credentials, and the agent then dies mid-grill with "Not logged in" - an empty
-    turn that looks like a driver bug. `run-L2.py:282-285` copies the same file for
-    the same reason. It is a local copy into a directory removed at teardown; nothing
-    is transmitted and nothing outlives the run.
+    credentials, and the agent then produces an empty turn that reads like a driver
+    bug. `run-L2.py:282-285` copies the same file for the same reason.
     """
-    src = real_home / ".claude" / ".credentials.json"
-    if not src.exists():
+    src = credentials_source(real_home, store)
+    if src is None:
         return
     dest = temp_home / ".claude"
     dest.mkdir(parents=True, exist_ok=True)
     with contextlib.suppress(OSError):
         shutil.copy2(src, dest / ".credentials.json")
+
+
+def preserve_credentials(temp_home: Path, store: Path = HARNESS_STORE) -> bool:
+    """Keep whatever the CLI refreshed, so the next run can still authenticate.
+
+    Only ever writes to the harness's own store - never to `~/.claude` (E1). A
+    blank file is not preserved: that is what the CLI leaves behind when a refresh
+    fails, and storing it would turn one bad run into every later run.
+    """
+    fresh = temp_home / ".claude" / ".credentials.json"
+    if not _usable(fresh):
+        return False
+    with contextlib.suppress(OSError):
+        store.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fresh, store)
+        return True
+    return False
 
 
 def _write_git_config(root: Path, bare: Path) -> Path:
