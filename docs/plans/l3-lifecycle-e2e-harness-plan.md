@@ -242,6 +242,14 @@ input; `gates.md` covers every gate the run actually hit; and **no loop can run 
 every gate has a budget and a terminal failure, proven by a test that starves the auditor
 and asserts the run ends.
 
+**DONE — calibrated 2026-09-16.** 7 turns, 2 rounds, ~23 min, `driver=opus proxy=haiku
+auditor=sonnet`; the auditor failed round 1 on two gaps and passed round 2. **10 turns per
+round is ample.** Two harness defects surfaced and were fixed: the responder was answering
+`1b`'s own stop gate (`1b:64`) and ending the grill itself, and `scaffold.py` was invoked
+with a non-existent `--yes` flag whose argparse failure was swallowed — so the first run
+drove `1b` against a project with no `.agents/` and no `.memory/`. Note the budget bounds
+**turns, not questions**: `1b` batches, and seven turns carried dozens of questions.
+
 **IF THIS FAILS:** the phase list shrinks — `1a`/`1b` move to L4-manual and L3 covers
 `2a→4a`. Decide that here, not after eight slices are built on the assumption.
 

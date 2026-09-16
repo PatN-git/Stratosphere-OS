@@ -295,8 +295,35 @@ def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) ->
     shutil.copytree(dist, claude_dir / "plugins" / "stratosphere-os", dirs_exist_ok=True)
     if (dist / "skills").is_dir():
         shutil.copytree(dist / "skills", claude_dir / "skills", dirs_exist_ok=True)
-    subprocess.run(["python", str(dist / "scripts" / "scaffold.py"), "--yes"],
-                   cwd=str(project), env=child, capture_output=True)
+    # No `--yes` flag exists - scaffold.py takes --dry-run/--repair-lock/--update/
+    # --verify and nothing else. Passing it made argparse exit 2, and
+    # capture_output with no check swallowed that completely: the first real
+    # full-depth run drove 1b against a project with no .agents/ and no .memory/
+    # at all, and nothing said so. Fail loudly instead.
+    r = subprocess.run(["python", str(dist / "scripts" / "scaffold.py")],
+                       cwd=str(project), env=child, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(
+            f"scaffold.py failed (exit {r.returncode}):\n"
+            f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-800:]}")
+    assert_scaffolded(project)
+
+
+SCAFFOLD_MARKERS = (
+    Path(".agents") / "rules",
+    Path(".agents") / "scripts" / "validate_memory.py",
+    Path(".agents") / ".stratosphere-lock.json",
+    Path(".memory"),
+    Path("AGENTS.md"),
+)
+
+
+def assert_scaffolded(project: Path) -> None:
+    """A silent scaffold failure invalidates every phase downstream of it."""
+    missing = [str(m) for m in SCAFFOLD_MARKERS if not (project / m).exists()]
+    if missing:
+        raise RuntimeError(
+            "the project was not scaffolded - these are absent: " + ", ".join(missing))
 
 
 def _teardown(root: Path, keep: bool) -> None:

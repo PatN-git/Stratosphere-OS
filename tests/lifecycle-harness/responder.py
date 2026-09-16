@@ -95,6 +95,10 @@ class Responder:
 
     fixture: str
     proxy: Proxy
+    # Counts agent TURNS, not individual questions. `1b` batches - a single turn
+    # in the first good run carried a numbered series (the proxy's answers refer
+    # to "Q41" and "Q54"), so 7 turns covered dozens of questions. The CLI flag
+    # keeps the familiar name; this is what it actually bounds.
     max_questions: int = 10
     max_rounds: int = 2
     loop_threshold: int = 3

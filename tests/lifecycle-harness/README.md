@@ -7,26 +7,51 @@ Plan: [`docs/plans/l3-lifecycle-e2e-harness-plan.md`](../../docs/plans/l3-lifecy
 
 ## Status
 
-**Slice 0 is PROVEN.** A live 3-question probe drove `1b-concept-framing` end to end with
-no human present, on 2026-09-16:
+**Slice 0 is PROVEN and calibrated.** A full-depth run drove `1b-concept-framing` to a
+sufficient discovery brief with no human present, 2026-09-16:
 
 ```
-[  1] policy:pick-first  '1'
-[  2] proxy              "I meant (a): this is single-actor. There's no config-owner/SDK-consumer split ..."
-[  3] policy:pick-first  '1'
-[  4] policy:budget      'That is enough questioning - proceed with what you have'
-[audit] sufficient=False gaps=[5 specific, well-formed gaps]
-[fail] rounds exhausted with gaps still open
+[models] driver=opus proxy=haiku auditor=sonnet
+[  1] policy:not-yet     'Not yet - we have not explored this enough. Keep asking...'
+[  2] proxy              "This is progressive rollout and entitlement, not kill-switch..."
+[  3] proxy              "I'll flag one lock over-read, then give you my reads..."
+[  4] proxy              "No external doc - this briefing is our complete spec..."
+[  5] policy:not-yet     'Not yet - we have not explored this enough...'
+[  6] proxy              'Q41 is in and foundational - ruleset-level CI tests...'
+[audit] sufficient=False gaps=[2]
+[  7] proxy              '**Q54 - S3.** If rules belong in the declarative artifact...'
+[audit] sufficient=True gaps=[]
+[pass] local-feature-flag-evaluation.md written in 7 replies, 2 round(s)
 ```
 
-Every load-bearing assumption held: `1b` **asks** in headless `-p` mode rather than
-self-answering, `--resume` carries the conversation, the policy recognises real option
-menus, the isolated proxy answers in character from the fixture, the budget fires, and the
-auditor returns a structured verdict. The run then failed **correctly** - three questions
-cannot produce a sufficient brief, and the auditor said so with specific gaps.
+**7 turns, 2 rounds, ~23 minutes.** The brief was 148 lines and the vocabulary *extended*
+the fixture rather than parroting it - `1b` coined `Subject`, `Reason`, `bucket_by` and
+deploy-time propagation, with an `Avoid:` list of its own. The round mechanism did real
+work: the auditor failed round 1 on two gaps, one of which was sharp enough to be worth
+quoting - *"has the user explicitly confirmed the F2 framing over F1/F3, rather than it
+being the author's recommendation?"*
 
-The remaining question is calibration, not viability: how deep a grill produces a brief the
-auditor passes. That needs a full-depth run (`--max-questions 10 --max-rounds 2`).
+### What the numbers mean
+
+- **10 turns per round is ample.** Seven were enough, including one round of remediation.
+- **The budget counts TURNS, not questions.** `1b` batches: the proxy's answers refer to
+  "Q41" and "Q54", so seven turns carried dozens of questions. `--max-questions` keeps the
+  familiar name, but turns are what it bounds.
+- **The number is model-specific.** Calibrated with `driver=opus`. A different driver asks
+  differently and needs re-calibrating - see the plan, section 6.
+
+### Two defects the run found, both in the harness
+
+1. **The responder was ending the grill itself.** `policy:confirm` matched `1b`'s primary
+   stop gate (`1b:64`), so the first attempt answered "Yes, proceed." and finished in three
+   replies without ever calling the proxy or the auditor. While turns remain, a request to
+   stop is now refused (`policy:not-yet`).
+2. **The scaffold never ran.** `scaffold.py` was invoked with an invented `--yes` flag;
+   argparse exited 2; `capture_output` without `check` swallowed it. `1b` was driven against
+   a project with no `.agents/` and no `.memory/` - and still produced a valid brief, which
+   is why nothing looked wrong. Now `check`ed and asserted against `SCAFFOLD_MARKERS`.
+
+Both are the class of bug this harness exists to surface, found on its own first outing.
 
 ### Running it
 

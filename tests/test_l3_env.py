@@ -190,3 +190,24 @@ def test_parent_agent_session_identity_is_scrubbed():
                    "CLAUDE_CODE_CHILD_SESSION": "1", "ANTHROPIC_API_KEY": "sk-x",
                    "AI_AGENT": "1", "PATH": "/usr/bin"})
     assert out == {"PATH": "/usr/bin"}
+
+
+# --- the scaffold must actually happen ----------------------------------------
+
+def test_scaffold_really_runs_and_is_asserted():
+    """The first full-depth run drove 1b against a project with no .agents/ and
+    no .memory/ at all. scaffold.py was invoked with an invented --yes flag,
+    argparse exited 2, and capture_output with no check hid it completely."""
+    with e.lifecycle_env(REPO, scaffold=True) as env:
+        for marker in e.SCAFFOLD_MARKERS:
+            assert (env.project / marker).exists(), f"missing {marker}"
+        assert len(list((env.project / ".memory").glob("*.md"))) >= 8
+
+
+def test_assert_scaffolded_names_what_is_missing(tmp_path):
+    proj = tmp_path / "bare"
+    proj.mkdir()
+    with pytest.raises(RuntimeError) as exc:
+        e.assert_scaffolded(proj)
+    assert "not scaffolded" in str(exc.value)
+    assert ".memory" in str(exc.value)
