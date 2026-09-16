@@ -2,7 +2,7 @@
 type: plan
 title: L3 — Automated Lifecycle E2E Harness
 description: Drive the full StratOS lifecycle (0a→1a→1b→2a→2b→3b→3d→4a→0b) end-to-end in a throwaway environment with no human interaction, asserting on artifacts rather than prose.
-version: "2.0.0"
+version: "3.0.0"
 generated:
   by: Claude Opus 5
   at: 2026-09-15
@@ -13,7 +13,7 @@ verified:
 
 # L3 — Automated Lifecycle E2E Harness
 
-Execution plan. 9 slices (0–8).
+Execution plan. 10 slices (0–9).
 
 ## 1. Contract
 
@@ -27,6 +27,11 @@ python tests/lifecycle-harness/run-L3.py --live-gh  # real throwaway GitHub repo
 
 Coverage is `0a→1a→1b→2a→2b→3b→3d→4a(audit-only)→0b`. **`4a`'s `ship-only` phase is out of
 scope** (fact 12) — L3 is not the whole lifecycle, and Slice 8 says so plainly.
+
+**The run's product is a report, not an exit code.** Every run emits
+`docs/audits/l3-<run-id>.md` — a classified, evidence-carrying list of what StratOS v4 needs
+changed (Slice 9). The exit code says whether the lifecycle completed; the report says what
+is wrong with it.
 
 At exit: temp `HOME` removed, temp project removed, any created GitHub repo deleted, the
 developer's real `~/.claude`, `~/.gemini`, `~/.config/devin` and working repo untouched.
@@ -168,6 +173,22 @@ itself. The questions do not exist until the agent writes them.
 
 - Drive a multi-turn session: `--output-format stream-json --input-format stream-json` with
   a responder process, or a `claude --resume <session-id>` turn loop.
+
+**Two subagents, asymmetric and isolated.** One agent answering its own grill is the exact
+failure `1b:64` forbids. Isolation is what makes this legitimate rather than a loophole:
+
+- **User Proxy** — sees only `fixture/topic.md` and the current question. Never sees the
+  draft brief, the `1a` research file, or the grilling agent's reasoning. It answers in
+  character; it cannot rubber-stamp a brief it has never read.
+- **Sufficiency Auditor** — once the budget is spent, reads the draft brief and returns
+  `PASS`, or `FAIL` plus the specific gaps. This replaces the human's "enough" declaration
+  with something checkable, so a bound truncates deliberately rather than arbitrarily.
+
+**Question budget: 10 per round** (`--max-questions`), auditor gate, then at most one more
+round seeded by its gaps. **Hard cap 2 rounds / 20 questions**, after which the run fails
+naming the unmet gaps. `1b:68` calls 20–50 typical, so 10 yields a thin brief by design —
+the auditor decides whether thin is sufficient, and the cap guarantees termination.
+
 - **Default answer policy**, checked in and versioned with the fixture:
   - Pick-among-generated (`1b` framings, `2b` Phase 2.5 directions) → **always option 1**.
   - Open questions → answer from the pinned positions in `fixture/topic.md`.
@@ -179,7 +200,9 @@ itself. The questions do not exist until the agent writes them.
   "every gate is answered" is falsifiable.
 
 **DONE WHEN:** `1b` reaches a valid discovery brief from a cold start with zero human
-input, and `gates.md` covers every gate the run actually hit.
+input; `gates.md` covers every gate the run actually hit; and **no loop can run forever** —
+every gate has a budget and a terminal failure, proven by a test that starves the auditor
+and asserts the run ends.
 
 **IF THIS FAILS:** the phase list shrinks — `1a`/`1b` move to L4-manual and L3 covers
 `2a→4a`. Decide that here, not after eight slices are built on the assumption.
@@ -319,17 +342,58 @@ Extend `tests/install-harness/README.md`'s layer table with L3. State plainly wh
 **DONE WHEN:** the layer table names L1–L4 with owner, isolation and coverage, and L3's
 limits are explicit. *(Doc-only; not verified by the harness itself.)*
 
+## Slice 9 — Emit the v4 findings report
+
+A pass/fail exit code says the lifecycle ran. It does not say what is wrong with StratOS.
+This run is the only place every skill is exercised back-to-back against one subject, so it
+is the only place the friction between them is visible — and that friction is the point.
+
+Emit `<temp>/L3-report.md`, copied out to `docs/audits/l3-<run-id>.md` with OKF
+`type: audit-report`. **Emit it on failure too**: a run that dies at `2b` has already
+learned everything up to `2b`, and discarding that is the expensive mistake.
+
+Classify every finding, because the three classes demand different action:
+
+| Class | Meaning | Routes to |
+|:---|:---|:---|
+| `stratos` | a skill, reference or script behaved wrongly, or contradicted the constitution | `/2c-reconcile-specs` |
+| `harness` | the assertion, shim or responder is wrong | this plan's backlog |
+| `environment` | no network, no `claude`, absent MCP server | neither — recorded so it is not re-diagnosed next run |
+
+Each finding carries: phase, class, **evidence** (file path, log line, or the exact command
+and its output), what was expected, and a proposed change. No finding ships without
+evidence — an unevidenced observation is prose, and E3 keeps prose out of this harness.
+
+The signals already exist; Slice 9 is about capturing rather than discarding them:
+
+| Signal | What it means |
+|:---|:---|
+| A gate the responder could not match (Slice 0) | a skill asks something unanswerable without a human |
+| A phase that halted without its sentinel | a broken hand-off contract |
+| An artifact that failed `okf_view.py` | a template/registry mismatch |
+| A `gh` subcommand the shim did not know (Slice 2) | undocumented GitHub surface |
+| A heal loop that hit `--max-heal-attempts` (Slice 5) | an unbounded gate |
+| A subagent that wrote a file | a violated guardrail |
+| A phase whose wall-clock or token cost is an outlier | a skill that will not survive AFK use |
+
+**DONE WHEN:** a full run emits a classified, evidence-carrying report; a deliberately
+broken skill appears in it as `stratos` with file and line; and a run failed at `2b` still
+reports the findings from `0a`–`2a`.
+
 ---
 
 ## 6. Order
 
 ```
-0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
-              └── 2's --record mode lands after 6
+0 → 1 → 2 → 3 → 4 → 5 → 9 → 6 → 7 → 8
+              │             └── 2's --record mode lands after 6
+              └── 9 accumulates findings from here on
 ```
 
 **0 gates everything** — if the responder cannot drive `1b`, the phase list changes before
-any other slice is built. 2 blocks 4. 5 hardens 4. 6 is independent of 7.
+any other slice is built. 2 blocks 4. 5 hardens 4. **9 lands after 5**, once every signal it
+records exists, but the collection hooks go in as each slice is built rather than being
+retrofitted. 6 is independent of 7; 7 publishes 9's report as a CI artifact.
 
 ## 7. Verification
 
@@ -337,6 +401,8 @@ any other slice is built. 2 blocks 4. 5 hardens 4. 6 is independent of 7.
 |:---|:---|
 | `1b` completes from a cold start with zero human input | 0 |
 | Every gate hit appears in `gates.md`; an unmatched question fails by name | 0 |
+| No loop can run forever: every gate has a budget and a terminal failure | 0 |
+| User Proxy never sees the draft brief; Sufficiency Auditor gates the budget | 0 |
 | Pre/post hash manifest of `~/.claude`, `~/.gemini`, working repo matches | 1 |
 | No `.git` under the temp root has a remote outside it; a run that would push out refuses to start | 1 |
 | `GH_TOKEN`/`GITHUB_*` absent from the child env in the shimmed lane | 1 |
@@ -350,6 +416,8 @@ any other slice is built. 2 blocks 4. 5 hardens 4. 6 is independent of 7.
 | All five subagent guardrails verified, not assumed | 5 |
 | Heal loops bounded; no unbounded `[MIRROR-DRIFT]` retry | 5 |
 | Live lane leaves no repo, even when killed | 6 |
+| A failing run still reports findings from the phases that completed | 9 |
+| Every finding carries evidence and a class; a broken skill lands as `stratos` | 9 |
 | Shimmed lane runs per PR; live lane nightly | 7 |
 
 ## 8. Risks
@@ -366,14 +434,23 @@ any other slice is built. 2 blocks 4. 5 hardens 4. 6 is independent of 7.
 | A killed live run orphans a GitHub repo | Scope preflight + atexit + signal handler; print the delete command on failure (Slice 6) |
 | Only Claude Code is exercisable headlessly, and `ship-only` is untested | Stated as explicit limits, not papered over (Slice 8) |
 | Harness passes because a gate silently never ran | Per-phase sentinels; a missing sentinel is a failure, never a skip |
+| The report becomes a dumping ground nobody acts on | Every finding is classified and routed; `stratos` findings go to `/2c-reconcile-specs` as real work, not a list |
+| A bounded grill produces a brief too thin to be a real test | The Sufficiency Auditor, not the question count, decides; a `FAIL` with unmet gaps fails the run (Slice 0) |
 
-## 9. Surfaced for `/2c-reconcile-specs`
+## 9. Lifecycle defects this planning already found
 
-Not L3's to fix, found while planning it:
+**Not L3's to fix, and not hypothetical** — each was verified against the source while
+planning the harness. They are listed here because L3 exists to find exactly this class of
+problem, and these were found before a single line of it was written. Route to
+`/2c-reconcile-specs`.
 
-- **`2a:88`, `2b:100`, `3a:69` push to the default branch as an automatic side effect.**
-  AGENTS.md §4 says "`main`/`master`: never a work target for code" and "Push is an
-  authorized ship action, never an automatic side effect." These three appear to conflict
-  with the constitution.
-- **`4a` Phase 5.2 runs `design_theme.py --check` unconditionally**, so a non-UI project
-  cannot pass `ship-only` (fact 12).
+| # | Defect | Evidence | Why it matters |
+|:--|:---|:---|:---|
+| D1 | Three skills commit and push to the **default branch** as an automatic side effect | `2a-write-prd.md:88`, `2b-interface-design.md:100`, `3a-version-planning.md:69` | AGENTS.md §4 permits a push only when "(3) it is a non-`main` feature branch" and calls push "an authorized ship action, never an automatic side effect". These push to `main` with no authorization gate. |
+| D2 | `reconcile.py` **fails open** when GitHub is unreachable | `reconcile.py:157-163` — prints `[local-only — GitHub not checked]` and `return 0` | The four sync gates say "non-zero → heal". Exit 0 reads as pass, so the terminal-sync invariant is silently not enforced offline. |
+| D3 | The same gates are **unbounded loops** | `3a:67`, `3b:70`, `3c:70`, `4a:78` — "re-run until `[MIRROR-OK]`" | No attempt cap. Worse, combined with D2 the gate can never emit `[MIRROR-OK]` offline while also exiting 0 — so the instruction is unsatisfiable exactly when it fails open. A human notices; `3z-afk-loop` does not. |
+| D4 | `4a` Phase 5.2 runs `design_theme.py --check` **unconditionally** | `4a-verify-and-ship.md:66-70` — "If command exits non-zero, **halt and fail ship**" | A backend-only project has no `<app-css-dir>/theme.tokens.css`, so it can never ship. No UI-surface condition guards the check. |
+| D5 | `1b`'s grill has **no question budget** | `1b:64,68` — "no fixed question budget"; the user declares "enough" | Correct for HITL, unbounded for AFK. The skill already notes it "guards an AFK agent against grilling itself" but supplies no mechanism. Slice 0's budget + Sufficiency Auditor is the candidate fix. |
+
+D2 and D3 compound: the gate that is supposed to be terminal is both unbounded and
+fail-open, and which one you get depends on whether `gh` happens to be reachable.
