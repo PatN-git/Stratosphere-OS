@@ -244,6 +244,9 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
             "GIT_TERMINAL_PROMPT": "0",
         })
 
+        install_shims(root, child)
+        assert_gh_is_shimmed(child)
+
         _seed_credentials(real_home, home)
         if scaffold:
             _install_stratos(repo_root, home, project, child)
@@ -280,6 +283,68 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
                 print(f"[warn] {msg}", file=sys.stderr)
             else:
                 raise RuntimeError(msg)
+
+
+SHIM_SRC = Path(__file__).parent / "shims"
+
+# Asks the shim who it is, from inside a child that has the run's environment.
+# It cannot be asked from here: on Windows the executable search uses the CALLING
+# process's PATH, not the `env=` one, so a check run from the harness would resolve
+# the developer's real gh and pass while the run under test was still shimmed - or,
+# worse, the reverse.
+_PROBE = ("import subprocess,sys;"
+          "r=subprocess.run(['gh','version'],capture_output=True,text=True);"
+          "sys.stdout.write(r.stdout)")
+
+
+def install_shims(root: Path, child: dict) -> Path:
+    """Put a `gh` the run controls in front of the real one (E4)."""
+    shim_dir = root / "shims"
+    shutil.copytree(SHIM_SRC, shim_dir, dirs_exist_ok=True)
+    with contextlib.suppress(OSError):
+        os.chmod(shim_dir / "gh", 0o755)
+    if os.name == "nt":
+        _mint_windows_launcher(shim_dir)
+    child["PATH"] = str(shim_dir) + os.pathsep + child.get("PATH", "")
+    # The Windows launcher imports `gh_shim` rather than running it as a file.
+    child["PYTHONPATH"] = os.pathsep.join(
+        [str(shim_dir)] + ([child["PYTHONPATH"]] if child.get("PYTHONPATH") else []))
+    child["L3_GH_STORE"] = str(root / "gh-store.json")
+    return shim_dir
+
+
+def _mint_windows_launcher(shim_dir: Path) -> None:
+    """A `.cmd` shim cannot intercept a Python caller on Windows.
+
+    `CreateProcess` appends only `.exe` when it searches PATH - PATHEXT is a shell
+    feature, which is why `shutil.which('gh')` finds `gh.cmd` and
+    `subprocess.run(['gh', ...])` does not. `reconcile.py:109,139` is exactly that
+    kind of caller, so with only a `.cmd` on PATH the terminal-sync gate would reach
+    the developer's real gh - authenticated through the OS keyring, which scrubbing
+    `GH_TOKEN` does nothing about. Mint a real launcher instead.
+    """
+    try:
+        from pip._vendor.distlib.scripts import ScriptMaker
+    except ImportError as exc:      # no launcher, no containment - do not proceed
+        raise RuntimeError(
+            "cannot mint tests/lifecycle-harness/shims/gh.exe: pip's vendored "
+            "distlib is unavailable, and on Windows a .cmd shim cannot intercept "
+            f"reconcile.py's `gh` calls, which would then reach the real GitHub: {exc}")
+    maker = ScriptMaker(None, str(shim_dir))
+    maker.executable = sys.executable
+    maker.variants = {""}
+    maker.make("gh = gh_shim:main")
+
+
+def assert_gh_is_shimmed(child: dict) -> None:
+    """Prove the interception, from a child with the run's environment (E4)."""
+    r = subprocess.run(["python", "-c", _PROBE], env=child,
+                       capture_output=True, text=True)
+    if "l3-shim" not in (r.stdout or ""):
+        raise RuntimeError(
+            "`gh` does not resolve to the L3 shim inside the run's environment, so "
+            "a phase would reach the real GitHub (E4). Probe said: "
+            f"{(r.stdout or r.stderr or '<nothing>').strip()[:300]!r}")
 
 
 def _seed_credentials(real_home: Path, temp_home: Path) -> None:

@@ -300,7 +300,9 @@ download a zip for nothing. Fact 13 still holds; the slice that needs it does it
   `grep -rhoE '\bgh [a-z-]+( [a-z-]+)?' src/workflows/ src/references/ src/scripts/`:
   `issue create|edit|view|list|comment|close`, `pr create|view|ready`, `api graphql`,
   `api repos`, `auth status`, `version`, plus `repo create|delete|list` for Slice 6.
-  (`release view` does not appear anywhere — do not implement it.)
+  (`release view`, `project list|view`, `label list`, `secret|variable set` and
+  `repo view` do appear, but only in `stratosphere-setup`/`stratosphere-update`,
+  which L3 never drives — do not implement them.)
 - Back it with a JSON fixture store; mint monotonic issue numbers so `BT-<padded>` IDs are
   stable across a run. The store is the **authoritative source `3b` writes `BACKLOG_MAP.md`
   from**, or `reconcile.py` will diverge from it (fact 6).
@@ -313,6 +315,28 @@ download a zip for nothing. Fact 13 still holds; the slice that needs it does it
 
 **DONE WHEN:** `3b` completes against the shim, `reconcile.py` reaches `[MIRROR-OK]`, and
 the fixture store contains every `gh` invocation the run made.
+
+**DONE — 2026-09-16, with one condition carried forward.** The shim serves the in-chain
+surface from a JSON store at `$L3_GH_STORE`, mints issue and PR numbers from one counter
+(GitHub shares them, which is why `2a:32` and `3b:66` forbid predicting the next), applies
+the three relation mutations, records every invocation, and fails loudly with the full argv
+on anything else. `reconcile.py --require-gh` reaches `[MIRROR-OK]` against it and still
+reports `[MIRROR-DRIFT]` when the mirror and the store disagree — both driven in
+`tests/test_l3_gh_shim.py` against the real script, no agent involved. **"`3b` completes
+against the shim" moves to Slice 4**, which is the slice that drives `3b`; proving it here
+would cost a live run to test something Slice 4 tests anyway.
+
+**A `.cmd` shim does not contain Windows, and the failure is silent.** `CreateProcess`
+appends only `.exe` when it searches `PATH` — `PATHEXT` is a shell feature — so
+`shutil.which('gh')` finds `gh.cmd` while `subprocess.run(['gh', ...])` walks straight past
+it to the real binary. `reconcile.py:109,139` is exactly that kind of caller, and the real
+`gh` authenticates from the OS keyring, which scrubbing `GH_TOKEN` does nothing about: the
+shimmed lane would have talked to real GitHub as the developer and reported `[MIRROR-OK]`
+for it. `env.py` now mints a real `gh.exe` launcher, and `assert_gh_is_shimmed` proves the
+interception from inside a child carrying the run's environment — it cannot be checked from
+the harness process, because on Windows the executable search uses the *calling* process's
+`PATH`, not the one passed in `env=`. Recorded as a Slice 9 `harness` finding class:
+containment that is only checked on the developer's platform is not checked.
 
 ## Slice 3 — Per-phase prompts
 

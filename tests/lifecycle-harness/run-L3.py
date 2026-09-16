@@ -126,6 +126,8 @@ def main(argv=None) -> int:
             assert_contained(env)
             print("[ok]   no GitHub credentials in the child environment (E1)")
             print("[ok]   every remote under the temp root resolves inside it (E7)")
+            print(f"[ok]   gh resolves to the shim, not the real one (E4); "
+                  f"store at {env.child_env['L3_GH_STORE']}")
             print("[ok]   project scaffolded and .memory/ passes validate_memory.py")
             print("[note] no phases yet - Slice 3 writes the prompts, Slice 4 drives "
                   "them")

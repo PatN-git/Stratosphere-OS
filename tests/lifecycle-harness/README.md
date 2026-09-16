@@ -98,6 +98,7 @@ against after and pre-existing dirt is a constant on both sides.
 | `responder.py` | Answers as the user. Deterministic policy for structured gates, isolated proxy for the rest, hard ceiling on total replies. |
 | `session.py` | Multi-turn `claude` driver (`--resume` per turn), plus `ClaudeProxy` and `ClaudeAuditor`, each a fresh session in an empty directory. |
 | `env.py` | Containment: temp HOME, temp project, stripped remotes, scrubbed tokens, guaranteed teardown. |
+| `shims/gh_shim.py` | Slice 2: a `gh` that answers from a JSON store. `auth status` must succeed or `reconcile.py` degrades to `[local-only]` and never emits `[MIRROR-OK]`. Unknown subcommands fail loudly. |
 | `fixture/topic.md` | The pinned subject. The proxy sees this and nothing else. |
 | `gates.md` | Every HALT/ASK point and its answer, so "every gate is answered" is falsifiable. |
 | `run-L3.py` | Slice 1: the CLI. Builds the contained environment, asserts E1/E7/E2 and the scaffold, tears it down. Drives no agent yet. |
@@ -109,6 +110,15 @@ against after and pre-existing dirt is a constant on both sides.
 brief. If it could read what the agent wrote, it would be approving its own work, which is
 exactly what `1b:64` forbids. `test_responder_cannot_leak_a_brief_because_it_never_holds_one`
 fails the moment `Responder` grows a field that would allow it.
+
+**A `.cmd` shim does not intercept a Python caller on Windows.** `CreateProcess` appends
+only `.exe` when it searches `PATH`; `PATHEXT` is a shell feature. So `shutil.which('gh')`
+finds `gh.cmd` and `subprocess.run(['gh', ...])` — which is what `reconcile.py` does —
+walks past it to the real `gh`, authenticated from the OS keyring where scrubbing
+`GH_TOKEN` cannot reach. `env.py` mints a real `gh.exe` launcher and `assert_gh_is_shimmed`
+proves the interception from inside a child carrying the run's environment. It cannot be
+proven from the harness process: on Windows the executable search uses the *calling*
+process's `PATH`, not the one passed in `env=`.
 
 **The E1 manifest compares names, not contents.** `~/.gemini` holds ~67k files and
 Antigravity writes into it while the harness runs, so a content-sensitive fingerprint fails
