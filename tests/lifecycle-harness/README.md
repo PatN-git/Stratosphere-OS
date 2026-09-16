@@ -7,15 +7,26 @@ Plan: [`docs/plans/l3-lifecycle-e2e-harness-plan.md`](../../docs/plans/l3-lifecy
 
 ## Status
 
-**Slice 0 built. The live spike is BLOCKED on this machine** - for two specific,
-diagnosed reasons, not for want of trying. Everything that does not need a live agent is
-tested (30 tests, `test_l3_responder.py` and `test_l3_env.py`).
+**Slice 0 is PROVEN.** A live 3-question probe drove `1b-concept-framing` end to end with
+no human present, on 2026-09-16:
 
-That split is deliberate. The parts where a bug would be silent - a gate answered
-non-deterministically, the proxy handed the draft brief, a grill that never ends, a run
-that reaches the real GitHub - are all verifiable without an agent, and are verified. What
-remains unproven is whether a real `1b` conversation terminates under this policy, which is
-the question Slice 0 exists to answer.
+```
+[  1] policy:pick-first  '1'
+[  2] proxy              "I meant (a): this is single-actor. There's no config-owner/SDK-consumer split ..."
+[  3] policy:pick-first  '1'
+[  4] policy:budget      'That is enough questioning - proceed with what you have'
+[audit] sufficient=False gaps=[5 specific, well-formed gaps]
+[fail] rounds exhausted with gaps still open
+```
+
+Every load-bearing assumption held: `1b` **asks** in headless `-p` mode rather than
+self-answering, `--resume` carries the conversation, the policy recognises real option
+menus, the isolated proxy answers in character from the fixture, the budget fires, and the
+auditor returns a structured verdict. The run then failed **correctly** - three questions
+cannot produce a sufficient brief, and the auditor said so with specific gaps.
+
+The remaining question is calibration, not viability: how deep a grill produces a brief the
+auditor passes. That needs a full-depth run (`--max-questions 10 --max-rounds 2`).
 
 ### The one thing still blocking the live spike
 

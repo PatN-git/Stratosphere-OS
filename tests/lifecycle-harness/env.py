@@ -30,6 +30,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -98,7 +99,7 @@ def preflight_remotes(root: Path) -> None:
             + "\n  ".join(offenders))
 
 
-def manifest(paths, max_depth: int = 2) -> dict[str, str]:
+def manifest(paths, max_depth: int = 1) -> dict[str, str]:
     """Depth-limited fingerprint of paths that must not change (E1).
 
     Records entry NAMES only, to depth 2. Two hard-won constraints shape this:
@@ -112,12 +113,17 @@ def manifest(paths, max_depth: int = 2) -> dict[str, str]:
         theoretical risk: it failed exactly that way during Slice 0, and passed on
         the retry, which is worse.
 
-    Names-only catches what actually matters: the harness installing into the real
-    HOME instead of the temp one, which shows up as new entries (a plugin directory,
-    a skills tree). It will NOT catch an in-place edit of an existing file. That is
-    an accepted limit - containment is the redirected HOME, the scrubbed environment
-    and the stripped remotes; this is the backstop, and `assert_no_install` names the
-    one breach worth asserting outright.
+    Depth 1, not 2, for the same reason. At depth 2 a new `sessions/<id>` directory
+    under `~/.gemini` - Antigravity creating one while the harness runs - reads as
+    drift and fails the run. That happened on the first real spike, AFTER the
+    names-only fix, so depth 2 was still too sensitive to live churn. The same is
+    true of `~/.claude/projects/<project>`.
+
+    What is left is deliberately coarse: a new or vanished TOP-LEVEL entry. It will
+    not catch an in-place edit, nor a new entry nested inside an existing directory.
+    That is an accepted limit - containment is the redirected HOME, the scrubbed
+    environment and the stripped remotes. `assert_no_install` covers the deep paths
+    that actually matter, by name.
     """
     out = {}
     for p in paths:
@@ -227,11 +233,26 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
             with contextlib.suppress(ValueError, OSError):
                 signal.signal(sig, handler)
         _teardown(root, keep)
-        assert_no_install(real_home, markers_before)
+        # Raising from `finally` REPLACES whatever the body was already raising, so
+        # a containment warning would erase the real failure - the first spike's
+        # "rounds exhausted with gaps still open" became an E1 traceback instead.
+        # Only raise when nothing else is in flight; otherwise warn and let the
+        # original outcome stand.
+        failing = sys.exc_info()[0] is not None
+        try:
+            assert_no_install(real_home, markers_before)
+        except RuntimeError:
+            if not failing:
+                raise
+            print("[warn] E1: StratOS markers appeared in the real HOME", file=sys.stderr)
         drift = diff_manifest(before, manifest(watched))
         if drift:
-            raise RuntimeError("the run added or removed entries under paths it must never touch (E1):\n  "
-                               + "\n  ".join(drift))
+            msg = ("the run added or removed top-level entries under paths it must "
+                   "never touch (E1):\n  " + "\n  ".join(drift))
+            if failing:
+                print(f"[warn] {msg}", file=sys.stderr)
+            else:
+                raise RuntimeError(msg)
 
 
 def _seed_credentials(real_home: Path, temp_home: Path) -> None:

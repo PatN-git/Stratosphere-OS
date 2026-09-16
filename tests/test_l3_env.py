@@ -141,12 +141,27 @@ def test_concurrent_writes_to_existing_files_do_not_trip_the_guard(tmp_path):
     assert not e.diff_manifest(before, e.manifest([watched]))
 
 
-def test_a_new_entry_still_trips_the_guard(tmp_path):
+def test_a_new_top_level_entry_still_trips_the_guard(tmp_path):
     watched = tmp_path / "claude"
     (watched / "plugins").mkdir(parents=True)
     before = e.manifest([watched])
-    (watched / "plugins" / "stratosphere-os").mkdir()         # an install appearing
+    (watched / "skills").mkdir()                              # new top-level entry
     assert e.diff_manifest(before, e.manifest([watched]))
+
+
+def test_a_new_nested_session_dir_does_not_trip_the_guard(tmp_path):
+    """Antigravity creates ~/.gemini/sessions/<id> mid-run; that is not drift.
+
+    Observed on the first real spike: at depth 2 this failed the run AFTER the
+    names-only fix had already landed, masking the run's actual result.
+    """
+    watched = tmp_path / "gemini"
+    (watched / "sessions").mkdir(parents=True)
+    before = e.manifest([watched])
+    (watched / "sessions" / "abc123").mkdir()
+    assert not e.diff_manifest(before, e.manifest([watched]))
+    # still visible if you ask for it
+    assert e.diff_manifest(e.manifest([watched], max_depth=2), before)
 
 
 def test_assert_no_install_flags_only_what_appeared(tmp_path):
