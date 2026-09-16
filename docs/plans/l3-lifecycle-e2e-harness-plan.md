@@ -395,6 +395,29 @@ knows nothing about `docs/`.
 **DONE WHEN:** each phase asserts at least one artifact and one frontmatter invariant; no
 assertion inspects agent prose (E3); `2b` completes Path C with no generator MCP.
 
+**BUILT — 2026-09-16; the live proof is the only part outstanding.** `driver.py` drives one
+phase from its opening prompt to its sentinel; `assertions.py` holds a checker per phase,
+each returning `(problems, notes)` — a problem fails the run, a note is an observation for
+Slice 9. `run-L3.py` gained `--phases`, `--skip-research`, the three `--model` pins and
+`--env-only`, which drives nothing and costs nothing. A failed phase stops the run: every
+later phase reads its artifacts, so continuing would measure nothing.
+
+**Where a phase's outcome is a claim rather than a file, the harness re-runs the
+deterministic script itself.** `3b`'s `[MIRROR-OK]` comes from running
+`reconcile.py --require-gh` against the shim, not from the transcript; `3d`'s "tests green"
+from running them; `0b`'s lint from running `validate_memory.py`. The only transcript
+reading anywhere is `4a`'s verdict token and each phase's sentinel, both of which E3 allows.
+
+**Vendoring landed here and immediately caught something.** `sync_skills.py:364-375` picks
+its destination by **host**, not from the registry's `targetPath`: `.claude/skills` when a
+`.claude-plugin` marker sits beside the script, `.agents/skills` otherwise. The first check
+knew only `.agents/skills`, so a *successful* vendor read as a silent miss — the guard
+fired correctly on a wrong expectation, which is the cheap version of this mistake.
+
+51 tests, none live. What remains is the DONE WHEN itself: every phase actually completing
+under the responder, `2b` reaching Path C, and `3b` completing against the shim (inherited
+from Slice 2). That needs model calls, and it is the first slice that does.
+
 ## Slice 5 — Subagent tolerance
 
 Five subagents sit in the chain (fact 5). Phases are not single-process.
@@ -575,23 +598,22 @@ That is Slice 9's job.
 
 ## 11. Resume here (2026-09-16)
 
-Slices 0–3 are done and pushed to `feat/spec-conformance-v4` (PR #107). 209 tests pass;
-`python tests/lifecycle-harness/run-L3.py` exits 0. **No live agent run has happened since
-Slice 0's calibration** — Slices 1–3 cost nothing.
+Slices 0–3 are done; **Slice 4 is built but not yet proven live**. 260 tests pass;
+`run-L3.py --env-only` exits 0. No model call has been spent since Slice 0's calibration.
 
-**Next: Slice 4**, which is the first slice that must spend runs. It inherits three things
-deferred into it, each deliberately and each cheap to forget:
+**Next: the first live phase run.** Staged, cheapest first, because a full chain is the
+driver plus five nested subagents that inherit its model (section 6):
 
-1. **`3b` completes against the shim** (Slice 2's DONE WHEN). Slice 4 drives `3b`, so it
-   proves this as a side effect.
-2. **`code-simplifier` vendoring** (Slice 1, fact 13). `3d` invokes it and it is fetched
-   from GitHub, not bundled. `sync_skills.py --only code-simplifier --project-root <proj>`
-   against the copy in `dist/claude-code/scripts/`. It is the one setup step needing
-   network.
-3. **Every phase completes under the responder** (Slice 3's DONE WHEN), with `gates.md`
-   corrected wherever a run contradicts a predicted row.
+```bash
+python tests/lifecycle-harness/run-L3.py --phases 0a          # minutes; proves the plumbing
+python tests/lifecycle-harness/run-L3.py --phases 0a,1a,1b    # the discovery half
+python tests/lifecycle-harness/run-L3.py                      # the whole chain
+```
 
-**Before spending anything on Slice 4, re-read three facts that are easy to misread:**
+`0a` is the cheap one: it halts by design (`0a:23`), so it is the shortest possible
+end-to-end proof that prompt → sentinel → assertions works against a real agent.
+
+**Before spending anything, re-read three facts that are easy to misread:**
 
 - The responder's budget counts agent **turns**, not questions — `1b` batches, and seven
   turns carried dozens. 10 was calibrated on **opus**; another driver needs re-calibrating.

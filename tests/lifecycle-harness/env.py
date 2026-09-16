@@ -205,7 +205,8 @@ def diff_manifest(before: dict, after: dict) -> list[str]:
 
 
 @contextlib.contextmanager
-def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
+def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
+                  vendor: bool = False):
     """Build an isolated project with StratOS installed, and tear it down."""
     repo_root = Path(repo_root).resolve()
     real_home = Path(os.path.expanduser("~"))
@@ -250,6 +251,8 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
         _seed_credentials(real_home, home)
         if scaffold:
             _install_stratos(repo_root, home, project, child)
+        if vendor:
+            vendor_skills(repo_root, project, child)
 
         strip_remotes(project)
         subprocess.run(["git", "-C", str(project), "remote", "add", "origin", str(bare)],
@@ -283,6 +286,55 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True):
                 print(f"[warn] {msg}", file=sys.stderr)
             else:
                 raise RuntimeError(msg)
+
+
+# `3d:38` runs `code-simplifier`, which is NOT bundled - `external-skills.json`
+# fetches it from GitHub (fact 13). `plan-html`, which `2b` invokes, IS bundled and
+# arrives with the scaffold; do not fetch it.
+VENDORED = ("code-simplifier",)
+
+
+# `sync_skills.py:364-375` picks its destination by HOST, not from the registry's
+# `targetPath`: `.claude/skills` when a `.claude-plugin` marker sits beside the
+# script (Claude Code), `.agents/skills` otherwise. Checking only one of them made
+# a successful vendor look like a silent miss.
+SKILL_BASES = (".claude/skills", ".agents/skills")
+
+
+def vendored_at(project: Path, name: str) -> Path | None:
+    for base in SKILL_BASES:
+        candidate = project / Path(base) / name
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def vendor_skills(repo_root: Path, project: Path, child: dict,
+                  names=VENDORED, script: Path | None = None) -> None:
+    """Fetch the external skills a driven phase needs, and prove they landed.
+
+    This is the one setup step that needs network, which is why it runs only when
+    the phase that needs it is in the run. A silent miss here surfaces much later
+    as `3d` behaving oddly for no visible reason, so both the exit code and the
+    resulting directory are checked - the `--yes` lesson from Slice 0.
+    """
+    script = script or (repo_root / "dist" / "claude-code" / "scripts" /
+                        "sync_skills.py")
+    if not script.exists():
+        raise RuntimeError(f"no sync_skills.py at {script} - build first")
+    r = subprocess.run(["python", str(script), "--only", *names,
+                        "--project-root", str(project)],
+                       cwd=str(project), env=child, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(
+            f"vendoring {', '.join(names)} failed (exit {r.returncode}): "
+            f"{(r.stdout or '')[-500:]}{(r.stderr or '')[-500:]}")
+    missing = [n for n in names if not vendored_at(project, n)]
+    if missing:
+        raise RuntimeError(
+            f"sync_skills.py reported success but did not install: "
+            f"{', '.join(missing)} (looked in {', '.join(SKILL_BASES)}). "
+            f"3d invokes code-simplifier (3d:38, fact 13).")
 
 
 SHIM_SRC = Path(__file__).parent / "shims"

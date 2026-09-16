@@ -7,7 +7,7 @@ Plan: [`docs/plans/l3-lifecycle-e2e-harness-plan.md`](../../docs/plans/l3-lifecy
 
 ## Status
 
-**Slice 0 is PROVEN and calibrated; Slice 1 is done.** A full-depth run drove `1b-concept-framing` to a
+**Slices 0–3 are done; Slice 4 is built and awaiting its first live run.** A full-depth run drove `1b-concept-framing` to a
 sufficient discovery brief with no human present, 2026-09-16:
 
 ```
@@ -98,6 +98,8 @@ against after and pre-existing dirt is a constant on both sides.
 | `responder.py` | Answers as the user. Deterministic policy for structured gates, isolated proxy for the rest, hard ceiling on total replies. |
 | `session.py` | Multi-turn `claude` driver (`--resume` per turn), plus `ClaudeProxy` and `ClaudeAuditor`, each a fresh session in an empty directory. |
 | `env.py` | Containment: temp HOME, temp project, stripped remotes, scrubbed tokens, guaranteed teardown. |
+| `driver.py` | Slice 4: drives one phase from its prompt to its sentinel. A missing sentinel is a failure, never a skip. |
+| `assertions.py` | Slice 4: a checker per phase. Claims the transcript makes (`[MIRROR-OK]`, tests green, lint clean) are re-run here rather than believed. |
 | `shims/gh_shim.py` | Slice 2: a `gh` that answers from a JSON store. `auth status` must succeed or `reconcile.py` degrades to `[local-only]` and never emits `[MIRROR-OK]`. Unknown subcommands fail loudly. |
 | `fixture/topic.md` | The pinned subject. The proxy sees this and nothing else. |
 | `prompts/` + `prompts.py` | Slice 3: the opening turn of each phase and its `L3-<PHASE>-COMPLETE` sentinel. The responder handles everything after it. No prompt carries the fixture. |

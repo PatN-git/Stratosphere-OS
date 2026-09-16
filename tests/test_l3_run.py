@@ -181,5 +181,102 @@ def test_a_failed_environment_exits_one_and_says_why(tmp_path, monkeypatch, caps
         yield
 
     monkeypatch.setattr(r.env_mod, "lifecycle_env", boom)
-    assert r.main(["--repo", str(REPO)]) == 1
+    # --env-only so the failure under test is the environment, not a probe
+    # for the CLI - and so no test can ever spend a model call.
+    assert r.main(["--repo", str(REPO), "--env-only"]) == 1
     assert "push outside" in capsys.readouterr().out
+
+
+# --- Slice 4: phase selection, and the cost that comes with it ----------------
+
+def test_env_only_drives_nothing():
+    """The free form. Everything else spends the driver plus, in five phases, the
+    subagents the skills spawn, which inherit the driver's model."""
+    assert r.parse_args(["--env-only"]).env_only is True
+    assert r.parse_args([]).env_only is False
+
+
+def test_phases_default_to_the_whole_chain():
+    assert r.chosen_phases(r.parse_args([])) == list(r.prompts_mod.PHASES)
+
+
+def test_a_subset_can_be_named():
+    assert r.chosen_phases(r.parse_args(["--phases", "0a,1b"])) == ["0a", "1b"]
+
+
+def test_an_unknown_phase_is_refused_before_anything_is_built():
+    with pytest.raises(SystemExit) as exc:
+        r.chosen_phases(r.parse_args(["--phases", "0a,9z"]))
+    assert "9z" in str(exc.value)
+
+
+def test_skip_research_drops_only_1a():
+    """E4: dropping 1a does NOT make the lane egress-free."""
+    phases = r.chosen_phases(r.parse_args(["--skip-research"]))
+    assert "1a" not in phases and "1b" in phases
+
+
+def test_the_models_are_pinned_per_role_not_inherited():
+    args = r.parse_args([])
+    assert args.model == r.session_mod.DRIVER_MODEL
+    assert args.proxy_model == r.session_mod.PROXY_MODEL
+    assert args.auditor_model == r.session_mod.AUDITOR_MODEL
+    assert args.proxy_model != args.model
+
+
+def test_the_budget_counts_turns_and_says_so():
+    """1b batches: seven turns carried dozens of numbered questions."""
+    assert r.parse_args([]).max_questions == 10
+    assert r.parse_args([]).max_rounds == 2
+
+
+# --- vendoring the one skill that is not bundled (fact 13) -------------------
+
+def _stub_sync(tmp_path, exit_code, creates=None):
+    """A stand-in for sync_skills.py: no network, and it does exactly as told."""
+    make = (f"from pathlib import Path; Path({str(creates)!r})"
+            ".mkdir(parents=True, exist_ok=True)") if creates else ""
+    script = tmp_path / "sync_skills.py"
+    script.write_text(f"""import sys
+{make}
+sys.exit({exit_code})
+""", encoding="utf-8")
+    return script
+
+
+@pytest.mark.parametrize("base", e.SKILL_BASES)
+def test_vendoring_accepts_either_host_destination(tmp_path, base):
+    """sync_skills.py:364-375 picks the base by HOST, not from the registry's
+    targetPath: `.claude/skills` under Claude Code, `.agents/skills` elsewhere.
+    Checking only one made a successful vendor look like a silent miss."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    target = proj / Path(base) / "code-simplifier"
+    e.vendor_skills(tmp_path, proj, CHILD,
+                    script=_stub_sync(tmp_path, 0, creates=str(target)))
+    assert e.vendored_at(proj, "code-simplifier") == target
+
+
+def test_vendoring_fails_loudly_when_sync_skills_does(tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    with pytest.raises(RuntimeError) as exc:
+        e.vendor_skills(tmp_path, proj, CHILD, script=_stub_sync(tmp_path, 2))
+    assert "exit 2" in str(exc.value)
+
+
+def test_vendoring_fails_when_it_reports_success_but_installs_nothing(tmp_path):
+    """The Slice 0 lesson: a swallowed failure looks exactly like success until a
+    phase behaves oddly for no visible reason."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    with pytest.raises(RuntimeError) as exc:
+        e.vendor_skills(tmp_path, proj, CHILD, script=_stub_sync(tmp_path, 0))
+    assert "code-simplifier" in str(exc.value)
+    assert "3d:38" in str(exc.value)
+
+
+def test_a_missing_sync_skills_says_to_build_first(tmp_path):
+    with pytest.raises(RuntimeError) as exc:
+        e.vendor_skills(tmp_path, tmp_path, CHILD, script=tmp_path / "nope.py")
+    assert "build first" in str(exc.value)
