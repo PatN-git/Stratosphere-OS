@@ -56,6 +56,12 @@ Work-status (`status:*` GitHub labels / BACKLOG `Status`) **never** appears in d
 
 `sources` (optional): supersedes a body `# Citations` / `## Sources` section. Each entry requires `resource`; `id`, `title`, `author`, `last_modified` are optional.
 
+`verified` (optional): a list of independent confirmation events, `[{by, at}]`. Distinct from `generated` — `generated` records who *produced* a document, `verified` who *checked* it. In `.memory/`, a trust-tag promotion (`[ASSUMED]` → `[PATTERN]`/`[CONFIRMED]`) appends an entry (see `memory-protocol.md` §2).
+
+`stale_after` (optional): an absolute ISO 8601 instant. The document is stale when `now >= stale_after`. Use it only where staleness is genuinely checkable — `.memory/STATUS.md` and sprint documents — never as a decorative field.
+
+**Not adopted:** OKF v0.2's attestation family (`runtime`, `parameters`, `computation`, `executor`, `attester`). It exists for attested computation over data assets; StratOS has no such artifact. Recorded so the decision is not re-litigated.
+
 ### 2.1 Activation contract (`rule` files)
 
 Files in `.agents/rules/` are **out of OKF scope** (§1) but still declare when they activate, via `trigger`:

@@ -100,6 +100,6 @@ Terminate loop when:
    - **Cost & Viability Signals:** capture pricing and market signals (e.g., paid products, freelancer hires, keyword ad spend) under `## Cost & Viability Signals`.
    - **Synthesis Contract:** synthesize strictly from `.work.md`; no uncited/un-persisted claims.
    - **Annex:** render Optional Annex within same file (structure of the other template), not a second file. When it precedes concept framing (no candidate product yet), omit the Dunford Positioning Lens and the Us (Candidate) matrix column; include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
-   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `references/research-evidence-standards.md` rules.
+   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `references/research-evidence-standards.md` rules. **Record every fetched URL in the frontmatter `sources:` list** (`resource` required; `title`, `author`, `last_modified` where known) — it supersedes the body `## Sources` section.
 4. **Cleanup:** Delete `.tmp/1a-research-<slug>.work.md`.
 5. **Handoff:** Notify user: *"Research compiled at `docs/research/<slug>.md`. Run `/1b-concept-framing` to define concept."*

@@ -51,17 +51,17 @@
       "version": "1.0.3"
     },
     "assets/templates/memory/STATUS.md": {
-      "sha256": "459d8db74de78b602bf4f8ffcbd3d5c37cd5d5c93916659bd418864d753991d1",
+      "sha256": "5027a0e189cd9eec73a0155ebcaed93c5405ef0174c07b3c0a13c75ee1387b16",
       "timestamp": "2026-07-17",
-      "version": "1.0.3"
+      "version": "1.1.0"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "376e684bcc7ca2a9853312e67fc1bbad1cc9b9ebee6ba35b21a95b6f292cc69a",
+      "sha256": "696ee5bae324554f91387bc8a63a984e454440e5cb5b92d2f5d372d33e7112e9",
       "timestamp": "2026-09-15",
       "version": "2.0.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "592c93ccd956da765ecd237921fdcc5df6cfd05863414bec7b760eb5fba17f3b",
+      "sha256": "4317827a75e0f3e0173c34ec1697293e338129272e30f331329ee8dd0df7d889",
       "timestamp": "2026-09-15",
       "version": "2.0.0"
     },
@@ -96,14 +96,14 @@
       "version": "1.1.2"
     },
     "skills/1a-research/SKILL.md": {
-      "sha256": "67935f9d994082a8c450cd874458c470c408eb41c50a1c58af741e8dba6e57b9",
+      "sha256": "35d0a3a3202b89339b19a435399da5c53f59e678600981ee25713a8623e86040",
       "timestamp": "2026-07-24",
       "version": "1.0.6"
     },
     "skills/1a-research/references/research-competitive-template.md": {
-      "sha256": "62ce43a6e292f10638856915740c51e2d02fc43b82cacbf12e59ee94923817cf",
+      "sha256": "6036c3677ba42e4a2c1134682ce4531b3dbd596ca2ca7ba4c3be56d30e87b2bc",
       "timestamp": "2026-09-15",
-      "version": "2.0.0"
+      "version": "2.1.0"
     },
     "skills/1a-research/references/research-evidence-standards.md": {
       "sha256": "6ef0f2eb19a4fa6fd10c93362d2622f62e130b7831aa59c3d4c3749780ecbdc3",
@@ -111,9 +111,9 @@
       "version": "1.0.1"
     },
     "skills/1a-research/references/research-problem-template.md": {
-      "sha256": "e396ebf297113b851d2bf183964e3352a1d61850bf56ea7d71b62d572b1de3a1",
+      "sha256": "abd0e66c8058d166d7face35f296ed0dc6a461e8cb2a99109bb2cd54d4386a82",
       "timestamp": "2026-09-15",
-      "version": "2.0.0"
+      "version": "2.1.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
       "sha256": "e37c97f4b26fe747797015d8421640080e9b1c4115711b00052ad6dfc78f0966",

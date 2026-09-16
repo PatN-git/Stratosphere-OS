@@ -1,6 +1,6 @@
 ---
 description: Template for a competitive research brief under docs/research/.
-version: "2.0.0"
+version: "2.1.0"
 timestamp: 2026-09-15
 ---
 
@@ -21,6 +21,11 @@ description: ""
 generated:
   by: 1a-research
   at: <ISO 8601>
+sources:
+  - resource: <URL>
+    title: <title>
+    author: <author or org>
+    last_modified: <ISO 8601>
 status: stable | deprecated   # deprecated once superseded or past its freshness window
 slug: <kebab-case-core-topic>
 version: <plugin version>   # stamped at generation (okf-protocol §5)
@@ -100,6 +105,7 @@ For each Need listed above, assign a **Served** score (1-10) indicating how well
 - <Explicitly list any missing info, product trial requirements, or unconfirmed claims.>
 
 ## Sources
-- <Source URL> (Accessed: <Date>, Source Type: <academic|industry|doc|repo|blog>, Confidence: <HIGH|MEDIUM|LOW>)
+> Superseded by the frontmatter `sources:` list. Record every source there;
+> keep per-claim confidence inline in the body where the claim appears.
 > Note: [HIGH] confidence claims require a one-line source-type justification inline (e.g., "Justification: Triangulated across two independent industry reports").
 > Note: In Quick mode, non-load-bearing claims top out at [MEDIUM] confidence.
