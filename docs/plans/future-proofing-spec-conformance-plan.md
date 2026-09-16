@@ -362,7 +362,11 @@ Rebuild. **Bump `build/build.py` VERSION 3.3.0 → 4.0.0 and the `README.md` ver
 
 ## 5. Spike before the sweep
 
-**Unverified assumption: a numbered-prefix skill name resolves as `/0a-start-session` in each host's slash menu.** The spec permits the name; no host has been tested.
+**Status: partially verified.** Leading-digit skill names (`/0a-start-session`) were
+**manually confirmed working on Claude Code, Antigravity and Devin** (user-tested,
+2026-09-15). **Cursor, Codex and OpenClaw remain unverified** — the spec permits the
+name and those hosts read the same `.agents/skills/` tree, so the risk is low, but it
+is not evidence. Confirm before relying on them.
 
 Migrate **one** workflow end-to-end through Slices 6–9 and invoke it on all six hosts before renaming the other 18. Doubles as the self-hosting canary — this repo drives its own work with `/3d`, `/4a`, `/0b`, and those break the moment Slice 7 stops emitting `.agents/workflows/`.
 
