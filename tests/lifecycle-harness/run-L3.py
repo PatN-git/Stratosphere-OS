@@ -73,14 +73,32 @@ def parse_args(argv=None):
                          f"{','.join(prompts_mod.PHASES)}")
     ap.add_argument("--skip-research", action="store_true",
                     help="drop 1a; the lane is still not egress-free (E4)")
-    ap.add_argument("--max-questions", type=int, default=10,
-                    help="agent TURNS per round, not questions - 1b batches")
-    ap.add_argument("--max-rounds", type=int, default=2)
+    ap.add_argument("--handoff", action="store_true",
+                    help="test the CHAIN, not the depth of each phase: fewer turns, "
+                         "one round, a per-phase wall-clock budget, and 1b's "
+                         "sufficiency auditor demoted to advisory")
+    ap.add_argument("--max-questions", type=int, default=None,
+                    help="agent TURNS per round, not questions - 1b batches "
+                         "(default 10, or 3 with --handoff)")
+    ap.add_argument("--max-rounds", type=int, default=None,
+                    help="default 2, or 1 with --handoff")
+    ap.add_argument("--phase-budget", type=float, default=None,
+                    help="seconds per phase before it fails by name "
+                         "(default none, or 600 with --handoff)")
     ap.add_argument("--model", default=session_mod.DRIVER_MODEL,
                     help="the agent under test; calibration is model-specific")
     ap.add_argument("--proxy-model", default=session_mod.PROXY_MODEL)
     ap.add_argument("--auditor-model", default=session_mod.AUDITOR_MODEL)
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    # Hand-off defaults, applied only where nothing was asked for explicitly, so
+    # `--handoff --max-questions 6` means what it says.
+    if args.max_questions is None:
+        args.max_questions = 3 if args.handoff else 10
+    if args.max_rounds is None:
+        args.max_rounds = 1 if args.handoff else 2
+    if args.phase_budget is None and args.handoff:
+        args.phase_budget = 600.0
+    return args
 
 
 def chosen_phases(args) -> list[str]:
@@ -142,11 +160,18 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     # Only `1b` hands in a `settle`: its sentinel is necessary but not sufficient,
     # because the first full-depth run printed it in three replies with a brief
     # nobody had audited. Elsewhere the sentinel plus the assertions are the gate.
-    settle = _brief_settle(env, auditor) if phase == "1b" else None
+    #
+    # In hand-off mode the auditor is advisory. A three-turn grill SHOULD produce a
+    # thin brief, and failing the run for that would be testing depth - the one
+    # thing this mode deliberately does not test. The verdict is still taken and
+    # still printed; it just does not reopen the phase or fail it.
+    settle = (_brief_settle(env, auditor, advisory=args.handoff)
+              if phase == "1b" else None)
 
     print(f"\n=== {phase} " + "=" * (60 - len(phase)))
-    run = driver_mod.drive(phase, prompts_mod.load(phase),
-                           prompts_mod.sentinel(phase), chat, responder, settle)
+    run = driver_mod.drive(phase, prompts_mod.load(phase, handoff=args.handoff),
+                           prompts_mod.sentinel(phase), chat, responder, settle,
+                           budget=args.phase_budget)
 
     tool_uses = [t for turn in run.turns for t in turn.tool_uses]
     ctx = assertions_mod.Context(
@@ -165,12 +190,17 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     return problems
 
 
-def _brief_settle(env, auditor):
+def _brief_settle(env, auditor, advisory: bool = False):
     def settle():
         brief = assertions_mod.only(env.project, "docs/discovery/*.md")
         if brief is None:
             return None
-        return auditor.judge(brief.read_text(encoding="utf-8"))
+        ok, gaps = auditor.judge(brief.read_text(encoding="utf-8"))
+        if advisory and not ok:
+            for gap in gaps:
+                print(f"[note] 1b: the auditor would have reopened this: {gap}")
+            return True, []
+        return ok, gaps
     return settle
 
 
@@ -218,6 +248,11 @@ def main(argv=None) -> int:
             else:
                 print(f"[models] driver={args.model} proxy={args.proxy_model} "
                       f"auditor={args.auditor_model}")
+                if args.handoff:
+                    print(f"[mode]   hand-off: {args.max_questions} turns/round, "
+                          f"{args.max_rounds} round(s), {args.phase_budget:.0f}s per "
+                          f"phase, 1b's auditor advisory. Findings from this run are "
+                          f"about the CHAIN, not about artifact quality.")
                 proxy = session_mod.ClaudeProxy(env=env.child_env,
                                                 model=args.proxy_model)
                 auditor = session_mod.ClaudeAuditor(env=env.child_env,

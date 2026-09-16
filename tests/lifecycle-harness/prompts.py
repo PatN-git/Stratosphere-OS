@@ -36,8 +36,28 @@ def sentinel(phase: str) -> str:
     return f"L3-{phase.upper()}-COMPLETE"
 
 
-def load(phase: str) -> str:
+# Hand-off mode tests the CHAIN, not the depth of each link: whether every phase
+# starts from the last one's artifacts, finds what it needs, and leaves what the
+# next one reads. Depth is what makes a full run cost hours, so it is bounded
+# explicitly rather than by hoping the agent is brief.
+#
+# This suffix changes what the agent does, so it is never silent: the run prints
+# that it is in hand-off mode and Slice 9's report records it. A finding from a
+# hand-off run is a finding about the hand-off, never about the quality of the
+# artifact - that needs a full-depth run.
+HANDOFF_SUFFIX = """
+
+--- HAND-OFF TEST MODE ---
+This run tests the hand-off between lifecycle phases, not the depth of any one of
+them. Work at minimum depth: produce the artifact with every required section and
+frontmatter field, correctly linked to the previous phase's output, and stop there.
+Do not elaborate, do not explore alternatives beyond what the template requires, and
+keep each answer short. Finishing is what matters here, not thoroughness."""
+
+
+def load(phase: str, handoff: bool = False) -> str:
     path = HERE / f"{phase}.txt"
     if not path.exists():
         raise FileNotFoundError(f"no opening prompt for phase {phase!r} at {path}")
-    return path.read_text(encoding="utf-8").strip()
+    text = path.read_text(encoding="utf-8").strip()
+    return text + HANDOFF_SUFFIX if handoff else text

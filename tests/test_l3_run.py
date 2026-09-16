@@ -280,3 +280,26 @@ def test_a_missing_sync_skills_says_to_build_first(tmp_path):
     with pytest.raises(RuntimeError) as exc:
         e.vendor_skills(tmp_path, tmp_path, CHILD, script=tmp_path / "nope.py")
     assert "build first" in str(exc.value)
+
+
+# --- teardown must actually remove things, not report that it did -------------
+
+def test_teardown_removes_read_only_files(tmp_path):
+    """git writes its object and pack files read-only, so a plain rmtree is
+    refused on Windows - and `ignore_errors=True` reports success anyway."""
+    root = tmp_path / "root"
+    (root / "objects").mkdir(parents=True)
+    obj = root / "objects" / "pack.idx"
+    obj.write_text("x", encoding="utf-8")
+    os.chmod(obj, 0o444)
+
+    e._teardown(root, keep=False)
+    assert not root.exists()
+
+
+def test_keep_leaves_it_and_says_where(tmp_path, capsys):
+    root = tmp_path / "root"
+    root.mkdir()
+    e._teardown(root, keep=True)
+    assert root.exists()
+    assert str(root) in capsys.readouterr().out

@@ -29,9 +29,11 @@ import hashlib
 import os
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -495,8 +497,35 @@ def assert_memory_valid(project: Path, child: dict) -> None:
             f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-400:]}")
 
 
-def _teardown(root: Path, keep: bool) -> None:
+def _teardown(root: Path, keep: bool, attempts: int = 5, delay: float = 0.2) -> None:
+    """Remove the temp root, or say plainly that it could not be (E2).
+
+    `shutil.rmtree(ignore_errors=True)` alone leaves residue on Windows for two
+    ordinary reasons, and reports success either way - which is the opposite of
+    what a containment teardown should do:
+
+      * git writes its object and pack files READ-ONLY, so the unlink is refused.
+      * the run just executed `shims/gh.exe`, and the handle can outlive the
+        process by a few milliseconds.
+
+    So: clear the read-only bit as we go (the same fix `sync_skills.py:76-80`
+    already carries), retry briefly, and warn loudly if it still survives rather
+    than pretending it is gone.
+    """
     if keep:
         print(f"[kept] {root}")
         return
-    shutil.rmtree(root, ignore_errors=True)
+    for attempt in range(attempts):
+        shutil.rmtree(root, onexc=_clear_readonly)
+        if not root.exists():
+            return
+        time.sleep(delay)
+    print(f"[warn] could not remove the temp root, so this run left residue: {root}",
+          file=sys.stderr)
+
+
+def _clear_readonly(func, path, exc):
+    """rmtree error hook: drop the read-only bit and try the operation once more."""
+    with contextlib.suppress(OSError):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)

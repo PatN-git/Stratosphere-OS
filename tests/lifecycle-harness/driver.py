@@ -22,6 +22,7 @@ Nothing here knows what a phase produces. That is `assertions.py`.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 
@@ -62,7 +63,8 @@ def guard(turn, phase: str):
 
 
 def drive(phase: str, prompt: str, sentinel: str, chat, responder,
-          settle=None, log=print) -> PhaseRun:
+          settle=None, log=print, budget: float | None = None,
+          clock=time.monotonic) -> PhaseRun:
     """Run one phase to its sentinel. Raises PhaseFailure if it never gets there.
 
     `settle()` returns `(ok, gaps)` or None when there is nothing to judge yet. It
@@ -70,10 +72,18 @@ def drive(phase: str, prompt: str, sentinel: str, chat, responder,
     phase can be reopened with the gaps rather than accepted thin.
     """
     run = PhaseRun(phase=phase)
+    started = clock()
     turn = guard(chat.send(prompt), phase)
     run.turns.append(turn)
 
     while True:
+        # A phase that stalls must fail by name rather than consume the run's
+        # remaining wall clock. Checked between turns, so a turn in flight is
+        # never killed mid-write.
+        if budget is not None and clock() - started > budget:
+            raise PhaseFailure(
+                f"{phase}: exceeded its {budget:.0f}s budget after "
+                f"{len(run.turns)} turn(s) without reaching its sentinel")
         if sentinel in turn.text:
             if settle is None:
                 return run

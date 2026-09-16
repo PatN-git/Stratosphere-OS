@@ -84,7 +84,13 @@ python tests/lifecycle-harness/spike_1b.py        # exit 2 = claude unavailable,
 python -m pytest tests/test_l3_responder.py tests/test_l3_env.py tests/test_l3_run.py -q
 ```
 
-`run-L3.py` costs nothing to run: it drives no agent and reaches no network. It builds
+`--handoff` runs every phase at minimum depth: 3 turns per round, 1 round, a 600s budget
+per phase, and `1b`'s auditor demoted to advisory. It answers whether each phase starts from
+the last one's artifacts and leaves what the next one reads — the chain, not the depth. A
+finding from a hand-off run is a finding about the hand-off; artifact quality needs a
+full-depth run, and the run prints which mode it is in.
+
+`run-L3.py --env-only` costs nothing to run: it drives no agent and reaches no network. It builds
 the throwaway, asserts the four things every later phase takes on trust — no GitHub
 credentials in the child environment, every remote resolving inside the temp root, the
 project scaffolded, and its `.memory/` passing `validate_memory.py` — then removes it.

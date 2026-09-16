@@ -418,6 +418,27 @@ fired correctly on a wrong expectation, which is the cheap version of this mista
 under the responder, `2b` reaching Path C, and `3b` completing against the shim (inherited
 from Slice 2). That needs model calls, and it is the first slice that does.
 
+### Hand-off mode
+
+A full-depth run of all ten phases is the driver plus five nested subagents that inherit
+its model, and it costs hours. `--handoff` keeps **every phase**, so every hand-off is still
+exercised, and bounds each one: 3 turns per round, 1 round, a 600s per-phase wall-clock
+budget that fails by name rather than stalling, and a suffix on each opening prompt asking
+for minimum depth with every required section and link intact.
+
+`1b`'s Sufficiency Auditor is **advisory** in this mode. A three-turn grill should produce a
+thin brief, and failing the run for that would test depth — the one thing this mode
+deliberately does not test. The verdict is still taken and still printed, so the gaps are
+visible; it simply does not reopen the phase.
+
+**What this buys and what it costs.** It answers "does every phase start from the last
+one's artifacts, find what it needs, and leave what the next one reads" — the `linked-prd`
+write-back, the research citation, the BACKLOG rows matching the store, the branch `3d` cuts
+and `4a` must not touch. It answers nothing about the quality of any artifact. The run
+prints the mode, and a finding from it is a finding about the **chain**; artifact-quality
+findings need a full-depth run, and the report must say which kind produced it.
+
+
 ## Slice 5 — Subagent tolerance
 
 Five subagents sit in the chain (fact 5). Phases are not single-process.
@@ -605,9 +626,10 @@ Slices 0–3 are done; **Slice 4 is built but not yet proven live**. 260 tests p
 driver plus five nested subagents that inherit its model (section 6):
 
 ```bash
-python tests/lifecycle-harness/run-L3.py --phases 0a          # minutes; proves the plumbing
-python tests/lifecycle-harness/run-L3.py --phases 0a,1a,1b    # the discovery half
-python tests/lifecycle-harness/run-L3.py                      # the whole chain
+python tests/lifecycle-harness/run-L3.py --env-only                    # free
+python tests/lifecycle-harness/run-L3.py --handoff --phases 0a         # minutes
+python tests/lifecycle-harness/run-L3.py --handoff --model sonnet      # whole chain, bounded
+python tests/lifecycle-harness/run-L3.py                               # full depth, hours
 ```
 
 `0a` is the cheap one: it halts by design (`0a:23`), so it is the shortest possible
