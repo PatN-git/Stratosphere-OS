@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""L3 Slice 0 spike - can a scripted responder drive `1b-concept-framing` alone?
+
+This is the slice that decides whether L3 is buildable as scoped. `1b` is the hardest
+gate in the chain: a 20-50 question grill the user must end (1b:64,68), plus two
+pick-among-generated gates whose options do not exist until the agent invents them.
+If a responder cannot get `1b` to a valid discovery brief with no human present, the
+phase list shrinks - `1a`/`1b` move to L4-manual and L3 covers `2a` onward.
+
+Run it:
+    python tests/lifecycle-harness/spike_1b.py            # needs `claude` or `npx`
+    python tests/lifecycle-harness/spike_1b.py --keep     # keep the project to inspect
+
+Exit 0 = the responder drove `1b` to a brief that passes the structural checks.
+Exit 2 = `claude` is not available here; nothing was proven either way.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).parent
+REPO = HERE.parents[1]
+
+
+def _load(name):
+    spec = importlib.util.spec_from_file_location(f"l3_{name}", HERE / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[f"l3_{name}"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+env_mod = _load("env")
+responder_mod = _load("responder")
+session_mod = _load("session")
+
+SENTINEL = "L3-1B-COMPLETE"
+
+OPENING = f"""/1b-concept-framing
+
+I want to frame this concept: a library that decides, locally and without a network
+call, whether a given feature flag is on for a given user.
+
+Grill me properly - I would rather answer too many questions than too few. When the
+discovery brief is written and you are completely done, print exactly {SENTINEL} on
+its own final line."""
+
+# Structural only. Agent prose varies between runs and models; these do not (E3).
+REQUIRED_SECTIONS = ["## Actor", "## Problem", "## Chosen Framing",
+                     "## Non-Goals", "## Riskiest Assumption"]
+
+
+def find_brief(project: Path) -> Path | None:
+    candidates = sorted((project / "docs" / "discovery").glob("*.md")) \
+        if (project / "docs" / "discovery").is_dir() else []
+    return candidates[0] if candidates else None
+
+
+def check_brief(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    problems = [s for s in REQUIRED_SECTIONS if s not in text]
+    if "type: discovery-brief" not in text:
+        problems.append("frontmatter is missing type: discovery-brief")
+    body = text.split("## Actor", 1)[-1]
+    if len(body.strip()) < 200:
+        problems.append("brief is present but essentially empty")
+    return problems
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--keep", action="store_true", help="keep the temp project")
+    ap.add_argument("--max-questions", type=int, default=10)
+    ap.add_argument("--max-rounds", type=int, default=2)
+    args = ap.parse_args()
+
+    try:
+        session_mod.probe()
+    except session_mod.ClaudeUnavailable as exc:
+        print(f"[skip] {exc}")
+        print("[skip] Slice 0 is UNPROVEN here - install the claude CLI and re-run.")
+        return 2
+
+    fixture = (HERE / "fixture" / "topic.md").read_text(encoding="utf-8")
+
+    with env_mod.lifecycle_env(REPO, keep=args.keep) as env:
+        print(f"[env] project={env.project}")
+        proxy = session_mod.ClaudeProxy(env=env.child_env)
+        auditor = session_mod.ClaudeAuditor(env=env.child_env)
+        resp = responder_mod.Responder(
+            fixture=fixture, proxy=proxy,
+            max_questions=args.max_questions, max_rounds=args.max_rounds)
+
+        chat = session_mod.ClaudeSession(cwd=env.project, env=env.child_env)
+        turn = chat.send(OPENING)
+
+        def guard(t):
+            """An empty turn is a driver failure, not a question to answer.
+
+            Feeding it to the responder produces 'proxy returned nothing', which
+            blames the wrong component and hides the real cause.
+            """
+            if not t.text.strip():
+                tail = "\n".join(t.raw[-5:]) or "<no output at all>"
+                raise RuntimeError(
+                    "the agent produced an empty turn - the CLI is not driving. "
+                    f"is_error={t.is_error}; last stream lines:\n{tail}")
+            return t
+
+        try:
+            guard(turn)
+            while SENTINEL not in turn.text:
+                answer = resp.reply(turn.text)
+                print(f"[{resp.replies:>3}] {answer.source:<18} {answer.text[:80]!r}")
+                turn = guard(chat.send(answer.text))
+
+                # The brief exists and the agent thinks it is done: let the auditor,
+                # not the question count, decide whether that is good enough.
+                if answer.source == "policy:budget":
+                    brief = find_brief(env.project)
+                    if brief:
+                        ok, gaps = auditor.judge(brief.read_text(encoding="utf-8"))
+                        print(f"[audit] sufficient={ok} gaps={gaps}")
+                        if not ok:
+                            seed = resp.next_round(gaps)
+                            if seed is None:
+                                print("[fail] rounds exhausted with gaps still open:")
+                                for g in gaps:
+                                    print(f"        - {g}")
+                                return 1
+                            turn = guard(chat.send(seed))
+        except responder_mod.ResponderFailure as exc:
+            print(f"[fail] {type(exc).__name__}: {exc}")
+            return 1
+        except RuntimeError as exc:
+            print(f"[fail] {exc}")
+            return 1
+
+        brief = find_brief(env.project)
+        if brief is None:
+            print("[fail] agent printed the sentinel but wrote no discovery brief")
+            return 1
+        problems = check_brief(brief)
+        if problems:
+            print(f"[fail] {brief.name} is not a valid brief:")
+            for p in problems:
+                print(f"        - {p}")
+            return 1
+
+        print(f"[pass] {brief.name} written in {resp.replies} replies, "
+              f"{resp.rounds_used} round(s)")
+        return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
