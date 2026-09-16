@@ -138,5 +138,16 @@ def test_no_legacy_workflow_paths_remain():
     assert not stale, "retired output dirs still emitted: " + ", ".join(stale)
 
 
+def test_placement_map_covers_every_host():
+    """A new host must be a SKILL_TARGETS entry, never a content fork (C3)."""
+    src = (REPO_ROOT / "src" / "scripts" / "scaffold.py").read_text(encoding="utf-8")
+    m = re.search(r'SKILL_TARGETS = \[(.*?)\]', src, flags=re.S)
+    assert m, "SKILL_TARGETS not found in scaffold.py"
+    targets = re.findall(r'"([^"]+)"', m.group(1))
+    assert ".agents/skills" in targets, "must serve Cursor, Codex, Antigravity, Devin, OpenClaw"
+    assert ".github/copilot/skills" in targets, "must serve VS Code Copilot"
+    assert ".github/skills" not in targets, ".github/skills is a Devin read path, not Copilot's"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))

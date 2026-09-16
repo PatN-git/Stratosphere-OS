@@ -316,6 +316,13 @@ ASSETS = PLUGIN_ROOT / "assets" / "templates"
 # Every bundled artifact is a skill: <plugin>/skills/<name>/SKILL.md (+ references/).
 SKILLS_SRC = PLUGIN_ROOT / "skills"
 
+# Host read paths for project-level skills. One canonical body, placed per host.
+#   .agents/skills/        - Cursor, Codex, Antigravity, Devin, OpenClaw
+#   .github/copilot/skills/ - VS Code Copilot (NOT .github/skills/, a Devin path)
+# Claude Code is intentionally absent: its plugin registers bundled skills
+# globally on install, so a project-level .claude/skills/ copy is redundant.
+SKILL_TARGETS = [".agents/skills", ".github/copilot/skills"]
+
 # NOTE: `.agents/skills/` is NOT ignored. It holds the bundled lifecycle skills,
 # which must be tracked. On-demand third-party packs are ignored per-directory by
 # `.agents/skills/.gitignore`, which sync_skills.py regenerates from its lockfile.
@@ -396,6 +403,7 @@ FOLDERS = [
     ".memory",
     ".agents/rules",
     ".agents/skills",
+    ".github/copilot/skills",
     ".agents/scripts",
     "docs/discovery",
     "docs/prds",
@@ -1062,13 +1070,15 @@ def main():
         if re.search(r'^trigger:\s*glob\b', src.read_text(encoding="utf-8"), re.M):
             place(src, project / ".claude" / "rules" / src.name, res, dry, update=update, tier="managed")
 
-    # 5. Bundled skills -> .agents/skills/<name>/ (SKILL.md + its references/).
-    #    One canonical shape for every host; invocable as /<name>.
+    # 5. Bundled skills -> one canonical body, placed per host.
+    #    A new host is an entry in SKILL_TARGETS, never a content fork (AGENTS.md §1).
     if SKILLS_SRC.exists():
         for src in sorted(SKILLS_SRC.rglob("*")):
             if src.is_file():
                 rel = src.relative_to(SKILLS_SRC)
-                place(src, project / ".agents" / "skills" / rel, res, dry, update=update, tier="managed")
+                for target in SKILL_TARGETS:
+                    place(src, project.joinpath(*target.split("/")) / rel,
+                          res, dry, update=update, tier="managed")
 
     # 6b. Project-local deterministic scripts (validate_memory, reconcile, design, okf viewer/view)
     place_project_scripts(project, res, dry, update=update)
