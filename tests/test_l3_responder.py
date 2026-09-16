@@ -58,10 +58,14 @@ def test_ice_prompt_is_fixed():
     assert "Impact 1.0" in a.text and "size:small" in a.text
 
 
-def test_confirm_is_yes():
-    a = make().reply("I have enough to proceed. Shall I write the brief?")
-    assert a.source == "policy:confirm"
-    assert a.text.lower().startswith("yes")
+def test_confirm_is_refused_until_the_budget_is_spent():
+    """Superseded the old `test_confirm_is_yes`, which asserted the bug.
+
+    Answering a confirm with "yes" while questions remain ends 1b's grill - the
+    first full-depth run finished in three replies because of exactly this.
+    """
+    a = make(max_questions=10).reply("I have enough to proceed. Shall I write the brief?")
+    assert a.source == "policy:not-yet"
 
 
 def test_menu_beats_confirm():
@@ -171,3 +175,46 @@ def test_ceiling_holds_even_with_unlimited_rounds():
             resp.reply(f"q{i}")
             if resp.asked >= resp.max_questions:
                 resp.next_round(["gap"])
+
+
+# --- the grill must not be endable by the harness -----------------------------
+
+def test_stop_gate_is_refused_while_budget_remains():
+    """1b:64's primary stop gate is a restatement the user must accept.
+
+    The first full-depth run answered it "Yes, proceed." and finished in three
+    replies, never reaching the proxy or the auditor. The harness caused the early
+    stop it exists to prevent.
+    """
+    resp = make(max_questions=10)
+    a = resp.reply("Let me restate to confirm: the actor is a backend engineer, "
+                   "the problem is latency. Is that right?")
+    assert a.source == "policy:not-yet"
+    assert "not yet" in a.text.lower()
+
+
+def test_every_observed_1b_stop_phrasing_is_refused():
+    for text in [
+        "Before I continue, can you confirm my understanding of the actor?",
+        "Shall I proceed to Phase 3 and crystallize vocabulary?",
+        "I have enough to proceed. Shall I write the discovery brief?",
+    ]:
+        assert make(max_questions=10).reply(text).source == "policy:not-yet", text
+
+
+def test_consent_only_once_the_budget_is_spent():
+    resp = make(max_questions=2)
+    # Texts must differ: three identical turns trip loop detection before the
+    # budget branch is ever reached.
+    assert resp.reply("Shall I proceed now?").source == "policy:not-yet"     # asked=1
+    assert resp.reply("Can you confirm the actor?").source == "policy:confirm"  # last
+    assert resp.reply("Shall I write it up?").source == "policy:budget"      # spent
+
+
+def test_pushing_back_still_drains_the_budget():
+    """Refusing must not be free, or the run never terminates."""
+    resp = make(max_questions=3)
+    for i in range(3):
+        resp.reply(f"Can you confirm point {i}?")
+    assert resp.asked == 3
+    assert resp.reply("Can you confirm once more?").source == "policy:budget"

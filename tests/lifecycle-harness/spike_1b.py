@@ -137,28 +137,53 @@ def main() -> int:
                     f"{hint}\n  last stream lines:\n{tail}")
             return t
 
+        def settle():
+            """Audit the brief if one exists. Returns (ok, gaps) or None."""
+            brief = find_brief(env.project)
+            if brief is None:
+                return None
+            ok, gaps = auditor.judge(brief.read_text(encoding="utf-8"))
+            print(f"[audit] sufficient={ok} gaps={gaps}")
+            return ok, gaps
+
         try:
             guard(turn)
-            while SENTINEL not in turn.text:
+            while True:
+                # The agent declaring itself finished is NOT the pass condition.
+                # The first full-depth run reached the sentinel in three replies
+                # and never audited anything, so [pass] meant only that the
+                # headings existed. Sufficiency is the auditor's call, always.
+                if SENTINEL in turn.text:
+                    verdict = settle()
+                    if verdict is None:
+                        print("[fail] sentinel printed but no discovery brief exists")
+                        return 1
+                    ok, gaps = verdict
+                    if ok:
+                        break
+                    seed = resp.next_round(gaps)
+                    if seed is None:
+                        print("[fail] rounds exhausted with gaps still open:")
+                        for g in gaps:
+                            print(f"        - {g}")
+                        return 1
+                    turn = guard(chat.send(seed))
+                    continue
+
                 answer = resp.reply(turn.text)
                 print(f"[{resp.replies:>3}] {answer.source:<18} {answer.text[:80]!r}")
                 turn = guard(chat.send(answer.text))
 
-                # The brief exists and the agent thinks it is done: let the auditor,
-                # not the question count, decide whether that is good enough.
                 if answer.source == "policy:budget":
-                    brief = find_brief(env.project)
-                    if brief:
-                        ok, gaps = auditor.judge(brief.read_text(encoding="utf-8"))
-                        print(f"[audit] sufficient={ok} gaps={gaps}")
-                        if not ok:
-                            seed = resp.next_round(gaps)
-                            if seed is None:
-                                print("[fail] rounds exhausted with gaps still open:")
-                                for g in gaps:
-                                    print(f"        - {g}")
-                                return 1
-                            turn = guard(chat.send(seed))
+                    verdict = settle()
+                    if verdict and not verdict[0]:
+                        seed = resp.next_round(verdict[1])
+                        if seed is None:
+                            print("[fail] rounds exhausted with gaps still open:")
+                            for g in verdict[1]:
+                                print(f"        - {g}")
+                            return 1
+                        turn = guard(chat.send(seed))
         except responder_mod.ResponderFailure as exc:
             print(f"[fail] {type(exc).__name__}: {exc}")
             return 1

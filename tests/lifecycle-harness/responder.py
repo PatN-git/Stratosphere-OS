@@ -68,6 +68,15 @@ class Answer:
 STOP = ("That is enough questioning - you have what you need. "
         "Proceed with what you have and write it up.")
 
+# 1b's PRIMARY stop gate is a restatement the user must accept (1b:64). Saying
+# "yes" to it ends the grill. The first full-depth run did exactly that and
+# finished in three replies, never reaching the proxy or the auditor - the
+# harness caused the early stop it was built to prevent. While budget remains,
+# a request to stop is refused, which is what the real user does and why the
+# skill leaves the grill unbounded in the first place.
+KEEP_GOING = ("Not yet - we have not explored this enough. Keep asking; I would "
+              "rather answer too many questions than too few.")
+
 # Structured gates. Order matters: an option list wins over a bare confirm, because
 # "shall I proceed with 1, 2 or 3?" is a pick, not a yes.
 _OPTION = re.compile(r"^\s*(?:\*\*)?(?:option\s*)?([1-3])[.):]", re.I | re.M)
@@ -122,6 +131,9 @@ class Responder:
         if _ICE.search(agent_text):
             return Answer("Impact 1.0, Confidence 80%, size:small, mode:AFK", "policy:ice")
         if _CONFIRM.search(agent_text):
+            # Consent only once the budget is spent; until then, push back.
+            if self.asked < self.max_questions:
+                return Answer(KEEP_GOING, "policy:not-yet")
             return Answer("Yes, proceed.", "policy:confirm")
 
         text = self.proxy.answer(agent_text, self.fixture)
