@@ -43,6 +43,11 @@ def main() -> int:
             for target in TARGETS:
                 dst = target / rel
                 if check:
+                    # This repo gitignores `.agents/` wholesale, so that copy is
+                    # absent in a fresh clone. Absent != drifted; only compare
+                    # targets the checkout actually carries.
+                    if not target.exists():
+                        continue
                     if not dst.exists() or not filecmp.cmp(src_file, dst, shallow=False):
                         drifted.append(str(dst.relative_to(ROOT)))
                     continue

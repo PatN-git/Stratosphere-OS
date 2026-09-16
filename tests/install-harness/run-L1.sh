@@ -29,7 +29,9 @@ assert_scaffold_tree() { # $1 proj
   done
   assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"
   assert "scaffold: .agents/rules 3 md" "$([ "$(nmd "$p/.agents/rules")" = "3" ] && echo 1 || echo 0)"
-  assert "scaffold: .agents/workflows 20 md" "$([ "$(nmd "$p/.agents/workflows")" = "20" ] && echo 1 || echo 0)"
+  assert "scaffold: .agents/skills 26 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+  assert "scaffold: no legacy .agents/workflows" "$([ -d "$p/.agents/workflows" ] && echo 0 || echo 1)"
+  assert "scaffold: copilot skills 26" "$([ "$(ls -1 "$p"/.github/copilot/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"
   assert "scaffold: okf_view.py" "$(exists "$p/.agents/scripts/okf_view.py")"
   assert "scaffold: okf_viewer/generator.py" "$(exists "$p/.agents/scripts/okf_viewer/generator.py")"
@@ -57,13 +59,15 @@ run_cell() { # $1 tool  $2 scope
   if [ "$tool" = "claude-code" ]; then
     if [ "$scope" = "local" ]; then base="$proj/.claude"; else base="$home/.claude"; fi
     plugin="$base/plugins/stratosphere-os"
-    assert "install: 22 commands" "$([ "$(nmd "$base/commands")" = "22" ] && echo 1 || echo 0)"
-    assert "install: micro-tdd skill" "$(exists "$base/skills/micro-tdd")"
+    assert "install: no legacy commands dir" "$([ -d "$plugin/commands" ] && echo 0 || echo 1)"
+    assert "install: 26 plugin skills" "$([ "$(ls -1 "$plugin"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+    assert "install: micro-tdd skill" "$(exists "$plugin/skills/micro-tdd")"
   else
     if [ "$scope" = "local" ]; then plugin="$proj/.agents/plugins/stratosphere-os"; else plugin="$home/.gemini/config/plugins/stratosphere-os"; fi
     assert "install: plugin.json" "$(exists "$plugin/plugin.json")"
-    assert "install: 20 workflows" "$([ "$(nmd "$plugin/workflows")" = "20" ] && echo 1 || echo 0)"
-    assert "install: no stratosphere-setup.md in workflows" "$([ -e "$plugin/workflows/stratosphere-setup.md" ] && echo 0 || echo 1)"
+    assert "install: no legacy workflows dir" "$([ -d "$plugin/workflows" ] && echo 0 || echo 1)"
+    assert "install: 26 plugin skills" "$([ "$(ls -1 "$plugin"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+    assert "install: stratosphere-setup is a skill" "$(exists "$plugin/skills/stratosphere-setup/SKILL.md")"
   fi
   assert "install: bundled scaffold.py" "$(exists "$plugin/scripts/scaffold.py")"
 
