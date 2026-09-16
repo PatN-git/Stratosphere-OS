@@ -100,6 +100,7 @@ against after and pre-existing dirt is a constant on both sides.
 | `env.py` | Containment: temp HOME, temp project, stripped remotes, scrubbed tokens, guaranteed teardown. |
 | `shims/gh_shim.py` | Slice 2: a `gh` that answers from a JSON store. `auth status` must succeed or `reconcile.py` degrades to `[local-only]` and never emits `[MIRROR-OK]`. Unknown subcommands fail loudly. |
 | `fixture/topic.md` | The pinned subject. The proxy sees this and nothing else. |
+| `prompts/` + `prompts.py` | Slice 3: the opening turn of each phase and its `L3-<PHASE>-COMPLETE` sentinel. The responder handles everything after it. No prompt carries the fixture. |
 | `gates.md` | Every HALT/ASK point and its answer, so "every gate is answered" is falsifiable. |
 | `run-L3.py` | Slice 1: the CLI. Builds the contained environment, asserts E1/E7/E2 and the scaffold, tears it down. Drives no agent yet. |
 | `spike_1b.py` | Slice 0's spike: drive `1b` alone and see whether it terminates. |

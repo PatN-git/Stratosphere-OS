@@ -36,17 +36,12 @@ def _load(name):
 env_mod = _load("env")
 responder_mod = _load("responder")
 session_mod = _load("session")
+prompts_mod = _load("prompts")
 
-SENTINEL = "L3-1B-COMPLETE"
-
-OPENING = f"""/1b-concept-framing
-
-I want to frame this concept: a library that decides, locally and without a network
-call, whether a given feature flag is on for a given user.
-
-Grill me properly - I would rather answer too many questions than too few. When the
-discovery brief is written and you are completely done, print exactly {SENTINEL} on
-its own final line."""
+# Slice 3 owns the opening turn now. The spike reads it rather than keeping its own
+# copy: two texts that must stay identical are one text that will not.
+SENTINEL = prompts_mod.sentinel("1b")
+OPENING = prompts_mod.load("1b")
 
 # Structural only. Agent prose varies between runs and models; these do not (E3).
 REQUIRED_SECTIONS = ["## Actor", "## Problem", "## Chosen Framing",

@@ -349,6 +349,27 @@ sentinel to print on success.
 **DONE WHEN:** every phase starts from its prompt and completes under the responder, with
 `gates.md` updated for any gate the run discovers.
 
+**WRITTEN — 2026-09-16; completion is Slice 4's to prove.** Ten prompts, one per driven
+phase (`0a` twice — greenfield, where it must halt without touching anything, and
+post-backlog, where it restores state). Each carries its invocation, the context the phase
+needs to start, and `L3-<PHASE>-COMPLETE`, derived in `prompts.py` rather than written per
+file so a sentinel cannot drift from the phase that prints it. `4a`'s prompt names the
+`audit-only` gate and forbids `ship-only`; `2b`'s states outright that the fixture has no
+UI, so Path C is the only branch it can take; `1a`'s pins Quick Search.
+
+**No prompt carries the fixture**, and a test enforces it. Handing `topic.md` to the driver
+would give `1b` the answers to its own grill, and the brief would be a transcription rather
+than a discovery — the same collapse `1b:64` guards against, arriving through the front
+door. The prompts name the subject in one line; the positions stay with the proxy.
+
+`gates.md` now enumerates every driven phase from source: **33 gates across nine phases**,
+each row citing `<skill>:<line>` and naming its answer, with tests that fail if a row has
+neither. `0b` is the most gate-dense phase after `1b` (`0b:53` — crystallization,
+supersession and lint fixes all need confirmation). The rows are **predictions until a run
+confirms them**; "every phase completes under the responder" needs live runs, so it moves
+to Slice 4 with Slice 2's deferred condition. `spike_1b.py` now reads `prompts/1b.txt`
+instead of keeping its own copy of the same text.
+
 ## Slice 4 — Phase driver and artifact assertions
 
 For each phase: launch the phase, wait for its sentinel, then assert on disk.

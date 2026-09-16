@@ -1,0 +1,8 @@
+/2a-write-prd
+
+Write the PRD from the discovery brief in docs/discovery/ and the research in
+docs/research/. Those two documents are the source; do not re-interview me on anything
+they already settle.
+
+When the PRD is written, the parent issue minted and the brief updated with its
+linked-prd, print exactly L3-2A-COMPLETE on its own final line.

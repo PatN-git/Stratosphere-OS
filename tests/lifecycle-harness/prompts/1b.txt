@@ -1,0 +1,8 @@
+/1b-concept-framing
+
+I want to frame this concept: a library that decides, locally and without a network call, whether a given
+feature flag is on for a given user.
+
+Grill me properly - I would rather answer too many questions than too few. When the
+discovery brief is written and you are completely done, print exactly L3-1B-COMPLETE on
+its own final line.

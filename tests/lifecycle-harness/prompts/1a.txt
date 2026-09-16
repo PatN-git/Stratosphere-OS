@@ -1,0 +1,10 @@
+/1a-research
+
+Research the landscape for a library that decides, locally and without a network call, whether a given
+feature flag is on for a given user.
+
+Use Quick Search depth - a single iteration, no deep loop. I am confirming the domain and
+the depth up front so you do not need to ask twice.
+
+When the research file is written and you are completely done, print exactly
+L3-1A-COMPLETE on its own final line.
