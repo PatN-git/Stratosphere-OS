@@ -570,3 +570,37 @@ changes are in this PR.
 a harness for are the ones only a full run surfaces — hand-offs that break under real
 artifacts, gates that deadlock in combination, skills whose cost makes them unusable AFK.
 That is Slice 9's job.
+
+---
+
+## 11. Resume here (2026-09-16)
+
+Slices 0–3 are done and pushed to `feat/spec-conformance-v4` (PR #107). 209 tests pass;
+`python tests/lifecycle-harness/run-L3.py` exits 0. **No live agent run has happened since
+Slice 0's calibration** — Slices 1–3 cost nothing.
+
+**Next: Slice 4**, which is the first slice that must spend runs. It inherits three things
+deferred into it, each deliberately and each cheap to forget:
+
+1. **`3b` completes against the shim** (Slice 2's DONE WHEN). Slice 4 drives `3b`, so it
+   proves this as a side effect.
+2. **`code-simplifier` vendoring** (Slice 1, fact 13). `3d` invokes it and it is fetched
+   from GitHub, not bundled. `sync_skills.py --only code-simplifier --project-root <proj>`
+   against the copy in `dist/claude-code/scripts/`. It is the one setup step needing
+   network.
+3. **Every phase completes under the responder** (Slice 3's DONE WHEN), with `gates.md`
+   corrected wherever a run contradicts a predicted row.
+
+**Before spending anything on Slice 4, re-read three facts that are easy to misread:**
+
+- The responder's budget counts agent **turns**, not questions — `1b` batches, and seven
+  turns carried dozens. 10 was calibrated on **opus**; another driver needs re-calibrating.
+- The responder must **refuse** a request to stop while turns remain (`policy:not-yet`).
+  Answering "yes" to `1b:64` ends the grill, and that bug once made a run "pass" in three
+  replies without ever calling the proxy or the auditor.
+- The E1 manifest compares **entry names at depth 1 only**. Anything deeper or
+  content-sensitive fails on the developer's IDE writing into `~/.gemini` rather than on a
+  real breach.
+
+**Not yet started:** Slices 5 (subagent tolerance), 6 (`--live-gh`), 7 (CI), 8 (docs),
+9 (findings report). Order is unchanged: 4 → 5 → 9 → 6 → 7 → 8.
