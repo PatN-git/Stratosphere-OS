@@ -694,49 +694,70 @@ That is Slice 9's job.
 
 ---
 
-## 11. Resume here (2026-09-16, end of session)
+## 11. Resume here (2026-09-17)
 
-**Slices 0-4 are built; the chain has been driven live, in hand-off mode, as far as `2b`.**
-295 tests pass. `run-L3.py --env-only` is free and exits 0.
+**Slices 0-4 are built. 312 tests pass. Every phase except `0a-second` and `0b` has now
+been driven live at least once.** `run-L3.py --env-only` is free and exits 0.
 
-### What the live runs established
+### What has been proven live
 
 | Phase | Result |
 |:---|:---|
 | `0a` | **passed** - sentinel on the first turn, STATUS.md untouched, no branch cut (`0a:23-24`) |
-| `1a` | **passed** after D6 was fixed - research file, `type: research`, sourced, cost section present |
-| `1b` | **passed** with a note - valid brief, auditor advisory; vocabulary never reached GLOSSARY (D7) |
-| `2a` | **passed** - PRD minted AND **`linked-prd: BT-001` written back into the brief**, the one cross-phase hand-off the plan hangs on |
-| `2b` | reached, design doc written on Path C; the run was stopped here for budget, with one harness assertion corrected afterwards |
-| `0a-second`, `3b`, `3d`, `4a`, `0b` | **not yet driven** |
+| `1a` | **passed** after D6 was fixed |
+| `1b` | **passed** with a note - valid brief; vocabulary never reached GLOSSARY (D7) |
+| `2a` | **passed** - PRD minted AND `linked-prd` written back into the brief |
+| `2b` | design doc written on Path C; its assertion was corrected afterwards and has not been re-driven |
+| `3b` | **passed twice** - four slices minted from the PRD's journey steps, BACKLOG rows matching the store, `[MIRROR-OK]` reached when the harness re-ran `reconcile.py --require-gh` itself. This is Slice 2's deferred DONE WHEN, now met |
+| `3d` | **passed** - cut `feat/BT-001-...`, committed `feat(BT-002): parse and validate a ruleset`, flipped the slice to `status:in progress` |
+| `4a` | **failed once**, on the verdict token, with no transcript to diagnose it. Transcripts now exist; the re-run to read one was stopped for budget |
+| `0a-second`, `0b` | **not yet driven** |
 
-### Next session, in order
+### Next action, in one command
 
-1. `python tests/lifecycle-harness/run-L3.py --handoff --keep` and let it run to the end.
-   **Redirecting its output hides progress** - Python buffers stdout to a file, so a killed
-   run looks like it did nothing. Use `-u` or watch the temp project's `docs/` instead.
-2. Expect the remaining five phases to surface assertion mismatches of the same class as the
-   two already fixed (`index.md`, `### [Path C · Non-UI] Interface Contract`): the harness
-   asserting a shape the template does not use. Check the template before believing the
-   finding - twice now the lifecycle was right and the assertion was wrong.
-3. Then Slice 5 (subagent tolerance), 9 (findings report), 6, 7, 8. Order unchanged.
+```bash
+python -u tests/lifecycle-harness/run-L3.py --handoff --seed --phases 3b,3d,4a,0b --keep
+```
+
+Then read `<temp-root>/logs/4a.log` and decide what the `4a` failure is:
+
+- the phase produced a verdict in wording `assertions.VERDICTS` does not match → **harness**,
+  and the third of its kind (`index.md`, `### [Path C · Non-UI] Interface Contract`). Check
+  `4a`'s own text before believing the finding.
+- the phase produced no verdict at all → **stratos**, and a real gap in `audit-only`.
+
+`3b` and `3d` re-run first because `4a` audits what `3d` implemented; there is no resume
+across runs, and `--seed` only covers `0a`-`2b`.
+
+### Cost and credentials
+
+- **`--seed`** installs the `0a`-`2b` artifacts, so the late chain costs four phases instead
+  of nine. A seeded run does **not** test the hand-off into its first phase, and says so.
+- **`--handoff`** bounds each phase: 3 turns, 1 round, 600s. It does **not** exercise gates -
+  the agent finishes in one turn, so the responder never speaks.
+- The harness authenticates from its own store (`~/.l3-harness/.claude/.credentials.json`,
+  `run-L3.py --login`). Rotations are checkpointed after every phase, so a stopped run now
+  costs at most one rotation rather than the whole credential.
 
 ### Findings so far
 
 - **D6, fixed:** neither research template defined `## Cost & Viability Signals`, which
-  `1a:100` writes into and `2a:60`'s Cost Approval Gate lifts from.
+  `1a:100` writes into and `2a:61`'s Cost Approval Gate lifts from.
 - **D7, recorded not fixed:** `1b`'s vocabulary never reaches `.memory/GLOSSARY.md` in an
-  unattended run, because promotion is gated on a confirmation that never fires. `3d:42`
-  then has nothing to check against. A design decision about AFK promotion, not a typo.
-- **Harness, fixed:** credential rotation consuming the developer's CLI session; `index.md`
-  mistaken for the artifact; read-only files surviving teardown while it reported success;
-  the `2b` heading above.
+  unattended run - promotion is gated on a confirmation that never fires, and `3d:42` then
+  has nothing to check against. A design decision about AFK promotion, not a typo.
+- **Harness, all fixed:** the credential rotation (twice - borrowed, then lost to a stopped
+  run); `index.md` mistaken for the artifact; read-only files surviving teardown while it
+  reported success; `2b`'s heading; no transcript to diagnose a failure.
 
 ### Three facts that are easy to misread
 
-- The responder's budget counts agent **turns**, not questions. In hand-off mode the agent
-  finishes in one turn, so **no gate is ever exercised** - that mode tests artifact
-  hand-offs only.
+- The responder's budget counts agent **turns**, not questions. Every live phase so far has
+  finished in **one turn**, so no gate has been exercised yet at all.
 - `--handoff` findings are about the **chain**. Artifact quality needs a full-depth run.
-- The E1 manifest compares **entry names at depth 1 only**; anything deeper fails on the
-  developer's IDE rather than on a real breach.
+- Twice the lifecycle was right and the assertion was wrong. **Read the template before
+  believing a finding.**
+
+### Still to build
+
+Slice 5 (subagent tolerance - its log capture landed early), 9 (findings report), 6, 7, 8.
