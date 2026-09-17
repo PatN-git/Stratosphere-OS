@@ -91,6 +91,7 @@ Each is one move; reach for the **leading-word palette** in [`glossary.md`](glos
 - **Completion criterion** — end every step on a bound that is *checkable* and, where it matters, *exhaustive* ("every AC maps to a passing test", not "looks complete"). This is the defence against **premature completion**. Live example: `3d`'s Slice Completion Gate.
 - **Progressive disclosure** — inline what every branch needs; push branch-specific **reference** behind a **context pointer** whose *wording* is reliable. Respect the skill self-containment limit (§1).
 - **Single source of truth** — one meaning, one place → §2.
+- **One write, one step, one command** — every side-effecting action gets its own numbered step *and* its own command literal. A write left as prose next to a copy-pasteable command for a **different** action is the one that gets dropped: the agent anchors on the literal and the clause evaporates. Live example: `4a` Phase 5 — the PR-link comment was the opening clause of the status-write step and the only Phase 5 action without a command form; it was also the only one that reliably failed its own terminal gate (`[MIRROR-DRIFT: pr-link absent from issue comments]`). Splitting it out with `gh issue comment` ended the failure class. A deterministic gate (`terminal-sync-invariant.md`) catches the drop *after* it happens; this is the emission-side fix that stops it.
 
 ## 4. Pruning pass (apply when revising)
 
@@ -108,6 +109,7 @@ They read like over-statement but are the lever. Do **not** cut, dilute, summari
 - **Sub-agent guardrails** (§2) — a dispatched sub-agent runs isolated and never sees surrounding prose; the guardrail is its **entire contract**. Keep every copy, verbatim.
 - **Leading-word tokens** — `[UNCOVERED]`, `seam`, `depth`, `[[G-xxx]]`/`[[A-xxx]]`/`[[DR-xxx]]`. Keep the **exact token**, never a synonym; never drop a `[[…]]` reference.
 - **Context-pointer paths** — cite the full installed path (`.agents/skills/<name>/references/<file>.md`, `.agents/rules/okf-protocol.md`), not a bare basename.
+- **Per-action steps and their command literals** (§3) — never merge two side-effecting steps into one, and never demote a command literal to prose. The economy is real and the cost is a silently dropped write.
 
 ### Over-prune — the anti-pattern (guard against each)
 **Over-prune** = cutting or diluting a protected class under the guise of economy. Real regressions seen in practice:
