@@ -1,7 +1,7 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "1.0.5"
+version: "1.0.6"
 timestamp: 2026-07-17
 ---
  
@@ -11,7 +11,7 @@ timestamp: 2026-07-17
 A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
  
 ## 1. Architecture
-- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent, and advisory only on Antigravity (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
+- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
 - **Layer 3: Execution Skills** (`.agents/skills/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
 
@@ -68,14 +68,12 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
   - *Always-on rules:* **this file is the body.** Most hosts read `AGENTS.md` natively (Codex, Cursor, Devin, Copilot, Jules, Gemini CLI); the two that don't get a two-line pointer to it — `CLAUDE.md` (Claude Code) and `GEMINI.md` (Antigravity). Adding a host means checking whether it needs a pointer, never restating the rules.
   - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`). Contract: `okf-protocol.md` §2.1.
   - *Skills:* `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw) and `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). Claude Code needs no project copy; its plugin registers them globally.
-- **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only, but only some hosts can enforce that:
+- **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only; the field carrying that varies:
 
-  | Host | Manual-only field | Enforced |
-  |---|---|:---:|
-  | Claude Code, Cursor, OpenClaw | `disable-model-invocation` | yes |
-  | Devin | `triggers: ["user"]` | yes |
-  | Codex | `agents/openai.yaml` sidecar | yes |
-  | Antigravity | none — `description` only | **no** |
-
-  On Antigravity a lifecycle skill can be model-invoked. Accepted deliberately; never describe it as a guarantee.
+  | Host | Manual-only field |
+  |---|---|
+  | Claude Code, Cursor, OpenClaw | `disable-model-invocation` |
+  | Devin | `triggers: ["user"]` |
+  | Codex | `agents/openai.yaml` sidecar |
+  | Antigravity | none — `description` only |
 `

@@ -2,7 +2,7 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.0.0"
+version: "2.1.0"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15
@@ -10,9 +10,9 @@ generated:
 
 # Improving Workflows & Skills
 
-Dev-time playbook for authoring, editing, and pruning **StratOS's own** skills (`src/skills/`) and workflows (`src/workflows/`). Lives in `docs/`, **never ships** — consumer projects don't author the framework.
+Dev-time playbook for authoring, editing, and pruning **StratOS's own** skills (`src/skills/`) and workflows (`src/workflows/`). Carried inside the `improve-workflows-skills` dev skill, which **never ships** — consumer projects don't author the framework.
 
-**Self-contained pair:** this playbook + its companion lexicon **[`glossary.md`](glossary.md)** (every term and the leading-word palette, defined inline). Bold terms below are defined there.
+**Self-contained pair:** this playbook + its companion lexicon **[`glossary.md`](glossary.md)** (every term and the leading-word palette, defined inline). Bold terms below are defined there. Both load with the skill; an author needs nothing else open.
 
 Consult it when: writing a new skill/workflow, editing one, or running a pruning/refactor pass. **Root virtue:** a skill/workflow exists to make the agent take the same *process* every run — every lever below serves that **predictability**.
 
@@ -144,4 +144,4 @@ Perform a systematic, word-level economy pass on every sentence. Prune words tha
 ## 5. Mechanics
 
 - Edit `src/` only — never hand-edit `dist/`. Rebuild via `python build/build.py`; confirm `build/validate.py` + the install-harness are green. Bump `version` once per PR on every changed file. `timestamp:` stays on `src/` files (build field); in-scope `.memory/`+`docs/` documents use `generated: {by, at}` instead (`okf-protocol.md` §2).
-- This folder is `docs/`-only: it never ships, so it may need not be self-contained against the repo — but it **is** self-contained as a pair (playbook + `glossary.md`), so an author needs nothing else open.
+- These references never ship, so they need not be self-contained against a consumer project — but they **are** self-contained as a pair (playbook + `glossary.md`).

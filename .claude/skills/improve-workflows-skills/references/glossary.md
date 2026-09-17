@@ -1,8 +1,8 @@
 ---
 type: reference
 title: Improving Workflows & Skills — Lexicon
-description: Self-contained lexicon for authoring StratOS skills/workflows — discipline terms + the leading-word palette (the tokens to use, and the synonyms to avoid). Companion to README.md.
-version: "2.0.0"
+description: Self-contained lexicon for authoring StratOS skills/workflows — discipline terms + the leading-word palette (the tokens to use, and the synonyms to avoid). Companion to playbook.md.
+version: "2.1.0"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15

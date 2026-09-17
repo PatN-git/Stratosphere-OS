@@ -3,7 +3,7 @@ name: improve-workflows-skills
 description: Dev-time discipline for authoring, editing, or pruning StratOS's OWN lifecycle skills (src/workflows/) and execution skills (src/skills/). Fires when creating/editing a StratOS skill, running a pruning/refactor pass, or reviewing framework artifacts. Repo-local and dev-only — NOT a product skill; never advise consumer projects with it.
 metadata:
   stratos.layer: execution
-version: "2.0.0"
+version: "2.1.0"
 timestamp: 2026-09-15
 ---
 
@@ -18,9 +18,9 @@ Authoring a new skill, editing one, or running a pruning/refactor pass over
 `src/skills/` or `src/workflows/` — or reviewing those artifacts for quality.
 
 ## Canonical source (read before acting)
-The full playbook + lexicon are the single source of truth — read them, don't restate them:
-- **`docs/improve-workflows-skills/README.md`** — the complete playbook (artifact kinds, shared-component extraction, authoring levers, the pruning pass, word-level economy, mechanics).
-- **`docs/improve-workflows-skills/glossary.md`** — every term + the leading-word palette (use those tokens, not synonyms).
+This skill carries its own playbook + lexicon — read them, don't restate them:
+- **`references/playbook.md`** — the complete playbook (artifact kinds, shared-component extraction, authoring levers, the pruning pass, word-level economy, mechanics).
+- **`references/glossary.md`** — every term + the leading-word palette (use those tokens, not synonyms).
 
 ## Non-negotiables (quick reference — the full rules are in the playbook)
 1. **Know the artifact kind — by frontmatter, never by path.** Both kinds install to `.agents/skills/<name>/SKILL.md`. A **lifecycle skill** (`metadata.stratos.layer: lifecycle`, authored in `src/workflows/`) orchestrates a phase, is user-invoked, and ships its own `references/`. An **execution skill** (`layer: execution`, authored in `src/skills/`) is self-contained discipline that may fire in an unscaffolded project, so it must carry no project-local refs.
