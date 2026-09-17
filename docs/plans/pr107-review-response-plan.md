@@ -1,6 +1,6 @@
 # Plan — PR #107 Review Response
 
-**Status:** Proposed. Nothing applied yet.
+**Status:** Applied on `feat/spec-conformance-v4` (PR #107). All 13 threads answered on GitHub.
 **Input:** 13 inline comments from @PatN-git on PR #107, 2026-09-17.
 **Shape:** 11 of 13 are one theme — *prose economy*: the constitution and several skills explain host differences and guard against agent mistakes at a length that costs tokens on every load. Two are questions of fact.
 
@@ -91,5 +91,13 @@ Codex reads `AGENTS.md` natively, so it needs nothing. Cursor and Devin have the
 
 Groups 1–2 are prose-only, land in this PR, and need `build.py` + `check.sh`. The spike and its rewrite are better as a follow-up than as more scope on a MAJOR already under review.
 
-## Open question for you
-Do Groups 1–2 go **into #107**, or into a follow-up PR? #107 is already large; but 1.1 fixes a regression *this PR introduced*, so that one belongs here regardless.
+## Outcome
+
+All 13 addressed in #107. Two departures from the plan as written:
+
+- **`0a:10` (OKF `timestamp` vs `generated`) was missing from this plan** and is comment 13. Answered, no change: `okf-protocol.md` §1 puts skills, rules, constitution and `src/*` out of OKF scope, so their `timestamp:` is a build field, not a retired change-record. Unifying would touch 65 files and make skills carry a field they're exempt from — a throwaway migration after merge if wanted, not agent passes.
+- **The glossary move (1.4) was attempted and reverted.** `docs/improve-workflows-skills/` is a deliberate self-contained pair — `README.md` links `glossary.md` four times and says so at `README.md:147`. The skill is dev-only and never ships; the pair beats matching the shipped-skill layout.
+
+Filed from the review: **#109** (port the CleanTechHub label→Projects sync Action) records that `status:*` labels become an integration contract the moment it lands.
+
+Gate after the changes: `VALIDATION OK`, 314 passed, verify_scripts / plan-html / install-harness L1 98-0 all green, `dist/` rebuilt for both hosts.
