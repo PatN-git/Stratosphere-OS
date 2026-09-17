@@ -471,6 +471,30 @@ frontmatter-free — and reported the artifact as having no `type:`. Directory i
 `log.md` are excluded now, and `*.map.md` with them, since the registry says `discovery-brief`
 excludes concept maps in the same directory.
 
+### D7 — vocabulary that never reaches the memory layer
+
+`1b` did the vocabulary work properly: the brief carried a `## Vocabulary` section with four
+terms, each with its `Avoid:` list, extending the fixture rather than parroting it.
+`.memory/GLOSSARY.md` still held nothing but its template placeholder.
+
+Promotion is gated. `1b:96` asks "these terms look cross-PRD reusable. Promote to GLOSSARY?"
+— and the run finished in **one turn**, so the responder never spoke and the gate never
+fired. The vocabulary is in the document; the shared memory layer is empty. `3d:42`'s
+avoid-drift check reads `.memory/GLOSSARY.md`, so in an unattended run it has nothing to
+check against, and `0b:30` is the only remaining chance to promote.
+
+Class `stratos`, but **narrower than it looks**: this is about AFK-ability, not about `1b`.
+The gate is correct for a human session, and the harness is the one standing in for the user.
+What the run shows is that a lifecycle driven without a human loses artifacts that live only
+behind confirmations — which is precisely what `3z-afk-loop` would hit. Recorded, not fixed:
+the fix is a design decision about unattended promotion, not a typo.
+
+**And a limit of hand-off mode, worth stating plainly: it does not exercise gates.** Told to
+work at minimum depth, the agent finishes in one turn, so the responder is never called. The
+mode tests whether each phase's *artifacts* reach the next phase. Everything gated on a
+confirmation needs a full-depth run, and the glossary assertion is a note rather than a
+failure here for exactly that reason.
+
 ### Hand-off mode
 
 A full-depth run of all ten phases is the driver plus five nested subagents that inherit

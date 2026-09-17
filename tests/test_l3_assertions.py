@@ -456,3 +456,57 @@ def test_every_driven_phase_has_a_checker():
 def test_an_unknown_phase_is_a_loud_error(tmp_path):
     with pytest.raises(KeyError):
         a.check("9z", ctx(project(tmp_path)))
+
+
+# --- what a gate-less mode can and cannot assert ------------------------------
+
+def test_1b_fails_on_an_unpromoted_glossary_at_full_depth(tmp_path):
+    """1b:96 gates promotion on a user confirmation. At full depth the responder
+    answers it, so an empty glossary is a real miss."""
+    proj = project(tmp_path)
+    write(proj / "docs" / "discovery" / "flags.md", BRIEF)
+    write(proj / ".memory" / "GLOSSARY.md", "- **[[G-XXX]]** Example Term: ...\n")
+    problems, _ = a.check("1b", ctx(proj))
+    assert any("GLOSSARY.md" in p for p in problems)
+
+
+def test_1b_only_notes_it_in_handoff_mode(tmp_path):
+    """Observed 2026-09-16: the brief carried four terms with their Avoid: lists and
+    GLOSSARY.md still held its placeholder. The run finished in ONE turn, so the
+    responder never spoke and no gate fired. Failing here would report the mode."""
+    proj = project(tmp_path)
+    write(proj / "docs" / "discovery" / "flags.md", BRIEF)
+    write(proj / ".memory" / "GLOSSARY.md", "- **[[G-XXX]]** Example Term: ...\n")
+    problems, notes = a.check("1b", ctx(proj, handoff=True))
+    assert problems == []
+    assert any("3d:42" in n for n in notes)
+
+
+def test_a_promoted_glossary_still_needs_its_avoid_list_in_either_mode(tmp_path):
+    proj = project(tmp_path)
+    write(proj / "docs" / "discovery" / "flags.md", BRIEF)
+    write(proj / ".memory" / "GLOSSARY.md", "- **[[G-001]]** Ruleset: a set of rules.\n")
+    for handoff in (False, True):
+        problems, _ = a.check("1b", ctx(proj, handoff=handoff))
+        assert any("Avoid:" in p for p in problems)
+
+
+def test_an_index_md_is_never_mistaken_for_the_artifact(tmp_path):
+    """okf-protocol section 4: directory indexes are listings with no frontmatter,
+    and `index.md` sorts before most slugs. The first live 1a run reported the
+    artifact as having no `type:` because of exactly this."""
+    proj = project(tmp_path)
+    write(proj / "docs" / "research" / "index.md", "# Research\n\n- [x](x.md)\n")
+    write(proj / "docs" / "research" / "local-flags.md", RESEARCH)
+    assert a.only(proj, "docs/research/*.md").name == "local-flags.md"
+    problems, _ = a.check("1a", ctx(proj))
+    assert problems == []
+
+
+def test_a_concept_map_is_not_the_discovery_brief(tmp_path):
+    """The registry puts both in docs/discovery/; `discovery-brief` excludes
+    `*.map.md`, which is the `concept-map` type."""
+    proj = project(tmp_path)
+    write(proj / "docs" / "discovery" / "flags.map.md", "---\ntype: concept-map\n---\n")
+    write(proj / "docs" / "discovery" / "flags.md", BRIEF)
+    assert a.brief_path(proj).name == "flags.md"

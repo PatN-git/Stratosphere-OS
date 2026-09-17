@@ -39,6 +39,12 @@ class Context:
     tool_uses: list = field(default_factory=list)
     before: dict = field(default_factory=dict)   # snapshot taken before the phase
     final_text: str = ""                 # last turn, read ONLY for bracket tokens
+    # Hand-off mode bounds each phase to a few turns, and an agent told to work at
+    # minimum depth tends to finish in ONE - which means the responder never speaks
+    # and no HITL gate ever fires. Anything that exists only behind a gate is
+    # therefore unreachable in this mode, and a checker that failed on it would be
+    # reporting the mode rather than the lifecycle.
+    handoff: bool = False
 
 
 # --- small readers -----------------------------------------------------------
@@ -200,7 +206,17 @@ def check_1b(ctx: Context):
     if glossary.exists():
         g = read(glossary)
         if not re.search(r"\[\[G-\d{3}\]\]", g):
-            problems.append("no [[G-xxx]] term reached GLOSSARY.md (1b:96)")
+            # Observed 2026-09-16: the brief carried a full `## Vocabulary` section -
+            # four terms, each with its `Avoid:` list - and GLOSSARY.md still held
+            # only its template placeholder. Promotion is gated on 1b:96 ("Promote
+            # to GLOSSARY?"), the run finished in one turn, so the gate never fired.
+            # The vocabulary is in the document; the shared memory layer that
+            # `3d:42`'s avoid-drift check reads is empty.
+            message = ("no [[G-xxx]] term reached GLOSSARY.md (1b:96), so 3d:42's "
+                       "avoid-drift check has nothing to read")
+            (notes if ctx.handoff else problems).append(
+                message + (" - unreachable in hand-off mode, where no gate fires"
+                           if ctx.handoff else ""))
         elif "Avoid:" not in g:
             problems.append("a glossary term was added with no `Avoid:` list (1b:96)")
     return problems, notes

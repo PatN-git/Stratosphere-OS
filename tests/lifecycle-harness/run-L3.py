@@ -182,7 +182,7 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     ctx = assertions_mod.Context(
         project=env.project, child_env=env.child_env,
         store=Path(env.child_env["L3_GH_STORE"]), bare=env.bare,
-        tool_uses=tool_uses, before=before,
+        tool_uses=tool_uses, before=before, handoff=args.handoff,
         final_text=run.last.text if run.last else "")
     problems, notes = assertions_mod.check(phase, ctx)
     for note in notes:
