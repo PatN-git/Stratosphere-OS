@@ -32,7 +32,23 @@ import subprocess
 import sys
 from pathlib import Path
 
-STALE_GITIGNORE = (".agents/skills/", "!.agents/skills/.lock.json")
+# Any spelling that ignores the bundled-skills tree. v3 projects carry several
+# (`.agents/skills/`, `.agents/skills/*`, `/.agents/skills/**`), and leaving ONE
+# behind silently untracks all 26 migrated skills — the failure this script exists
+# to prevent. Matched after normalising leading `/` and trailing `/`, `/*`, `/**`.
+STALE_SKILLS_IGNORE = ".agents/skills"
+STALE_GITIGNORE = ("!.agents/skills/.lock.json",)
+
+
+def _is_stale_ignore(line: str) -> bool:
+    l = line.strip()
+    if l in STALE_GITIGNORE:
+        return True
+    l = l.lstrip("/").rstrip("/")
+    for suffix in ("/**", "/*"):
+        if l.endswith(suffix):
+            l = l[: -len(suffix)]
+    return l == STALE_SKILLS_IGNORE
 
 STATUS_MAP = {
     "approved": "stable", "active": "stable", "ready-to-implement": "stable",
@@ -70,11 +86,11 @@ def fix_gitignore(project: Path, dry: bool, log: list) -> None:
     if not gi.exists():
         return
     lines = gi.read_text(encoding="utf-8").splitlines()
-    keep = [l for l in lines if l.strip() not in STALE_GITIGNORE]
+    keep = [l for l in lines if not _is_stale_ignore(l)]
     if len(keep) == len(lines):
         log.append("  .gitignore: already clean")
         return
-    removed = [l for l in lines if l.strip() in STALE_GITIGNORE]
+    removed = [l for l in lines if _is_stale_ignore(l)]
     for r in removed:
         log.append(f"  .gitignore: remove {r.strip()!r}  <- was untracking every bundled skill")
     if not dry:
