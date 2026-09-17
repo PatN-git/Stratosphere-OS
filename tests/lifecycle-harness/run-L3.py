@@ -78,6 +78,10 @@ def parse_args(argv=None):
                          f"{','.join(prompts_mod.PHASES)}")
     ap.add_argument("--skip-research", action="store_true",
                     help="drop 1a; the lane is still not egress-free (E4)")
+    ap.add_argument("--seed", action="store_true",
+                    help="install the artifacts 0a-2b would have produced, so the "
+                         "late chain can be driven without paying for the early one. "
+                         "A seeded run does NOT test the hand-off into its first phase")
     ap.add_argument("--handoff", action="store_true",
                     help="test the CHAIN, not the depth of each phase: fewer turns, "
                          "one round, a per-phase wall-clock budget, and 1b's "
@@ -284,7 +288,8 @@ def main(argv=None) -> int:
         # Vendoring needs network and only `3d` needs the skill (fact 13), so
         # it runs when that phase is in the run and not otherwise.
         with env_mod.lifecycle_env(repo_root, keep=args.keep,
-                                   vendor="3d" in phases) as env:
+                                   vendor="3d" in phases,
+                                   seed=args.seed) as env:
             print(f"[env]  root    {env.root}")
             print(f"[env]  project {env.project}")
             print(f"[env]  origin  {env.bare}")
@@ -301,6 +306,10 @@ def main(argv=None) -> int:
             else:
                 print(f"[models] driver={args.model} proxy={args.proxy_model} "
                       f"auditor={args.auditor_model}")
+                if args.seed:
+                    print(f"[mode]   seeded: {phases[0]} starts from fixture "
+                          f"artifacts, not from a phase that ran. Nothing here says "
+                          f"anything about the hand-off INTO it.")
                 if args.handoff:
                     print(f"[mode]   hand-off: {args.max_questions} turns/round, "
                           f"{args.max_rounds} round(s), {args.phase_budget:.0f}s per "
