@@ -111,12 +111,16 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 > **Upgrading a v3 project to v4.0.0 — do not auto-update.**
 > v4 is a breaking release: every lifecycle artifact is renamed to Agent Skills spec form and moves to `.agents/skills/<name>/SKILL.md`. `/0a_start-session` and its siblings stop resolving — use `/0a-start-session`. There are **no alias shims**.
 >
-> `/stratosphere-update` alone is **not sufficient** and will refuse to run. Migrate once, by hand, from the project root:
+> `/stratosphere-update` alone is **not sufficient** and will refuse to run. The migration is a one-shot script that is **not bundled with the plugin** — fetch it from the release tag and run it once, by hand, from your project root:
 >
 > ```bash
-> python <plugin>/scripts/migrations/migrate_v3_to_v4.py            # dry run (default)
-> python <plugin>/scripts/migrations/migrate_v3_to_v4.py --apply
+> curl -fsSL https://raw.githubusercontent.com/PatN-git/Stratosphere-OS/v4.0.0/scripts/migrations/migrate_v3_to_v4.py -o migrate_v3_to_v4.py
+> python migrate_v3_to_v4.py            # dry run (default) — read it before applying
+> python migrate_v3_to_v4.py --apply
+> rm migrate_v3_to_v4.py
 > ```
+>
+> If you keep a clone of this repo (Antigravity users do), run `scripts/migrations/migrate_v3_to_v4.py --project <your-project>` from it instead.
 >
 > Then run `/stratosphere-update` to place the v4 skills. Between the two commands the project has no lifecycle skills, so run them back-to-back — and on a dedicated branch, since the migration touches `.agents/`, `.memory/` and `docs/`.
 
