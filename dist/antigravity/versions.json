@@ -261,9 +261,9 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "738efdbf81f4d4dd17ec8f023cbb49c52dce48fb24c10148bbfae51c7c305d25",
+      "sha256": "b6034cee933a11f6db37f21d20ec44173cdf8c19035429961d8d946eab8e3b16",
       "timestamp": "2026-09-17",
-      "version": "1.2.1"
+      "version": "1.2.2"
     },
     "skills/4a-verify-and-ship/references/code-smell-baseline.md": {
       "sha256": "1f3404aeda8ef46d9ba571066a52aec92d51a21547e26bd48c49a83232866259",
@@ -276,9 +276,9 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
-      "sha256": "8ac110addfcb982a336f3b20900deca3babe538c327c0ae9864e0e8e26d97a48",
+      "sha256": "2c4468feeb25eaa7ea5a89846397dfc549b0ec55aaf70ff298ad8827cd24adcb",
       "timestamp": "2026-09-17",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/github-issue-relations.md": {
       "sha256": "48d20cf47b2be26e16b52572ae67b67ada4ee3c79cc3c7d0de529e39282aac3e",
