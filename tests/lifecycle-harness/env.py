@@ -54,6 +54,10 @@ class Env:
     project: Path
     bare: Path
     child_env: dict
+    # Digest of the credential as last written to the harness store. A rotation is
+    # detected by comparing against this, so a run that never refreshed does not
+    # rewrite the store with what it was handed.
+    credential_digest: str | None = None
 
 
 def scrub(env: dict) -> dict:
@@ -221,7 +225,12 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
     seeded_credential = None
     original_handlers = {}
 
+    holder = {}
+
     def _bail(signum, frame):     # E2: teardown on signal, not just on return
+        # Keep the rotation first: the environment is about to be deleted, and with
+        # it the only copy of a token the provider has already superseded.
+        checkpoint_credentials(holder.get("env"))
         _teardown(root, keep)
         raise KeyboardInterrupt(f"signal {signum}")
 
@@ -268,7 +277,9 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
                        capture_output=True)
         preflight_remotes(root)
 
-        env_obj = Env(root=root, home=home, project=project, bare=bare, child_env=child)
+        env_obj = Env(root=root, home=home, project=project, bare=bare,
+                      child_env=child, credential_digest=seeded_credential)
+        holder["env"] = env_obj
         yield env_obj
     finally:
         for sig, handler in original_handlers.items():
@@ -276,8 +287,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
                 signal.signal(sig, handler)
         # Before the temp HOME is removed: keep whatever the CLI refreshed, or the
         # next run inherits a superseded token and cannot authenticate at all.
-        if env_obj is not None:
-            preserve_credentials(env_obj.home, seeded=seeded_credential)
+        checkpoint_credentials(env_obj)
         _teardown(root, keep)
         # Raising from `finally` REPLACES whatever the body was already raising, so
         # a containment warning would erase the real failure - the first spike's
@@ -537,6 +547,35 @@ def digest(path: Path) -> str | None:
     with contextlib.suppress(OSError):
         return hashlib.sha256(path.read_bytes()).hexdigest()
     return None
+
+
+def checkpoint_credentials(env: "Env", store: Path = HARNESS_STORE) -> bool:
+    """Write a rotation to the store AS SOON as it happens, not at teardown.
+
+    Teardown is not a promise anyone can keep. `SIGKILL` cannot be caught, and a
+    run stopped from outside - a task runner, a closed terminal - never reaches its
+    `finally`. That is not hypothetical: two runs were stopped mid-flight here, each
+    had refreshed (and so rotated) the token in its temp HOME, and each took the
+    rotation with it. The store kept a superseded refresh token and the next run
+    could not authenticate at all.
+
+    Called after every phase, a kill now costs at most the rotation of the phase in
+    flight rather than the whole credential.
+    """
+    if env is None:
+        return False
+    fresh = env.home / ".claude" / ".credentials.json"
+    if not _usable(fresh):
+        return False
+    now = digest(fresh)
+    if now == env.credential_digest:
+        return False
+    with contextlib.suppress(OSError):
+        store.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fresh, store)
+        env.credential_digest = now
+        return True
+    return False
 
 
 def preserve_credentials(temp_home: Path, store: Path = HARNESS_STORE,

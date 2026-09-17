@@ -181,3 +181,60 @@ def test_env_only_needs_no_credential(monkeypatch):
     r = _load("l3_run_creds2", HARNESS / "run-L3.py")
     monkeypatch.setattr(r.env_mod, "credentials_source", lambda *a, **kw: None)
     assert r.preflight_credentials([]) is None
+
+
+# --- a rotation must survive a run that is stopped from outside ---------------
+
+class _Env:
+    def __init__(self, home, digest=None):
+        self.home = home
+        self.credential_digest = digest
+
+
+def test_a_rotation_is_written_the_moment_it_happens(tmp_path):
+    """Teardown is not a promise anyone can keep: SIGKILL cannot be caught, and a
+    run stopped by a task runner never reaches its `finally`. Two runs were stopped
+    mid-flight here; each had rotated its token and took the rotation with it, and
+    the next run could not authenticate at all."""
+    home = tmp_path / "home"
+    seeded = e.digest(creds(home / ".claude" / ".credentials.json"))
+    env = _Env(home, digest=seeded)
+    store = tmp_path / "store" / ".credentials.json"
+
+    # nothing refreshed yet
+    assert e.checkpoint_credentials(env, store) is False
+
+    creds(home / ".claude" / ".credentials.json", refresh="rotated-once")
+    assert e.checkpoint_credentials(env, store) is True
+    assert json.loads(store.read_text(encoding="utf-8")
+                      )["claudeAiOauth"]["refreshToken"] == "rotated-once"
+
+    # a second checkpoint with no further change is a no-op
+    assert e.checkpoint_credentials(env, store) is False
+
+
+def test_each_rotation_replaces_the_last(tmp_path):
+    """A phase can rotate more than once across a chain; the store keeps the newest."""
+    home = tmp_path / "home"
+    creds(home / ".claude" / ".credentials.json")
+    env = _Env(home)
+    store = tmp_path / "store" / ".credentials.json"
+    for token in ("first", "second", "third"):
+        creds(home / ".claude" / ".credentials.json", refresh=token)
+        assert e.checkpoint_credentials(env, store) is True
+    assert json.loads(store.read_text(encoding="utf-8")
+                      )["claudeAiOauth"]["refreshToken"] == "third"
+
+
+def test_a_blanked_credential_is_never_checkpointed(tmp_path):
+    home = tmp_path / "home"
+    blanked(home / ".claude" / ".credentials.json")
+    store = creds(tmp_path / "store" / ".credentials.json", refresh="still-good")
+    assert e.checkpoint_credentials(_Env(home), store) is False
+    assert json.loads(store.read_text(encoding="utf-8")
+                      )["claudeAiOauth"]["refreshToken"] == "still-good"
+
+
+def test_checkpointing_with_no_environment_is_not_an_error(tmp_path):
+    """The signal handler may fire before the environment exists."""
+    assert e.checkpoint_credentials(None, tmp_path / "store.json") is False

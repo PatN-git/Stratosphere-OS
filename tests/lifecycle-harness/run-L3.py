@@ -324,11 +324,14 @@ def main(argv=None) -> int:
                         problems = run_phase(phase, env, args, proxy, auditor)
                     except (driver_mod.PhaseFailure,
                             responder_mod.ResponderFailure) as exc:
+                        # Even a failed phase may have refreshed the token.
+                        env_mod.checkpoint_credentials(env)
                         print(f"[FAIL] {exc}")
                         failures[phase] = [str(exc)]
                         # Stop at the first failed phase: every later phase reads
                         # this one's artifacts, so continuing measures nothing.
                         break
+                    env_mod.checkpoint_credentials(env)
                     if problems:
                         failures[phase] = problems
                         break
