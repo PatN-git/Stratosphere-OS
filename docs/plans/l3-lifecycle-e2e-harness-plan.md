@@ -694,34 +694,49 @@ That is Slice 9's job.
 
 ---
 
-## 11. Resume here (2026-09-16)
+## 11. Resume here (2026-09-16, end of session)
 
-Slices 0–3 are done; **Slice 4 is built but not yet proven live**. 260 tests pass;
-`run-L3.py --env-only` exits 0. No model call has been spent since Slice 0's calibration.
+**Slices 0-4 are built; the chain has been driven live, in hand-off mode, as far as `2b`.**
+295 tests pass. `run-L3.py --env-only` is free and exits 0.
 
-**Next: the first live phase run.** Staged, cheapest first, because a full chain is the
-driver plus five nested subagents that inherit its model (section 6):
+### What the live runs established
 
-```bash
-python tests/lifecycle-harness/run-L3.py --env-only                    # free
-python tests/lifecycle-harness/run-L3.py --handoff --phases 0a         # minutes
-python tests/lifecycle-harness/run-L3.py --handoff --model sonnet      # whole chain, bounded
-python tests/lifecycle-harness/run-L3.py                               # full depth, hours
-```
+| Phase | Result |
+|:---|:---|
+| `0a` | **passed** - sentinel on the first turn, STATUS.md untouched, no branch cut (`0a:23-24`) |
+| `1a` | **passed** after D6 was fixed - research file, `type: research`, sourced, cost section present |
+| `1b` | **passed** with a note - valid brief, auditor advisory; vocabulary never reached GLOSSARY (D7) |
+| `2a` | **passed** - PRD minted AND **`linked-prd: BT-001` written back into the brief**, the one cross-phase hand-off the plan hangs on |
+| `2b` | reached, design doc written on Path C; the run was stopped here for budget, with one harness assertion corrected afterwards |
+| `0a-second`, `3b`, `3d`, `4a`, `0b` | **not yet driven** |
 
-`0a` is the cheap one: it halts by design (`0a:23`), so it is the shortest possible
-end-to-end proof that prompt → sentinel → assertions works against a real agent.
+### Next session, in order
 
-**Before spending anything, re-read three facts that are easy to misread:**
+1. `python tests/lifecycle-harness/run-L3.py --handoff --keep` and let it run to the end.
+   **Redirecting its output hides progress** - Python buffers stdout to a file, so a killed
+   run looks like it did nothing. Use `-u` or watch the temp project's `docs/` instead.
+2. Expect the remaining five phases to surface assertion mismatches of the same class as the
+   two already fixed (`index.md`, `### [Path C · Non-UI] Interface Contract`): the harness
+   asserting a shape the template does not use. Check the template before believing the
+   finding - twice now the lifecycle was right and the assertion was wrong.
+3. Then Slice 5 (subagent tolerance), 9 (findings report), 6, 7, 8. Order unchanged.
 
-- The responder's budget counts agent **turns**, not questions — `1b` batches, and seven
-  turns carried dozens. 10 was calibrated on **opus**; another driver needs re-calibrating.
-- The responder must **refuse** a request to stop while turns remain (`policy:not-yet`).
-  Answering "yes" to `1b:64` ends the grill, and that bug once made a run "pass" in three
-  replies without ever calling the proxy or the auditor.
-- The E1 manifest compares **entry names at depth 1 only**. Anything deeper or
-  content-sensitive fails on the developer's IDE writing into `~/.gemini` rather than on a
-  real breach.
+### Findings so far
 
-**Not yet started:** Slices 5 (subagent tolerance), 6 (`--live-gh`), 7 (CI), 8 (docs),
-9 (findings report). Order is unchanged: 4 → 5 → 9 → 6 → 7 → 8.
+- **D6, fixed:** neither research template defined `## Cost & Viability Signals`, which
+  `1a:100` writes into and `2a:60`'s Cost Approval Gate lifts from.
+- **D7, recorded not fixed:** `1b`'s vocabulary never reaches `.memory/GLOSSARY.md` in an
+  unattended run, because promotion is gated on a confirmation that never fires. `3d:42`
+  then has nothing to check against. A design decision about AFK promotion, not a typo.
+- **Harness, fixed:** credential rotation consuming the developer's CLI session; `index.md`
+  mistaken for the artifact; read-only files surviving teardown while it reported success;
+  the `2b` heading above.
+
+### Three facts that are easy to misread
+
+- The responder's budget counts agent **turns**, not questions. In hand-off mode the agent
+  finishes in one turn, so **no gate is ever exercised** - that mode tests artifact
+  hand-offs only.
+- `--handoff` findings are about the **chain**. Artifact quality needs a full-depth run.
+- The E1 manifest compares **entry names at depth 1 only**; anything deeper fails on the
+  developer's IDE rather than on a real breach.

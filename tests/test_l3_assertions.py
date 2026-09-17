@@ -224,7 +224,7 @@ type: interface-design
 title: "Interface: flag evaluation"
 ---
 
-## Interface Contract
+### [Path C · Non-UI] Interface Contract
 `evaluate(ruleset, key, subject) -> Decision`
 
 ## Direction Alternatives (Considered)
@@ -253,7 +253,7 @@ def test_2b_fails_when_a_generator_mcp_was_reached(tmp_path):
 def test_2b_fails_without_the_interface_contract(tmp_path):
     proj = project(tmp_path)
     write(proj / "docs" / "design" / "BT-001-interface.md",
-          DESIGN.replace("## Interface Contract", "## Screens"))
+          DESIGN.replace("Interface Contract", "Screens"))
     problems, _ = a.check("2b", ctx(proj))
     assert any("Interface Contract" in p for p in problems)
 

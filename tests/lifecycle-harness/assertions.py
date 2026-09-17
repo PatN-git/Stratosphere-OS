@@ -258,9 +258,16 @@ def check_2b(ctx: Context):
     fm = frontmatter(text)
     if fm.get("type") != "interface-design":
         problems.append(f"{doc.name}: type is {fm.get('type')!r}, not 'interface-design'")
-    if "## Interface Contract" not in text:
-        problems.append(f"{doc.name}: no `## Interface Contract` - Path C is the "
+    # The template heads this `### [Path C · Non-UI] Interface Contract` - an H3
+    # carrying its path marker, not a bare `## Interface Contract`. Asserting the
+    # invented shape failed a design doc that was correct; match the words the
+    # template actually uses, and take the marker as the proof of Path C.
+    if "Interface Contract" not in text:
+        problems.append(f"{doc.name}: no Interface Contract section - Path C is the "
                         "non-UI contract path, and that section is its product")
+    elif "Path C" not in text:
+        problems.append(f"{doc.name}: an Interface Contract with no `[Path C · Non-UI]` "
+                        "marker - the path taken is not recorded in the document")
     if "## Direction Alternatives (Considered)" not in text:
         problems.append(f"{doc.name}: the rejected directions were not recorded "
                         "(2b:50)")
