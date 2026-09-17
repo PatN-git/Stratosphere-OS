@@ -111,7 +111,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
-| `reference` | in-scope reference material under `docs/` (e.g. `docs/okf-spec-essentials.md`, `docs/improve-workflows-skills/*`) | — |
+| `reference` | in-scope reference material under `docs/` (e.g. `docs/okf-spec-essentials.md`) | — |
 
 ## 4. Reserved Files
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
