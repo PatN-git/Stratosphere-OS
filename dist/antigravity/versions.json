@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "909ae2919550a63382155055e49439349cf455db7883810e07bb12c58950b692",
+      "sha256": "d4b7be03ae83892fecd353dffc3322a57466e48a03d2f3053e5933e4d33ce1f1",
       "timestamp": "2026-09-15",
       "version": "3.0.0"
     },
@@ -56,7 +56,7 @@
       "version": "1.1.0"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "696ee5bae324554f91387bc8a63a984e454440e5cb5b92d2f5d372d33e7112e9",
+      "sha256": "cfe6a93c29e9f976d9f4a51d2e4674b294aa53900483d3df03823794efe0f7a1",
       "timestamp": "2026-09-15",
       "version": "2.0.0"
     },
@@ -96,14 +96,14 @@
       "version": "1.1.2"
     },
     "skills/1a-research/SKILL.md": {
-      "sha256": "35d0a3a3202b89339b19a435399da5c53f59e678600981ee25713a8623e86040",
+      "sha256": "b3ac3be477978b9ea6e8edc583c567a689f5b7b5aaa430082238b98bc0bc162b",
       "timestamp": "2026-07-24",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     "skills/1a-research/references/research-competitive-template.md": {
-      "sha256": "ba6a58b46d56ddafeb2127c920801cd17e3768d325dfc00a6a5465bead9c8721",
+      "sha256": "dd1dd7b7f82454f3a866fc8da115c37fdd7cbe6de7ae3923f566d49b718f2b5b",
       "timestamp": "2026-09-15",
-      "version": "2.1.0"
+      "version": "2.1.1"
     },
     "skills/1a-research/references/research-evidence-standards.md": {
       "sha256": "6ef0f2eb19a4fa6fd10c93362d2622f62e130b7831aa59c3d4c3749780ecbdc3",
@@ -111,14 +111,14 @@
       "version": "1.0.1"
     },
     "skills/1a-research/references/research-problem-template.md": {
-      "sha256": "297c5ec275e07e32ca5ee178851f2569a6af4327fd7d710122f0f8c2a6fd0709",
+      "sha256": "85205802d0cd168969667e2ea316b3bdd35ae48233ec5e0dec0100630cf845aa",
       "timestamp": "2026-09-15",
-      "version": "2.1.0"
+      "version": "2.1.1"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "e37c97f4b26fe747797015d8421640080e9b1c4115711b00052ad6dfc78f0966",
+      "sha256": "293038c6d00fb2fe5550010ba4464c1c92d15f4295fcbef6fa3b0a3511a05ebd",
       "timestamp": "2026-07-24",
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
       "sha256": "ba3e7f491668df585d8c48ac61e33a1df574b419d2ed5a1499d967d9b43d86f0",
@@ -261,9 +261,9 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "935df973173e83ac8207ea5824bda4a8adb930ef89deda2d7d444d4c6c166c49",
+      "sha256": "738efdbf81f4d4dd17ec8f023cbb49c52dce48fb24c10148bbfae51c7c305d25",
       "timestamp": "2026-09-17",
-      "version": "1.2.0"
+      "version": "1.2.1"
     },
     "skills/4a-verify-and-ship/references/code-smell-baseline.md": {
       "sha256": "1f3404aeda8ef46d9ba571066a52aec92d51a21547e26bd48c49a83232866259",
@@ -274,6 +274,11 @@
       "sha256": "756bf8c4234ac41ca9a410c43454b18682819135289dc3b0de68908db7a1d323",
       "timestamp": "2026-06-22",
       "version": "1.1.0"
+    },
+    "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
+      "sha256": "8ac110addfcb982a336f3b20900deca3babe538c327c0ae9864e0e8e26d97a48",
+      "timestamp": "2026-09-17",
+      "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/github-issue-relations.md": {
       "sha256": "48d20cf47b2be26e16b52572ae67b67ada4ee3c79cc3c7d0de529e39282aac3e",

@@ -1,6 +1,6 @@
 ---
 description: Template for a problem-space research brief under docs/research/.
-version: "2.1.0"
+version: "2.1.1"
 timestamp: 2026-09-15
 ---
 
@@ -66,8 +66,3 @@ and its Cost Approval Gate cannot fire on a section that is not here.>
 ## Open Unknowns
 - <Explicitly list any missing info, outstanding technical questions, or gaps in understanding.>
 
-## Sources
-> Superseded by the frontmatter `sources:` list. Record every source there;
-> keep per-claim confidence inline in the body where the claim appears.
-> Note: [HIGH] confidence claims require a one-line source-type justification inline (e.g., "Justification: Triangulated across two independent industry reports").
-> Note: In Quick mode, non-load-bearing claims top out at [MEDIUM] confidence.

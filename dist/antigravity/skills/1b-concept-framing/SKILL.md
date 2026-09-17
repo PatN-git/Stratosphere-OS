@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-07-24
 ---
 
@@ -112,7 +112,7 @@ Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT
 
 ## Phase 5: Write Discovery Brief
 
-Create `docs/discovery/<slug>.md` using `references/discovery_brief_template.md`. Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: discovery-brief` — do not prepend a second one.
+Create `docs/discovery/<slug>.md` using `references/discovery_brief_template.md`. Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder.
 
 **Rules:**
 - Synthesis Contract: Build brief from work file and live transcript. Capture approved vocabulary and chosen framing durably at lock-time.

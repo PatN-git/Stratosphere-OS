@@ -1,7 +1,7 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "1.0.4"
+version: "1.0.5"
 timestamp: 2026-07-17
 ---
  
@@ -11,7 +11,7 @@ timestamp: 2026-07-17
 A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
  
 ## 1. Architecture
-- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously.** Enforcement is host-dependent: `disable-model-invocation` (Claude Code, Cursor, OpenClaw), `triggers: ["user"]` (Devin), `agents/openai.yaml` (Codex). **Antigravity has no manual-only field** — there the `description` is the only signal and the guarantee is advisory, not enforced (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
+- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent, and advisory only on Antigravity (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
 - **Layer 3: Execution Skills** (`.agents/skills/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
 
@@ -37,7 +37,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
-- **Documentation-artifact exception (deliberate):** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected. This is intentional — the artifact has to be readable by every tool and agent that later picks up the work, not stranded in one machine's working copy. The carve-out is narrow and does not relax the Git Protocol for anything else: exactly one generated document per run, **never code**, never swept drift, and nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
+- **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected — the artifact must be readable by whoever picks the work up next, not stranded in one working copy. Exactly one document per run, **never code**, never swept drift; nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
  
 ## 5. Operating Principles
 - **Think Before Coding:** For non-trivial tasks, state assumptions, tradeoffs, and a short plan before coding.
@@ -64,7 +64,18 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
-- **Host activation (rules):** Antigravity loads rules from `.agents/rules/` via `trigger`/`globs`. Claude Code loads `glob` rules (e.g. `okf-protocol`) from `.claude/rules/` via `paths:`. `always_on` rules (`output-mode`, `memory-protocol`) load via the pointers above. Cursor, Codex, Devin and Copilot reach them through this file, which they all read. Contract: `okf-protocol.md` §2.1.
-- **Host activation (skills):** skills are placed to `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw) and `.github/copilot/skills/` (VS Code Copilot — **not** `.github/skills/`, which is a Devin path). Claude Code needs no project copy: its plugin registers bundled skills globally on install. One canonical body; placement differs, content never does.
-- **Known gap — Antigravity HITL is advisory.** Antigravity reads only `name` and `description` from a skill; it honours no manual-only field. A Layer 1 skill can therefore be model-invoked there. Every lifecycle skill's `description` restates its user-only status, but this is a prompt-level signal, **not enforcement**. Accepted deliberately; do not describe it as a guarantee.
+- **Host activation.** One canonical body; placement differs, content never does.
+  - *Always-on rules:* **this file is the body.** Most hosts read `AGENTS.md` natively (Codex, Cursor, Devin, Copilot, Jules, Gemini CLI); the two that don't get a two-line pointer to it — `CLAUDE.md` (Claude Code) and `GEMINI.md` (Antigravity). Adding a host means checking whether it needs a pointer, never restating the rules.
+  - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`). Contract: `okf-protocol.md` §2.1.
+  - *Skills:* `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw) and `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). Claude Code needs no project copy; its plugin registers them globally.
+- **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only, but only some hosts can enforce that:
+
+  | Host | Manual-only field | Enforced |
+  |---|---|:---:|
+  | Claude Code, Cursor, OpenClaw | `disable-model-invocation` | yes |
+  | Devin | `triggers: ["user"]` | yes |
+  | Codex | `agents/openai.yaml` sidecar | yes |
+  | Antigravity | none — `description` only | **no** |
+
+  On Antigravity a lifecycle skill can be model-invoked. Accepted deliberately; never describe it as a guarantee.
 `

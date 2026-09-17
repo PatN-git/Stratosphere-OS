@@ -12,19 +12,15 @@ For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-pro
 
 ## 1. Trust Tags
 
-> **Promotion evidence (OKF v0.2).** A trust tag records *what* an entry is; it cannot
-> record who established that or when. On any promotion — `[ASSUMED]` → `[PATTERN]` or
-> `[CONFIRMED]` — append an entry to the file's `verified` list:
+> **Promotion evidence (OKF v0.2).** A trust tag says *what* an entry is, not who established it.
+> On promotion (`[ASSUMED]` → `[PATTERN]`/`[CONFIRMED]`) **append** — never rewrite — an entry to
+> the file's `verified` list, so repeated independent confirmation stays visible:
 >
 > ```yaml
 > verified:
->   - by: 0b-stop-session
+>   - by: 0b-stop-session   # the invoking skill, as in `generated.by`
 >     at: 2026-09-15
 > ```
->
-> `by` names the invoking skill, matching `generated.by`. The tag stays authoritative for
-> reading; `verified` is the audit trail behind it. Never rewrite an existing entry —
-> append, so repeated independent confirmation is visible.
 
 Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, and `DESIGN_RULES.md` carries exactly one trust tag.
 

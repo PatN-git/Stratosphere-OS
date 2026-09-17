@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.6"
+version: "1.0.7"
 timestamp: 2026-07-24
 ---
 
@@ -94,12 +94,12 @@ Terminate loop when:
 1. **Read Working File:** If Deep Research run, read `.tmp/1a-research-<slug>.work.md` once.
 2. **Select Template:** Use `references/research-competitive-template.md` (Competitive) or `references/research-problem-template.md` (Problem-Space).
 3. **Format & Write:** Create `docs/research/<slug>.md`.
-   - Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder. It already carries `type: research` — do not prepend a second one.
+   - Write the template's **Artifact frontmatter** block verbatim, substituting every placeholder.
    - **Question Coverage Map:** include one-line map (e.g., `Question Coverage: Q1 ✓ · Q2 ✓ · Q3 [Unknown]`).
    - **Opportunity Scoring & Gap Matrix:** for Competitive runs (or Annex), build Gap Matrix and Opportunity table. A pure problem-space run records Pain + Served: [Unknown] (Opportunity lower bound). Sourced only from reviews/docs and confidence-tagged before synthesis.
    - **Cost & Viability Signals:** capture pricing and market signals (e.g., paid products, freelancer hires, keyword ad spend) under `## Cost & Viability Signals`.
    - **Synthesis Contract:** synthesize strictly from `.work.md`; no uncited/un-persisted claims.
    - **Annex:** render Optional Annex within same file (structure of the other template), not a second file. When it precedes concept framing (no candidate product yet), omit the Dunford Positioning Lens and the Us (Candidate) matrix column; include only the product-agnostic sections (Market Overview, Competitor Profiles, Landscape Patterns).
-   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `references/research-evidence-standards.md` rules. **Record every fetched URL in the frontmatter `sources:` list** (`resource` required; `title`, `author`, `last_modified` where known) — it supersedes the body `## Sources` section.
+   - Enforce evidence standards. Before writing, verify every [HIGH] claim has ≥2 different-type sources; downgrade if not. Enforce `references/research-evidence-standards.md` rules. **Record every fetched URL in the frontmatter `sources:` list** (`resource` required; `title`, `author`, `last_modified` where known).
 4. **Cleanup:** Delete `.tmp/1a-research-<slug>.work.md`.
 5. **Handoff:** Notify user: *"Research compiled at `docs/research/<slug>.md`. Run `/1b-concept-framing` to define concept."*
