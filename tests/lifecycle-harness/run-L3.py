@@ -196,7 +196,8 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
         project=env.project, child_env=env.child_env,
         store=Path(env.child_env["L3_GH_STORE"]), bare=env.bare,
         tool_uses=tool_uses, before=before, handoff=args.handoff,
-        final_text=run.last.text if run.last else "")
+        final_text=run.last.text if run.last else "",
+        phase_text="\n".join(t.text for t in run.turns))
     problems, notes = assertions_mod.check(phase, ctx)
     for note in notes:
         print(f"[note] {phase}: {note}")

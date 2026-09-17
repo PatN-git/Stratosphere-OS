@@ -510,3 +510,27 @@ def test_a_concept_map_is_not_the_discovery_brief(tmp_path):
     write(proj / "docs" / "discovery" / "flags.map.md", "---\ntype: concept-map\n---\n")
     write(proj / "docs" / "discovery" / "flags.md", BRIEF)
     assert a.brief_path(proj).name == "flags.md"
+
+
+VERDICT_TURNS = """[PASS] Slice verified.
+Writing the coverage map."""
+
+NO_VERDICT_TURNS = """I read the tests and the acceptance criteria.
+Done."""
+
+
+def test_4a_accepts_a_verdict_from_any_turn_of_the_phase(tmp_path):
+    """A verdict is a product of the PHASE, not of its closing turn. 4a emitted one
+    on one run and not on another; reading only the last turn cannot tell an absent
+    verdict from one stated a turn earlier."""
+    proj = project(tmp_path)
+    problems, _ = a.check("4a", ctx(proj, final_text="Done. L3-4A-COMPLETE",
+                                    phase_text=VERDICT_TURNS))
+    assert problems == []
+
+
+def test_4a_still_fails_when_no_turn_carried_a_verdict(tmp_path):
+    proj = project(tmp_path)
+    problems, _ = a.check("4a", ctx(proj, final_text="Done.",
+                                    phase_text=NO_VERDICT_TURNS))
+    assert any("verdict" in p for p in problems)

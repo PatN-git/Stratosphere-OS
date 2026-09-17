@@ -694,85 +694,66 @@ That is Slice 9's job.
 
 ---
 
-## 11. Resume here (2026-09-17)
+## 11. Where L3 ended (2026-09-17)
 
-**Slices 0-4 are built. 312 tests pass. Every phase except `0a-second` and `0b` has now
-been driven live at least once.** `run-L3.py --env-only` is free and exits 0.
-
-### What has been proven live
+**Every phase has now been driven live and passed.** 314 tests pass; the last run drove
+`3b -> 3d -> 4a -> 0b` clean from seeded upstream artifacts.
 
 | Phase | Result |
 |:---|:---|
-| `0a` | **passed** - sentinel on the first turn, STATUS.md untouched, no branch cut (`0a:23-24`) |
-| `1a` | **passed** after D6 was fixed |
-| `1b` | **passed** with a note - valid brief; vocabulary never reached GLOSSARY (D7) |
-| `2a` | **passed** - PRD minted AND `linked-prd` written back into the brief |
-| `2b` | design doc written on Path C; its assertion was corrected afterwards and has not been re-driven |
-| `3b` | **passed twice** - four slices minted from the PRD's journey steps, BACKLOG rows matching the store, `[MIRROR-OK]` reached when the harness re-ran `reconcile.py --require-gh` itself. This is Slice 2's deferred DONE WHEN, now met |
-| `3d` | **passed** - cut `feat/BT-001-...`, committed `feat(BT-002): parse and validate a ruleset`, flipped the slice to `status:in progress` |
-| `4a` | **failed once**, on the verdict token, with no transcript to diagnose it. Transcripts now exist; the re-run to read one was stopped for budget |
-| `0a-second`, `0b` | **not yet driven** |
+| `0a` | passed - sentinel on the first turn, STATUS.md untouched, no branch cut |
+| `1a` | passed, after D6 was fixed |
+| `1b` | passed with a note - vocabulary never reached GLOSSARY (D7) |
+| `2a` | passed - PRD minted AND `linked-prd` written back into the brief |
+| `2b` | design doc on Path C; its assertion was corrected afterwards and not re-driven |
+| `3b` | **passed three times** - four slices minted, BACKLOG rows matching the store, `[MIRROR-OK]` reached when the harness re-ran `reconcile.py --require-gh` itself |
+| `3d` | passed twice - branch cut, slice committed, status flipped |
+| `4a` | passed on the second attempt - `[PASS] Slice verified`, the two auditor subagents ran (`Agent` in the tool stream), and nothing was committed, pushed or PR'd |
+| `0b` | passed - STATUS.md written, `validate_memory.py` clean, `okf_view.py` run, no `verified` promoted |
+| `0a-second` | never driven; the only phase with no live evidence |
 
-### Next action, in one command
+**What L3 now claims, and what it does not.** The artifact chain holds: every phase started
+from the last one's output, found what it needed, and left what the next one reads. It does
+**not** claim the lifecycle works unattended - every live phase finished in a single turn, so
+**no HITL gate has ever fired**. Gate validation happens in the maintainer's live project.
 
-```bash
-python -u tests/lifecycle-harness/run-L3.py --handoff --seed --phases 3b,3d,4a,0b --keep
-```
+### The `4a` flake, which is the honest caveat
 
-Then read `<temp-root>/logs/4a.log` and decide what the `4a` failure is:
+`4a` failed its verdict assertion on one run and passed on the next, same prompt, same mode.
+The first run kept no transcript, so the cause cannot be settled: either the phase emitted no
+verdict that time, or it emitted one in a turn the assertion did not read. The checker now
+reads every turn of the phase rather than the last, which removes the harness-side
+explanation for next time. **n=2 is not a pattern** - recorded so a third occurrence is
+recognised rather than re-diagnosed.
 
-- the phase produced a verdict in wording `assertions.VERDICTS` does not match → **harness**,
-  and the third of its kind (`index.md`, `### [Path C · Non-UI] Interface Contract`). Check
-  `4a`'s own text before believing the finding.
-- the phase produced no verdict at all → **stratos**, and a real gap in `audit-only`.
-
-`3b` and `3d` re-run first because `4a` audits what `3d` implemented; there is no resume
-across runs, and `--seed` only covers `0a`-`2b`.
-
-### Cost and credentials
-
-- **`--seed`** installs the `0a`-`2b` artifacts, so the late chain costs four phases instead
-  of nine. A seeded run does **not** test the hand-off into its first phase, and says so.
-- **`--handoff`** bounds each phase: 3 turns, 1 round, 600s. It does **not** exercise gates -
-  the agent finishes in one turn, so the responder never speaks.
-- The harness authenticates from its own store (`~/.l3-harness/.claude/.credentials.json`,
-  `run-L3.py --login`). Rotations are checkpointed after every phase, so a stopped run now
-  costs at most one rotation rather than the whole credential.
-
-### Findings so far
+### Findings
 
 - **D6, fixed:** neither research template defined `## Cost & Viability Signals`, which
   `1a:100` writes into and `2a:61`'s Cost Approval Gate lifts from.
-- **D7, recorded not fixed:** `1b`'s vocabulary never reaches `.memory/GLOSSARY.md` in an
-  unattended run - promotion is gated on a confirmation that never fires, and `3d:42` then
-  has nothing to check against. A design decision about AFK promotion, not a typo.
-- **Harness, all fixed:** the credential rotation (twice - borrowed, then lost to a stopped
-  run); `index.md` mistaken for the artifact; read-only files surviving teardown while it
-  reported success; `2b`'s heading; no transcript to diagnose a failure.
+- **D7, recorded not fixed:** `1b`'s vocabulary never reaches `.memory/GLOSSARY.md`
+  unattended - promotion is gated on a confirmation that never fires, and `3d:42` then has
+  nothing to check against. A design decision about AFK promotion, not a typo.
+- **Harness, all fixed:** credential rotation (twice: borrowed, then lost to a stopped run);
+  `index.md` mistaken for the artifact; read-only files surviving teardown while it reported
+  success; `2b`'s `### [Path C · Non-UI]` heading; no transcript to diagnose a failure; the
+  verdict read from one turn instead of the phase.
 
-### Three facts that are easy to misread
+**Three of the six harness bugs were the assertion inventing a shape the template does not
+use.** Read the template before believing a finding.
 
-- The responder's budget counts agent **turns**, not questions. Every live phase so far has
-  finished in **one turn**, so no gate has been exercised yet at all.
-- `--handoff` findings are about the **chain**. Artifact quality needs a full-depth run.
-- Twice the lifecycle was right and the assertion was wrong. **Read the template before
-  believing a finding.**
+### Running it again
 
-### Scope decision (2026-09-17)
+```bash
+python -u tests/lifecycle-harness/run-L3.py --env-only                          # free
+python -u tests/lifecycle-harness/run-L3.py --handoff --seed --phases 3b,3d,4a,0b --keep
+python -u tests/lifecycle-harness/run-L3.py --handoff --keep                    # whole chain
+python tests/lifecycle-harness/run-L3.py --login                                # when auth expires
+```
 
-**No full-depth run is planned.** Hand-off mode never exercises a gate - the agent finishes
-each phase in one turn - so the HITL surface stays untested here by design. That validation
-happens in the maintainer's live project instead, where the gates fire naturally and cost
-nothing extra. L3's claim is therefore bounded and should be stated that way: *the artifact
-chain holds between phases*, not *the lifecycle works unattended*.
+### Not built, deliberately
 
-**L3's live driving ends after `4a` and `0b`.** Slices 5-9 build a recurring lane (subagent
-tolerance, `--live-gh`, CI, docs, the findings report). That is worth building only if L3 is
-wanted nightly as regression protection. It is not needed to finish what the harness was
-built to answer, and the discovery rate argues against it: two lifecycle findings across ten
-phase-runs, against five harness bugs. Revisit if the skills start changing often enough
-that regressions become likely.
-
-### Still to build
-
-Slice 5 (subagent tolerance - its log capture landed early), 9 (findings report), 6, 7, 8.
+Slices 5 (subagent tolerance - its log capture landed early), 6 (`--live-gh`), 7 (CI),
+8 (docs), 9 (findings report). They build a **recurring** lane. Worth it only if L3 is wanted
+nightly as regression protection; the discovery rate argues against it for now - two
+lifecycle findings across fourteen phase-runs, against six harness bugs. Revisit when the
+skills start changing often enough that regressions become likely.

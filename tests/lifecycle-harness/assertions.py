@@ -39,6 +39,11 @@ class Context:
     tool_uses: list = field(default_factory=list)
     before: dict = field(default_factory=dict)   # snapshot taken before the phase
     final_text: str = ""                 # last turn, read ONLY for bracket tokens
+    # Every turn of the phase, same restriction. A verdict is a product of the
+    # PHASE, not of its closing turn: `4a` emitted one in the final turn on one
+    # run and not on another, and reading only the last turn cannot tell an
+    # absent verdict from one stated a turn earlier.
+    phase_text: str = ""
     # Hand-off mode bounds each phase to a few turns, and an agent told to work at
     # minimum depth tends to finish in ONE - which means the responder never speaks
     # and no HITL gate ever fires. Anything that exists only behind a gate is
@@ -377,8 +382,10 @@ VERDICTS = ("[PASS]", "[UNCOVERED]", "[SKIP]")
 def check_4a(ctx: Context):
     """`audit-only` is Phases 1-4: a verdict, and nothing else moved (fact 7)."""
     problems, notes = [], []
-    if not any(v in ctx.final_text for v in VERDICTS):
-        problems.append(f"4a produced none of the verdict tokens {VERDICTS}")
+    spoken = ctx.phase_text or ctx.final_text
+    if not any(v in spoken for v in VERDICTS):
+        problems.append(f"4a produced none of the verdict tokens {VERDICTS} in any "
+                        f"of its turns")
     if head(ctx.project) != ctx.before.get("head"):
         problems.append("4a audit-only moved HEAD; it must touch no commit")
     new = branches(ctx.project) - ctx.before.get("branches", set())
