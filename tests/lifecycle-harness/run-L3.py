@@ -178,9 +178,18 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
               if phase == "1b" else None)
 
     print(f"\n=== {phase} " + "=" * (60 - len(phase)))
-    run = driver_mod.drive(phase, prompts_mod.load(phase, handoff=args.handoff),
-                           prompts_mod.sentinel(phase), chat, responder, settle,
-                           budget=args.phase_budget)
+    try:
+        run = driver_mod.drive(phase, prompts_mod.load(phase, handoff=args.handoff),
+                               prompts_mod.sentinel(phase), chat, responder, settle,
+                               budget=args.phase_budget)
+    finally:
+        # Written whatever happens. A phase that fails on an assertion leaves no
+        # trace of WHY otherwise: `4a produced none of the verdict tokens` is not
+        # diagnosable without the turn that was supposed to carry one, and the
+        # transcript is the only place it exists.
+        log_path = write_transcript(env, phase, chat)
+        if log_path:
+            print(f"[log]  {log_path}")
 
     tool_uses = [t for turn in run.turns for t in turn.tool_uses]
     ctx = assertions_mod.Context(
@@ -193,10 +202,41 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
         print(f"[note] {phase}: {note}")
     for problem in problems:
         print(f"[FAIL] {phase}: {problem}")
+    if problems:
+        transcript = env.root / "logs" / f"{phase}.log"
+        if transcript.exists():
+            print(f"[log]  last turn of {phase}:")
+            print(tail(transcript))
     if not problems:
         print(f"[ok]   {phase}: {run.replies} replies, {run.rounds} round(s), "
               f"assertions passed")
     return problems
+
+
+def write_transcript(env, phase: str, chat) -> Path | None:
+    """Every turn of one phase, on disk, kept with the run.
+
+    Not for assertions - E3 keeps prose out of those. This is evidence for the
+    human reading a failure: which turn the phase stopped on, what it said, and
+    which tools it reached for. `--keep` preserves it alongside the project.
+    """
+    turns = getattr(chat, "turns", None)
+    if not turns:
+        return None
+    logs = env.root / "logs"
+    logs.mkdir(exist_ok=True)
+    path = logs / f"{phase}.log"
+    parts = []
+    for i, turn in enumerate(turns, 1):
+        tools = ", ".join(sorted({str(t.get("name", "")) for t in turn.tool_uses}))
+        parts.append(f"--- turn {i} (tools: {tools or 'none'}) ---\n{turn.text}")
+    path.write_text("\n\n".join(parts), encoding="utf-8")
+    return path
+
+
+def tail(path: Path, lines: int = 25) -> str:
+    text = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return "\n".join(f"    | {ln}" for ln in text[-lines:])
 
 
 def _brief_settle(env, auditor, advisory: bool = False):

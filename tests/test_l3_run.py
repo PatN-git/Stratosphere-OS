@@ -303,3 +303,47 @@ def test_keep_leaves_it_and_says_where(tmp_path, capsys):
     e._teardown(root, keep=True)
     assert root.exists()
     assert str(root) in capsys.readouterr().out
+
+
+# --- the transcript, which is evidence rather than an assertion ---------------
+
+class _Turn:
+    def __init__(self, text, tools=()):
+        self.text = text
+        self.tool_uses = [{"name": t} for t in tools]
+
+
+class _Chat:
+    def __init__(self, turns):
+        self.turns = turns
+
+
+class _Env:
+    def __init__(self, root):
+        self.root = root
+
+
+def test_a_transcript_is_written_for_every_phase(tmp_path):
+    """`4a produced none of the verdict tokens` is not diagnosable without the turn
+    that was supposed to carry one."""
+    env = _Env(tmp_path)
+    path = r.write_transcript(env, "4a", _Chat([
+        _Turn("Auditing the slice.", tools=["Read", "Bash"]),
+        _Turn("Coverage map complete. L3-4A-COMPLETE")]))
+    text = path.read_text(encoding="utf-8")
+    assert path == tmp_path / "logs" / "4a.log"
+    assert "turn 1" in text and "turn 2" in text
+    assert "Bash, Read" in text
+    assert "L3-4A-COMPLETE" in text
+
+
+def test_a_phase_with_no_turns_writes_nothing(tmp_path):
+    assert r.write_transcript(_Env(tmp_path), "0a", _Chat([])) is None
+
+
+def test_the_tail_is_what_gets_printed_on_failure(tmp_path):
+    log = tmp_path / "x.log"
+    log.write_text("\n".join(f"line {i}" for i in range(50)), encoding="utf-8")
+    shown = r.tail(log, lines=3)
+    assert shown.count("\n") == 2
+    assert "line 49" in shown and "line 46" not in shown
