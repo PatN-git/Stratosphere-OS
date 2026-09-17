@@ -140,10 +140,17 @@ def test_nothing_to_preserve_is_not_an_error(tmp_path):
                                   tmp_path / "store" / ".credentials.json") is False
 
 
-def test_the_store_is_never_the_developers_directory():
+def test_the_store_is_never_inside_the_developers_claude_directory():
     """E1 watches `~/.claude`. The harness's own credential lives outside it, so
     preserving a rotation is not a write into the path the run must not touch."""
-    assert ".claude" not in e.HARNESS_STORE.parent.name
+    assert Path.home() / ".claude" not in e.HARNESS_STORE.parents
+
+
+def test_the_store_sits_where_the_cli_writes_it():
+    """`$HOME/.claude/.credentials.json`, under the harness's own HOME. A bare file
+    beside that HOME made a successful `--login` read as a failed one: the CLI had
+    written exactly where it should, and the harness looked one directory up."""
+    assert e.HARNESS_STORE == e.HARNESS_HOME / ".claude" / ".credentials.json"
 
 
 def test_preserving_writes_only_to_the_store(tmp_path):

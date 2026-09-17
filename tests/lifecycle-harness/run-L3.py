@@ -218,7 +218,7 @@ def login() -> int:
     a run refreshes the HARNESS's token rather than consuming the developer's.
     """
     store = env_mod.HARNESS_STORE
-    home = store.parent
+    home = env_mod.HARNESS_HOME
     home.mkdir(parents=True, exist_ok=True)
     child = dict(os.environ)
     child.update({"HOME": str(home), "USERPROFILE": str(home)})

@@ -421,8 +421,13 @@ def assert_gh_is_shimmed(child: dict) -> None:
 # So the harness keeps its own credential and writes the rotation back into it.
 # The developer's file is read once, to bootstrap, and never written.
 # `run-L3.py --login` authenticates this store directly, which avoids even that.
+# The CLI writes its credential at `$HOME/.claude/.credentials.json`, so the store
+# is that path under the harness's own HOME - not a bare file beside it. Getting
+# this wrong made a successful `--login` look like a failed one: the CLI had written
+# exactly where it should, and the harness was looking one directory up.
+HARNESS_HOME = Path(os.environ.get("L3_HOME", str(Path.home() / ".l3-harness")))
 HARNESS_STORE = Path(os.environ.get(
-    "L3_CREDENTIALS", str(Path.home() / ".l3-harness" / ".credentials.json")))
+    "L3_CREDENTIALS", str(HARNESS_HOME / ".claude" / ".credentials.json")))
 
 
 def _usable(path: Path) -> bool:
