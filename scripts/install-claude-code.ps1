@@ -68,4 +68,15 @@ if (Test-Path (Join-Path $buildDir "skills")) {
 # Stage full plugin to plugins/stratosphere-os/
 Copy-Item -Path (Join-Path $buildDir "\*") -Destination $pluginsDir -Recurse -Force
 
+# v4 retired two top-level bundle dirs. The overlay only replaces what the CURRENT
+# bundle ships, so a dir we no longer ship is never touched and its stale v3 contents
+# survive an upgrade. Both dirs are unambiguously framework-owned.
+foreach ($retired in @("workflows", "commands")) {
+    $retiredPath = Join-Path $pluginsDir $retired
+    if (Test-Path $retiredPath) {
+        Write-Host "Removing retired $retired/ from plugin dir (v3 leftovers)..."
+        Remove-Item -Path $retiredPath -Recurse -Force
+    }
+}
+
 Write-Host "Successfully installed to $claudeDir. Restart Claude Code for the commands to load."

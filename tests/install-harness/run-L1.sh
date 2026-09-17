@@ -43,9 +43,20 @@ assert_scaffold_tree() { # $1 proj
 run_cell() { # $1 tool  $2 scope
   local tool="$1" scope="$2"
   echo ""; echo "== $tool / $scope (sh) =="
-  local proj home plugin base
+  local proj home plugin base seed
   proj="$(mktemp -d)"
   if [ "$scope" = "global" ]; then home="$(mktemp -d)"; fi
+
+  # Seed the v3 leftovers an upgrade would carry in, so the "no legacy dir"
+  # assertions below test the UPGRADE path, not just a fresh install.
+  if [ "$tool" = "claude-code" ]; then
+    if [ "$scope" = "local" ]; then seed="$proj/.claude/plugins/stratosphere-os"; else seed="$home/.claude/plugins/stratosphere-os"; fi
+  else
+    if [ "$scope" = "local" ]; then seed="$proj/.agents/plugins/stratosphere-os"; else seed="$home/.gemini/config/plugins/stratosphere-os"; fi
+  fi
+  mkdir -p "$seed/workflows/.reference" "$seed/commands"
+  echo "# stale v3" > "$seed/workflows/0a_start-session.md"
+  echo "# stale v3" > "$seed/commands/0a_start-session.md"
 
   # install
   if [ "$scope" = "local" ]; then
@@ -59,6 +70,8 @@ run_cell() { # $1 tool  $2 scope
   if [ "$tool" = "claude-code" ]; then
     if [ "$scope" = "local" ]; then base="$proj/.claude"; else base="$home/.claude"; fi
     plugin="$base/plugins/stratosphere-os"
+    assert "install: no legacy commands dir" "$([ -d "$plugin/commands" ] && echo 0 || echo 1)"
+    assert "install: no legacy workflows dir" "$([ -d "$plugin/workflows" ] && echo 0 || echo 1)"
     assert "install: no legacy commands dir" "$([ -d "$plugin/commands" ] && echo 0 || echo 1)"
     assert "install: 26 plugin skills" "$([ "$(ls -1 "$plugin"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
     assert "install: micro-tdd skill" "$(exists "$plugin/skills/micro-tdd")"

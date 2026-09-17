@@ -82,4 +82,15 @@ fi
 # Stage full plugin to plugins/stratosphere-os/
 cp -rf "$REPO_ROOT/dist/claude-code/"* "$PLUGINS_DIR/"
 
+# v4 retired two top-level bundle dirs. The overlay only replaces what the CURRENT
+# bundle ships, so a dir we no longer ship is never touched and its stale v3 contents
+# survive an upgrade -- leaving /0a_start-session resolving from the plugin alongside
+# /0a-start-session. Both dirs are unambiguously framework-owned.
+for retired in workflows commands; do
+    if [ -d "$PLUGINS_DIR/$retired" ]; then
+        echo "removing retired $retired/ from plugin dir (v3 leftovers)"
+        rm -rf "${PLUGINS_DIR:?}/$retired"
+    fi
+done
+
 echo "Successfully installed to $CLAUDE_DIR. Restart Claude Code for the commands to load."
