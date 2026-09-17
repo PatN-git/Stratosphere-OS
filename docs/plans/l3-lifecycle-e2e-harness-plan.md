@@ -758,6 +758,21 @@ across runs, and `--seed` only covers `0a`-`2b`.
 - Twice the lifecycle was right and the assertion was wrong. **Read the template before
   believing a finding.**
 
+### Scope decision (2026-09-17)
+
+**No full-depth run is planned.** Hand-off mode never exercises a gate - the agent finishes
+each phase in one turn - so the HITL surface stays untested here by design. That validation
+happens in the maintainer's live project instead, where the gates fire naturally and cost
+nothing extra. L3's claim is therefore bounded and should be stated that way: *the artifact
+chain holds between phases*, not *the lifecycle works unattended*.
+
+**L3's live driving ends after `4a` and `0b`.** Slices 5-9 build a recurring lane (subagent
+tolerance, `--live-gh`, CI, docs, the findings report). That is worth building only if L3 is
+wanted nightly as regression protection. It is not needed to finish what the harness was
+built to answer, and the discovery rate argues against it: two lifecycle findings across ten
+phase-runs, against five harness bugs. Revisit if the skills start changing often enough
+that regressions become likely.
+
 ### Still to build
 
 Slice 5 (subagent tolerance - its log capture landed early), 9 (findings report), 6, 7, 8.
