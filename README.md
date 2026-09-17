@@ -107,10 +107,23 @@ To upgrade an already-instantiated project to later plugin versions, run:
 ```
 Your `.memory/` data and constitution are never overwritten; framework-owned blocks are updated in place, and you confirm any conflicts.
 
+> [!IMPORTANT]
+> **Upgrading a v3 project to v4.0.0 — do not auto-update.**
+> v4 is a breaking release: every lifecycle artifact is renamed to Agent Skills spec form and moves to `.agents/skills/<name>/SKILL.md`. `/0a_start-session` and its siblings stop resolving — use `/0a-start-session`. There are **no alias shims**.
+>
+> `/stratosphere-update` alone is **not sufficient** and will refuse to run. Migrate once, by hand, from the project root:
+>
+> ```bash
+> python <plugin>/scripts/migrations/migrate_v3_to_v4.py            # dry run (default)
+> python <plugin>/scripts/migrations/migrate_v3_to_v4.py --apply
+> ```
+>
+> Then run `/stratosphere-update` to place the v4 skills. Between the two commands the project has no lifecycle skills, so run them back-to-back — and on a dedicated branch, since the migration touches `.agents/`, `.memory/` and `docs/`.
+
 > [!TIP]
 > **Keeping the Plugin Fresh**
-> - **Claude Code users:** You can set `"autoUpdate": true` for the StratOS marketplace plugin configuration in your global settings so that the host environment keeps the plugin updated automatically in the background.
-> - **Google Antigravity users:** Update your local repository clone via `git pull` and re-run the `scripts/install-antigravity.sh` or `scripts/install-antigravity.ps1` script to install the latest templates.
+> - **Claude Code users:** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
+> - **Google Antigravity users:** update your local repository clone via `git pull` and re-run `scripts/install-antigravity.sh` or `scripts/install-antigravity.ps1` to install the latest templates.
 
 ---
 
