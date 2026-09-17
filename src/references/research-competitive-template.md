@@ -101,6 +101,12 @@ For each Need listed above, assign a **Served** score (1-10) indicating how well
 ## Landscape Patterns
 <Patterns identified across the landscape: common gaps, emerging standards, or white space we can capture.>
 
+## Cost & Viability Signals
+<Pricing and market signals: paid products and their tiers, freelancer hires, keyword ad
+spend, anything indicating people already pay to solve this. Mark a signal you could not
+find as [Unknown] rather than omitting it - `/2a-write-prd` section 12 cites this section
+and its Cost Approval Gate cannot fire on a section that is not here.>
+
 ## Open Questions & Unknowns
 - <Explicitly list any missing info, product trial requirements, or unconfirmed claims.>
 

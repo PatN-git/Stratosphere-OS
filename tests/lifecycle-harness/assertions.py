@@ -61,9 +61,25 @@ def frontmatter(text: str) -> dict:
     return out
 
 
-def only(project: Path, pattern: str) -> Path | None:
-    hits = sorted(project.glob(pattern))
+# okf-protocol section 4: directory `index.md` files are listings and carry NO
+# frontmatter; `log.md` is change history and carries none either. They sort before
+# most slugs, so a naive "first match" picks up the index and then reports the
+# artifact as having no `type:` - which is exactly what the first live 1a run did.
+RESERVED = {"index.md", "log.md"}
+
+
+def only(project: Path, pattern: str, exclude: tuple = ()) -> Path | None:
+    """The one artifact a phase produced, ignoring the bundle's own furniture."""
+    hits = [p for p in sorted(project.glob(pattern))
+            if p.name not in RESERVED
+            and not any(p.match(x) for x in exclude)]
     return hits[0] if hits else None
+
+
+def brief_path(project: Path) -> Path | None:
+    """`*.map.md` is a concept-map, a different OKF type in the same directory
+    (registry: `discovery-brief` is `docs/discovery/*.md` EXCLUDING `*.map.md`)."""
+    return only(project, "docs/discovery/*.md", exclude=("*.map.md",))
 
 
 def tool_names(ctx: Context) -> list[str]:
@@ -164,7 +180,7 @@ def check_1a(ctx: Context):
 
 def check_1b(ctx: Context):
     problems, notes = [], []
-    doc = only(ctx.project, "docs/discovery/*.md")
+    doc = brief_path(ctx.project)
     if doc is None:
         return ["1b produced no docs/discovery/<slug>.md"], notes
     text = read(doc)
@@ -205,7 +221,7 @@ def check_2a(ctx: Context):
                         "means 'stable'")
     if "## 12" not in text and "§12" not in text and "Viability & Cost" not in text:
         problems.append(f"{doc.name}: no §12 Viability & Cost section")
-    brief = only(ctx.project, "docs/discovery/*.md")
+    brief = brief_path(ctx.project)
     if brief is None:
         problems.append("the 1b brief vanished, so the hand-off cannot be checked")
     else:

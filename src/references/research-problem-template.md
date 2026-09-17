@@ -57,6 +57,12 @@ Score each unmet **Need** with a **Pain** value 1-10 ("how much does it hurt?", 
 ## Technological Approaches
 <Technical analysis of potential/existing solutions. Detail different architectures, libraries, APIs, or algorithms that solve or address this problem.>
 
+## Cost & Viability Signals
+<Pricing and market signals: paid products and their tiers, freelancer hires, keyword ad
+spend, anything indicating people already pay to solve this. Mark a signal you could not
+find as [Unknown] rather than omitting it - `/2a-write-prd` section 12 cites this section
+and its Cost Approval Gate cannot fire on a section that is not here.>
+
 ## Open Unknowns
 - <Explicitly list any missing info, outstanding technical questions, or gaps in understanding.>
 

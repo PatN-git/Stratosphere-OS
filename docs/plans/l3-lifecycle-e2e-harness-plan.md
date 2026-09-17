@@ -442,6 +442,35 @@ Two things this validates about the design: the driver's error-turn guard caught
 infrastructure failure rather than feeding it to the responder to grill, and `--keep` left
 the evidence that made the diagnosis a five-minute read rather than a guess.
 
+### D6 — the first defect only a run could find
+
+`1a` completed and wrote a valid research file. `2a` would then have had nothing to lift.
+
+**Neither research template defines `## Cost & Viability Signals`.** `1a:100` says to capture
+pricing and market signals "under `## Cost & Viability Signals`", while the same step says to
+write the template's body **verbatim** — and neither `research-problem-template.md` nor
+`research-competitive-template.md` contains that heading. `2a:60` then requires §12 to
+"Summarize and cite `## Cost & Viability Signals` from `1a` research", and `2a:61`'s **Cost
+Approval Gate** hangs off that table. So the cost hand-off worked only when the agent
+improvised a section outside its own template. On this run it did not: the file carried
+Research Brief, Core Problem, User Pains, Current State, Technological Approaches, Open
+Unknowns and Sources — every heading the template defines, and no cost section at all.
+
+Class `stratos`. Resolution: the section is now in both templates, with a line saying why it
+cannot be dropped and that an unfound signal is `[Unknown]` rather than omitted. Fixed in
+this PR rather than routed, because it is two lines and it blocks the hand-off the harness
+exists to test.
+
+This is the shape §10 predicted: **D1–D5 were reachable by reading; D6 needed the run.** A
+static read finds a skill that contradicts itself. Only a run finds a skill that agrees with
+itself and with the template, where the template is missing the thing both of them assume.
+
+Two harness bugs surfaced alongside it, both in the same assertion: `only()` took the
+alphabetically first `*.md`, which is `index.md` — a listing okf-protocol §4 reserves as
+frontmatter-free — and reported the artifact as having no `type:`. Directory indexes and
+`log.md` are excluded now, and `*.map.md` with them, since the registry says `discovery-brief`
+excludes concept maps in the same directory.
+
 ### Hand-off mode
 
 A full-depth run of all ten phases is the driver plus five nested subagents that inherit
