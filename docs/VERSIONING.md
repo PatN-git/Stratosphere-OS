@@ -1,9 +1,19 @@
+---
+type: reference
+title: StratosphereOS Artifact Versioning Standard
+description: Per-file semantic versioning and content-hash rules for distributed artifacts.
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-15
+version: "1.0.0"
+---
+
 # StratosphereOS Artifact Versioning Standard
 
 StratosphereOS utilizes a robust, per-file versioning system combined with content hashing to selectively update distributed artifacts (workflows, templates, rules, constitution files) without clobbering a user's local edits.
 
 ## 1. Version Format & Semantics
-All distributed artifacts MUST carry a semantic version `x.y.z` and a `timestamp` date `YYYY-MM-DD`. The plugin version sets the baseline (e.g., `1.0.0`).
+All distributed artifacts MUST carry a semantic version `x.y.z`. The change-date field differs by scope: framework artifacts under `src/` carry `timestamp: YYYY-MM-DD` (a build field); in-scope OKF documents under `docs/` and `.memory/` carry `generated: {by, at}` instead (`okf-protocol.md` §2). The plugin version sets the baseline (e.g., `1.0.0`).
 
 - **PATCH** (`x.y.Z`): Wording changes, formatting, typos.
 - **MINOR** (`x.Y.0`): Additive/backward-compatible changes (new optional sections, new guidance).
@@ -12,12 +22,12 @@ All distributed artifacts MUST carry a semantic version `x.y.z` and a `timestamp
 Note: The semver level communicates change magnitude to humans and drives the derived plugin bump; it does NOT gate the updater. The updater decides whether to auto-apply a change or perform a manual merge purely based on content. A framework block that the user has never customized is swapped automatically regardless of whether the change is a patch, minor, or major update. Conversely, any block the user has customized will result in a manual conflict-merge, regardless of its semver level.
 
 ## 2. Authoring Convention
-With the introduction of the Open Knowledge Format (OKF), the versioning format has been strictly unified. Every distributed artifact (workflows, commands, rules, constitution files, and memory templates) MUST carry its version metadata within a YAML frontmatter block at the top of the file.
+With the introduction of the Open Knowledge Format (OKF), the versioning format has been strictly unified. Every distributed artifact (skills, rules, constitution files, and memory templates) MUST carry its version metadata within a YAML frontmatter block at the top of the file. Note the two date fields are **not** interchangeable: framework artifacts under `src/` keep `timestamp:` as a build field, while in-scope OKF documents under `docs/` and `.memory/` use `generated: {by, at}` (`okf-protocol.md` §2).
 
 Add to the existing frontmatter block:
 ```yaml
-version: "1.0.0"
-timestamp: 2026-06-18
+version: "1.1.0"
+timestamp: 2026-09-15
 ```
 
 `timestamp` is OKF's standard last-change field; `version` is a StratOS extension. The retired `updated` field is no longer used.
@@ -46,7 +56,7 @@ The overall framework plugin version is derived from individual artifact version
   2. **Derive & Stage**: Run `python scripts/release.py` locally to automatically calculate the new plugin version, update `build/build.py` and `README.md`, re-compile the build outputs (`dist/`), and run validation.
   3. **PR & Merge**: Commit the changes, open a PR, and merge to the `main` branch.
   4. **Auto-Release**: The "Release on main" workflow detects the new version on push, verifies consistency, checks that a release for this version doesn't already exist, and automatically tags the commit as `v<VERSION>` and publishes a GitHub Release.
-  5. **Client Update**: The `/stratosphere-update` command runs a remote preflight check, comparing the locally installed version against the latest published release tag.
+  5. **Client Update**: The `/stratosphere-update` skill runs a remote preflight check, comparing the locally installed version against the latest published release tag.
 - **Release Invariant**: The tag name must exactly match `v` + `VERSION`, which must equal the plugin version in both platform manifests. This is guaranteed by `validate.py` and the CI stale-dist guard (`git status --porcelain dist/`).
 - **Conditional Releases**: Releases are cut only when `VERSION` moves (indicating that a distributed artifact was modified and rebuilt). Documentation, testing, or CI-only changes do not bump version metadata and thus do not trigger a new release.
 - **Initial Bootstrapping**: The very first release (`v1.1.0`) was cut manually since no prior tag existed for comparison. All subsequent releases are derived automatically via `release.py`.

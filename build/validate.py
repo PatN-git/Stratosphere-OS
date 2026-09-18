@@ -51,23 +51,69 @@ def fm_dict(text):
             res[k.strip()] = v.strip()
     return res
 
-for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:
-    for md in (root / plat / inv).glob("*.md"):
-        # Check BOM
-        if md.read_bytes().startswith(b'\xef\xbb\xbf'):
-            errs.append(f"BOM DETECTED in {plat}/{inv}/{md.name}")
-        k = set(fm_dict(md.read_text(encoding="utf-8")).keys())
-        required = {"name", "description", "version", "timestamp"}
-        if not required.issubset(k):
-            errs.append(f"{plat}/{inv}/{md.name} missing OKF keys. Found {k}")
-    for sk in (root / plat / "skills").glob("*/SKILL.md"):
-        # Check BOM
+SKILL_NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+PLATFORMS = ["dist/claude-code", "dist/antigravity"]
+
+# Every bundled artifact is a skill. `Path.glob` on a missing directory yields
+# nothing WITHOUT erroring, so a retargeting mistake would otherwise leave this
+# walk iterating zero files and the build passing green on an empty set.
+_skills_seen = 0
+for plat in PLATFORMS:
+    plat_skills = sorted((root / plat / "skills").glob("*/SKILL.md"))
+    if not plat_skills:
+        errs.append(f"{plat}/skills: NO skills found - the emitter or this path is wrong")
+    for sk in plat_skills:
+        _skills_seen += 1
+        name_dir = sk.parent.name
         if sk.read_bytes().startswith(b'\xef\xbb\xbf'):
-            errs.append(f"BOM DETECTED in {plat}/skills/{sk.parent.name}/SKILL.md")
-        k = set(fm_dict(sk.read_text(encoding="utf-8")).keys())
-        required = {"name", "description", "version", "timestamp"}
+            errs.append(f"BOM DETECTED in {plat}/skills/{name_dir}/SKILL.md")
+        fm = fm_dict(sk.read_text(encoding="utf-8"))
+        k = set(fm.keys())
+        required = {"name", "description", "version"}
         if not required.issubset(k):
-            errs.append(f"{plat}/skills/{sk.parent.name} missing OKF keys. Found {k}")
+            errs.append(f"{plat}/skills/{name_dir} missing required keys. Found {k}")
+
+        # Agent Skills spec: name must match the regex AND equal the parent dir
+        nm = str(fm.get("name", "")).strip().strip('"')
+        if not SKILL_NAME_RE.match(nm):
+            errs.append(f"{plat}/skills/{name_dir}: name {nm!r} fails ^[a-z0-9]+(-[a-z0-9]+)*$")
+        elif nm != name_dir:
+            errs.append(f"{plat}/skills/{name_dir}: name {nm!r} != parent directory")
+        desc = str(fm.get("description", ""))
+        if len(desc) > 1024:
+            errs.append(f"{plat}/skills/{name_dir}: description {len(desc)} chars exceeds spec limit 1024")
+
+        # no OKF type: outside the bundle scope (.memory/ + docs/)
+        if "type" in k:
+            errs.append(f"{plat}/skills/{name_dir}: carries OKF 'type:' but is outside the bundle scope")
+
+if _skills_seen == 0:
+    errs.append("FATAL: validated zero skills - the walk is looking in the wrong place")
+
+# retired output directories must not reappear
+for plat in PLATFORMS:
+    for legacy in ("commands", "workflows"):
+        if (root / plat / legacy).exists():
+            errs.append(f"{plat}/{legacy}/ still emitted - retired in v4.0.0")
+
+# The registry is the single source of truth; parse it rather than restating it,
+# so a new type cannot be used without being registered (okf-protocol §3 forbids
+# inventing types, but nothing enforced it before v4.0.0).
+def _registered_types():
+    src = root / "src" / "rules" / "okf-protocol.md"
+    if not src.exists():
+        return set()
+    body = src.read_text(encoding="utf-8")
+    sec = body.split("## 3. Type Registry", 1)
+    if len(sec) < 2:
+        return set()
+    sec = sec[1].split("\n## ", 1)[0]
+    return set(re.findall(r'^\| `([a-z-]+)` \|', sec, flags=re.M))
+
+
+REGISTERED_TYPES = _registered_types()
+if not REGISTERED_TYPES:
+    errs.append("could not parse the OKF type registry from src/rules/okf-protocol.md")
 
 # 2.5 Asset templates type + version validation
 concept_references = {
@@ -97,20 +143,19 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
         if "version" not in d or not d["version"]:
             errs.append(f"{plat}/assets/templates/{rel_path} missing version")
 
-        # Check type (only concept templates)
-        is_concept = False
-        if parent_dir == "memory" and not is_index:
-            is_concept = True
-        elif parent_dir == "rules" and not is_index:
-            is_concept = True
-        elif parent_dir == "constitution" and filename == "AGENTS.md":
-            is_concept = True
-        elif parent_dir == "references" and filename in concept_references:
-            is_concept = True
+        # OKF `type:` is required only where the template SEEDS an in-scope
+        # document. Rules and the constitution live outside the bundle scope
+        # (.memory/ + docs/) and must NOT carry one (okf-protocol §1).
+        is_seed = parent_dir == "memory" and not is_index
 
-        if is_concept:
-            if "type" not in d or not d["type"]:
+        if is_seed:
+            ty = d.get("type")
+            if not ty:
                 errs.append(f"{plat}/assets/templates/{rel_path} missing type")
+            elif ty not in REGISTERED_TYPES:
+                errs.append(f"{plat}/assets/templates/{rel_path}: type {ty!r} is not in the okf-protocol registry")
+        elif parent_dir in ("rules", "constitution") and "type" in d:
+            errs.append(f"{plat}/assets/templates/{rel_path}: carries 'type:' but is outside the OKF bundle scope")
 
 # 2.5. Frontmatter version check on reference files
 for ref_file in (root / "src/references").glob("*.md"):
@@ -299,9 +344,9 @@ for plat in ["dist/claude-code", "dist/antigravity"]:
                 errs.append(f"EXPERIMENTAL PATH LEAKED INTO {plat}: {p.relative_to(root)}")
 
 # 3. Counts
-for plat, inv in [("dist/claude-code", "commands"), ("dist/antigravity", "workflows")]:
-    n = len(list((root / plat / inv).glob('*.md')))
-    print(f"{plat}/{inv}: {n} invocables")
+for plat in PLATFORMS:
+    n = len(list((root / plat / "skills").glob('*/SKILL.md')))
+    print(f"{plat}/skills: {n} skills")
 print("external skills:", len(json.loads((root / 'src/external-skills.json').read_text(encoding='utf-8'))['skills']))
 
 if errs:

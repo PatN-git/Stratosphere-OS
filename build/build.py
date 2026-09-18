@@ -10,7 +10,7 @@ Outputs:
 Skills are byte-identical between platforms; only the manifest and the
 workflow-vs-command directory naming differ. Project-instance content
 (constitution, memory templates, rules) ships as assets/templates/
-and is written into a project by the instantiate command, not on install.
+and is written into a project by the stratosphere-setup skill, not on install.
 """
 import json
 import os
@@ -40,7 +40,7 @@ DIST = ROOT / "dist"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "3.3.0"
+VERSION = "4.0.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a first-party skill, on-demand external skills, and a one-command project installer."
@@ -142,6 +142,62 @@ def command_name(stem: str) -> str:
     return stem
 
 
+# Two citation forms: the relative `references/<file>.md` a skill uses for itself,
+# and the absolute `.agents/skills/<name>/references/<file>.md` required wherever a
+# path is handed to an isolated subagent (whose cwd is the repo root, not the skill).
+REF_CITE = re.compile(
+    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+
+
+def cited_refs(text):
+    """Reference filenames cited by a body, in either citation form."""
+    return {a or b for a, b in REF_CITE.findall(text)}
+
+
+def closure_for(text: str, ref_dir) -> set:
+    """Transitive closure: a reference may itself cite further references."""
+    seen, queue = set(), list(cited_refs(text))
+    while queue:
+        name = queue.pop()
+        if name in seen:
+            continue
+        src = ref_dir / name
+        if not src.exists():
+            print(f"  WARNING: cited reference not found: {name}")
+            continue
+        seen.add(name)
+        queue.extend(cited_refs(src.read_text(encoding="utf-8")) - seen)
+    return seen
+
+
+CODEX_SIDECAR = """# Codex reads invocation policy from this fixed path, not from SKILL.md
+# frontmatter. Keep in sync with `disable-model-invocation` / `triggers`.
+policy:
+  allow_implicit_invocation: false
+"""
+
+
+def emit_skill(src_md, name, skills_dir, ref_dir):
+    """Emit one self-contained skill: SKILL.md + its transitive references/."""
+    dst = skills_dir / name
+    dst.mkdir(parents=True, exist_ok=True)
+    copy_md_with_frontmatter(src_md, dst / "SKILL.md", name=name)
+    body = src_md.read_text(encoding="utf-8")
+
+    # Codex honours no frontmatter field; it reads <skill>/agents/openai.yaml by
+    # fixed convention. Emit it wherever the skill declares itself manual-only.
+    if re.search(r'^disable-model-invocation:\s*true\s*$', body, re.M):
+        (dst / "agents").mkdir(exist_ok=True)
+        write_lf(dst / "agents" / "openai.yaml", CODEX_SIDECAR)
+
+    refs = closure_for(body, ref_dir)
+    for rname in sorted(refs):
+        (dst / "references").mkdir(exist_ok=True)
+        shutil.copy2(ref_dir / rname, dst / "references" / rname)
+    return len(refs)
+
+
 # --- per-platform assembly -------------------------------------------------
 
 def build_platform(kind: str):
@@ -149,56 +205,40 @@ def build_platform(kind: str):
     force_rmtree(out)
     out.mkdir(parents=True)
 
-    # invocable folder differs: Claude=commands/, Antigravity=workflows/
-    invoke_dir = out / ("commands" if kind == "claude" else "workflows")
-    invoke_dir.mkdir(parents=True)
+    skills_dir = out / "skills"
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    ref_dir = SRC / "references"
 
-    # 1. First-party skill(s)
+    # 1. Execution skills (self-contained by construction)
     for skill in (SRC / "skills").iterdir():
         if skill.is_dir():
-            dst = out / "skills" / skill.name
+            dst = skills_dir / skill.name
             copytree(skill, dst)
             sk = dst / "SKILL.md"
             if sk.exists():
                 copy_md_with_frontmatter(sk, sk, name=skill.name)
 
-    # 2. Numbered lifecycle workflows -> invocable
+    # 2. Lifecycle skills + their transitive references. One canonical shape for
+    #    every host: .agents/skills/<name>/SKILL.md, invocable as /<name>.
+    total_refs = 0
     for wf in sorted((SRC / "workflows").glob("*.md")):
-        copy_md_with_frontmatter(wf, invoke_dir / wf.name, name=command_name(wf.stem))
+        total_refs += emit_skill(wf, wf.stem, skills_dir, ref_dir)
 
-    # 3. Installer entry point. Claude registers plugin commands globally, so ship
-    #    it as a /command. Antigravity only surfaces skills (not plugin workflows),
-    #    so ship it there as a discoverable skill instead.
-    inst = SRC / "commands" / "instantiate" / "Instantiate-StratosphereOS.md"
-    if kind == "claude":
-        copy_md_with_frontmatter(inst, invoke_dir / "stratosphere-setup.md",
-                                 name="stratosphere-setup")
-    else:
-        sk = out / "skills" / "stratosphere-setup" / "SKILL.md"
-        sk.parent.mkdir(parents=True, exist_ok=True)
-        copy_md_with_frontmatter(inst, sk, name="stratosphere-setup")
-
-    upd = SRC / "commands" / "update" / "Stratosphere-Update.md"
-    if kind == "claude":
-        copy_md_with_frontmatter(upd, invoke_dir / "stratosphere-update.md",
-                                 name="stratosphere-update")
-    else:
-        sk = out / "skills" / "stratosphere-update" / "SKILL.md"
-        sk.parent.mkdir(parents=True, exist_ok=True)
-        copy_md_with_frontmatter(upd, sk, name="stratosphere-update")
-
-    # 4. sync-skills command + script + registry
-    sync_md = SRC / "commands" / "sync-skills" / "SKILL_sync-skills.md"
-    copy_md_with_frontmatter(sync_md, invoke_dir / "sync-skills.md", name="sync-skills")
+    # 3. Install/upgrade/sync drivers - skills like everything else
+    for dirname, name in (("stratosphere-setup", "stratosphere-setup"),
+                          ("stratosphere-update", "stratosphere-update"),
+                          ("sync-skills", "sync-skills")):
+        src_md = SRC / "commands" / dirname / "SKILL.md"
+        total_refs += emit_skill(src_md, name, skills_dir, ref_dir)
     copytree(SRC / "commands" / "sync-skills" / "scripts", out / "scripts")
     shutil.copy2(SRC / "external-skills.json", out / "external-skills.json")
+    print(f"  {kind}: {len(list(skills_dir.iterdir()))} skills, {total_refs} reference copies")
 
     # 5. Project-instance templates (written into a project by the installer)
     assets = out / "assets" / "templates"
     copytree(SRC / "constitution", assets / "constitution")
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
-    copytree(SRC / "references", assets / "references")
     copytree(SRC / "github", assets / "github")
     copytree(SRC / "scripts", out / "scripts")
 

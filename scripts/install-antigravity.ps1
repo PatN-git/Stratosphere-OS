@@ -66,6 +66,17 @@ foreach ($item in Get-ChildItem -Force -Path $buildDir) {
     }
 }
 
+# v4 retired two top-level bundle dirs. The overlay only replaces what the CURRENT
+# bundle ships, so a dir we no longer ship is never touched and its stale v3 contents
+# survive an upgrade. Both dirs are unambiguously framework-owned.
+foreach ($retired in @("workflows", "commands")) {
+    $retiredPath = Join-Path $pluginDir $retired
+    if (Test-Path $retiredPath) {
+        Write-Host "Removing retired $retired/ from plugin dir (v3 leftovers)..."
+        Remove-Item -Path $retiredPath -Recurse -Force
+    }
+}
+
 # Record provenance so /stratosphere-update can self-update this copy-based install.
 # The plugin dir is not a git checkout; without a recorded source, the update workflow
 # cannot locate what to pull/fetch and falls back to manual instructions.

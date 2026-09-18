@@ -44,6 +44,12 @@ jobs:
         # update_preflight, migrate, jules, 3z). Local `pytest` == this.
         run: python -m pytest
 
+      - name: Verify dev-skill copies match src/dev-skills/
+        # src/dev-skills/ never ships; place-dev-skills.py installs it into this
+        # repo's .agents/skills/ and .claude/skills/. --check fails on drift
+        # rather than rewriting, so CI cannot silently "fix" a stale copy.
+        run: python scripts/place-dev-skills.py --check
+
       - name: Validate utility scripts
         run: python tests/verify_scripts.py
 

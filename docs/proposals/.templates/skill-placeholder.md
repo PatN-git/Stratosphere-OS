@@ -1,10 +1,9 @@
 ---
 name: xxx
 description: xxx
-type: skill
-trigger: AFK
-version: xxx
-updated: xxx
+metadata:
+  stratos.layer: execution
+  stratos.version: "0.1.0"
 ---
 
 # TBD

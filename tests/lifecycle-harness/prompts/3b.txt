@@ -1,0 +1,7 @@
+/3b-create-issue
+
+Slice the feature whose PRD is in docs/prds/ and whose interface design is in
+docs/design/ into implementable vertical slices.
+
+When every slice is minted, BACKLOG_MAP.md is updated and the terminal sync gate has
+passed, print exactly L3-3B-COMPLETE on its own final line.

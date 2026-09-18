@@ -113,12 +113,19 @@ def main():
     errors = []
     warnings = []
     
+    # A missing .memory/ must NOT skip the docs/ OKF conformance walk below.
+    # Coupling them meant the framework repo (which has no .memory/) never
+    # validated docs/ at all, which is how unregistered types accumulated.
+    docs_present = Path('docs').is_dir()
     if not memory_dir.exists() or not memory_dir.is_dir():
+        if not docs_present:
+            if not args.quiet:
+                print(f"Neither '{args.path}' nor 'docs' exists. Skipping validation.")
+            print("# MACHINE")
+            print(json.dumps({"clean": True, "errors": [], "warnings": []}))
+            sys.exit(0)
         if not args.quiet:
-            print(f"Memory directory '{args.path}' does not exist. Skipping validation.")
-        print("# MACHINE")
-        print(json.dumps({"clean": True, "errors": [], "warnings": []}))
-        sys.exit(0)
+            print(f"Memory directory '{args.path}' does not exist - validating docs/ only.")
 
     # 1. Scan all files in memory directory for secrets (including STATUS.md, DESIGN.md, etc.)
     for path in memory_dir.glob('*'):
@@ -389,7 +396,10 @@ def main():
                 continue
             try:
                 rel = path.relative_to(docs_dir)
-                if rel.parts and rel.parts[0] == 'knowledge':
+                # Out of OKF scope: inbound foreign bundles, historical records,
+                # and placeholder templates (okf-protocol §1, §6).
+                if any(seg in ('knowledge', 'archive', '.archive', '.templates')
+                       for seg in rel.parts):
                     continue
             except ValueError:
                 pass

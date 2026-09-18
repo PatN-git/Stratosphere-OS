@@ -2,8 +2,10 @@
 type: plan
 title: "StratOS Plan — 3z Slice-Routing Efficiency (revised)"
 description: "Right-size slices and remove the 0a relic so AFK orchestration cost is proportionate — without weakening independent verification."
-timestamp: 2026-07-23
-status: proposed
+generated:
+  by: PatN-git
+  at: 2026-07-23
+status: draft
 version: "1.0.0"
 ---
 

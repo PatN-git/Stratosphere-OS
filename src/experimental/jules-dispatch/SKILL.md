@@ -1,12 +1,11 @@
 ---
 name: jules-dispatch
-type: skill
-description: EXPERIMENTAL, user-invoked only — offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatch + report; hands off at "PR opened". Never merges, never orchestrates. Invoke ONLY on an explicit user request (normally via /x_jules-dispatch) — never autonomously.
+description: EXPERIMENTAL, user-invoked only — offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatch + report; hands off at "PR opened". Never merges, never orchestrates. Invoke ONLY on an explicit user request (normally via /3x-jules-dispatch) — never autonomously.
 version: "0.1.3"
 timestamp: 2026-07-15
 ---
 
-> **User-invoked only.** Run via `/x_jules-dispatch` or an explicit user request — never
+> **User-invoked only.** Run via `/3x-jules-dispatch` or an explicit user request — never
 > autonomously (the description is the contract). It spends Jules quota and opens PRs on a
 > real repo, so dispatch is always a deliberate human action.
 
@@ -14,7 +13,7 @@ timestamp: 2026-07-15
 
 Offload bounded, well-specified `mode:AFK` slices to Google Jules; implementation runs on
 Google's VM, preserving Claude/Antigravity tokens. This skill **dispatches and reports** —
-it never verifies or merges. You run `/4a_verify-and-ship` and merge.
+it never verifies or merges. You run `/4a-verify-and-ship` and merge.
 
 ## Guardrails (invariant — never weaken)
 - **Never merges, never enables auto-merge** — `automationMode` is `AUTO_CREATE_PR` only.
@@ -45,6 +44,6 @@ python $PACK/status.py                                                          
 1. **Preflight** (`gh issue view`): slice must be `mode:AFK`, not `tier:epic`, and state acceptance criteria — else fail closed.
 2. **Dispatch:** create a Jules session (`automationMode=AUTO_CREATE_PR`, `requirePlanApproval=true`); record `{slice_id, session_id, …, state:DISPATCHED}` in `.memory/jules-ledger.jsonl` (single-writer, sole state store, idempotent).
 3. **`--status`:** poll each `DISPATCHED` session; on a ready PR, print its URL + `gh pr view` CI status and flip the row to `DONE`.
-4. **You** verify: `gh pr checkout <pr>` in a real clone → `/4a_verify-and-ship` → merge.
+4. **You** verify: `gh pr checkout <pr>` in a real clone → `/4a-verify-and-ship` → merge.
 
 See `CONTRACT.md` for the pinned v1alpha API shapes (PR URL at `session.outputs[].pullRequest.url`).

@@ -43,20 +43,30 @@ def test_external_skills_entry_opt_in():
     print("PASS"); return True
 
 
-def test_update_never_targets_skills_dir():
-    print("--- test_update_never_targets_skills_dir ---")
+def test_bundled_skills_are_guarded_from_packs():
+    """v4: bundled skills and on-demand packs SHARE .agents/skills/.
+
+    The old assertion (no bundled artifact may map there) was inverted by the
+    migration. What must hold now is that a pack cannot overwrite a bundled
+    lifecycle skill — enforced by sync_skills.assert_not_reserved().
+    """
+    print("--- test_bundled_skills_are_guarded_from_packs ---")
     versions = json.loads((REPO_ROOT / "dist/antigravity/versions.json").read_text(encoding="utf-8"))
     artifacts = versions.get("artifacts", {})
     assert artifacts, "expected a non-empty bundled manifest"
-    for rel in artifacts:
-        proj = scaffold.map_bundled_to_project(rel)
-        if proj:
-            assert not proj.startswith(".agents/skills"), \
-                f"bundled artifact {rel} maps to {proj} — would collide with the on-demand pack"
-    print("PASS (no bundled artifact maps into .agents/skills/)"); return True
+
+    mapped = [scaffold.map_bundled_to_project(r) for r in artifacts]
+    skills = [m for m in mapped if m and m.startswith(".agents/skills/")]
+    assert skills, "expected bundled skills to map into .agents/skills/ under v4"
+
+    src = (REPO_ROOT / "src/commands/sync-skills/scripts/sync_skills.py").read_text(encoding="utf-8")
+    assert "def assert_not_reserved(" in src, "sync_skills must define the reserved-name guard"
+    assert "stratos.layer: lifecycle" in src, "guard must identify bundled skills by layer"
+    assert "assert_not_reserved(target_dir" in src, "guard must be called from fetch()"
+    print(f"PASS ({len(skills)} bundled skills in .agents/skills/, pack guard wired)"); return True
 
 
-TESTS = [test_no_experimental_in_dist, test_external_skills_entry_opt_in, test_update_never_targets_skills_dir]
+TESTS = [test_no_experimental_in_dist, test_external_skills_entry_opt_in, test_bundled_skills_are_guarded_from_packs]
 
 if __name__ == "__main__":
     ok = True

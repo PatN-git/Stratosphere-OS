@@ -1,8 +1,10 @@
 ---
 type: design-doc
 title: "Master plan — lifecycle status + load-memory skill + trigger harmonization (single MAJOR release)"
-status: ready-to-implement
-timestamp: 2026-07-17
+status: stable
+generated:
+  by: PatN-git
+  at: 2026-07-17
 ---
 
 # Master Plan — one MAJOR release combining three approved plans

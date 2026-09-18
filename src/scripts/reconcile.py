@@ -11,7 +11,7 @@ check to the single issue that received the PR comment (e.g. the shipped slice),
 so co-passed ids (cleared dependents, a flipped epic) are not required to carry it.
 
 Offline / no `gh` -> internal-consistency check only, exit 0 (`[local-only]`).
-Contract + heal protocol: .agents/workflows/.reference/terminal-sync-invariant.md
+Contract + heal protocol: .agents/skills/4a-verify-and-ship/references/terminal-sync-invariant.md
 
 Usage:
   python .agents/scripts/reconcile.py --ids BT-007[,BT-006,BT-005] \
@@ -148,6 +148,9 @@ def main(argv=None):
     ap.add_argument('--fields', default=','.join(ALL_FIELDS),
                     help="mirror fields to check (default: all). Pass only the fields this phase wrote.")
     ap.add_argument('--backlog', default='.memory/BACKLOG_MAP.md')
+    ap.add_argument('--require-gh', action='store_true',
+                    help="terminal gates pass this: refuse to report success when GitHub "
+                         "cannot be reached, instead of silently not verifying")
     args = ap.parse_args(argv)
 
     ids = [i.strip() for i in args.ids.split(',') if i.strip()]
@@ -155,6 +158,11 @@ def main(argv=None):
     rows = parse_backlog(args.backlog)
 
     if not gh_available():
+        # A terminal gate must not pass on an unverified mirror. Without
+        # --require-gh this stays exit 0 so local dev runs are unaffected.
+        if args.require_gh:
+            print("[MIRROR-UNVERIFIED: gh unavailable — terminal invariant NOT checked]")
+            return 3
         print("[local-only — GitHub not checked]")
         missing = [i for i in ids if i not in rows]
         if missing:
