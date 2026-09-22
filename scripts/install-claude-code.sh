@@ -66,6 +66,7 @@ PLUGINS_DIR="$CLAUDE_DIR/plugins/stratosphere-os"
 
 # Replace each shipped entry wholesale (drops stale files inside it, e.g. a
 # template removed upstream) while preserving foreign entries in shared dirs.
+shopt -s dotglob  # include dotfiles/dirs (e.g. .claude-plugin/), matching the ps1 -Force
 overlay() {  # overlay <src-dir> <dest-dir>
     mkdir -p "$2"
     for item in "$1"/*; do

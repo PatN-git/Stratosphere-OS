@@ -21,7 +21,7 @@
       "version": "1.0.4"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "9cf52a78635c83be06a4f055d856645306a946748fc49772b2ef5f09a05a807c",
+      "sha256": "d0229bdcfb1ad5856c3d266cc7fe9cef7567d3e1d03a17507969c8546f3b7c80",
       "timestamp": "2026-09-22",
       "version": "1.3.0"
     },
@@ -161,7 +161,7 @@
       "version": "2.0.0"
     },
     "skills/2b-interface-design/SKILL.md": {
-      "sha256": "980a598a59c5e60cf03f2feb80439a5305b897688959c5f02bf729dd3d7e4197",
+      "sha256": "8e9198d88b94483750bd09ec3886f1f856966888a83c2a0af0fab4fec3673c30",
       "timestamp": "2026-09-22",
       "version": "1.4.0"
     },
@@ -201,7 +201,7 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "cbb073f092b128c331385bc0c3beea8b3f8ec5395e12cff1e5d432e23de043eb",
+      "sha256": "3a5ebc81f0855456543418bc9d4c16b1306898e374fbe79a6a43f3984737e834",
       "timestamp": "2026-09-22",
       "version": "2.4.0"
     },
@@ -346,7 +346,7 @@
       "version": "1.2.0"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "1a7087c5e811bfa618e7c1b7e8e73c3e7fd4b389bec7774a8e80d268e3d7a00b",
+      "sha256": "318b589cc163585f644c102ccc60e0199c58d4e0a8be961c0eb13fa8479e676e",
       "timestamp": "2026-09-22",
       "version": "1.2.0"
     },

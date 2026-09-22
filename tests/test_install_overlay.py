@@ -40,6 +40,7 @@ def _assert_overlay(claude_dir: Path, orphans, foreign):
     assert (claude_dir / "plugins/stratosphere-os" / TEMPLATES / "plan-document.html").exists()
     assert (claude_dir / TEMPLATES / "plan-document.html").exists()
     assert (claude_dir / "skills/0b-stop-session/SKILL.md").exists()
+    assert (claude_dir / "plugins/stratosphere-os/.claude-plugin/plugin.json").exists(), "dot-dirs must be staged"
     assert not (claude_dir / "plugins/stratosphere-os/commands").exists(), "retired v3 dir must stay removed"
 
 

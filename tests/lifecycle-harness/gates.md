@@ -83,12 +83,12 @@ The refutation subagent (`1a:78`) is Phase 2 only, so it does not run here (fact
 
 | # | Gate | Source | Answer |
 |:--|:---|:---|:---|
-| 3b-G1 | Phase 2.2 ICE — Impact, Confidence, Effort per slice; **HALT** for Impact + Confidence when ODI is absent (never inferred) | `3b:35-52` | `policy:ice` → Impact 1.0, Confidence 80%, `size:small`, `mode:AFK`, fixed for every slice so the run does not vary on priority bucketing. |
-| 3b-G2 | **Approval Request** — audited drafts + coverage map, "Halt until user approves" | `3b:58` | `policy:confirm` → yes. This is the one hard halt in `3b`. |
+| 3b-G1 | Phase 2.2 ICE — Impact, Confidence, Effort per slice; **HALT** for Impact + Confidence when ODI is absent (never inferred) | `3b:34-50` | `policy:ice` → Impact 1.0, Confidence 80%, `size:small`, `mode:AFK`, fixed for every slice so the run does not vary on priority bucketing. |
+| 3b-G2 | **Approval Request** — audited drafts + coverage map, "Halt until user approves" | `3b:58` | `policy:confirm` → yes. The main approval halt in `3b`; the other HALTs (G1 fallback, G6) fire only on missing data or a drafting leak. |
 | 3b-G3 | `[UNCOVERED]` resolution — add slice / defer / confirm out of scope | `3b:56-57` | `policy:confirm`. A `[RESEARCH-GAP]` or **spec defect** routed to `/2c-reconcile-specs` is NOT answerable by policy: it is a finding, and the run records it. |
-| 3b-G4 | Missing label → propose adding to the registry, await confirmation | `3b:76` | `policy:confirm` → yes. |
+| 3b-G4 | Missing label → propose adding to the registry, await confirmation | `3b:77` | `policy:confirm` → yes. |
 | 3b-G5 | Phase 3.6 terminal sync — non-zero → heal and re-run, **at most 3 attempts** | `3b:71` | Not a user gate. Bounded at the source since D3; the harness caps heal attempts as well (Slice 5) and fails by name rather than spinning. |
-| 3b-G6 | Phase 3.3 pre-mint guard — a `BT-<…>` or `[[X-xxx]]` placeholder in the drafts → **HALT**; sibling references → state a mint order (cycle → HALT) | `3b:66` | Not answerable by policy: a hit is a drafting leak and the run records it as a `stratos` finding. A clean draft never reaches this gate. |
+| 3b-G6 | Phase 3.3 pre-mint guard — (a) any placeholder other than a sibling `BT-<slice:N>` → **HALT**; (b) sibling refs → state a mint order (cycle → HALT); (c) per-slice strict re-check before each mint → **HALT** on any remaining placeholder | `3b:66` | Not answerable by policy: a hit is a drafting leak or a mint-order error, recorded as a `stratos` finding. Sibling `BT-<slice:N>` refs are expected and pass (a); a correct order substitutes them before (c). |
 
 ---
 

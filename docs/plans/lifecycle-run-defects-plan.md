@@ -104,5 +104,6 @@ Per-file OKF bumps for touched `src/` files (validate.py fork-point baseline), `
 - **C3:** also corrected okf-protocol's example of excluded `docs/**/*.html`, which named `docs/ROADMAP.html`.
 - **C7:** reversed from the draft (see C7). v4 had already fixed the template-version leak by splitting template and artifact frontmatter.
 - **Versions:** files v4 had already bumped above v3.3.0 keep v4's number (plan-html 1.2.0, okf 2.0.0, BACKLOG_MAP 1.3.0, setup 1.1.0, 2c 1.1.0). Otherwise minor, since each change alters behavior: 0b 1.2.0, 1b 1.2.0, 2a 1.4.0, 2b 1.4.0, 3a 1.2.0, 3b 2.4.0.
+- **Review follow-ups (independent judge):** (1) 3b's guard as drafted halted on the sibling placeholders the mint order exists to resolve. Sibling refs now use a defined `BT-<slice:N>` form: a whole-file check tolerates only that form, and a strict per-slice check runs before each mint. (2) 2b routes to `/3a` only when 3a's scale-gate would also act (no milestone **and** ≥ 1 other unassigned epic, or contention); a lone feature goes straight to `/3b`. Also: the sh installer now includes dot-dirs (`.claude-plugin/`), matching the ps1.
 - **Gate inventory:** new HALT/confirm points are registered in `tests/lifecycle-harness/gates.md`.
 - **Consumer migration** (goes in PR #107's body): `git rm --cached docs/prds/*.html docs/discovery/*.html docs/ROADMAP.html`.
