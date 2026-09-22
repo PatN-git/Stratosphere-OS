@@ -201,9 +201,9 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "f67ecb1ddb041a57084bd0526233aed8bb16ac72cce5161aa69efebfdbc33c6d",
-      "timestamp": "2026-07-28",
-      "version": "2.3.0"
+      "sha256": "3388062cf8b3b12b0b3b36c70ee8a4f8b1427cf15c083c832e29fcba066e080f",
+      "timestamp": "2026-09-22",
+      "version": "2.4.0"
     },
     "skills/3b-create-issue/references/confidence-scale.md": {
       "sha256": "756bf8c4234ac41ca9a410c43454b18682819135289dc3b0de68908db7a1d323",
