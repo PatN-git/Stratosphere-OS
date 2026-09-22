@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
-timestamp: 2026-07-24
+version: "1.2.0"
+timestamp: 2026-09-22
 ---
 
 # Concept framing
@@ -138,7 +138,7 @@ Present brief for approval.
 1. Write `docs/discovery/<slug>.md` using semantic slug; no `BT-<n>`.
 2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder), each with its `Avoid:` list. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
 3. If framing decision is reusable, propose `[[L-xxx]]` for `.memory/LEARNINGS.md`.
-4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render `docs/discovery/<slug>.html`.
+4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/discovery/<slug>.html` (never committed; re-render from the `.md` whenever presenting it).
 5. Delete `.tmp/1b-discovery-<slug>.work.md`.
 6. Guide user to next step: `/2a-write-prd`, `/3b-create-issue` (Template A/B), or dropped.
 

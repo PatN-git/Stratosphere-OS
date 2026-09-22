@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-07-24
+version: "1.4.0"
+timestamp: 2026-09-22
 ---
 
 # Write PRD
@@ -92,7 +92,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
    | BT-<padded> | <Feature name> | needs_spec | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |
    ```
    Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a-version-planning` owns MAJOR.MINOR and may reassign, `/3c-sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
-6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render `docs/prds/BT-<padded>-<feature-name>.html`.
+6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/prds/BT-<padded>-<feature-name>.html` (never committed; re-render from the `.md` whenever presenting it).
 7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b-interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it)."*
 
 ---

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-07-24
+version: "1.2.0"
+timestamp: 2026-09-22
 ---
 
 # Version Planning
@@ -65,8 +65,8 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 2. **GitHub:** if disconnected, skip. Create milestones vX.Y.0 in GitHub, assign parent issues, and update BACKLOG_MAP Milestone column (do not touch leaf slices).
 3. **Comment:** post release placement and rationale on each assigned parent feature issue.
 4. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of assigned parent BT-<padded>> --fields milestone` per `references/terminal-sync-invariant.md` (verifies each roadmapped epic's milestone mirror only — 3a writes no other field). Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
-5. **Render:** invoke `plan-html` using `board` or `plan-document` to render read-only `docs/ROADMAP.html`.
-6. **Commit & Push Doc:** `git add docs/ROADMAP.md docs/ROADMAP.html && git commit -m "docs: roadmap"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). The roadmap is the cross-feature product changelog re-read by `/3a-version-planning` on default (Phase 2 "Live product" marker) — committing here keeps its `[SHIPPED]`/numbering baseline durable across a fresh clone or session. Never sweep unrelated drift into this commit.
+5. **Render:** invoke `plan-html` using `board` or `plan-document` to render the read-only ephemeral companion `.tmp/render/docs/ROADMAP.html` (never committed; re-render from the `.md` whenever presenting it).
+6. **Commit & Push Doc:** `git add docs/ROADMAP.md && git commit -m "docs: roadmap"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). The roadmap is the cross-feature product changelog re-read by `/3a-version-planning` on default (Phase 2 "Live product" marker) — committing here keeps its `[SHIPPED]`/numbering baseline durable across a fresh clone or session. Never sweep unrelated drift into this commit.
 7. **Cleanup:** delete `.tmp/3a-roadmap.work.md`.
 8. **Hand-off:** *"Roadmap updated. Current release features ready to slice (run `/3b-create-issue`)."*
 

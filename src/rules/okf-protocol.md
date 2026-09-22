@@ -7,7 +7,7 @@ paths:
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
 version: "2.0.0"
-timestamp: 2026-09-15
+timestamp: 2026-09-22
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -117,7 +117,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
 - **Directory `index.md` files** (e.g. `.memory/index.md`, `docs/prds/index.md`): Used for progressive disclosure. These files must **not** carry frontmatter and are listings only.
 - **`log.md`**: If present, carries change history. It must not contain frontmatter.
-- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (e.g. `docs/ROADMAP.html`, rendered PRDs), `docs/audits/.last-run.json`, and `.memory/*.jsonl` (e.g. `jules-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
+- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (e.g. `docs/design/BT-<n>-directions.html`; companion renders live in `.tmp/render/`, never `docs/`), `docs/audits/.last-run.json`, and `.memory/*.jsonl` (e.g. `jules-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
 
 ## 5. Version Semantics
 - **System/Template Files**: Stamped at build time by `build/build.py` based on the system `VERSION` constant.

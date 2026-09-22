@@ -61,8 +61,8 @@
       "version": "2.0.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "9b76d285ecaf1d0da1d7cb437fd0589c33a352b7e351cc766dc3906e237eacdc",
-      "timestamp": "2026-09-15",
+      "sha256": "da15c62eb6036bce9cf8eb86e7f589e21ea2f8d5f0d27d87412f5fecb048cf59",
+      "timestamp": "2026-09-22",
       "version": "2.0.0"
     },
     "assets/templates/rules/output-mode.md": {
@@ -116,9 +116,9 @@
       "version": "2.1.1"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "293038c6d00fb2fe5550010ba4464c1c92d15f4295fcbef6fa3b0a3511a05ebd",
-      "timestamp": "2026-07-24",
-      "version": "1.1.1"
+      "sha256": "52d2813ed7ff507f4b462f1bea1729c27041141548fceec6d7a44db31e1eb7a7",
+      "timestamp": "2026-09-22",
+      "version": "1.2.0"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
       "sha256": "ba3e7f491668df585d8c48ac61e33a1df574b419d2ed5a1499d967d9b43d86f0",
@@ -151,9 +151,9 @@
       "version": "1.0.0"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "e2d7d45f015fbcb0c6f2a191037a1d338ba363a00332894ad66db89a43ccb82e",
-      "timestamp": "2026-07-24",
-      "version": "1.3.0"
+      "sha256": "57d162459151282e306e70a34c55060b1b840cb17b1da237098033a90aa74819",
+      "timestamp": "2026-09-22",
+      "version": "1.4.0"
     },
     "skills/2a-write-prd/references/PRD-template.md": {
       "sha256": "8a6423c2c242015f8cfef12bcff919dbb829974fe868ba00ee780a2650fdde4d",
@@ -186,9 +186,9 @@
       "version": "1.1.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "6aa9d479ba3fc7fdb2c4f5d078c16721de629ec94508849235b4e38d00a71490",
-      "timestamp": "2026-07-24",
-      "version": "1.1.0"
+      "sha256": "613942903ad18f292d78d8588db0d7bd145a2c9424b948991b15b262bc96bdb1",
+      "timestamp": "2026-09-22",
+      "version": "1.2.0"
     },
     "skills/3a-version-planning/references/ROADMAP-template.md": {
       "sha256": "4ec8a92ed4e547aa1cd1f9fa94c6223a523678b15b684c17686daa82f4d38905",
@@ -346,7 +346,7 @@
       "version": "1.2.0"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "dd21d860af4379cf0171b84f2b3f6697cf01b0b6ba8280b3918c3d4090fdc916",
+      "sha256": "1a7087c5e811bfa618e7c1b7e8e73c3e7fd4b389bec7774a8e80d268e3d7a00b",
       "timestamp": "2026-09-22",
       "version": "1.2.0"
     },

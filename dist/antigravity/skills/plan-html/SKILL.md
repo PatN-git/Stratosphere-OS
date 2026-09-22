@@ -42,7 +42,8 @@ If no template fits → **custom-composition mode**: compose using primitives fr
 - Write to a standalone `.html` file at the path the caller specifies.
 - Convention by lifespan:
   - **ephemeral** artifacts (decision aids, editors, throwaway comparisons) → `.tmp/` (gitignored) or OS temp;
-  - **durable** artifacts (tied to a feature/decision) → beside the artifact they document (e.g. `docs/design/…`).
+  - **companions** (an HTML view of a committed `.md`: PRD, discovery brief, roadmap) → `.tmp/render/<source path>.html`. Never commit a companion and never present an existing render: regenerate it from the current `.md` each time, so it cannot drift from its source.
+  - **durable** standalone artifacts (no `.md` source, tied to a feature/decision) → beside the artifact they document (e.g. `docs/design/…`).
   - Invoking workflows set the concrete path (e.g. `2b` → `docs/design/BT-<n>-directions.html`). The skill stays path-agnostic.
 - First line must be the token header:
   `<!-- plan-html | md-equivalent: ~<N> lines | html: ~<N> lines | ratio: <N>x | justified: <reason> -->`
