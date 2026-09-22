@@ -83,11 +83,12 @@ The refutation subagent (`1a:78`) is Phase 2 only, so it does not run here (fact
 
 | # | Gate | Source | Answer |
 |:--|:---|:---|:---|
-| 3b-G1 | Phase 2.2 ICE — Impact, Confidence, Effort per slice | `3b:61-65` | `policy:ice` → Impact 1.0, Confidence 80%, `size:small`, `mode:AFK`, fixed for every slice so the run does not vary on priority bucketing. |
+| 3b-G1 | Phase 2.2 ICE — Impact, Confidence, Effort per slice; **HALT** for Impact + Confidence when ODI is absent (never inferred) | `3b:35-52` | `policy:ice` → Impact 1.0, Confidence 80%, `size:small`, `mode:AFK`, fixed for every slice so the run does not vary on priority bucketing. |
 | 3b-G2 | **Approval Request** — audited drafts + coverage map, "Halt until user approves" | `3b:58` | `policy:confirm` → yes. This is the one hard halt in `3b`. |
 | 3b-G3 | `[UNCOVERED]` resolution — add slice / defer / confirm out of scope | `3b:56-57` | `policy:confirm`. A `[RESEARCH-GAP]` or **spec defect** routed to `/2c-reconcile-specs` is NOT answerable by policy: it is a finding, and the run records it. |
 | 3b-G4 | Missing label → propose adding to the registry, await confirmation | `3b:76` | `policy:confirm` → yes. |
-| 3b-G5 | Phase 3.5 terminal sync — non-zero → heal and re-run, **at most 3 attempts** | `3b:70` | Not a user gate. Bounded at the source since D3; the harness caps heal attempts as well (Slice 5) and fails by name rather than spinning. |
+| 3b-G5 | Phase 3.6 terminal sync — non-zero → heal and re-run, **at most 3 attempts** | `3b:71` | Not a user gate. Bounded at the source since D3; the harness caps heal attempts as well (Slice 5) and fails by name rather than spinning. |
+| 3b-G6 | Phase 3.3 pre-mint guard — a `BT-<…>` or `[[X-xxx]]` placeholder in the drafts → **HALT**; sibling references → state a mint order (cycle → HALT) | `3b:66` | Not answerable by policy: a hit is a drafting leak and the run records it as a `stratos` finding. A clean draft never reaches this gate. |
 
 ---
 
@@ -116,12 +117,14 @@ The refutation subagent (`1a:78`) is Phase 2 only, so it does not run here (fact
 | # | Gate | Source | Answer |
 |:--|:---|:---|:---|
 | 0b-G1 | Parent epic `done` confirmation when every sibling is closed | `0b:26` | `policy:confirm`. Nothing merges in an L3 run, so this should not fire. |
-| 0b-G2 | Glossary term agreed → add `[[G-xxx]]`, offer a module-scoped retrofit | `0b:30` | `policy:confirm` → yes; the retrofit offer is propose-only. |
-| 0b-G3 | Structural `[LAW]` change → propose, add `[[A-xxx]]` on confirmation | `0b:32-33` | `policy:confirm` → yes. |
-| 0b-G4 | UI structural / brand token changes | `0b:35` | `policy:confirm`, but it should not fire on a non-UI fixture — if it does, the same leak `2b-G4` watches for has reached `0b`, and that is a finding. |
-| 0b-G5 | Memory lint — propose fixes, list warnings, **await confirmation** | `0b:36` | `policy:confirm` → yes. |
+| 0b-G2 | Glossary term agreed → propose `[[G-xxx]]`, add on confirmation, offer a module-scoped retrofit | `0b:32` | `policy:confirm` → yes; the retrofit offer is propose-only. |
+| 0b-G3 | Structural `[LAW]` change → propose, add `[[A-xxx]]` on confirmation | `0b:33-35` | `policy:confirm` → yes. |
+| 0b-G4 | UI structural / brand token changes | `0b:38` | `policy:confirm`, but it should not fire on a non-UI fixture — if it does, the same leak `2b-G4` watches for has reached `0b`, and that is a finding. |
+| 0b-G5 | Memory lint — propose fixes, list warnings, **await confirmation** | `0b:39` | `policy:confirm` → yes. |
+| 0b-G6 | Durable lesson → durability gate, then propose `[[L-xxx]]` text, write on confirmation | `0b:29-31` | `policy:confirm` → yes. A lesson failing the durability gate goes to the issue or `STATUS.md` with no prompt. |
+| 0b-G7 | New `[[A-xxx]]` codifies a step-4 learning → propose superseding it | `0b:36` | `policy:confirm` → yes. |
 
-`0b:53` makes this explicit: crystallization, supersession and lint fixes all require user
+`0b:56` makes this explicit: crystallization, supersession and lint fixes all require user
 confirmation, so `0b` is the most gate-dense phase after `1b`.
 
 ---
