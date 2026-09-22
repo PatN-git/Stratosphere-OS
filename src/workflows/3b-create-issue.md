@@ -43,7 +43,7 @@ Run the `load-memory` skill to restore session context (read-only).
      - `[HIGH]` → `100%`
      - `[MEDIUM]` → `80%`
      - `[LOW]` → `50%`
-    - **Fallback (ODI absent):** Prompt user for Impact and Confidence:
+    - **Fallback (ODI absent): HALT** and ask the user for Impact and Confidence; never infer them (an inferred value can move the priority bucket). Resume drafting only after both are given:
       - **Impact:** ∈ {0.25 (min), 0.5 (low), 1.0 (med), 2.0 (high), 3.0 (crit)}
       - **Confidence:** ∈ {50% (guess), 80% (high), 100% (certain)}
    - Prompt for **Size** (Effort):
