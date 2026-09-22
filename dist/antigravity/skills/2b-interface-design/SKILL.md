@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-07-24
+version: "1.4.0"
+timestamp: 2026-09-22
 ---
 
 # Interface Design
@@ -100,7 +100,7 @@ Run the `load-memory` skill to restore session context (read-only).
 2. **Commit & Push Doc:** `git add docs/design/BT-<padded>-interface.md && git commit -m "docs(BT-<padded>): interface design"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). Never sweep unrelated drift into this commit.
 3. Append design doc link to parent GitHub Issue body.
 4. Append memory IDs to Ref column in `BACKLOG_MAP.md` (never put design doc path in Ref column).
-5. Handoff: "Interface design complete. If ≥ 2 unassigned `tier:epic` features (`status != done`) now sit in the backlog, or ≥ 2 features contend for the current release's scope, run `/3a-version-planning` to place this on the roadmap first; otherwise run `/3b-create-issue` to slice."
+5. Handoff — route on whether this feature's `MAJOR.MINOR` is decided (3a is the only writer of an epic's GitHub milestone; the BACKLOG milestone 2a writes is provisional). Undecided = parent has no GitHub milestone (`gh issue view <n> --json milestone` → `null`; offline: `BT-<padded>` absent from `docs/ROADMAP.md`), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first." Otherwise → "Interface design complete. Run `/3b-create-issue` to slice." (A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.)
 
 ---
 
