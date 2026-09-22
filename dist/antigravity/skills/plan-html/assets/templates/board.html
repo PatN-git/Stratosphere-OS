@@ -133,13 +133,14 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
 function initTheme(){
-  const saved = localStorage.getItem('plan-theme') || 'system';
+  let saved = 'system';
+  try { saved = localStorage.getItem('plan-theme') || 'system'; } catch(e) {}
   const select = document.getElementById('theme-select');
   if(select) select.value = saved;
   applyTheme(saved);
 }
 function changeTheme(theme){
-  localStorage.setItem('plan-theme', theme);
+  try { localStorage.setItem('plan-theme', theme); } catch(e) {}
   applyTheme(theme);
 }
 function applyTheme(theme){
@@ -169,8 +170,7 @@ function toggleNotesPanel() {
     panel.style.display = isHidden ? 'flex' : 'none';
   }
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  initTheme();
+function bootPlan(){
   // Record original column states
   const data = planData();
   (data.cards || []).forEach(c => {
@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
   renderBody(data);
+  try { initTheme(); } catch(e) {}
 
   const layout = document.querySelector('.board-layout');
   if (layout) {
@@ -220,7 +221,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
     });
   }
-});
+}
 
 const originalColumns = {};
 
@@ -312,6 +313,7 @@ function toMarkdown(data) {
   }
   return md.trim();
 }
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bootPlan);}else{bootPlan();}
 </script>
 </body>
 </html>

@@ -96,7 +96,7 @@ function planData(){return JSON.parse(document.getElementById('plan-data').textC
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
-document.addEventListener('DOMContentLoaded',()=>{
+function bootPlan(){
   // Record original column states
   const data = planData();
   (data.cards || []).forEach(c => {
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
   renderBody(data);
-});
+}
 
 const originalColumns = {};
 
@@ -205,6 +205,7 @@ function toMarkdown(data) {
   });
   return md.trim();
 }
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bootPlan);}else{bootPlan();}
 </script>
 </body>
 </html>

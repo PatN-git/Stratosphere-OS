@@ -4,7 +4,7 @@ description: Use when presenting a complex or spatial plan to a human — roadma
 metadata:
   stratos.layer: execution
 version: "1.2.0"
-timestamp: 2026-06-25
+timestamp: 2026-09-22
 ---
 
 # Decision Gate (Four-Scenario)
@@ -51,6 +51,7 @@ If no template fits → **custom-composition mode**: compose using primitives fr
 # State Persistence
 - Embed current state in `<script id="plan-data" type="application/json">` as the single source of truth.
 - On load: `renderBody(planData())` constructs the DOM dynamically. Do not duplicate state in DOM and script.
+- Boot resilience: storage and theme code must never gate rendering. Wrap every `localStorage` access in try/catch (it throws in `data:` URLs, private windows, blocked site data); call `renderBody` before `initTheme`; dispatch via `document.readyState` (not `DOMContentLoaded` alone) as the last line of the script, after every function it calls.
 - On update:
   1. Read existing `<script id="plan-data">` to restore context.
   2. Merge changes, rewrite file.

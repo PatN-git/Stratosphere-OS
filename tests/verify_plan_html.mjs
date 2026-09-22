@@ -587,6 +587,109 @@ try {
   assert('Parser: successfully rejects non-existent card', true);
 }
 
+// ─── 4. Boot-Path Resilience ────────────────────────────────────────────────
+// Runs each page's real bootstrap (not renderBody directly) where storage throws
+// (data: URL, private window, blocked site data) and where DOMContentLoaded has
+// already fired. Either condition must still render content.
+console.log('\n[4] Boot-Path Resilience');
+
+const templatesDir = path.join(rootDir, 'src/skills/plan-html/assets/templates');
+// Templates ship with empty plan-data; boot them with a matching fixture's state.
+const TEMPLATE_FIXTURE = {
+  'board.html': 'triage-board.html',
+  'trade-off-matrix.html': 'db-options-matrix.html',
+  'plan-document.html': 'complex-plan-document.html',
+};
+const planDataRegex = /<script\s+id="plan-data"\s+type="application\/json">([\s\S]*?)<\/script>/;
+
+function pageScript(html) {
+  const scriptRegex = /<script>([\s\S]*?)<\/script>/g;
+  let m;
+  while ((m = scriptRegex.exec(html)) !== null) {
+    if (m[1].includes('renderBody')) return m[1];
+  }
+  return '';
+}
+
+// Permissive DOM: any id or selector resolves to an element created on demand.
+function bootPage(script, planJson, { storageThrows, readyState }) {
+  const created = new Map();
+  const get = (key) => {
+    if (!created.has(key)) {
+      const attrs = key.startsWith('#') ? { id: key.slice(1) } : key.startsWith('.') ? { class: key.slice(1) } : {};
+      created.set(key, new MockElement('div', attrs));
+    }
+    return created.get(key);
+  };
+  // A browser fires DOMContentLoaded only if the page registered while still loading.
+  const dcl = [];
+  const on = (event, fn) => { if (event === 'DOMContentLoaded') dcl.push(fn); };
+  const context = {
+    document: {
+      readyState,
+      documentElement: get('html'),
+      body: get('body'),
+      getElementById: (id) => (id === 'plan-data' ? { textContent: planJson } : get(`#${id}`)),
+      querySelector: (sel) => get(sel),
+      querySelectorAll: (sel) => [...created.values()].flatMap((el) => el.querySelectorAll(sel)),
+      addEventListener: on,
+    },
+    window: { addEventListener: on, getComputedStyle: () => ({ display: 'none' }), scrollTo: () => {} },
+    addEventListener: on,
+    navigator: { clipboard: { writeText: () => Promise.resolve() } },
+    setTimeout: () => 0,
+    IntersectionObserver: class { observe() {} unobserve() {} disconnect() {} },
+    console: { log: () => {}, error: () => {} },
+  };
+  // Blocked storage: omit the global so any access throws (ReferenceError here,
+  // SecurityError in a browser; same control flow). vm ignores sandbox accessors.
+  if (!storageThrows) context.localStorage = { getItem: () => null, setItem: () => {} };
+  vm.createContext(context);
+  let error = null;
+  try {
+    vm.runInContext(script, context);
+    if (readyState === 'loading') dcl.forEach((fn) => fn());
+  } catch (e) { error = e; }
+  const rendered = [...created.values()].reduce((n, el) => n + String(el.innerHTML).length + String(el.textContent).length, 0);
+  const spySections = context.document.querySelectorAll('.spy-section').length;
+  return { error, rendered, spySections };
+}
+
+const bootTargets = [
+  ...fs.readdirSync(templatesDir).filter((f) => f.endsWith('.html')).map((f) => ({
+    label: `template ${f}`,
+    html: fs.readFileSync(path.join(templatesDir, f), 'utf-8'),
+    stateFrom: path.join(outputDir, TEMPLATE_FIXTURE[f] || f),
+    isPlanDocument: f === 'plan-document.html',
+  })),
+  ...mockFiles.map((f) => ({
+    label: `fixture ${f}`,
+    html: fs.readFileSync(path.join(outputDir, f), 'utf-8'),
+    stateFrom: path.join(outputDir, f),
+    isPlanDocument: f === 'complex-plan-document.html',
+  })),
+];
+
+const scenarios = [
+  { name: 'storage throws, DOM still loading', storageThrows: true, readyState: 'loading' },
+  { name: 'DOMContentLoaded already fired', storageThrows: false, readyState: 'complete' },
+  { name: 'storage throws + already loaded', storageThrows: true, readyState: 'interactive' },
+];
+
+bootTargets.forEach(({ label, html, stateFrom, isPlanDocument }) => {
+  const stateMatch = fs.existsSync(stateFrom) && fs.readFileSync(stateFrom, 'utf-8').match(planDataRegex);
+  if (!stateMatch) {
+    assert(`Boot: fixture state available for ${label}`, false);
+    return;
+  }
+  const script = pageScript(html);
+  scenarios.forEach((sc) => {
+    const result = bootPage(script, stateMatch[1], sc);
+    const ok = !result.error && result.rendered > 0 && (!isPlanDocument || result.spySections > 0);
+    assert(`Boot [${sc.name}]: ${label} renders content${result.error ? ` (threw: ${result.error.message})` : ''}`, ok);
+  });
+});
+
 if (failed) {
   console.log('\n=== Behavioral Verification FAILED ===');
   process.exit(1);

@@ -133,7 +133,9 @@
     function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
     function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
     function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
-    document.addEventListener('DOMContentLoaded',()=>{renderBody(planData());if(typeof afterRender==='function')afterRender(planData());});
+    function bootPlan(){renderBody(planData());if(typeof afterRender==='function')afterRender(planData());}
+    // Define renderBody / toMarkdown / afterRender above this line, in this same <script>. Keep the dispatch last.
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bootPlan);}else{bootPlan();}
   </script>
 </body>
 </html>
