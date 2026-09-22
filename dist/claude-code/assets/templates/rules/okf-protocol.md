@@ -122,6 +122,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 ## 5. Version Semantics
 - **System/Template Files**: Stamped at build time by `build/build.py` based on the system `VERSION` constant.
 - **Generated Docs** (e.g., PRDs, designs created by workflows): Stamped at generation time with the installed plugin version read from the manifest `plugin.json`. If the manifest cannot be resolved at runtime, the `version` field is omitted (since `type` is the only strict conformance requirement).
+- **Edited Docs** (a generated doc changed by a later run, e.g. `2c` reconciliation or an expand-mode re-run): re-stamp `version` to the installed plugin version and refresh `generated.at` (and `generated.by` to the editing workflow), once per run. `version` records the plugin that last wrote the doc; it is not a document revision, so never apply patch/minor increments to it.
 - **Exemptions**: `DESIGN.md` is exempt from automatic version stamping to prevent conflicts with the Google DESIGN.md specification.
 
 ## 6. Inbound External Bundles (`docs/knowledge/`)

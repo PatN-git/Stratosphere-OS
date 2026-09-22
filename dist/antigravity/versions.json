@@ -61,7 +61,7 @@
       "version": "2.0.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "da15c62eb6036bce9cf8eb86e7f589e21ea2f8d5f0d27d87412f5fecb048cf59",
+      "sha256": "3f016bfb47a61b7d0c2a9ff9024c851d189db3370cad3087e2d52c588613f5d6",
       "timestamp": "2026-09-22",
       "version": "2.0.0"
     },
@@ -176,8 +176,8 @@
       "version": "2.0.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "4ac428ddac2d7703a75d53856ec60c84adc1778ec32423d676a8dd10f7d3ccc5",
-      "timestamp": "2026-07-28",
+      "sha256": "cb493fb4c9e39d4934390a76c319740b51d6fad740f9f7c8bdde236402d6c8b4",
+      "timestamp": "2026-09-22",
       "version": "1.1.0"
     },
     "skills/2c-reconcile-specs/references/confidence-scale.md": {
