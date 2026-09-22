@@ -7,7 +7,7 @@ metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
 version: "1.1.0"
-timestamp: 2026-07-28
+timestamp: 2026-09-22
 ---
 
 # Instantiate StratosphereOS
@@ -213,7 +213,7 @@ GitHub labels are ground truth for the `area:` dimension — the same principle 
 No GitHub labels exist yet.
 1. Create every label in the canonical registry verbatim in GitHub.
 2. No user confirmation required — no conflicts possible.
-3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry` while preserving all operational bullet points (such as label syncing rules and the `Milestone` definition line).
+3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry` while preserving all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
 
 ### Brownfield
 GitHub labels already exist and may differ from the registry.
@@ -248,7 +248,7 @@ GitHub labels already exist and may differ from the registry.
 
 5. **Execute** confirmed changes in GitHub.
 
-6. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes the single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line).
+6. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes the single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
 
 ### GitHub Project & Board Setup (both paths)
 1. **Programmatic Check:** Before prompting or setting up, search for any existing Project V2 board for the owner by running `gh project list --owner <owner>`. If a board is detected, query its fields (`gh project view <number> --owner <owner> --json fields`) to verify if the `Status` single-select field is configured.
