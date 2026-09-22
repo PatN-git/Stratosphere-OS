@@ -76,9 +76,9 @@
       "version": "1.1.1"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "d780c8d060a59639d9b7c72bbcbc7cd2a2c85e598cee42fb7009220864269697",
-      "timestamp": "2026-07-28",
-      "version": "1.1.1"
+      "sha256": "5b79b49f05ce4940757a80f11d1c7788853207dc512abe2c9ca463c54c216941",
+      "timestamp": "2026-09-22",
+      "version": "1.2.0"
     },
     "skills/0b-stop-session/references/github-issue-relations.md": {
       "sha256": "48d20cf47b2be26e16b52572ae67b67ada4ee3c79cc3c7d0de529e39282aac3e",

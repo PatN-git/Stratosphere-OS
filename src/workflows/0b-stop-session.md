@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
-timestamp: 2026-07-28
+version: "1.2.0"
+timestamp: 2026-09-22
 ---
 
 # STOP SESSION
@@ -26,11 +26,14 @@ Leave next session with context to resume immediately. Ensure new entries are ta
     - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed. For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (`removeBlockedBy` mutation per `references/github-issue-relations.md`; safety net for the 4a in-review clearing). Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge. If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`.
 2. Update `.memory/STATUS.md` (last sync, current branch, active issue, current focus, completed, blockers, next step).
 3. Evaluate session reasoning for inefficiencies. If systemic tool/agent failure, flag the specific `.agents/skills/` or `.agents/workflows/` path for optimization (do not log learning).
-4. If durable lesson discovered, add to `.memory/LEARNINGS.md` (assign next `[[L-xxx]]`, apply default tag `[ASSUMED]`, cross-reference `Source: BT-xxx`).
-5. If term agreed, add to `.memory/GLOSSARY.md` (assign next `[[G-xxx]]`, default tag `[ASSUMED]`, record rejected synonyms in `Avoid:` — same as 1b; if an `Avoid:` synonym likely already appears in code, offer the same one-time, module-scoped retrofit (propose-only); cross-reference `Source`).
+4. If durable lesson discovered:
+   - **Durability gate:** *Would this still be true after the work that prompted it ships?* If no (a current defect, a pending fix, in-flight state) → record it in the issue or `STATUS.md`, not `LEARNINGS.md`.
+   - Propose the full entry text (next `[[L-xxx]]`, default tag `[ASSUMED]`, `Source: BT-xxx`); write to `.memory/LEARNINGS.md` only on confirmation. Never self-write.
+5. If term agreed, propose the entry and add to `.memory/GLOSSARY.md` on confirmation (assign next `[[G-xxx]]`, default tag `[ASSUMED]`, record rejected synonyms in `Avoid:` — same as 1b; if an `Avoid:` synonym likely already appears in code, offer the same one-time, module-scoped retrofit (propose-only); cross-reference `Source`).
 6. If architecture changed:
    - Propose structural `[LAW]` changes; never self-write to `ARCHITECTURE.md`.
    - On confirmation, add `[[A-xxx]]` entry (follow supersession protocol).
+   - If a step-4 learning is now codified by the new `[[A-xxx]]`, propose superseding it (`[[L-xxx]]` → `[[A-xxx]]`); apply on confirmation.
 7. If DB schema or understanding changed, update `.memory/DATABASE_SCHEMA.md` (always `[LAW]`).
 8. Propose UI structural (`[[DR-xxx]]`/immortal component) or brand token changes before updating `DESIGN_RULES.md`/`DESIGN.md`.
 9. Run codebase verification tests, then run memory lint: `python .agents/scripts/validate_memory.py`. Propose fixes for any reported errors, list warnings, and await confirmation.
@@ -43,7 +46,7 @@ Session complete.
 - Files touched:
 - GitHub issues touched:
 - Verification & Lint results:
-- New learnings (with IDs and tags):
+- New learnings (ID, tag, one-line text):
 - New glossary terms (with IDs and tags):
 - Blockers:
 - Next immediate step:
