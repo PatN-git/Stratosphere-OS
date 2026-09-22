@@ -64,23 +64,31 @@ COMMANDS_DIR="$CLAUDE_DIR/commands"
 SKILLS_DIR="$CLAUDE_DIR/skills"
 PLUGINS_DIR="$CLAUDE_DIR/plugins/stratosphere-os"
 
-# Create directories
-mkdir -p "$COMMANDS_DIR"
-mkdir -p "$SKILLS_DIR"
+# Replace each shipped entry wholesale (drops stale files inside it, e.g. a
+# template removed upstream) while preserving foreign entries in shared dirs.
+overlay() {  # overlay <src-dir> <dest-dir>
+    mkdir -p "$2"
+    for item in "$1"/*; do
+        [ -e "$item" ] || continue
+        rm -rf "$2/$(basename "$item")"
+        cp -rf "$item" "$2/"
+    done
+}
+
+[ -d "$BUILD_DIR/commands" ] && overlay "$BUILD_DIR/commands" "$COMMANDS_DIR"
+[ -d "$BUILD_DIR/skills" ] && overlay "$BUILD_DIR/skills" "$SKILLS_DIR"
+
+# Stage full plugin to plugins/stratosphere-os/ (skills/ merged per skill).
 mkdir -p "$PLUGINS_DIR"
-
-# Copy commands
-if [ -d "$REPO_ROOT/dist/claude-code/commands" ]; then
-    cp -rf "$REPO_ROOT/dist/claude-code/commands/"* "$COMMANDS_DIR/"
-fi
-
-# Copy skills
-if [ -d "$REPO_ROOT/dist/claude-code/skills" ]; then
-    cp -rf "$REPO_ROOT/dist/claude-code/skills/"* "$SKILLS_DIR/"
-fi
-
-# Stage full plugin to plugins/stratosphere-os/
-cp -rf "$REPO_ROOT/dist/claude-code/"* "$PLUGINS_DIR/"
+for item in "$BUILD_DIR"/*; do
+    name="$(basename "$item")"
+    if [ "$name" = "skills" ] && [ -d "$item" ]; then
+        overlay "$item" "$PLUGINS_DIR/skills"
+    else
+        rm -rf "$PLUGINS_DIR/$name"
+        cp -rf "$item" "$PLUGINS_DIR/"
+    fi
+done
 
 # v4 retired two top-level bundle dirs. The overlay only replaces what the CURRENT
 # bundle ships, so a dir we no longer ship is never touched and its stale v3 contents
