@@ -1,6 +1,6 @@
 # Plan — Unified Audit Pipeline: Report → Proposal → Maintenance Epic (4b + 4c → 3b)
 
-**Status:** Approved for implementation. Not yet implemented.
+**Status:** Approved for implementation (rev 2 — PR #107 review fixes applied). Not yet implemented.
 **Branch:** `feat/spec-conformance-v4` — ships **inside PR #107** (v4.0.0). Build directly on that branch; no separate PR.
 **Targets:**
 
@@ -8,16 +8,18 @@
 |---|---|
 | `src/references/audit-to-slices.md` | **new** 1.0.0 |
 | `src/references/arch-drift-report-template.md` | **new** 1.0.0 |
-| `src/references/health-audit-report-template.md` | 2.0.0 → 2.1.0 |
-| `src/references/feature-acceptance-audit.md` | 1.0.1 → 1.1.0 |
+| `src/references/health-audit-report-template.md` | stays **2.0.0** (already bumped 1.0.0 → 2.0.0 in #107) |
+| `src/references/feature-acceptance-audit.md` | stays **1.0.1** (new in #107, unreleased) |
 | `src/workflows/4b-audit-architecture-drift.md` | 1.0.9 → 1.1.0 |
 | `src/workflows/4c-codebase-health-audit.md` | 1.0.0 → 1.1.0 |
-| `src/workflows/3b-create-issue.md` | 2.4.0 → 2.5.0 |
+| `src/workflows/3b-create-issue.md` | stays **2.4.0** (already bumped 2.3.0 → 2.4.0 in #107) |
 | `src/workflows/0d-nightly-consolidation.md` | 1.1.2 → 1.1.3 |
 | `README.md` (lifecycle table row 4 only) | — |
 | `tests/test_audit_pipeline.py` | **new** |
 
 Plugin `VERSION` in `build/build.py` stays **4.0.0** — this lands in the same release.
+
+**Version rule (once per PR).** `build/validate.py` measures bumps against the PR fork point (`git merge-base HEAD origin/main`). A file already bumped above its fork version in #107 takes **no further bump**; a file unchanged since the fork takes exactly one. Refresh `timestamp` on every edited file regardless.
 
 ---
 
@@ -25,9 +27,11 @@ Plugin `VERSION` in `build/build.py` stays **4.0.0** — this lands in the same 
 
 - **What you are editing.** StratOS lifecycle skills. Sources live in `src/workflows/*.md` (lifecycle skills) and `src/references/*.md` (shared references). **Never hand-edit `dist/`** — `python build/build.py` regenerates it.
 - **How references ship.** A skill cites a reference as `references/<file>.md` (its own copy) or `.agents/skills/<skill>/references/<file>.md` (absolute — required whenever the path is handed to an isolated subagent). `build.py` walks citations transitively and copies each cited reference into every citing skill's `references/`. A new reference needs **no build change** — only a citation.
-- **Versioning.** Every changed `.md` in `src/` bumps its frontmatter `version` and refreshes `timestamp` to the edit date. `validate.py` fails a changed dist artifact whose version did not move.
+- **Versioning.** See the version rule above. `validate.py` fails a changed dist artifact whose version did not move from the fork point.
 - **Load the dev playbook before editing:** invoke the `improve-workflows-skills` skill. Its **protected classes** (§4 of its playbook) apply to every edit below: sub-agent guardrails verbatim, leading-word tokens exact (`[UNCOVERED]`, `seam`, `[[A-xxx]]`), full context-pointer paths, one side-effecting write per numbered step with its own command literal.
-- **Test-pinned phrases** — must survive unchanged (`tests/test_subagent_spawning.py`): in `4b`, `Context Isolation Rule`, `invoke an independent Staff-Level Architect subagent`, and the guardrail `Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints).`
+- **Test-pinned phrases** — must survive unchanged (`tests/test_subagent_spawning.py`):
+  - `4b`: `Context Isolation Rule`, `invoke an independent Staff-Level Architect subagent`, and the guardrail `Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints).`
+  - `3b` (§6.4 edits Phase 2.4): `Slice Draft Auditor subagent` and the guardrail `Report findings + one proposed fix each; do not create issues or edit any file.`
 
 ---
 
@@ -51,13 +55,14 @@ Plugin `VERSION` in `build/build.py` stays **4.0.0** — this lands in the same 
 - **Path collision.** A single `.tmp/refactor-proposal.md` would be clobbered once two skills write proposals.
 - **Retention breaks traceability.** `4c` Phase 4.3 deletes reports older than 90 days regardless of whether open issues still point at them.
 - **Epics assume a PRD.** `4a`'s Feature Acceptance Audit (`feature-acceptance-audit.md`, Input) and `0d`'s "slicing incomplete" signal (`0d-nightly-consolidation.md`, Recommendation table) both read PRD content; an epic without a PRD breaks both.
+- **Reports are local-only.** `4b`/`4c` never commit (4c `[!IMPORTANT]`: "Never … commit, or push"), and AGENTS.md §4's documentation-artifact exception covers only `2a`/`2b`/`3a`. A report therefore exists in one working copy — invisible to `3z` subagents, Jules, or a fresh clone. **Nothing downstream of `3b` may depend on the report file.**
 
 ---
 
 ## 2. Target end state
 
 ```
-/4b <dir>  ─┐                                  ┌─ docs/audits/arch-<slug>-<date>.md    (durable findings, F-01…F-NN)
+/4b <dir>  ─┐                                  ┌─ docs/audits/arch-<slug>-<date>.md    (findings history, F-01…F-NN; local)
             ├─ scan → score → tier → ID ───────┤
 /4c         ─┘                                  └─ docs/audits/health-<date>.md
                                   │
@@ -71,11 +76,12 @@ Plugin `VERSION` in `build/build.py` stays **4.0.0** — this lands in the same 
          🔴 slices: standalone                 🟠/🟡 slices: sub-issues of ONE
          (own branch + PR, ship now)           type:maintenance epic (one feature PR)
                                                         │
-                                  3d → 4a; at the epic's last slice the Feature
-                                  Acceptance Audit checks the report's claimed F-xx
+                                  epic issue body = spec of record (Source line + Coverage)
+                                  3d → 4a; at the epic's last slice the Feature Acceptance
+                                  Audit reads the epic body + child slice bodies (never the report file)
 ```
 
-Both audits write a findings artifact under **`docs/audits/`** (durable, OKF `type: audit-report`, already registered for `docs/audits/*.md` in `src/rules/okf-protocol.md`). Both write a proposal under **`.tmp/`** (ephemeral — once minted, the issues are the durable record).
+Both audits write a findings artifact under **`docs/audits/`** (OKF `type: audit-report`, already registered for `docs/audits/*.md` in `src/rules/okf-protocol.md`) — durable history for the working copy that ran the audit. Both write a proposal under **`.tmp/`** (ephemeral). Once minted, **GitHub issues are the durable, shared record**: the epic body carries the Coverage map, and every slice body carries its findings' evidence inline.
 
 ---
 
@@ -86,7 +92,7 @@ Both audits write a findings artifact under **`docs/audits/`** (durable, OKF `ty
 | D1 | `4b` assigns the **same four impact tiers** as `4c` (🔴 Critical / 🟠 High / 🟡 Medium / ⚪ Low) | One findings contract, one ICE mapping; `3b` never HALTs on audit input. |
 | D2 | Non-Critical slices from one proposal are grouped under **one `type:maintenance` epic**; 🔴 slices stay **standalone** | AGENTS.md §4: one branch + PR per parent. Standalone would mean N PRs and no feature-level acceptance gate. Critical carve-out: a security fix must not wait behind Medium work in the same PR. |
 | D3 | Epic only when the proposal has **≥ 2 non-🔴 slices**; one slice → standalone | An epic of one is ceremony. |
-| D4 | The **audit report is the epic's spec of record** (replaces the PRD) | Lets `4a` and `0d` keep their logic with one input branch each. |
+| D4 | The **epic issue body is the epic's spec of record** (replaces the PRD). The report file is history, never a runtime dependency. | Reports are never committed (§1.3); an issue body is readable from every host, clone, and subagent. Slices already copy evidence inline, so nothing is lost. Avoids widening AGENTS.md §4's default-branch exception. |
 | D5 | Ships **in PR #107**, built on `feat/spec-conformance-v4` | Additive; #107 already renamed every path this touches. |
 
 ---
@@ -96,7 +102,7 @@ Both audits write a findings artifact under **`docs/audits/`** (durable, OKF `ty
 Cited by `4b`, `4c`, `3b`, and `feature-acceptance-audit.md`. It must **not** cite either report template (the transitive walk would ship them into `3b`). Frontmatter: `description`, `version: "1.0.0"`, `timestamp`. Sections, in order:
 
 ### §1 Finding IDs
-`F-01…F-NN`, assigned once per report after all filtering, ordered Critical → Low then confidence descending. IDs are never reused or renumbered after the report is written. External citation form: `<report-stem>#F-07` (stem = filename without `.md`).
+`F-01…F-NN`, assigned once per report after all filtering, ordered Critical → Low then confidence descending. IDs are never reused or renumbered after the report is written. External citation form: **`docs/audits/<report-stem>.md#F-07`** (stem = filename without `.md`) — always the full path, so the retention pin (§9) sees every citing issue.
 
 ### §2 Impact tiers
 Move the **Impact Categories** table out of `health-audit-report-template.md` into here verbatim (Critical/High/Medium/Low criteria + the sentence *"Impact is independent of confidence…"*). Add a second column set for architecture drift:
@@ -122,9 +128,9 @@ Both report kinds use one table shape per impact section:
 - **Line 1, exactly:** `Source: docs/audits/<report-stem>.md`
 - **Then, in order:**
   1. `## Epic` — `Title:` (`Maintenance: <scope> — <date>`), `Area:` (one registry `area:` label), `Milestone (proposed):` (§8), `Overview:` one paragraph. Omit the section when D3's threshold fails.
-  2. `## Coverage` — table `| Finding | Impact | Resolution |`, **one row per F-xx in the report**; Resolution is `Slice <N>` or an exclusion token (§5).
+  2. `## Coverage` — table `| Finding | Impact | Resolution |`, **one row per F-xx in the report**; Resolution is `Slice <N>` (epic child), `Slice <N> (standalone)` (🔴, §7), or an exclusion token (§5).
   3. `## Slice <N> — <title>` per slice — a complete Template B body per `references/issue-templates.md`, with these audit-specific rules:
-     - **Current state / Problem** opens with `Resolves: <report-stem>#F-03, <report-stem>#F-07`, then each resolved finding's File/Line(s)/Evidence/Law **copied inline** (the report is a pointer, never the only copy).
+     - **Current state / Problem** opens with `Resolves: docs/audits/<report-stem>.md#F-03, docs/audits/<report-stem>.md#F-07`, then each resolved finding's File/Line(s)/Evidence/Law **copied inline** (the issue body is self-sufficient; the report may not exist where the slice is implemented).
      - **ICE Priorities** per §6.
      - **The Path:** mark untouched layers `N/A`.
      - **Acceptance Criteria:** one verifiable check **per resolved F-xx** proving it no longer reproduces (test, command, or grep with expected output), plus the Verification command. Time-to-Value and Stress Cases lines read `N/A — audit-sourced (no design doc)`.
@@ -132,15 +138,16 @@ Both report kinds use one table shape per impact section:
 - **Clustering:** group findings into slices by module / `seam`. Apply `3b`'s minimum-slice floor — never one slice per finding by default; never merge findings across unrelated modules to save a slice.
 
 ### §5 Coverage gate
-Every F-xx maps to exactly one `Slice <N>` or one token: `[OPPORTUNISTIC]` (⚪ default), `[DEFERRED: <reason>]`, `[WONTFIX: <reason>]`. Any unmapped finding is `[UNCOVERED]`. A proposal with an open `[UNCOVERED]` is incomplete — never summarise as "mostly covered".
+Every F-xx maps to exactly one `Slice <N>` / `Slice <N> (standalone)` or one token: `[OPPORTUNISTIC]` (⚪ default), `[DEFERRED: <reason>]`, `[WONTFIX: <reason>]`. Any unmapped finding is `[UNCOVERED]`. A proposal with an open `[UNCOVERED]` is incomplete — never summarise as "mostly covered".
 
 ### §6 ICE mapping (a rule, not an inference)
 - **Impact:** 🔴 3.0 · 🟠 2.0 · 🟡 1.0 · ⚪ 0.5 — a slice takes the **highest** tier among its resolved findings.
 - **Confidence:** the **lowest** confidence among its resolved findings → ≥ 90 `100%` · 80–89 `80%` · 60–79 `50%`.
 - **Size:** unchanged — prompted by `3b` Phase 2.2.
+- **Scope label:** every audit slice takes `scope:baseline` (it repairs existing behaviour; keeps `3c`'s baseline-first sort deterministic).
 
 ### §7 Critical carve-out and epic threshold
-🔴 slices never take a parent. The epic is proposed only when ≥ 2 non-🔴 slices exist; otherwise every slice is standalone and `## Epic` is omitted.
+A slice whose highest resolved tier is 🔴 never takes a parent; its Coverage rows read `Slice <N> (standalone)`. The epic is proposed only when ≥ 2 non-🔴 slices exist; otherwise every slice is standalone and `## Epic` is omitted.
 
 ### §8 Milestone default
 The `vX.Y.0` of the `[ACTIVE]` release in `docs/ROADMAP.md`; if absent, `v1.0.0`. Confirmed by the user at `3b` Phase 2.5 approval. Maintenance epics never need a `3a` MAJOR/MINOR decision.
@@ -151,6 +158,9 @@ A report is **pinned** while any open issue body cites its path. Resolve the pin
 gh issue list --state open --limit 500 --json body --jq '.[].body' | grep -oE 'docs/audits/[A-Za-z0-9._-]+\.md' | sort -u
 ```
 `gh` absent or unauthenticated → **skip retention entirely** this run and say so (fail safe: keep). Never delete a pinned report.
+
+### §10 Epic spec of record
+An audit epic's body is: line 1 the proposal's `Source:` line, then the Overview, then the Coverage table. Consumers identify an audit epic by that line 1 **and** no PRD at `docs/prds/BT-<padded>-*.md`. Its acceptance input is the epic body plus every child slice body (their `Resolves:` lines, inline evidence, and ACs) — **never the report file**, which may be absent.
 
 ---
 
@@ -163,6 +173,7 @@ Owned by `4b` (mirrors `health-audit-report-template.md` for `4c`). Frontmatter:
 type: audit-report
 title: "Architecture Drift — <target> — <YYYY-MM-DD>"
 status: stable
+version: <plugin version>   # stamped at generation (okf-protocol §5)
 generated:
   by: 4b-audit-architecture-drift
   at: <ISO 8601>
@@ -201,7 +212,8 @@ Omit empty impact sections.
 
 ## 6. File-by-file edits
 
-### 6.1 `health-audit-report-template.md` → 2.1.0
+### 6.1 `health-audit-report-template.md` (stays 2.0.0)
+- **Report frontmatter skeleton:** add `version: <plugin version>   # stamped at generation (okf-protocol §5)` after `status:` (matches every other generated-doc template in #107).
 - **Delete** the `## Impact Categories` section; replace with one line: `Impact categories: references/audit-to-slices.md §2.` *(This reference is only shipped into `4c`; `4c` also cites `audit-to-slices.md` directly, so the pointer resolves.)*
 - **Findings tables:** replace the header `| # | Pass | File | Line(s) | Finding | Confidence | Recent? | Suggested Fix |` with `| ID | Pass | File | Line(s) | Finding | Evidence | Confidence | Law | Recent? | Suggested Direction |` (row contract §3 plus the `4c`-only `Pass` column). Update the example row to `F-01` and fill the new columns.
 - **Recommended Next Steps:** replace the four per-tier bullets with the Next Step block from §5 (health wording). Keep the `/4b-audit-architecture-drift` line and the `✓ Recent` line.
@@ -238,41 +250,44 @@ Omit empty impact sections.
 - **Phase 4 Handoff:** 2-line summary of flagged components **+ both paths**, then the same `/3b-create-issue <proposal>` line as `4c`. Keep "Await human instruction".
 - The old `.tmp/refactor-proposal.md` path must not appear anywhere after this edit.
 
-### 6.4 `3b-create-issue` → 2.5.0 — third intake: audit-sourced
+### 6.4 `3b-create-issue` (stays 2.4.0) — third intake: audit-sourced
 - **Hand-off contract paragraph:** add *"Audit-sourced → the trigger names `.tmp/refactor-proposal-<stem>.md`; the proposal is the drafts file; audits coverage against the `Source:` report per `references/audit-to-slices.md`."*
 - **Phase 1.2 (defensive epic promotion):** add `Audit-sourced: skip.`
 - **Phase 1.3 Scope:** add the branch: `Audit-sourced → load the proposal and the report named on its line 1. Scope is every F-xx in the report.`
 - **Phase 2.1–2.3:** add `Audit-sourced: skip 2.1 and 2.3 (the proposal is the draft); in 2.2 take Impact and Confidence from references/audit-to-slices.md §6 — the ODI fallback HALT does not apply; still prompt for Size.`
 - **Phase 2.4 Slice Draft Audit:** add an audit-sourced input line (reads the proposal + the report, fresh from disk; PRD/research precedence clause does not apply) and redefine:
   - **Breadth:** every F-xx in the report maps to a slice or a §5 token; else `[UNCOVERED]`.
-  - **Depth:** Template B-complete per §4 — `Resolves:` line present, evidence inline, one no-longer-reproduces AC per resolved F-xx.
-  - Guardrail sentence: unchanged.
+  - **Depth:** Template B-complete per §4 — `Resolves:` line with full report paths present, evidence inline, one no-longer-reproduces AC per resolved F-xx.
+  - Guardrail sentence and `Slice Draft Auditor subagent` phrase: unchanged.
 - **Phase 2.5 Approval:** audit-sourced also confirms the epic (title, area, milestone per §8) or its absence (§7).
 - **Phase 3.3 pre-mint guard:** audit-sourced → run against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`. Mint order gains step (b0): **mint the epic first** (below), then replace every `BT-<epic>` in the proposal with the returned ID; only then run (a).
 - **Phase 3.4 Generate — epic mint (new sub-bullet, own command literal):**
   ```bash
   gh issue create --title "<Epic Title>" --label "tier:epic,type:maintenance,area:<x>,status:planned" --milestone "<vX.Y.0>" --body-file <tmp epic body>
   ```
-  Epic body line 1 is the proposal's `Source:` line, followed by the Overview and the Coverage table. Epic slices then mint with the existing slice rules; sub-issue linkage per `references/github-issue-relations.md`. 🔴 slices: no parent, no sub-issue link. Slice `type:` = `type:bug` for Security/Correctness findings, else `type:maintenance`.
+  Epic body per `references/audit-to-slices.md` §10 (line 1 the proposal's `Source:` line, then the Overview and the Coverage table). Epic slices then mint with the existing slice rules; sub-issue linkage per `references/github-issue-relations.md`. 🔴 slices: no parent, no sub-issue link. Slice `type:` = `type:bug` for Security/Correctness findings, else `type:maintenance`. Scope label `scope:baseline` (§6).
 - **Phase 3.5 Backlog Sync:** epic row: `| BT-<n> | <title> | planned | area:<x>, tier:epic, type:maintenance | vX.Y.0 | — | — | ICE: - | <cited laws or —> |`. Slice rows as today. (Report paths go in issue bodies, never in `Ref` — BACKLOG_MAP rule.)
 - **Phase 3.6 terminal gate:** `--ids` includes the epic.
 
-### 6.5 `feature-acceptance-audit.md` → 1.1.0
-Append to **Input**: *"Audit epic — the parent body's first line is `Source: docs/audits/<stem>.md` and no PRD exists → input is that report's F-xx rows claimed by the epic's slices (their `Resolves:` lines), per `references/audit-to-slices.md`, plus the whole-feature diff. Scope: each claimed finding no longer reproduces in the diff."* Verdict section unchanged. (`4a/SKILL.md` itself is untouched; the new citation fans `audit-to-slices.md` into `4a` automatically.)
+### 6.5 `feature-acceptance-audit.md` (stays 1.0.1)
+- Append to **Input**: *"Audit epic (per `references/audit-to-slices.md` §10 — parent body line 1 `Source: docs/audits/<stem>.md`, no PRD) → input is the epic body's Coverage table and every child slice body (`Resolves:` lines, inline evidence, ACs), plus the whole-feature diff. Never read the report file. Scope: every finding resolved by a child slice no longer reproduces in the diff."*
+- **Verdict:** fix the existing step reference — `Clean → continue Step 7.` → `Clean → continue Step 8 (\`gh pr ready\`).` (the audit runs inside 4a Step 8, before `gh pr ready`).
+- (`4a/SKILL.md` itself is untouched; the new citation fans `audit-to-slices.md` into `4a` automatically.)
 
 ### 6.6 `0d-nightly-consolidation` → 1.1.3
-In the Recommendation table, the "slicing **incomplete**" row: append *"— for an audit epic (body line 1 `Source: docs/audits/…`), compare child slices to the number of `Slice` resolutions in its Coverage table instead of PRD §6."* No other change.
+In the Recommendation table, the "slicing **incomplete**" row: append *"— a `type:maintenance` audit epic (no PRD) is fully sliced at mint by `/3b`; apply only the zero-child test."* No other change. (Uses labels + `subIssues` already in 0d's batched query; no body fetch needed. Counting Coverage rows would miscount — 🔴 slices are standalone, never children.)
 
 ### 6.7 `README.md`
 Lifecycle table, row **4. Ship & Audit**, last column: `Quality gap report, traceable PR, health audit report` → `Quality gap report, traceable PR, audit reports (docs/audits/) + slice proposals`. Do not bump the README badge.
 
 ### 6.8 `tests/test_audit_pipeline.py` (new; pytest, no network)
 Against both hosts' `dist/*/skills/`:
-1. `4b`, `4c`, `3b` SKILL.md each cite `audit-to-slices.md`. *(Presence of the shipped copy is already covered by `test_skill_conformance.py::test_every_cited_reference_ships` — do not duplicate it.)*
+1. `4b`, `4c`, `3b` SKILL.md each cite `audit-to-slices.md`; `4a`'s `references/feature-acceptance-audit.md` cites it too. *(Presence of the shipped copy is already covered by `test_skill_conformance.py::test_every_cited_reference_ships` — do not duplicate it.)*
 2. No skill contains the retired literal `.tmp/refactor-proposal.md`.
 3. `4b` and `4c` both contain `docs/audits/` and `.tmp/refactor-proposal-<report-stem>.md`.
-4. `audit-to-slices.md` contains the tokens `[UNCOVERED]`, `[OPPORTUNISTIC]`, `Resolves:`, `Source: docs/audits/`.
+4. `audit-to-slices.md` contains the tokens `[UNCOVERED]`, `[OPPORTUNISTIC]`, `Resolves: docs/audits/`, `Source: docs/audits/`, `(standalone)`.
 5. `3b-create-issue` does **not** ship `health-audit-report-template.md` or `arch-drift-report-template.md` (guards the §4 no-cite rule).
+6. Both report templates carry `version: <plugin version>`.
 
 ---
 
@@ -302,7 +317,7 @@ Against both hosts' `dist/*/skills/`:
 | Fan-out | `ls dist/claude-code/skills/{3b-create-issue,4a-verify-and-ship,4b-audit-architecture-drift,4c-codebase-health-audit}/references/audit-to-slices.md` → four paths |
 
 ### Done criteria
-- Every row of the Targets table changed and at its target version; `timestamp` refreshed.
+- Every row of the Targets table at its target version; `timestamp` refreshed on every edited file.
 - Every edit in §6 applied; every protected phrase from §0 intact.
 - Gate green; `dist/` committed and drift-free.
 
@@ -311,7 +326,7 @@ The L3 lifecycle harness does not drive `4b`/`4c`; these stay unverified until r
 - `/4c-codebase-health-audit` → report with global F-IDs + proposal with a full Coverage table.
 - `/4b-audit-architecture-drift <dir>` → `arch-*` report + proposal.
 - `/3b-create-issue <proposal>` → no ICE HALT; epic minted first; slices linked; 🔴 standalone; `reconcile.py --require-gh` → `[MIRROR-OK]`.
-- One audit epic through `3d` → `4a`: the Feature Acceptance Audit reads the report, not a PRD.
+- One audit epic through `3d` → `4a`: the Feature Acceptance Audit reads the epic + slice bodies, not a PRD or the report file.
 
 ---
 
@@ -325,5 +340,6 @@ Add a section **"Unified audit pipeline (added late)"** to the PR body, after "F
 
 - **Branch/commit prefix for `type:maintenance`.** `3d` builds `<type>/BT-<parent>-<slug>` from the parent's `type:` label, and no mapping table exists (`feat` is the only abbreviation in use). Audit epics will branch as `maintenance/BT-<n>-<slug>` and commit as `maintenance(BT-<n>): …`. Accepted; normalising prefixes is a separate change.
 - **`3a` treats maintenance epics like features** if it runs over them. Not changed — §8 assigns a milestone at mint, so `3a`'s "unassigned epic" trigger does not fire for them.
-- **Epic body as data.** `4a` and `0d` key off body line 1 `Source: docs/audits/…`. A human editing it out reverts both to PRD behaviour. Accepted for v4.0.0.
+- **Epic body as data.** `4a` keys off body line 1 `Source: docs/audits/…`. A human editing it out reverts the Feature Acceptance Audit to PRD behaviour (which then finds no PRD). Accepted for v4.0.0.
+- **Reports stay local.** `docs/audits/*.md` is never committed by `4b`/`4c` (unchanged from today's `4c`); D4 makes that harmless. Committing reports would need an AGENTS.md §4 exception — not proposed.
 - Not added: a `.last-run.json` for `4b` (dated filenames suffice); auto-running `/3b` from an audit (stays HITL per AGENTS.md §1); threshold changes (`4c` ≥ 60, `4b` ≥ 80).
