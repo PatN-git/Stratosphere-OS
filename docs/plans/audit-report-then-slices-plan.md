@@ -1,6 +1,6 @@
 # Plan — Unified Audit Pipeline: Report → Proposal → Maintenance Epic (4b + 4c → 3b)
 
-**Status:** Approved for implementation (rev 2 — PR #107 review fixes applied). Not yet implemented.
+**Status:** Implemented on feat/spec-conformance-v4 (PR #107). Rev 2 — PR #107 review fixes applied; see §9a for post-review deviations.
 **Branch:** `feat/spec-conformance-v4` — ships **inside PR #107** (v4.0.0). Build directly on that branch; no separate PR.
 **Targets:**
 
