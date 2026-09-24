@@ -1,9 +1,10 @@
 ---
 name: plan-html
 description: Use when presenting a complex or spatial plan to a human — roadmap, trade-off matrix, status dashboard, multi-section plan document, decision record, side-by-side comparison. Generates one self-contained interactive HTML file; fires on ≥~100-line or spatial human-facing output. Defaults to markdown for agent-loop content, repo docs, model input, and short/simple output.
-type: skill
-version: "1.1.4"
-timestamp: 2026-06-25
+metadata:
+  stratos.layer: execution
+version: "1.2.0"
+timestamp: 2026-09-22
 ---
 
 # Decision Gate (Four-Scenario)
@@ -41,7 +42,8 @@ If no template fits → **custom-composition mode**: compose using primitives fr
 - Write to a standalone `.html` file at the path the caller specifies.
 - Convention by lifespan:
   - **ephemeral** artifacts (decision aids, editors, throwaway comparisons) → `.tmp/` (gitignored) or OS temp;
-  - **durable** artifacts (tied to a feature/decision) → beside the artifact they document (e.g. `docs/design/…`).
+  - **companions** (an HTML view of a committed `.md`: PRD, discovery brief, roadmap) → `.tmp/render/<source path with .md replaced by .html>` (e.g. `docs/prds/BT-012-x.md` → `.tmp/render/docs/prds/BT-012-x.html`). Never commit a companion and never present an existing render: regenerate it from the current `.md` each time, so it cannot drift from its source.
+  - **durable** standalone artifacts (no `.md` source, tied to a feature/decision) → beside the artifact they document (e.g. `docs/design/…`).
   - Invoking workflows set the concrete path (e.g. `2b` → `docs/design/BT-<n>-directions.html`). The skill stays path-agnostic.
 - First line must be the token header:
   `<!-- plan-html | md-equivalent: ~<N> lines | html: ~<N> lines | ratio: <N>x | justified: <reason> -->`
@@ -50,6 +52,7 @@ If no template fits → **custom-composition mode**: compose using primitives fr
 # State Persistence
 - Embed current state in `<script id="plan-data" type="application/json">` as the single source of truth.
 - On load: `renderBody(planData())` constructs the DOM dynamically. Do not duplicate state in DOM and script.
+- Boot resilience: storage and theme code must never gate rendering. Wrap every `localStorage` access in try/catch (it throws in `data:` URLs, private windows, blocked site data); call `renderBody` before `initTheme`; dispatch via `document.readyState` (not `DOMContentLoaded` alone) as the last line of the script, after every function it calls.
 - On update:
   1. Read existing `<script id="plan-data">` to restore context.
   2. Merge changes, rewrite file.

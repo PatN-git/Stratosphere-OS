@@ -1,0 +1,6 @@
+/3d-implement-issue
+
+Implement the first slice in .memory/BACKLOG_MAP.md.
+
+When the slice is implemented, its tests pass and the work is committed to the feature
+branch, print exactly L3-3D-COMPLETE on its own final line.

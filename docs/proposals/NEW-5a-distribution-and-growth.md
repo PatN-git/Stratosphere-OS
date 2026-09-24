@@ -1,8 +1,8 @@
 ---
 name: 5a_distribution-and-growth
 description: Proposal for distribution and growth workflow detailing user acquisition and loops.
-type: workflow HITL
-trigger: User. Do not run autonomously.
+type: proposal
+
 ---
 
 # Workflow Proposal: 5a_distribution-and-growth

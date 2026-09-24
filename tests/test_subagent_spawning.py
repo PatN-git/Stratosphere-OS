@@ -17,28 +17,28 @@ def check_workflow(filepath, required_phrases):
     return True
 
 WORKFLOWS = {
-    "src/workflows/1a_research.md": [
+    "src/workflows/1a-research.md": [
         "Invoke a subagent",
         "remaining = 24 - issued",
         "Return verdicts + queries_used"
     ],
-    "src/workflows/1b_concept-framing.md": [
+    "src/workflows/1b-concept-framing.md": [
         "Skeptical Challenger",
         "Report only; do not write any file."
     ],
-    "src/workflows/2b_interface-design.md": [
+    "src/workflows/2b-interface-design.md": [
         "Stress Tester",
         "Report the matrix only; do not edit any file."
     ],
-    "src/workflows/3a_version-planning.md": [
+    "src/workflows/3a-version-planning.md": [
         "Invoke a Release Auditor subagent",
         "Report the audit findings only; do not edit any file, create milestones, or modify the roadmap."
     ],
-    "src/workflows/3b_create-issue.md": [
+    "src/workflows/3b-create-issue.md": [
         "Slice Draft Auditor subagent",
         "Report findings + one proposed fix each; do not create issues or edit any file."
     ],
-    "src/workflows/4a_verify-and-ship.md": [
+    "src/workflows/4a-verify-and-ship.md": [
         "Context Isolation Rule",
         "invoke an independent Strict Business-Logic Auditor subagent",
         "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4.",
@@ -50,7 +50,7 @@ WORKFLOWS = {
         # the subagent is forbidden from repo-wide discovery. Assert the meaning, not a heading.
         "the subagent must never run repo-wide discovery"
     ],
-    "src/workflows/4b_audit-architecture-drift.md": [
+    "src/workflows/4b-audit-architecture-drift.md": [
         "Context Isolation Rule",
         "invoke an independent Staff-Level Architect subagent",
         "Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."

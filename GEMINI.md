@@ -1,5 +1,4 @@
 ---
-type: constitution
 name: GEMINI
 description: GEMINI
 version: "1.0.1"

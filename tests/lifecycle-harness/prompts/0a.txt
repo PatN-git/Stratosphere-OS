@@ -1,0 +1,7 @@
+/0a-start-session
+
+This is a brand-new project. Nothing has been built yet and there is no active task.
+
+When you have finished - including when you find no active task and stop with next-step
+guidance, which is the expected outcome here - print exactly L3-0A-COMPLETE on its own
+final line.

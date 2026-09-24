@@ -50,22 +50,41 @@ $commandsDir = Join-Path $claudeDir "commands"
 $skillsDir = Join-Path $claudeDir "skills"
 $pluginsDir = Join-Path $claudeDir "plugins\stratosphere-os"
 
-# Create directories
-New-Item -ItemType Directory -Force -Path $commandsDir | Out-Null
-New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+# Replace each shipped entry wholesale (drops stale files inside it, e.g. a
+# template removed upstream) while preserving foreign entries in shared dirs.
+function Copy-Overlay($src, $dest) {
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    foreach ($item in Get-ChildItem -Path $src -Force) {
+        $target = Join-Path $dest $item.Name
+        if (Test-Path $target) { Remove-Item -Path $target -Recurse -Force }
+        Copy-Item -Path $item.FullName -Destination $target -Recurse -Force
+    }
+}
+
+if (Test-Path (Join-Path $buildDir "commands")) { Copy-Overlay (Join-Path $buildDir "commands") $commandsDir }
+if (Test-Path (Join-Path $buildDir "skills")) { Copy-Overlay (Join-Path $buildDir "skills") $skillsDir }
+
+# Stage full plugin to plugins/stratosphere-os/ (skills/ merged per skill).
 New-Item -ItemType Directory -Force -Path $pluginsDir | Out-Null
-
-# Copy commands
-if (Test-Path (Join-Path $buildDir "commands")) {
-    Copy-Item -Path (Join-Path $buildDir "commands\*") -Destination $commandsDir -Recurse -Force
+foreach ($item in Get-ChildItem -Path $buildDir -Force) {
+    if ($item.PSIsContainer -and $item.Name -eq "skills") {
+        Copy-Overlay $item.FullName (Join-Path $pluginsDir "skills")
+    } else {
+        $dest = Join-Path $pluginsDir $item.Name
+        if (Test-Path $dest) { Remove-Item -Path $dest -Recurse -Force }
+        Copy-Item -Path $item.FullName -Destination $dest -Recurse -Force
+    }
 }
 
-# Copy skills
-if (Test-Path (Join-Path $buildDir "skills")) {
-    Copy-Item -Path (Join-Path $buildDir "skills\*") -Destination $skillsDir -Recurse -Force
+# v4 retired two top-level bundle dirs. The overlay only replaces what the CURRENT
+# bundle ships, so a dir we no longer ship is never touched and its stale v3 contents
+# survive an upgrade. Both dirs are unambiguously framework-owned.
+foreach ($retired in @("workflows", "commands")) {
+    $retiredPath = Join-Path $pluginsDir $retired
+    if (Test-Path $retiredPath) {
+        Write-Host "Removing retired $retired/ from plugin dir (v3 leftovers)..."
+        Remove-Item -Path $retiredPath -Recurse -Force
+    }
 }
-
-# Stage full plugin to plugins/stratosphere-os/
-Copy-Item -Path (Join-Path $buildDir "\*") -Destination $pluginsDir -Recurse -Force
 
 Write-Host "Successfully installed to $claudeDir. Restart Claude Code for the commands to load."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulation harness for 3z_afk-loop workflow state machine.
+"""Simulation harness for 3z-afk-loop workflow state machine.
 
 Simulates orchestrator execution across multiple mock slices:
 1. BT-101 (execution_mode:AFK): Passes implementation and audit on Attempt 1.
@@ -49,7 +49,7 @@ class MockOrchestrator:
             # Gated single issue checks
             if len(self.slices) == 1:
                 if exec_mode == "HITL":
-                    raise ValueError("HALT: run /3d_implement-issue + /4a_verify-and-ship manually")
+                    raise ValueError("HALT: run /3d-implement-issue + /4a-verify-and-ship manually")
                 elif not exec_mode:
                     raise ValueError("HALT: requires execution mode mode:AFK or mode:HITL to be run")
 
@@ -186,7 +186,7 @@ def test_simulation(ship_mode="auto-PR"):
         
     assert "local" in shipped["FEAT-20"], "FEAT-20 should stay local"
 
-    print(f"=== 3z_afk-loop Simulation Test PASSED ({ship_mode}) ===")
+    print(f"=== 3z-afk-loop Simulation Test PASSED ({ship_mode}) ===")
     print("Skipped:", skipped)
     print("Slice Results:", json.dumps(orch.results, indent=2))
     print("Feature Ship Status:", json.dumps(shipped, indent=2))
@@ -218,7 +218,7 @@ def run_tests():
         print("FAIL: Expected ValueError for single HITL issue")
         sys.exit(1)
     except ValueError as e:
-        assert "run /3d_implement-issue" in str(e)
+        assert "run /3d-implement-issue" in str(e)
         print("Pass: Preflight correctly raised error for single HITL issue.")
 
     # Verify single missing mode preflight check throws

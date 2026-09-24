@@ -1,0 +1,10 @@
+/2b-interface-design
+
+Design the interface for the feature whose PRD is in docs/prds/.
+
+This feature has no user interface of any kind: it is a library with an evaluation
+function and a ruleset schema, consumed by other code. The surface to design is that
+contract.
+
+When the design document is written and frozen, print exactly L3-2B-COMPLETE on its own
+final line.

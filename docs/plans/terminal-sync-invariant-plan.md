@@ -1,3 +1,12 @@
+---
+type: plan
+title: Terminal Sync Invariant Plan
+generated:
+  by: PatN-git
+  at: 2026-09-15
+version: "1.0.0"
+---
+
 # Plan — Process-Integrity Gates (anti-drop-off / anti-skip)
 
 **Status:** Reviewed + scoped — awaiting final approval. Do not implement yet.

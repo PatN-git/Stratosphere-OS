@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""POSIX `gh`: the shim, executable under its real name (see gh_shim.py)."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gh_shim
+
+raise SystemExit(gh_shim.main())

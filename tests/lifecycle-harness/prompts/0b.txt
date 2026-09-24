@@ -1,0 +1,6 @@
+/0b-stop-session
+
+Close the session out.
+
+When the memory layer is written, validate_memory.py has run clean and okf_view.py has
+run, print exactly L3-0B-COMPLETE on its own final line.

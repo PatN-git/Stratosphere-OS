@@ -1,3 +1,12 @@
+---
+type: plan
+title: Discovery Pipeline Quality Fixes Plan
+generated:
+  by: Claude
+  at: 2026-09-15
+version: "1.0.0"
+---
+
 # Plan — Discovery→Design pipeline quality fixes (tracker)
 
 **Status:** **IMPLEMENTED on branch** (2026-07-24) — all F1–F12 + Q1–Q4 edited in `src/`, `dist/` rebuilt, `build/validate.py` + reconcile / terminal-sync / 3z-orchestrator tests green. 12 files bumped (OKF once each); plugin **VERSION 3.0.1 → 3.1.0** (minor, derived by `scripts/release.py` — biggest-change-wins over the artifact bumps) + README badge; `bump_guard` green (3.1.0 > released tag v3.0.1). Awaiting review + human merge (workflows never self-merge).

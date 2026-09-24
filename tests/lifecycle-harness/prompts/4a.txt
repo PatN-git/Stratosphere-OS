@@ -1,0 +1,7 @@
+/4a-verify-and-ship
+
+Run the gate audit-only - Phases 1 to 4 only - against the slice you just implemented.
+Produce the coverage map and the verdict. Do not run the ship-only gate: no branch
+mutation, no commit, no push, no PR.
+
+When the verdict is produced, print exactly L3-4A-COMPLETE on its own final line.

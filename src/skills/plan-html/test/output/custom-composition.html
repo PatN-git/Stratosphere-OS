@@ -215,13 +215,14 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
 function initTheme(){
-  const saved = localStorage.getItem('plan-theme') || 'system';
+  let saved = 'system';
+  try { saved = localStorage.getItem('plan-theme') || 'system'; } catch(e) {}
   const select = document.getElementById('theme-select');
   if(select) select.value = saved;
   applyTheme(saved);
 }
 function changeTheme(theme){
-  localStorage.setItem('plan-theme', theme);
+  try { localStorage.setItem('plan-theme', theme); } catch(e) {}
   applyTheme(theme);
 }
 function applyTheme(theme){
@@ -278,10 +279,10 @@ function updateConfig() {
   }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  initTheme();
+function bootPlan(){
   const data = planData();
   renderBody(data);
+  try { initTheme(); } catch(e) {}
   // Set up inputs from loaded planData
   if (data.config) {
     document.getElementById('replicas').value = data.config.replicas || 3;
@@ -291,7 +292,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     updateVal('latency', data.config.routingLatency || 150);
   }
   updateConfig();
-});
+}
 
 function renderBody(data) {
   const h1 = document.querySelector('h1');
@@ -315,6 +316,7 @@ function toMarkdown(data) {
   }
   return md.trim();
 }
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bootPlan);}else{bootPlan();}
 </script>
 </body>
 </html>

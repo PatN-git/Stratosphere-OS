@@ -2,7 +2,7 @@
 
 Reports PR readiness and hands off — it NEVER merges, never enables auto-merge, and
 never invokes another workflow (`4a`/`3z`/`3d`). Verification is the human's job:
-`gh pr checkout <pr>` in a real clone, then `/4a_verify-and-ship`, then merge.
+`gh pr checkout <pr>` in a real clone, then `/4a-verify-and-ship`, then merge.
 """
 import json
 import subprocess
@@ -67,7 +67,7 @@ def status(client, ledger_path, *, ci_fetcher=None, printer=print):
         if pr_url:
             ci = ci_fetcher(pr_url)
             printer(f"[{r['slice_id']}] PR ready: {pr_url}  (CI: {ci})")
-            printer(f"    -> to verify: gh pr checkout {pr_url} in a real clone, run /4a_verify-and-ship, then merge yourself")
+            printer(f"    -> to verify: gh pr checkout {pr_url} in a real clone, run /4a-verify-and-ship, then merge yourself")
             r["state"], r["pr_url"] = "DONE", pr_url
             changed = True
         elif session.get("state") == "FAILED":
