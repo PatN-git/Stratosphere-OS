@@ -6,11 +6,7 @@ timestamp: 2026-09-24
 
 # Health Audit — Report Template
 
-Reference for `4c-codebase-health-audit` Phase 4.
-
----
-
-Impact categories, finding IDs, and the findings row contract: `references/audit-to-slices.md` §1–§3.
+Reference for `4c-codebase-health-audit` Phase 4. Impact categories, finding IDs, and the findings row contract: `references/audit-to-slices.md` §1–§3.
 
 ---
 
@@ -54,7 +50,7 @@ generated:
 
 | ID | Pass | File | Line(s) | Finding | Evidence | Confidence | Law | Recent? | Suggested Direction |
 |:---|:---|:---|:---|:---|:---|---:|:---|:---:|:---|
-| F-01 | Security | src/api/auth.ts | 42 | Hardcoded JWT secret | `const JWT_SECRET = "sk_live_…"` | 95 | — | ✓ | Move to `.env`; rotate key |
+| F-01 | Security | src/api/auth.ts | 42 | Hardcoded JWT secret | `const JWT_SECRET = "<REDACTED>"` | 95 | — | ✓ | Move to `.env`; rotate key |
 
 ## 🟠 High
 (same table)

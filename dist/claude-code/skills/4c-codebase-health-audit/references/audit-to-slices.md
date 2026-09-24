@@ -11,7 +11,7 @@ One findings contract for both audits (`4b`, `4c`), one proposal shape for `3b-c
 ---
 
 ## §1 Finding IDs
-Assign `F-01…F-NN` once per report, after all filtering, ordered Critical → Low, then confidence descending. Never reuse or renumber an ID after the report is written. External citation form: `docs/audits/<report-stem>.md#F-07` (stem = filename without `.md`) — always the full path, so the §9 retention pin sees every citing issue.
+Assign `F-01…F-NN` once per report, after all filtering, ordered Critical → Low, then confidence descending. Never reuse or renumber an ID after the report is written, and never overwrite a report: if its path exists, append `-2`, `-3`… to the stem. External citation form: `docs/audits/<report-stem>.md#F-07` (stem = filename without `.md`) — always the full path, so the §9 retention pin sees every citing issue.
 
 ## §2 Impact Tiers
 
@@ -29,7 +29,7 @@ Every impact section of either report uses one table shape (`4c` adds a `Pass` c
 
 `| ID | File | Line(s) | Finding | Evidence | Confidence | Law | Recent? | Suggested Direction |`
 
-- **Evidence:** the quoted symbol, signature, or ≤ 3-line excerpt that proves the finding.
+- **Evidence:** the quoted symbol, signature, or ≤ 3-line excerpt that proves the finding. **Never a secret value** — show the symbol and `<REDACTED>` (evidence is copied into issue bodies, which may be public).
 - **Law:** `[[A-xxx]]`/`[[DR-xxx]]` IDs that exist in `.memory/`, else `—`. Never a placeholder ID.
 - **Recent?:** `✓` or blank in `4c`; always `—` in `4b`.
 
@@ -57,7 +57,7 @@ Every F-xx maps to exactly one `Slice <N>` / `Slice <N> (standalone)` or one tok
 - **Scope label:** every audit slice takes `scope:baseline`.
 
 ## §7 Critical Carve-out and Epic Threshold
-A slice whose highest resolved tier is 🔴 never takes a parent; its Coverage rows read `Slice <N> (standalone)`. Propose the epic only when ≥ 2 non-🔴 slices exist; otherwise every slice is standalone and `## Epic` is omitted.
+A slice whose highest resolved tier is 🔴 never takes a parent; its Coverage rows read `Slice <N> (standalone)`. Propose the epic only when ≥ 2 non-🔴 slices exist; otherwise every slice is standalone (all Coverage rows read `Slice <N> (standalone)`) and `## Epic` is omitted.
 
 ## §8 Milestone Default
 The `vX.Y.0` of the `[ACTIVE]` release in `docs/ROADMAP.md`; if absent, `v1.0.0`. The user confirms it at `3b` approval. A maintenance epic never needs a `3a` MAJOR/MINOR decision.

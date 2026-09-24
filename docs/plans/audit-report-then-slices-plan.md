@@ -336,6 +336,19 @@ Add a section **"Unified audit pipeline (added late)"** to the PR body, after "F
 
 ---
 
+## 9a. Implementation notes (post-review deviations)
+
+An independent judge reviewed the implementation (verdict: PASS WITH FIXES). Applied:
+- **3b pre-mint order:** the epic mints only after (a) **and** the (b) order/cycle check pass — a cycle HALT can no longer orphan an epic. (a) also HALTs on `BT-<epic>` without a `## Epic` section.
+- **Secret redaction:** `audit-to-slices.md` §3 — Evidence never carries a secret value (`<REDACTED>`); evidence is copied into issue bodies. Health template example redacted.
+- **4b tiering in the parent:** the subagent guardrail says "findings + confidence only", so the parent assigns impact tiers in Phase 3 step 1; the §6.3 `_INPUT_`/Output Contract additions were dropped.
+- **ICE Score writer:** 3b writes Size + ICE Score into each proposal slice after the Size prompt.
+- **Feature Acceptance Audit:** the audit-epic bullet explicitly replaces Input and Scope.
+- **Standalone audit slices** take the §8 milestone; below the epic threshold every Coverage row reads `Slice <N> (standalone)`.
+- **Reports never overwrite:** an existing path gets `-2`, `-3`… (cited F-IDs stay stable); arch slug strips trailing `-`.
+
+---
+
 ## 10. Out of scope / known limits
 
 - **Branch/commit prefix for `type:maintenance`.** `3d` builds `<type>/BT-<parent>-<slug>` from the parent's `type:` label, and no mapping table exists (`feat` is the only abbreviation in use). Audit epics will branch as `maintenance/BT-<n>-<slug>` and commit as `maintenance(BT-<n>): …`. Accepted; normalising prefixes is a separate change.

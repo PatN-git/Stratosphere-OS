@@ -12,7 +12,7 @@ Reference for `4b-audit-architecture-drift` Phase 3. Impact tiers, finding IDs, 
 
 ## Report Structure
 
-Write to `docs/audits/arch-<target-slug>-<YYYY-MM-DD>.md` (`<target-slug>` = target path with `/` → `-`, leading `-` stripped). Omit empty impact sections.
+Write to `docs/audits/arch-<target-slug>-<YYYY-MM-DD>.md` (`<target-slug>` = target path with `/` → `-`, leading and trailing `-` stripped). Omit empty impact sections.
 
 ```markdown
 ---

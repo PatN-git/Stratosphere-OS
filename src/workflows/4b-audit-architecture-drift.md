@@ -32,9 +32,9 @@ _CONSTRAINTS:_
 **Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (using the host's subagent mechanism) for Phase 2.
 - **Resolve targets first:** in the parent, enumerate the target directory's files and pass the explicit list; the subagent reads the named files and must not sweep to locate them (never ingest the whole repo).
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
-- **Output Contract:** the subagent returns the findings + confidence mapping + impact tier per `references/audit-to-slices.md` §2; the main agent handles subsequent logic.
+- **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
 
-_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md`, and `.agents/skills/4b-audit-architecture-drift/references/audit-to-slices.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, and `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix
@@ -66,14 +66,14 @@ Score findings 0–100 per the **Audit scope** above and `references/confidence-
 
 ## Phase 3: Output
 If issues ≥ 80 confidence exist:
-1. **Assign IDs:** `F-01…F-NN` per `references/audit-to-slices.md` §1.
+1. **Tier and ID:** assign each finding an impact tier per `references/audit-to-slices.md` §2, then `F-01…F-NN` per §1.
 2. **Write report:** `docs/audits/arch-<target-slug>-<YYYY-MM-DD>.md` per `references/arch-drift-report-template.md`.
 3. **Write proposal:** `.tmp/refactor-proposal-<report-stem>.md` per `references/audit-to-slices.md` §4–§8, each slice formatted strictly as "Template B" from `references/issue-templates.md` (all tiers in scope; ⚪ may be `[OPPORTUNISTIC]`). **Completion criterion:** every F-xx in the report appears in `## Coverage`; zero `[UNCOVERED]`.
    - CONSTRAINT:
-   - Generate only after confidence filtering and backlog collision checks complete.
-   - Use double-bracket syntax to link back to the exact system laws violated:
-     - Example: Violates [[A-102]] (Architecture rule)
-     - Example: Blocks BT-042 (Backlog Task)
+     - Generate only after confidence filtering and backlog collision checks complete.
+     - Use double-bracket syntax to link back to the exact system laws violated:
+       - Example: Violates [[A-102]] (Architecture rule)
+       - Example: Blocks BT-042 (Backlog Task)
 4. **Retention:** resolve the pinned set (`references/audit-to-slices.md` §9):
    ```bash
    gh issue list --state open --limit 500 --json body --jq '.[].body' | grep -oE 'docs/audits/[A-Za-z0-9._-]+\.md' | sort -u
@@ -81,7 +81,7 @@ If issues ≥ 80 confidence exist:
    Delete `docs/audits/arch-*.md` where the filename date is older than 90 days **and** the path is not in the pinned set. `gh` absent or unauthenticated → delete nothing and output `[SKIP] Retention — gh unavailable; no reports deleted.`
 
 ## Phase 4: Handoff
-HALT. Output a 2-line summary of flagged components and both paths, then:
+HALT. Output a 2-line summary of flagged components, then:
 ```
 Report:   docs/audits/arch-<target-slug>-<YYYY-MM-DD>.md
 Proposal: .tmp/refactor-proposal-<report-stem>.md  (<S> slices, epic: yes|no)

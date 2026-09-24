@@ -17,7 +17,7 @@ Regression is already covered — the repo-wide suite runs on the full feature b
 One **Strict Business-Logic Auditor** subagent under the Phase 2 guardrail: audit and format the table only; no edits, commits, or pushes.
 
 - **Input:** the parent PRD (`docs/prds/BT-<parentPadded>-<name>.md`) full AC set, the interface design doc, and the whole-feature diff — base ref `git merge-base HEAD origin/<default>`. The parent resolves changed paths and passes them explicitly; the subagent never runs repo-wide discovery.
-- **Audit epic** (per `references/audit-to-slices.md` §10 — parent body line 1 `Source: docs/audits/<stem>.md`, no PRD): input is the epic body's Coverage table and every child slice body (`Resolves:` lines, inline evidence, ACs), plus the whole-feature diff. Never read the report file. Scope: every finding resolved by a child slice no longer reproduces in the diff.
+- **Audit epic** (per `references/audit-to-slices.md` §10 — parent body line 1 `Source: docs/audits/<stem>.md`, no PRD; replaces Input and Scope): input is the epic body's Coverage table and every child slice body (`Resolves:` lines, inline evidence, ACs), plus the whole-feature diff. Never read the report file. Scope: every finding resolved by a child slice no longer reproduces in the diff.
 - **Scope:** cross-slice integration AC, and PRD AC unclaimed by any single slice. Do not re-litigate AC already mapped PASS in a shipped slice's table.
 - **Output:** the Phase 3 §1 AC↔test table, gaps ≥ 80 confidence.
 
