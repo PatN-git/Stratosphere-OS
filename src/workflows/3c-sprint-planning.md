@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.2.2"
-timestamp: 2026-07-28
+version: "2.3.0"
+timestamp: 2026-09-24
 ---
 
 # Sprint planning
@@ -38,7 +38,7 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 3: Capacity Calculation & Safeguards
 *Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues.*
-- **Weights:** `size:large` = 12h | `size:medium` = 6h | `size:small` = 1h.
+- **Weights:** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min.
 - **AFK Check:** Flag leaf issues containing `size:large` and `mode:AFK`.
 - **Label Check:** Verify labels exist in registry.
 
