@@ -260,7 +260,7 @@ Omit empty impact sections.
   - **Depth:** Template B-complete per §4 — `Resolves:` line with full report paths present, evidence inline, one no-longer-reproduces AC per resolved F-xx.
   - Guardrail sentence and `Slice Draft Auditor subagent` phrase: unchanged.
 - **Phase 2.5 Approval:** audit-sourced also confirms the epic (title, area, milestone per §8) or its absence (§7).
-- **Phase 3.3 pre-mint guard:** audit-sourced → run against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`. Mint order gains step (b0): **mint the epic first** (below), then replace every `BT-<epic>` in the proposal with the returned ID; only then run (a).
+- **Phase 3.3 pre-mint guard:** audit-sourced → run against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`. In (a), also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`) so any other hit HALTs **before anything is minted**; then step (b0): **mint the epic** (below) and replace every `BT-<epic>` in the proposal with the returned ID before (b). *(Rev-2 implementation note: running (a) after the epic mint would orphan the epic on a HALT.)*
 - **Phase 3.4 Generate — epic mint (new sub-bullet, own command literal):**
   ```bash
   gh issue create --title "<Epic Title>" --label "tier:epic,type:maintenance,area:<x>,status:planned" --milestone "<vX.Y.0>" --body-file <tmp epic body>

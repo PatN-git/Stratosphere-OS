@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.2"
-timestamp: 2026-07-27
+version: "1.1.3"
+timestamp: 2026-09-24
 ---
 
 # Nightly Consolidation
@@ -58,7 +58,7 @@ Recommend the next planning skill from backlog state. **Read-only. Emit the reco
    |---|---|
    | an open sprint `vX.Y.Z` (Z≥1) with unfinished slices | `/3d-implement-issue` (or `/3z-afk-loop` for `mode:AFK` slices) |
    | ≥1 ready `tier:slice` (`status:planned`, milestone `vX.Y.0`, no sprint digit Z) and no open sprint `vX.Y.Z` (Z≥1) | `/3c-sprint-planning` |
-   | a current-release `tier:epic` whose slicing is **incomplete** — zero child slices, **or** fewer child slices than its PRD §6 `[BASELINE]`/`[DIFFERENTIATOR]` stories (lazy slicing means a part-sliced epic still needs more) | `/3b-create-issue` — slice `BT-<padded>` |
+   | a current-release `tier:epic` whose slicing is **incomplete** — zero child slices, **or** fewer child slices than its PRD §6 `[BASELINE]`/`[DIFFERENTIATOR]` stories (lazy slicing means a part-sliced epic still needs more) — a `type:maintenance` audit epic (no PRD) is fully sliced at mint by `/3b`; apply only the zero-child test | `/3b-create-issue` — slice `BT-<padded>` |
    | ≥2 `tier:epic` unassigned to a release (milestone empty/`-`/`—`, or ID absent from `docs/ROADMAP.md`) | `/3a-version-planning` |
    | `docs/ROADMAP.md` absent and ≥1 `tier:epic` exists | `/3a-version-planning` — initialize roadmap |
    | none of the above | *"Backlog healthy — no planning action pending."* |
