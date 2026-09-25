@@ -346,6 +346,92 @@ def map_bundled_to_project(rel_path: str):
         return ".agents/skills/" + "/".join(parts[1:])
     return None
 
+CONTAINER_ROOTS = {
+    ".agents",
+    ".agents/skills",
+    ".agents/rules",
+    ".claude",
+    ".claude/rules",
+    ".github",
+    ".github/copilot",
+    ".github/copilot/skills",
+    ".github/workflows",
+    ".memory"
+}
+
+def is_file_pristine(file_path: Path, expected_hash: str | None) -> tuple[bool, str]:
+    """Checks whether an on-disk file matches its recorded baseline hash.
+    Returns (is_pristine, reason).
+    """
+    if not _versioning:
+        return False, "no_versioning_module"
+    if not file_path.exists():
+        return False, "missing"
+    if not expected_hash or expected_hash == "unknown" or len(expected_hash) != 64:
+        return False, "no_baseline_hash"
+    try:
+        text = file_path.read_bytes().decode("utf-8")
+        current_hash = _versioning.body_hash(text)
+        if current_hash == expected_hash:
+            return True, "pristine"
+        return False, "modified"
+    except Exception as e:
+        return False, f"read_error: {e}"
+
+def get_twin_paths(proj_path: str) -> list[str]:
+    """Returns dual-placed mirror paths for a given canonical project path."""
+    proj_path = Path(proj_path).as_posix()
+    twins = []
+    if proj_path.startswith(".agents/rules/"):
+        sub = proj_path[len(".agents/rules/"):]
+        twins.append(f".claude/rules/{sub}")
+    elif proj_path.startswith(".agents/skills/"):
+        sub = proj_path[len(".agents/skills/"):]
+        twins.append(f".github/copilot/skills/{sub}")
+    return twins
+
+def prune_empty_parents(file_path: Path, project_root: Path, dry: bool = False, simulated_pruned: set[Path] | None = None) -> list[str]:
+    """Recursively removes empty parent directories up to, but excluding, CONTAINER_ROOTS.
+    Supports simulation tracking in dry-run mode. Returns list of pruned directory relative paths.
+    """
+    pruned_dirs = []
+    parent = file_path.parent
+    while parent != project_root:
+        try:
+            rel_posix = parent.relative_to(project_root).as_posix()
+        except (ValueError, OSError):
+            break
+        if rel_posix in CONTAINER_ROOTS or parent == project_root:
+            break
+        if not parent.is_dir():
+            break
+        if dry:
+            if simulated_pruned is not None and parent in simulated_pruned:
+                parent = parent.parent
+                continue
+            try:
+                remaining = [p for p in parent.iterdir() if simulated_pruned is None or p not in simulated_pruned]
+            except OSError:
+                break
+            if not remaining:
+                pruned_dirs.append(rel_posix + "/")
+                if simulated_pruned is not None:
+                    simulated_pruned.add(parent)
+                parent = parent.parent
+            else:
+                break
+        else:
+            try:
+                if not any(parent.iterdir()):
+                    parent.rmdir()
+                    pruned_dirs.append(rel_posix + "/")
+                    parent = parent.parent
+                else:
+                    break
+            except OSError:
+                break
+    return pruned_dirs
+
 def reconcile_gitignore(project_dir, dry_run):
     gi = project_dir / ".gitignore"
     if not gi.exists():
@@ -905,6 +991,61 @@ def main():
                     file_info["status"] = "staged"
                     worklist["preserved_files"][proj_path] = file_info
                     
+        # Orphan detection (framework files dropped or renamed between versions)
+        bundled_proj_paths = {map_bundled_to_project(r) for r in bundled_manifest if map_bundled_to_project(r)}
+        candidate_orphans = [
+            p for p in sorted(lock_data.get("artifacts", {}).keys())
+            if p not in bundled_proj_paths and (p.startswith(".agents/skills/") or p.startswith(".agents/rules/"))
+        ]
+
+        pruned_orphan_records = []  # list of {"canonical": str, "files": [str]}
+        ghost_orphans = []          # list of canonical paths absent from disk
+        needs_review_orphans = []   # list of {"canonical": str, "files": [str], "reason": str}
+
+        for can_path in candidate_orphans:
+            lock_entry = lock_data["artifacts"].get(can_path, {})
+            expected_hash = lock_entry.get("sha256_at_install")
+            can_file = project / can_path
+            twin_paths = get_twin_paths(can_path)
+
+            existing_files = []
+            if can_file.exists():
+                existing_files.append((can_path, can_file))
+            for tw in twin_paths:
+                tw_file = project / tw
+                if tw_file.exists():
+                    existing_files.append((tw, tw_file))
+
+            if not existing_files:
+                ghost_orphans.append(can_path)
+                continue
+
+            is_pristine_all = True
+            failure_reason = None
+            for rel_p, f_path in existing_files:
+                pristine, reason = is_file_pristine(f_path, expected_hash)
+                if not pristine:
+                    is_pristine_all = False
+                    failure_reason = reason
+                    break
+
+            if is_pristine_all:
+                pruned_orphan_records.append({
+                    "canonical": can_path,
+                    "files": [rel_p for rel_p, _ in existing_files]
+                })
+            else:
+                needs_review_orphans.append({
+                    "canonical": can_path,
+                    "files": [rel_p for rel_p, _ in existing_files],
+                    "reason": failure_reason
+                })
+
+        worklist["pruned_orphans"] = [r["canonical"] for r in pruned_orphan_records]
+        worklist["pruned_files"] = [f for r in pruned_orphan_records for f in r["files"]]
+        worklist["ghost_orphans"] = ghost_orphans
+        worklist["needs_review_orphans"] = [r["canonical"] for r in needs_review_orphans]
+
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
         worklist_file = tmp_dir / "stratosphere-update-worklist.json"
@@ -942,6 +1083,25 @@ def main():
                 new_p.parent.mkdir(parents=True, exist_ok=True)
                 new_p.write_bytes(prop_bytes)
                 print(f"STAGED: {proj_path}.stratosphere-new")
+
+            simulated_pruned = set()
+            all_pruned_files = []
+            for rec in pruned_orphan_records:
+                for f_rel in rec["files"]:
+                    p_file = project / f_rel
+                    simulated_pruned.add(p_file)
+                    all_pruned_files.append((f_rel, p_file))
+                    print(f"WOULD PRUNE: {f_rel}")
+            for f_rel, p_file in all_pruned_files:
+                pruned_dirs = prune_empty_parents(p_file, project, dry=True, simulated_pruned=simulated_pruned)
+                for d_rel in pruned_dirs:
+                    print(f"WOULD PRUNE DIRECTORY: {d_rel}")
+            for rec in needs_review_orphans:
+                for f_rel in rec["files"]:
+                    print(f"NEEDS-REVIEW (modified orphan): {f_rel}")
+            for g_can in ghost_orphans:
+                print(f"WOULD PURGE GHOST LOCK: {g_can}")
+
             print("Summary: All updates verified and written to *.stratosphere-new files (dry-run).")
             return
             
@@ -975,6 +1135,33 @@ def main():
                 new_p.unlink()
                 
             print(f"UPDATED: {proj_path}")
+            
+        # Prune verified pristine orphans and their twin copies
+        all_pruned_files = []
+        for rec in pruned_orphan_records:
+            for f_rel in rec["files"]:
+                p_file = project / f_rel
+                if p_file.exists():
+                    p_file.unlink()
+                    all_pruned_files.append((f_rel, p_file))
+                    print(f"PRUNED: {f_rel}")
+            if rec["canonical"] in lock_data.get("artifacts", {}):
+                del lock_data["artifacts"][rec["canonical"]]
+
+        for f_rel, p_file in all_pruned_files:
+            pruned_dirs = prune_empty_parents(p_file, project, dry=False)
+            for d_rel in pruned_dirs:
+                print(f"PRUNED DIRECTORY: {d_rel}")
+
+        # Clean ghost orphans from lock
+        for g_can in ghost_orphans:
+            if g_can in lock_data.get("artifacts", {}):
+                del lock_data["artifacts"][g_can]
+
+        # Report modified/unverified orphans as non-fatal notices
+        for rec in needs_review_orphans:
+            for f_rel in rec["files"]:
+                print(f"Notice: Modified orphan kept: {f_rel} (needs review)")
             
         for proj_path, info in worklist["preserved_files"].items():
             if proj_path not in proposed_files:

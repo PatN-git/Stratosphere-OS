@@ -1821,6 +1821,333 @@ def test_template_adds_block():
         raise AssertionError("Expected label-canonical markers to be present")
     print("Template adds new block test passed!")
 
+# --- BT-106: Project-Level Orphan Guard Tests ------------------------------
+
+def setup_orphan_test_env(test_name):
+    tmp = REPO_ROOT / ".tmp" / test_name
+    if tmp.exists():
+        shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True, exist_ok=True)
+    
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    
+    # Pre-place matching constitution templates via binary copy to ensure exact byte match
+    ctpl = mock_plugin / "assets" / "templates" / "constitution"
+    if ctpl.is_dir():
+        for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+            src_f = ctpl / name
+            if src_f.exists():
+                (tmp / name).write_bytes(src_f.read_bytes())
+                
+    # Mock bundle contains a new skill (so legacy skills/rules are orphans)
+    (mock_plugin / "skills" / "new-bundled-skill").mkdir(parents=True, exist_ok=True)
+    (mock_plugin / "skills" / "new-bundled-skill" / "SKILL.md").write_bytes(b"---\nname: new-bundled-skill\n---\nNew\n")
+
+    versions_data = {
+        "plugin_version": "4.0.0",
+        "artifacts": {
+            "skills/new-bundled-skill/SKILL.md": {
+                "version": "1.0.0",
+                "timestamp": "2026-09-25",
+                "sha256": "dummy"
+            }
+        }
+    }
+    (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
+    scaffold_script = mock_plugin / "scripts" / "scaffold.py"
+    return tmp, scaffold_script
+
+def test_orphan_prune_on_skill_rename_or_drop():
+    print("--- Test: Orphan Prune on Skill Rename/Drop ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_skill_drop")
+    
+    skill_dir = tmp / ".agents" / "skills" / "legacy-skill"
+    ref_dir = skill_dir / "references"
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: legacy-skill\nversion: 1.0.0\n---\n# Legacy Skill\n"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    ref_file = ref_dir / "doc.md"
+    ref_content = "# Reference Guide\nSome instructions."
+    ref_file.write_text(ref_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/legacy-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            },
+            ".agents/skills/legacy-skill/references/doc.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(ref_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/skills/legacy-skill/SKILL.md" in res.stdout
+    assert "PRUNED: .agents/skills/legacy-skill/references/doc.md" in res.stdout
+    assert "PRUNED DIRECTORY: .agents/skills/legacy-skill/references/" in res.stdout
+    assert "PRUNED DIRECTORY: .agents/skills/legacy-skill/" in res.stdout
+    
+    assert not skill_file.exists(), "Skill file should be pruned"
+    assert not ref_file.exists(), "Reference file should be pruned"
+    assert not ref_dir.exists(), "Reference directory should be pruned"
+    assert not skill_dir.exists(), "Skill directory should be pruned"
+    assert (tmp / ".agents" / "skills").exists(), "Container root .agents/skills must remain"
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/legacy-skill/SKILL.md" not in new_lock.get("artifacts", {})
+    assert ".agents/skills/legacy-skill/references/doc.md" not in new_lock.get("artifacts", {})
+    print("Orphan prune on skill drop test passed!")
+
+def test_orphan_prune_dual_placed_twins():
+    print("--- Test: Orphan Prune Dual Placed Twins ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_twins")
+    
+    # Canonical rule and claude rule twin
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "old-rule.md"
+    rule_content = "---\nname: old-rule\ntrigger: glob\n---\nRule body"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    claude_rule_dir = tmp / ".claude" / "rules"
+    claude_rule_dir.mkdir(parents=True, exist_ok=True)
+    claude_rule = claude_rule_dir / "old-rule.md"
+    claude_rule.write_text(rule_content, encoding="utf-8")
+    
+    # Canonical skill and copilot skill twin
+    can_skill_dir = tmp / ".agents" / "skills" / "old-twin-skill"
+    can_skill_dir.mkdir(parents=True, exist_ok=True)
+    can_skill = can_skill_dir / "SKILL.md"
+    skill_content = "---\nname: old-twin-skill\n---\nSkill content"
+    can_skill.write_text(skill_content, encoding="utf-8")
+    
+    copilot_skill_dir = tmp / ".github" / "copilot" / "skills" / "old-twin-skill"
+    copilot_skill_dir.mkdir(parents=True, exist_ok=True)
+    copilot_skill = copilot_skill_dir / "SKILL.md"
+    copilot_skill.write_text(skill_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/old-rule.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            },
+            ".agents/skills/old-twin-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/rules/old-rule.md" in res.stdout
+    assert "PRUNED: .claude/rules/old-rule.md" in res.stdout
+    assert "PRUNED: .agents/skills/old-twin-skill/SKILL.md" in res.stdout
+    assert "PRUNED: .github/copilot/skills/old-twin-skill/SKILL.md" in res.stdout
+    assert "PRUNED DIRECTORY: .github/copilot/skills/old-twin-skill/" in res.stdout
+    
+    assert not can_rule.exists()
+    assert not claude_rule.exists()
+    assert not can_skill.exists()
+    assert not copilot_skill.exists()
+    assert not copilot_skill_dir.exists()
+    assert (tmp / ".github" / "copilot" / "skills").exists(), "Copilot skills container root must survive"
+    assert claude_rule_dir.exists(), "Claude rules container root must survive"
+    print("Orphan prune dual placed twins test passed!")
+
+def test_absent_twin_is_benign():
+    print("--- Test: Absent Twin Is Benign ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_absent_twin")
+    
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "non-glob.md"
+    rule_content = "---\nname: non-glob\ntrigger: always_on\n---\nRule body"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/non-glob.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/rules/non-glob.md" in res.stdout
+    assert "NEEDS-REVIEW" not in res.stdout
+    assert not can_rule.exists()
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/rules/non-glob.md" not in new_lock.get("artifacts", {})
+    print("Absent twin is benign test passed!")
+
+def test_modified_orphan_preserved_in_needs_review():
+    print("--- Test: Modified Orphan Preserved in NEEDS-REVIEW ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_modified_orphan")
+    
+    skill_dir = tmp / ".agents" / "skills" / "edited-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_file.write_text("User customized content", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/edited-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": "original_pristine_hash_which_does_not_match"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "Notice: Modified orphan kept: .agents/skills/edited-skill/SKILL.md (needs review)" in res.stdout
+    assert skill_file.exists(), "Modified orphan file must be preserved"
+    assert skill_file.read_text(encoding="utf-8") == "User customized content"
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/edited-skill/SKILL.md" in new_lock.get("artifacts", {})
+    print("Modified orphan preserved test passed!")
+
+def test_twin_modification_preserves_both():
+    print("--- Test: Twin Modification Preserves Both ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_twin_modified")
+    
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "custom-twin.md"
+    rule_content = "Canonical rule content"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    claude_rule_dir = tmp / ".claude" / "rules"
+    claude_rule_dir.mkdir(parents=True, exist_ok=True)
+    claude_rule = claude_rule_dir / "custom-twin.md"
+    claude_rule.write_text("User edited twin content", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/custom-twin.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert can_rule.exists(), "Canonical rule should be preserved if twin was edited"
+    assert claude_rule.exists(), "Edited twin should be preserved"
+    assert "Notice: Modified orphan kept" in res.stdout
+    print("Twin modification preserves both test passed!")
+
+def test_ghost_orphan_cleaned_from_lock():
+    print("--- Test: Ghost Orphan Cleaned From Lock ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_ghost_orphan")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/ghost-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": "somehash"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "needs review" not in res.stdout.lower()
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/ghost-skill/SKILL.md" not in new_lock.get("artifacts", {})
+    print("Ghost orphan cleaned from lock test passed!")
+
+def test_user_content_in_orphan_dir_preserved():
+    print("--- Test: User Content in Orphan Dir Preserved ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_user_content_survives")
+    
+    skill_dir = tmp / ".agents" / "skills" / "shared-dir-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: shared-dir-skill\n---\nSkill"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    user_file = skill_dir / "notes.txt"
+    user_file.write_text("User personal notes", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/shared-dir-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/skills/shared-dir-skill/SKILL.md" in res.stdout
+    assert not skill_file.exists(), "Framework skill file should be pruned"
+    assert user_file.exists(), "User file must be preserved"
+    assert skill_dir.exists(), "Parent directory must be preserved because user file remains"
+    print("User content in orphan dir preserved test passed!")
+
+def test_orphan_prune_dry_run():
+    print("--- Test: Orphan Prune Dry Run ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_dry_run")
+    
+    skill_dir = tmp / ".agents" / "skills" / "dry-run-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: dry-run-skill\n---\nSkill"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    copilot_dir = tmp / ".github" / "copilot" / "skills" / "dry-run-skill"
+    copilot_dir.mkdir(parents=True, exist_ok=True)
+    copilot_file = copilot_dir / "SKILL.md"
+    copilot_file.write_text(skill_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/dry-run-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "WOULD PRUNE: .agents/skills/dry-run-skill/SKILL.md" in res.stdout
+    assert "WOULD PRUNE: .github/copilot/skills/dry-run-skill/SKILL.md" in res.stdout
+    assert "WOULD PRUNE DIRECTORY: .agents/skills/dry-run-skill/" in res.stdout
+    assert "WOULD PRUNE DIRECTORY: .github/copilot/skills/dry-run-skill/" in res.stdout
+    
+    assert skill_file.exists(), "Dry run must not delete skill file"
+    assert copilot_file.exists(), "Dry run must not delete copilot file"
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/dry-run-skill/SKILL.md" in lock_after.get("artifacts", {}), "Dry run must not modify lockfile"
+    print("Orphan prune dry run test passed!")
+
 if __name__ == "__main__":
     test_pristine_update()
     test_conflict_update()
@@ -1844,4 +2171,12 @@ if __name__ == "__main__":
     test_constitution_needs_review()
     test_malformed_template_skip()
     test_template_adds_block()
+    test_orphan_prune_on_skill_rename_or_drop()
+    test_orphan_prune_dual_placed_twins()
+    test_absent_twin_is_benign()
+    test_modified_orphan_preserved_in_needs_review()
+    test_twin_modification_preserves_both()
+    test_ghost_orphan_cleaned_from_lock()
+    test_user_content_in_orphan_dir_preserved()
+    test_orphan_prune_dry_run()
     print("All update E2E tests passed successfully.")
