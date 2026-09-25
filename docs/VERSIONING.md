@@ -62,7 +62,12 @@ The overall framework plugin version is derived from individual artifact version
 - **Initial Bootstrapping**: The very first release (`v1.1.0`) was cut manually since no prior tag existed for comparison. All subsequent releases are derived automatically via `release.py`.
 - **What /stratosphere-update Covers**:
   - `scaffold.py` acts as the single installer and updater for all framework-owned files.
-  - When running `/stratosphere-update` (which invokes `scaffold.py --update`), it refreshes all managed framework templates and rules (via block merging or byte-diff updates) as well as opted-in framework GitHub Actions (such as `.github/workflows/sync-labels-to-project.yml`) if they are present in the project.
+  - When running `/stratosphere-update` (which invokes `scaffold.py --update`), it selectively refreshes framework files according to their tier without clobbering user customizations:
+    1. **Memory Registries (`.memory/`)**: Protected via `SOS:BLOCK` markers and three-way block-level merging. User-customized blocks are preserved; unedited blocks receive framework updates automatically.
+    2. **Constitution Files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`)**: User edits are never overwritten. When upstream changes occur, the incoming template is staged at `<file>.stratosphere-new` and reported under `needs merge/review` for explicit user approval.
+    3. **Project Scripts (`.agents/scripts/**`)**: Script baselines are tracked via SHA-256 in `.stratosphere-lock.json` across install, update, and repair-lock. Pristine scripts matching baseline or known historical release hashes are refreshed in place. Locally modified scripts are preserved byte-for-byte on disk, staged with `<script>.stratosphere-new`, and reported under `NEEDS-REVIEW (modified script)`.
+    4. **Managed Rules & Skills (`.agents/rules/`, `.agents/skills/`, and host mirrors)**: Refreshed in place when updated upstream. Framework files removed or renamed between versions are safely pruned by the orphan-guard if pristine, or preserved under `NEEDS-REVIEW (modified orphan)` if modified.
+    5. **Opted-in GitHub Actions**: Managed only if allowlisted and already opted-in by the project.
   - It additively reconciles required `.gitignore` and `.gitattributes` lines (e.g. `*.work.md` and linguist diff directives) without removing or reordering user-written lines.
   - Third-party and domain-specific skills are updated separately via `/sync-skills` as they are gitignored and fetched on demand.
   - An automated orphan-guard test in CI (`tests/verify_scripts.py`) enforces that no bundled framework file can be orphaned (every bundled file must be mapped by `scaffold.py` to its project destination or explicitly excluded with a documented reason).

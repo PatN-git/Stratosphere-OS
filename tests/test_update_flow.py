@@ -2148,6 +2148,323 @@ def test_orphan_prune_dry_run():
     assert ".agents/skills/dry-run-skill/SKILL.md" in lock_after.get("artifacts", {}), "Dry run must not modify lockfile"
     print("Orphan prune dry run test passed!")
 
+def test_script_pristine_refresh():
+    print("--- Test: Script Pristine Refresh ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_pristine_refresh")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    old_content = "# Old pristine script\nprint('old')\n"
+    target_script.write_text(old_content, encoding="utf-8")
+    
+    new_content = "# New upstream script\nprint('new')\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(new_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(old_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" in res.stdout
+    assert target_script.read_text(encoding="utf-8") == new_content
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/validate_memory.py"]["sha256_at_install"] == _versioning.body_hash(new_content)
+    print("Script pristine refresh test passed!")
+
+def test_script_locally_edited_preserved():
+    print("--- Test: Script Locally Edited Preserved ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_edited_preserved")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// User custom design tokens patch\nconsole.log('custom');\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "// Upstream design tokens v4.1.0\nconsole.log('upstream');\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(upstream_content, encoding="utf-8")
+    
+    baseline_content = "// Baseline original\nconsole.log('orig');\n"
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(baseline_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" in res.stdout
+    
+    assert target_script.read_text(encoding="utf-8") == user_content, "Locally edited script must survive byte for byte"
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert staged_file.exists(), "Stratosphere-new must be staged"
+    assert staged_file.read_text(encoding="utf-8") == upstream_content
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == _versioning.body_hash(baseline_content), "Lockfile hash must not advance for modified script"
+    print("Script locally edited preserved test passed!")
+
+def test_script_nested_preservation():
+    print("--- Test: Script Nested Preservation ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_nested_preservation")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "okf_viewer" / "templates"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "viz.html"
+    user_content = "<html><body>Custom Template</body></html>\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "<html><body>New Upstream Template</body></html>\n"
+    (mock_plugin / "scripts" / "okf_viewer" / "templates" / "viz.html").write_text(upstream_content, encoding="utf-8")
+    
+    baseline_content = "<html><body>Original Template</body></html>\n"
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/okf_viewer/templates/viz.html": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(baseline_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/okf_viewer/templates/viz.html" in res.stdout
+    staged_file = script_dir / "viz.html.stratosphere-new"
+    assert staged_file.exists()
+    assert staged_file.read_text(encoding="utf-8") == upstream_content
+    assert target_script.read_text(encoding="utf-8") == user_content
+    print("Script nested preservation test passed!")
+
+def test_script_resolve_workflow():
+    print("--- Test: Script Resolve Workflow ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_resolve_workflow")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// Custom patch\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "// Upstream version\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(upstream_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": "old_hash"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # 1. Update stages .stratosphere-new
+    run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert staged_file.exists()
+    
+    # 2. User resolves by taking .stratosphere-new
+    target_script.write_text(staged_file.read_text(encoding="utf-8"), encoding="utf-8")
+    
+    # 3. Next update recognizes dst == src, cleans up .stratosphere-new and updates lockfile
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert not staged_file.exists(), "Staged file should be unlinked upon resolve"
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == _versioning.body_hash(upstream_content)
+    print("Script resolve workflow test passed!")
+
+def test_script_legacy_project_fallback():
+    print("--- Test: Script Legacy Project Fallback ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_legacy_fallback")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Script A: Historical shipped content (from v4.0.0 validate_memory.py)
+    script_a = script_dir / "validate_memory.py"
+    v4_content = (REPO_ROOT / "src" / "scripts" / "validate_memory.py").read_text(encoding="utf-8")
+    script_a.write_text(v4_content, encoding="utf-8")
+    
+    # Mock plugin has a newer version of validate_memory.py
+    new_script_a = v4_content + "\n# Extra update\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(new_script_a, encoding="utf-8")
+    
+    # Script B: Locally customized script with no lockfile entry
+    design_dir = script_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    script_b = design_dir / "design_theme.py"
+    script_b.write_text("// Purely custom user code\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// Upstream theme\n", encoding="utf-8")
+    
+    # Legacy lockfile has NO entries under .agents/scripts/
+    lock_data = {
+        "installed_plugin_version": "3.3.0",
+        "artifacts": {}
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    # Script A was historical shipped version -> refreshed
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" in res.stdout
+    assert script_a.read_text(encoding="utf-8") == new_script_a
+    
+    # Script B was custom content -> preserved, staged, flagged
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res.stdout
+    assert script_b.read_text(encoding="utf-8") == "// Purely custom user code\n"
+    assert (design_dir / "design_theme.py.stratosphere-new").exists()
+    print("Script legacy project fallback test passed!")
+
+def test_script_crlf_normalization():
+    print("--- Test: Script CRLF Normalization ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_crlf_norm")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    
+    # Disk has CRLF
+    content_crlf = "print('hello')\r\nprint('world')\r\n"
+    target_script.write_bytes(content_crlf.encode("utf-8"))
+    
+    # Upstream plugin has LF
+    content_lf = "print('hello')\nprint('world')\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_bytes(content_lf.encode("utf-8"))
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(content_lf)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    # Must NOT report as refreshed because normalized content is identical
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "WOULD REFRESH script: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "NEEDS-REVIEW" not in res.stdout
+    print("Script CRLF normalization test passed!")
+
+def test_script_dry_run():
+    print("--- Test: Script Dry Run ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_dry_run")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    user_content = "# Local edits\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "# Upstream content\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(upstream_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": "old_hash"
+            }
+        }
+    }
+    lock_file = tmp / ".agents" / ".stratosphere-lock.json"
+    lock_file.write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "STAGED: .agents/scripts/validate_memory.py.stratosphere-new" in res.stdout
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/validate_memory.py" in res.stdout
+    
+    staged_file = script_dir / "validate_memory.py.stratosphere-new"
+    assert staged_file.exists(), "Dry-run should stage .stratosphere-new for review"
+    assert target_script.read_text(encoding="utf-8") == user_content, "Dry run must not overwrite original script"
+    
+    # Assert lockfile was not touched
+    lock_after = json.loads(lock_file.read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/validate_memory.py"]["sha256_at_install"] == "old_hash"
+    print("Script dry run test passed!")
+
+def test_script_repair_lock():
+    print("--- Test: Script Repair Lock ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_repair_lock")
+    
+    # Place scripts
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    (script_dir / "validate_memory.py").write_text("print('val')\n", encoding="utf-8")
+    (script_dir / "reconcile.py").write_text("print('rec')\n", encoding="utf-8")
+    
+    design_dir = script_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    (design_dir / "design_theme.py").write_text("console.log('theme')\n", encoding="utf-8")
+    
+    # Run repair-lock
+    res = run_cmd([sys.executable, str(scaffold_script), "--repair-lock"], cwd=tmp)
+    assert "Repaired .stratosphere-lock.json" in res.stdout
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    arts = lock_after.get("artifacts", {})
+    assert ".agents/scripts/validate_memory.py" in arts
+    assert ".agents/scripts/reconcile.py" in arts
+    assert ".agents/scripts/design/design_theme.py" in arts
+    for k in arts:
+        assert "\\" not in k, f"Path key '{k}' must be strictly POSIX formatted"
+    print("Script repair lock test passed!")
+
+def test_orphan_prune_does_not_touch_scripts():
+    print("--- Test: Orphan Prune Does Not Touch Scripts ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_script_isolation")
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    script_file = script_dir / "validate_memory.py"
+    content = "print('isolated')\n"
+    script_file.write_text(content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "WOULD PRUNE: .agents/scripts/validate_memory.py" not in res.stdout
+    assert script_file.exists(), "Script must not be pruned by orphan pruner"
+    print("Orphan prune does not touch scripts test passed!")
+
 if __name__ == "__main__":
     test_pristine_update()
     test_conflict_update()
@@ -2179,4 +2496,13 @@ if __name__ == "__main__":
     test_ghost_orphan_cleaned_from_lock()
     test_user_content_in_orphan_dir_preserved()
     test_orphan_prune_dry_run()
+    test_script_pristine_refresh()
+    test_script_locally_edited_preserved()
+    test_script_nested_preservation()
+    test_script_resolve_workflow()
+    test_script_legacy_project_fallback()
+    test_script_crlf_normalization()
+    test_script_dry_run()
+    test_script_repair_lock()
+    test_orphan_prune_does_not_touch_scripts()
     print("All update E2E tests passed successfully.")

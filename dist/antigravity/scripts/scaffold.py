@@ -359,24 +359,77 @@ CONTAINER_ROOTS = {
     ".memory"
 }
 
-def is_file_pristine(file_path: Path, expected_hash: str | None) -> tuple[bool, str]:
+KNOWN_SHIPPED_SCRIPT_HASHES = {
+    ".agents/scripts/design/design_theme.py": {
+        "fd951c5c64fcb5a645e825639da0c5f2471ff5524fcaeffb3f3029b1de0683a0",
+    },
+    ".agents/scripts/design/package.json": {
+        "5f02f37dbb663508b383207fdb65e1ad8c3445a7a70453083e523ece864d787d",
+    },
+    ".agents/scripts/okf_view.py": {
+        "6fa6c6cffbeadf8924a596cf25b6720755126a40aef9aeec6a2f62450fb7864f",
+    },
+    ".agents/scripts/okf_viewer/LICENSE": {
+        "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    },
+    ".agents/scripts/okf_viewer/NOTICE": {
+        "48a437ee4004d596e174042520a1667630bc17d1e8ad2f6418177a4c010aded2",
+    },
+    ".agents/scripts/okf_viewer/__init__.py": {
+        "fad8fd70a206045ff8f795fc13884bf99d930ff6fa0634791a7d14d23d19dfd0",
+    },
+    ".agents/scripts/okf_viewer/document.py": {
+        "04680187b7880e64679e74dcb331b33b3b05ef4a2765b4b10c8fbac8130cc90f",
+    },
+    ".agents/scripts/okf_viewer/generator.py": {
+        "0ea2f456caae49eb2c8858f26947031305f0bfaf29a7189732b8fd99423152d1",
+    },
+    ".agents/scripts/okf_viewer/static/viz.css": {
+        "9a36cd5efcc6cbc864b43ce535728e2fdd0871850acd712894f9497f26850d95",
+    },
+    ".agents/scripts/okf_viewer/static/viz.js": {
+        "86cff85fdd1f469c32e1a7f81f4dd6f744b68c95ac2b5e40dc2412a3423283a6",
+    },
+    ".agents/scripts/okf_viewer/templates/viz.html": {
+        "0ecff2742aa1e55cf2a630bd44065beb65eaf8c534d901a292013c3b058d8461",
+    },
+    ".agents/scripts/reconcile.py": {
+        "3452a5d0bef592f6002bcf5b9936cb66b661533b5e4ea0657002102c40cf1ec9",
+        "c2ff7cb943c8a04fce1a41555d0a3b4c80852441ffa619ed20d4a5bca49c1224",
+    },
+    ".agents/scripts/validate_memory.py": {
+        "2f18a37ab53d79ded5f1b5888c4ad977709e8103c2b464c9bcebd1accae3a568",
+        "95f723323c425e3ed42b2e550d8b0363f37101cb5395b6464a1dca1fac5d05b5",
+        "9e470da6ad4cbedc09db12aad7063b422dd3f73b4082d7e2d6750bf56711da37",
+    },
+}
+
+def is_file_pristine(file_path: Path, expected_hash: str | None, rel_proj_path: str | None = None) -> tuple[bool, str]:
     """Checks whether an on-disk file matches its recorded baseline hash.
+    For scripts under .agents/scripts/**, also checks against known historical
+    shipped hashes for backward compatibility with pre-change installations.
     Returns (is_pristine, reason).
     """
     if not _versioning:
         return False, "no_versioning_module"
     if not file_path.exists():
         return False, "missing"
-    if not expected_hash or expected_hash == "unknown" or len(expected_hash) != 64:
-        return False, "no_baseline_hash"
     try:
         text = file_path.read_bytes().decode("utf-8")
         current_hash = _versioning.body_hash(text)
+    except Exception as e:
+        return False, f"read_error: {e}"
+
+    if expected_hash and expected_hash != "unknown" and len(expected_hash) == 64:
         if current_hash == expected_hash:
             return True, "pristine"
         return False, "modified"
-    except Exception as e:
-        return False, f"read_error: {e}"
+
+    if rel_proj_path and rel_proj_path in KNOWN_SHIPPED_SCRIPT_HASHES:
+        if current_hash in KNOWN_SHIPPED_SCRIPT_HASHES[rel_proj_path]:
+            return True, "known_shipped_version"
+
+    return False, "no_baseline_hash"
 
 def get_twin_paths(proj_path: str) -> list[str]:
     """Returns dual-placed mirror paths for a given canonical project path."""
@@ -535,28 +588,38 @@ def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "pre
     res["created"].append(rel)
 
 
-def place_project_scripts(project: Path, res, dry, update: bool):
-    """Copy project-local deterministic scripts into `.agents/scripts/`. Runs on BOTH
-    fresh install and `--update` — scripts are outside `versions.json`, so the
-    manifest-diff update loop never sees them; without this an existing project would
-    never receive a new script (e.g. `reconcile.py`) or a changed one on update.
-    `place(tier='managed')` refreshes a changed file and creates a missing one."""
+def get_bundled_project_scripts(project: Path):
+    """Enumerates all project scripts shipped with the plugin as (src, dst, rel_proj_path).
+    Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
+    """
+    scripts = []
     for name in ("validate_memory.py", "reconcile.py", "okf_view.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
-            place(src, project / ".agents" / "scripts" / name, res, dry, update=update, tier="managed")
+            dst = project / ".agents" / "scripts" / name
+            scripts.append((src, dst, f".agents/scripts/{name}"))
     design_dir = PLUGIN_ROOT / "scripts" / "design"
     if design_dir.is_dir():
         for src in sorted(design_dir.rglob("*")):
             if src.is_file() and "test" not in src.parts:
-                place(src, project / ".agents" / "scripts" / "design" / src.relative_to(design_dir),
-                      res, dry, update=update, tier="managed")
+                rel = src.relative_to(design_dir).as_posix()
+                dst = project / ".agents" / "scripts" / "design" / rel
+                scripts.append((src, dst, f".agents/scripts/design/{rel}"))
     viewer_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
     if viewer_dir.is_dir():
         for src in sorted(viewer_dir.rglob("*")):
             if src.is_file():
-                place(src, project / ".agents" / "scripts" / "okf_viewer" / src.relative_to(viewer_dir),
-                      res, dry, update=update, tier="managed")
+                rel = src.relative_to(viewer_dir).as_posix()
+                dst = project / ".agents" / "scripts" / "okf_viewer" / rel
+                scripts.append((src, dst, f".agents/scripts/okf_viewer/{rel}"))
+    return scripts
+
+
+def place_project_scripts(project: Path, res, dry, update: bool = False):
+    """Copy project-local deterministic scripts into `.agents/scripts/`. Runs on
+    fresh install (`update=False`). Places files using `place(tier='managed')`."""
+    for src, dst, _ in get_bundled_project_scripts(project):
+        place(src, dst, res, dry, update=update, tier="managed")
 
 
 def main():
@@ -656,6 +719,37 @@ def main():
                     lock_data.setdefault("artifacts", {})[proj_path] = lock_entry
                     count += 1
         
+        # Also track project scripts under .agents/scripts/**
+        for src, dst, rel_proj_path in get_bundled_project_scripts(project):
+            if repair:
+                if dst.exists():
+                    try:
+                        text = dst.read_bytes().decode("utf-8")
+                        dst_h = _versioning.body_hash(text)
+                        src_h = _versioning.body_hash(src.read_text(encoding="utf-8"))
+                        if dst_h in KNOWN_SHIPPED_SCRIPT_HASHES.get(rel_proj_path, set()) or dst_h == src_h:
+                            lock_hash = dst_h
+                        else:
+                            lock_hash = src_h
+                        lock_data.setdefault("artifacts", {})[rel_proj_path] = {
+                            "version": "unknown",
+                            "sha256_at_install": lock_hash
+                        }
+                        count += 1
+                    except Exception:
+                        pass
+            else:
+                if rel_proj_path not in lock_data.get("artifacts", {}) and dst.exists():
+                    try:
+                        text = dst.read_bytes().decode("utf-8")
+                        lock_data.setdefault("artifacts", {})[rel_proj_path] = {
+                            "version": "unknown",
+                            "sha256_at_install": _versioning.body_hash(text)
+                        }
+                        count += 1
+                    except Exception:
+                        pass
+
         lock_file.parent.mkdir(parents=True, exist_ok=True)
         if not dry_run and count > 0:
             lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -694,7 +788,11 @@ def main():
             "plugin_version": plugin_version,
             "stale_managed": [],
             "needs_review_constitution": [],
-            "preserved_files": {}
+            "preserved_files": {},
+            "refreshed_scripts": [],
+            "created_scripts": [],
+            "needs_review_scripts": [],
+            "unchanged_scripts": []
         }
         
         proposed_files = {}  # proj_path -> proposed_bytes
@@ -1046,6 +1144,54 @@ def main():
         worklist["ghost_orphans"] = ghost_orphans
         worklist["needs_review_orphans"] = [r["canonical"] for r in needs_review_orphans]
 
+        # Project-local scripts (.agents/scripts/**)
+        for src, dst, rel_proj_path in get_bundled_project_scripts(project):
+            src_bytes = src.read_bytes()
+            src_text = src_bytes.decode("utf-8")
+            src_hash = _versioning.body_hash(src_text)
+            new_p = dst.with_name(dst.name + ".stratosphere-new")
+            has_new_file = new_p.exists()
+
+            if not dst.exists():
+                worklist["created_scripts"].append(rel_proj_path)
+                proposed_files[rel_proj_path] = src_bytes
+                continue
+
+            try:
+                dst_bytes = dst.read_bytes()
+                dst_text = dst_bytes.decode("utf-8")
+                dst_hash = _versioning.body_hash(dst_text)
+            except Exception:
+                dst_bytes = b""
+                dst_text = ""
+                dst_hash = ""
+
+            # Check normalized content identity to avoid Windows CRLF false positives
+            if dst_hash == src_hash:
+                worklist["unchanged_scripts"].append(rel_proj_path)
+                if not dry and has_new_file:
+                    try:
+                        new_p.unlink()
+                    except OSError:
+                        pass
+                continue
+
+            lock_entry = lock_data.get("artifacts", {}).get(rel_proj_path, {})
+            expected_hash = lock_entry.get("sha256_at_install")
+
+            pristine, reason = is_file_pristine(dst, expected_hash, rel_proj_path)
+            if pristine:
+                worklist["refreshed_scripts"].append(rel_proj_path)
+                if has_new_file:
+                    proposed_files[rel_proj_path] = normalize_proposed_bytes(new_p.read_bytes(), dst)
+                else:
+                    proposed_files[rel_proj_path] = normalize_proposed_bytes(src_bytes, dst)
+            else:
+                worklist["needs_review_scripts"].append(rel_proj_path)
+                # Stage incoming version at .stratosphere-new
+                new_p.parent.mkdir(parents=True, exist_ok=True)
+                new_p.write_bytes(src_bytes)
+
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
         worklist_file = tmp_dir / "stratosphere-update-worklist.json"
@@ -1078,11 +1224,19 @@ def main():
             
         if dry:
             for proj_path, prop_bytes in proposed_files.items():
-                p = project / proj_path
-                new_p = p.parent / (p.name + ".stratosphere-new")
-                new_p.parent.mkdir(parents=True, exist_ok=True)
-                new_p.write_bytes(prop_bytes)
+                if proj_path in worklist.get("refreshed_scripts", []):
+                    print(f"WOULD REFRESH script: {proj_path}")
+                elif proj_path in worklist.get("created_scripts", []):
+                    print(f"WOULD CREATE script: {proj_path}")
+                else:
+                    new_p = project / (proj_path + ".stratosphere-new")
+                    new_p.parent.mkdir(parents=True, exist_ok=True)
+                    new_p.write_bytes(prop_bytes)
+                    print(f"STAGED: {proj_path}.stratosphere-new")
+
+            for proj_path in worklist.get("needs_review_scripts", []):
                 print(f"STAGED: {proj_path}.stratosphere-new")
+                print(f"NEEDS-REVIEW (modified script): {proj_path}")
 
             simulated_pruned = set()
             all_pruned_files = []
@@ -1134,7 +1288,16 @@ def main():
             if new_p.exists():
                 new_p.unlink()
                 
-            print(f"UPDATED: {proj_path}")
+            if proj_path in worklist.get("refreshed_scripts", []):
+                print(f"REFRESHED script: {proj_path}")
+            elif proj_path in worklist.get("created_scripts", []):
+                print(f"CREATED script: {proj_path}")
+            else:
+                print(f"UPDATED: {proj_path}")
+
+        for proj_path in worklist.get("needs_review_scripts", []):
+            print(f"STAGED: {proj_path}.stratosphere-new")
+            print(f"NEEDS-REVIEW (modified script): {proj_path}")
             
         # Prune verified pristine orphans and their twin copies
         all_pruned_files = []
@@ -1213,13 +1376,17 @@ def main():
             verb = "WOULD RECONCILE" if dry else "RECONCILED"
             print(f"{verb} .gitattributes: added {', '.join(ga_added)}")
                 
-        # Refresh project-local scripts (outside versions.json — the manifest loop above
-        # never sees them, so a new/changed script like reconcile.py would otherwise never
-        # reach an existing project on update).
-        script_res = {k: [] for k in ("exists", "unchanged", "refreshed", "stale", "needs_review", "would", "created")}
-        place_project_scripts(project, script_res, dry, update=True)
-        for rel in script_res["created"] + script_res["refreshed"]:
-            print(f"{'WOULD REFRESH' if dry else 'REFRESHED'} script: {rel}")
+        for proj_path in worklist.get("refreshed_scripts", []) + worklist.get("created_scripts", []) + worklist.get("unchanged_scripts", []):
+            p = project / proj_path
+            if p.exists():
+                try:
+                    text = p.read_bytes().decode("utf-8")
+                    lock_data.setdefault("artifacts", {})[proj_path] = {
+                        "version": "unknown",
+                        "sha256_at_install": _versioning.body_hash(text)
+                    }
+                except Exception:
+                    pass
 
         lock_data["installed_plugin_version"] = plugin_version
         lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
