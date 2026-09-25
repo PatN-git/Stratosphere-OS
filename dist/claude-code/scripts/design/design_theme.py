@@ -5,6 +5,7 @@ import re
 import argparse
 import math
 import difflib
+import json
 
 # Canonical ordering of shadcn variables as defined in StratOS mapping-table
 MAP_TABLE_ORDER = [
@@ -295,8 +296,33 @@ def get_dark_var(name: str, colors_dark: dict, derived_val: str) -> str:
         return colors_dark[name]
     return derived_val
 
-def generate_css(data: dict) -> tuple:
-    """Generates the CSS variables structure based on parsed frontmatter data."""
+def detect_tailwind_major(start_dir: str) -> int:
+    """Tailwind major version from the nearest package.json (walking up from start_dir)
+    that declares `tailwindcss`; 4 when none is found or the version is not numeric."""
+    d = os.path.abspath(start_dir)
+    while True:
+        pkg = os.path.join(d, 'package.json')
+        if os.path.isfile(pkg):
+            try:
+                with open(pkg, 'r', encoding='utf-8') as f:
+                    manifest = json.load(f)
+            except (OSError, ValueError):
+                manifest = {}
+            for section in ('dependencies', 'devDependencies', 'peerDependencies'):
+                ver = (manifest.get(section) or {}).get('tailwindcss')
+                if isinstance(ver, str):
+                    m = re.search(r'(\d+)', ver)
+                    return 3 if m and int(m.group(1)) == 3 else 4
+        parent = os.path.dirname(d)
+        if parent == d:
+            return 4
+        d = parent
+
+def generate_css(data: dict, tailwind: int = 4) -> tuple:
+    """Generates the CSS variables structure based on parsed frontmatter data.
+
+    tailwind=4 emits `@custom-variant dark` + `@theme inline`; tailwind=3 keeps every
+    token in `:root` and appends `.dark` (v3 has neither directive)."""
     warnings = []
     colors = data.get('colors', {})
     colors_dark = data.get('colorsDark', {})
@@ -422,25 +448,27 @@ def generate_css(data: dict) -> tuple:
     for k in MAP_TABLE_ORDER:
         if k in light_vars:
             css_lines.append(f"  {k}: {light_vars[k]};")
-    css_lines.append("}")
-    
-    css_lines.append("")
-    css_lines.append("@custom-variant dark (&:is(.dark *));")
-    css_lines.append("")
-    
-    css_lines.append(".dark {")
-    for k in MAP_TABLE_ORDER:
-        if k in dark_vars:
-            css_lines.append(f"  {k}: {dark_vars[k]};")
-    css_lines.append("}")
-    
-    css_lines.append("")
-    css_lines.append("@theme inline {")
-    for k in MAP_TABLE_ORDER:
-        if k in light_vars:
-            css_name = k.replace('--', '--color-')
-            css_lines.append(f"  {css_name}: var({k});")
-            
+
+    if tailwind == 4:
+        css_lines.append("}")
+
+        css_lines.append("")
+        css_lines.append("@custom-variant dark (&:is(.dark *));")
+        css_lines.append("")
+
+        css_lines.append(".dark {")
+        for k in MAP_TABLE_ORDER:
+            if k in dark_vars:
+                css_lines.append(f"  {k}: {dark_vars[k]};")
+        css_lines.append("}")
+
+        css_lines.append("")
+        css_lines.append("@theme inline {")
+        for k in MAP_TABLE_ORDER:
+            if k in light_vars:
+                css_name = k.replace('--', '--color-')
+                css_lines.append(f"  {css_name}: var({k});")
+
     if 'sm' in rounded:
         sm_val = rounded['sm']
         sm_str = f"{sm_val}px" if isinstance(sm_val, (int, float)) else str(sm_val)
@@ -488,7 +516,15 @@ def generate_css(data: dict) -> tuple:
         css_lines.append(f"  --spacing-{level}: {convert_to_clamp(val)};")
         
     css_lines.append("}")
-    
+
+    if tailwind == 3:
+        css_lines.append("")
+        css_lines.append(".dark {")
+        for k in MAP_TABLE_ORDER:
+            if k in dark_vars:
+                css_lines.append(f"  {k}: {dark_vars[k]};")
+        css_lines.append("}")
+
     return "\n".join(css_lines) + "\n", warnings
 
 def main():
@@ -496,6 +532,7 @@ def main():
     parser.add_argument('--design', required=True, help="Path to DESIGN.md file.")
     parser.add_argument('--out', help="Path to write the generated CSS theme file.")
     parser.add_argument('--check', help="Compare generated CSS with target file. Exit 0 if identical, exit 1 if different (prints unified diff).")
+    parser.add_argument('--tailwind', type=int, choices=(3, 4), help="Tailwind major version to target. Default: detected from the nearest package.json declaring tailwindcss (from the --out/--check directory, else cwd); 4 if none.")
     
     args = parser.parse_args()
     
@@ -514,7 +551,11 @@ def main():
         print(f"Error parsing design file: {e}", file=sys.stderr)
         sys.exit(1)
         
-    css_out, warnings = generate_css(data)
+    tailwind = args.tailwind
+    if tailwind is None:
+        target = args.out or args.check
+        tailwind = detect_tailwind_major(os.path.dirname(os.path.abspath(target)) if target else os.getcwd())
+    css_out, warnings = generate_css(data, tailwind)
     
     if args.check:
         if not os.path.exists(args.check):
