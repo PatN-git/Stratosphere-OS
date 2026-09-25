@@ -37,6 +37,7 @@ assert_scaffold_tree() { # $1 proj
   assert "scaffold: okf_viewer/generator.py" "$(exists "$p/.agents/scripts/okf_viewer/generator.py")"
   assert "scaffold: docs/discovery/.gitkeep" "$(exists "$p/docs/discovery/.gitkeep")"
   assert "scaffold: docs/knowledge/index.md" "$(exists "$p/docs/knowledge/index.md")"
+  assert "scaffold: docs/nightly/index.md" "$(exists "$p/docs/nightly/index.md")"
   grep -q '\*\.work\.md' "$p/.gitignore" 2>/dev/null && assert "scaffold: .gitignore has *.work.md" 1 || assert "scaffold: .gitignore has *.work.md" 0
 }
 

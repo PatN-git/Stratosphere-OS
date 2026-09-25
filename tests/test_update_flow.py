@@ -1821,6 +1821,812 @@ def test_template_adds_block():
         raise AssertionError("Expected label-canonical markers to be present")
     print("Template adds new block test passed!")
 
+# --- BT-106: Project-Level Orphan Guard Tests ------------------------------
+
+def setup_orphan_test_env(test_name):
+    tmp = REPO_ROOT / ".tmp" / test_name
+    if tmp.exists():
+        shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True, exist_ok=True)
+    
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    
+    # Pre-place matching constitution templates via binary copy to ensure exact byte match
+    ctpl = mock_plugin / "assets" / "templates" / "constitution"
+    if ctpl.is_dir():
+        for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+            src_f = ctpl / name
+            if src_f.exists():
+                (tmp / name).write_bytes(src_f.read_bytes())
+                
+    # Mock bundle contains a new skill (so legacy skills/rules are orphans)
+    (mock_plugin / "skills" / "new-bundled-skill").mkdir(parents=True, exist_ok=True)
+    (mock_plugin / "skills" / "new-bundled-skill" / "SKILL.md").write_bytes(b"---\nname: new-bundled-skill\n---\nNew\n")
+
+    versions_data = {
+        "plugin_version": "4.0.0",
+        "artifacts": {
+            "skills/new-bundled-skill/SKILL.md": {
+                "version": "1.0.0",
+                "timestamp": "2026-09-25",
+                "sha256": "dummy"
+            }
+        }
+    }
+    (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
+    scaffold_script = mock_plugin / "scripts" / "scaffold.py"
+    return tmp, scaffold_script
+
+def test_orphan_prune_on_skill_rename_or_drop():
+    print("--- Test: Orphan Prune on Skill Rename/Drop ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_skill_drop")
+    
+    skill_dir = tmp / ".agents" / "skills" / "legacy-skill"
+    ref_dir = skill_dir / "references"
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: legacy-skill\nversion: 1.0.0\n---\n# Legacy Skill\n"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    ref_file = ref_dir / "doc.md"
+    ref_content = "# Reference Guide\nSome instructions."
+    ref_file.write_text(ref_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/legacy-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            },
+            ".agents/skills/legacy-skill/references/doc.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(ref_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/skills/legacy-skill/SKILL.md" in res.stdout
+    assert "PRUNED: .agents/skills/legacy-skill/references/doc.md" in res.stdout
+    assert "PRUNED DIRECTORY: .agents/skills/legacy-skill/references/" in res.stdout
+    assert "PRUNED DIRECTORY: .agents/skills/legacy-skill/" in res.stdout
+    
+    assert not skill_file.exists(), "Skill file should be pruned"
+    assert not ref_file.exists(), "Reference file should be pruned"
+    assert not ref_dir.exists(), "Reference directory should be pruned"
+    assert not skill_dir.exists(), "Skill directory should be pruned"
+    assert (tmp / ".agents" / "skills").exists(), "Container root .agents/skills must remain"
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/legacy-skill/SKILL.md" not in new_lock.get("artifacts", {})
+    assert ".agents/skills/legacy-skill/references/doc.md" not in new_lock.get("artifacts", {})
+    print("Orphan prune on skill drop test passed!")
+
+def test_orphan_prune_dual_placed_twins():
+    print("--- Test: Orphan Prune Dual Placed Twins ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_twins")
+    
+    # Canonical rule and claude rule twin
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "old-rule.md"
+    rule_content = "---\nname: old-rule\ntrigger: glob\n---\nRule body"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    claude_rule_dir = tmp / ".claude" / "rules"
+    claude_rule_dir.mkdir(parents=True, exist_ok=True)
+    claude_rule = claude_rule_dir / "old-rule.md"
+    claude_rule.write_text(rule_content, encoding="utf-8")
+    
+    # Canonical skill and copilot skill twin
+    can_skill_dir = tmp / ".agents" / "skills" / "old-twin-skill"
+    can_skill_dir.mkdir(parents=True, exist_ok=True)
+    can_skill = can_skill_dir / "SKILL.md"
+    skill_content = "---\nname: old-twin-skill\n---\nSkill content"
+    can_skill.write_text(skill_content, encoding="utf-8")
+    
+    copilot_skill_dir = tmp / ".github" / "copilot" / "skills" / "old-twin-skill"
+    copilot_skill_dir.mkdir(parents=True, exist_ok=True)
+    copilot_skill = copilot_skill_dir / "SKILL.md"
+    copilot_skill.write_text(skill_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/old-rule.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            },
+            ".agents/skills/old-twin-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/rules/old-rule.md" in res.stdout
+    assert "PRUNED: .claude/rules/old-rule.md" in res.stdout
+    assert "PRUNED: .agents/skills/old-twin-skill/SKILL.md" in res.stdout
+    assert "PRUNED: .github/copilot/skills/old-twin-skill/SKILL.md" in res.stdout
+    assert "PRUNED DIRECTORY: .github/copilot/skills/old-twin-skill/" in res.stdout
+    
+    assert not can_rule.exists()
+    assert not claude_rule.exists()
+    assert not can_skill.exists()
+    assert not copilot_skill.exists()
+    assert not copilot_skill_dir.exists()
+    assert (tmp / ".github" / "copilot" / "skills").exists(), "Copilot skills container root must survive"
+    assert claude_rule_dir.exists(), "Claude rules container root must survive"
+    print("Orphan prune dual placed twins test passed!")
+
+def test_absent_twin_is_benign():
+    print("--- Test: Absent Twin Is Benign ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_absent_twin")
+    
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "non-glob.md"
+    rule_content = "---\nname: non-glob\ntrigger: always_on\n---\nRule body"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/non-glob.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/rules/non-glob.md" in res.stdout
+    assert "NEEDS-REVIEW" not in res.stdout
+    assert not can_rule.exists()
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/rules/non-glob.md" not in new_lock.get("artifacts", {})
+    print("Absent twin is benign test passed!")
+
+def test_modified_orphan_preserved_in_needs_review():
+    print("--- Test: Modified Orphan Preserved in NEEDS-REVIEW ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_modified_orphan")
+    
+    skill_dir = tmp / ".agents" / "skills" / "edited-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_file.write_text("User customized content", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/edited-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": "original_pristine_hash_which_does_not_match"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "Notice: Modified orphan kept: .agents/skills/edited-skill/SKILL.md (needs review)" in res.stdout
+    assert skill_file.exists(), "Modified orphan file must be preserved"
+    assert skill_file.read_text(encoding="utf-8") == "User customized content"
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/edited-skill/SKILL.md" in new_lock.get("artifacts", {})
+    print("Modified orphan preserved test passed!")
+
+def test_twin_modification_preserves_both():
+    print("--- Test: Twin Modification Preserves Both ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_twin_modified")
+    
+    can_rule_dir = tmp / ".agents" / "rules"
+    can_rule_dir.mkdir(parents=True, exist_ok=True)
+    can_rule = can_rule_dir / "custom-twin.md"
+    rule_content = "Canonical rule content"
+    can_rule.write_text(rule_content, encoding="utf-8")
+    
+    claude_rule_dir = tmp / ".claude" / "rules"
+    claude_rule_dir.mkdir(parents=True, exist_ok=True)
+    claude_rule = claude_rule_dir / "custom-twin.md"
+    claude_rule.write_text("User edited twin content", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/rules/custom-twin.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(rule_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert can_rule.exists(), "Canonical rule should be preserved if twin was edited"
+    assert claude_rule.exists(), "Edited twin should be preserved"
+    assert "Notice: Modified orphan kept" in res.stdout
+    print("Twin modification preserves both test passed!")
+
+def test_ghost_orphan_cleaned_from_lock():
+    print("--- Test: Ghost Orphan Cleaned From Lock ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_ghost_orphan")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/ghost-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": "somehash"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "needs review" not in res.stdout.lower()
+    
+    new_lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/ghost-skill/SKILL.md" not in new_lock.get("artifacts", {})
+    print("Ghost orphan cleaned from lock test passed!")
+
+def test_user_content_in_orphan_dir_preserved():
+    print("--- Test: User Content in Orphan Dir Preserved ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_user_content_survives")
+    
+    skill_dir = tmp / ".agents" / "skills" / "shared-dir-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: shared-dir-skill\n---\nSkill"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    user_file = skill_dir / "notes.txt"
+    user_file.write_text("User personal notes", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/shared-dir-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/skills/shared-dir-skill/SKILL.md" in res.stdout
+    assert not skill_file.exists(), "Framework skill file should be pruned"
+    assert user_file.exists(), "User file must be preserved"
+    assert skill_dir.exists(), "Parent directory must be preserved because user file remains"
+    print("User content in orphan dir preserved test passed!")
+
+def test_orphan_prune_dry_run():
+    print("--- Test: Orphan Prune Dry Run ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_dry_run")
+    
+    skill_dir = tmp / ".agents" / "skills" / "dry-run-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "SKILL.md"
+    skill_content = "---\nname: dry-run-skill\n---\nSkill"
+    skill_file.write_text(skill_content, encoding="utf-8")
+    
+    copilot_dir = tmp / ".github" / "copilot" / "skills" / "dry-run-skill"
+    copilot_dir.mkdir(parents=True, exist_ok=True)
+    copilot_file = copilot_dir / "SKILL.md"
+    copilot_file.write_text(skill_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/skills/dry-run-skill/SKILL.md": {
+                "version": "1.0.0",
+                "sha256_at_install": _versioning.body_hash(skill_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "WOULD PRUNE: .agents/skills/dry-run-skill/SKILL.md" in res.stdout
+    assert "WOULD PRUNE: .github/copilot/skills/dry-run-skill/SKILL.md" in res.stdout
+    assert "WOULD PRUNE DIRECTORY: .agents/skills/dry-run-skill/" in res.stdout
+    assert "WOULD PRUNE DIRECTORY: .github/copilot/skills/dry-run-skill/" in res.stdout
+    
+    assert skill_file.exists(), "Dry run must not delete skill file"
+    assert copilot_file.exists(), "Dry run must not delete copilot file"
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".agents/skills/dry-run-skill/SKILL.md" in lock_after.get("artifacts", {}), "Dry run must not modify lockfile"
+    print("Orphan prune dry run test passed!")
+
+def test_script_pristine_refresh():
+    print("--- Test: Script Pristine Refresh ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_pristine_refresh")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    old_content = "# Old pristine script\nprint('old')\n"
+    target_script.write_text(old_content, encoding="utf-8")
+    
+    new_content = "# New upstream script\nprint('new')\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(new_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(old_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" in res.stdout
+    assert target_script.read_text(encoding="utf-8") == new_content
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/validate_memory.py"]["sha256_at_install"] == _versioning.body_hash(new_content)
+    print("Script pristine refresh test passed!")
+
+def test_script_locally_edited_preserved():
+    print("--- Test: Script Locally Edited Preserved ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_edited_preserved")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// User custom design tokens patch\nconsole.log('custom');\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "// Upstream design tokens v4.1.0\nconsole.log('upstream');\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(upstream_content, encoding="utf-8")
+    
+    baseline_content = "// Baseline original\nconsole.log('orig');\n"
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(baseline_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" in res.stdout
+    
+    assert target_script.read_text(encoding="utf-8") == user_content, "Locally edited script must survive byte for byte"
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert staged_file.exists(), "Stratosphere-new must be staged"
+    assert staged_file.read_text(encoding="utf-8") == upstream_content
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == _versioning.body_hash(baseline_content), "Lockfile hash must not advance for modified script"
+    print("Script locally edited preserved test passed!")
+
+def test_script_nested_preservation():
+    print("--- Test: Script Nested Preservation ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_nested_preservation")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "okf_viewer" / "templates"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "viz.html"
+    user_content = "<html><body>Custom Template</body></html>\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "<html><body>New Upstream Template</body></html>\n"
+    (mock_plugin / "scripts" / "okf_viewer" / "templates" / "viz.html").write_text(upstream_content, encoding="utf-8")
+    
+    baseline_content = "<html><body>Original Template</body></html>\n"
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/okf_viewer/templates/viz.html": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(baseline_content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/okf_viewer/templates/viz.html" in res.stdout
+    staged_file = script_dir / "viz.html.stratosphere-new"
+    assert staged_file.exists()
+    assert staged_file.read_text(encoding="utf-8") == upstream_content
+    assert target_script.read_text(encoding="utf-8") == user_content
+    print("Script nested preservation test passed!")
+
+def test_script_resolve_workflow():
+    print("--- Test: Script Resolve Workflow ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_resolve_workflow")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// Custom patch\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "// Upstream version\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(upstream_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": "old_hash"
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # 1. Update stages .stratosphere-new
+    run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert staged_file.exists()
+    
+    # 2. User resolves by taking .stratosphere-new
+    target_script.write_text(staged_file.read_text(encoding="utf-8"), encoding="utf-8")
+    
+    # 3. Next update recognizes dst == src, cleans up .stratosphere-new and updates lockfile
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert not staged_file.exists(), "Staged file should be unlinked upon resolve"
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == _versioning.body_hash(upstream_content)
+    print("Script resolve workflow test passed!")
+
+def test_script_legacy_project_fallback():
+    print("--- Test: Script Legacy Project Fallback ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_legacy_fallback")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Script A: Historical shipped content (from v4.0.0 validate_memory.py)
+    script_a = script_dir / "validate_memory.py"
+    v4_content = (REPO_ROOT / "src" / "scripts" / "validate_memory.py").read_text(encoding="utf-8")
+    script_a.write_text(v4_content, encoding="utf-8")
+    
+    # Mock plugin has a newer version of validate_memory.py
+    new_script_a = v4_content + "\n# Extra update\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(new_script_a, encoding="utf-8")
+    
+    # Script B: Locally customized script with no lockfile entry
+    design_dir = script_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    script_b = design_dir / "design_theme.py"
+    script_b.write_text("// Purely custom user code\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// Upstream theme\n", encoding="utf-8")
+    
+    # Legacy lockfile has NO entries under .agents/scripts/
+    lock_data = {
+        "installed_plugin_version": "3.3.0",
+        "artifacts": {}
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    # Script A was historical shipped version -> refreshed
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" in res.stdout
+    assert script_a.read_text(encoding="utf-8") == new_script_a
+    
+    # Script B was custom content -> preserved, staged, flagged
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res.stdout
+    assert script_b.read_text(encoding="utf-8") == "// Purely custom user code\n"
+    assert (design_dir / "design_theme.py.stratosphere-new").exists()
+    print("Script legacy project fallback test passed!")
+
+def test_script_crlf_normalization():
+    print("--- Test: Script CRLF Normalization ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_crlf_norm")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    
+    # Disk has CRLF
+    content_crlf = "print('hello')\r\nprint('world')\r\n"
+    target_script.write_bytes(content_crlf.encode("utf-8"))
+    
+    # Upstream plugin has LF
+    content_lf = "print('hello')\nprint('world')\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_bytes(content_lf.encode("utf-8"))
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(content_lf)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    # Must NOT report as refreshed because normalized content is identical
+    assert "REFRESHED script: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "WOULD REFRESH script: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "NEEDS-REVIEW" not in res.stdout
+    print("Script CRLF normalization test passed!")
+
+def test_script_dry_run():
+    print("--- Test: Script Dry Run ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_dry_run")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "validate_memory.py"
+    user_content = "# Local edits\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    upstream_content = "# Upstream content\n"
+    (mock_plugin / "scripts" / "validate_memory.py").write_text(upstream_content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": "old_hash"
+            }
+        }
+    }
+    lock_file = tmp / ".agents" / ".stratosphere-lock.json"
+    lock_file.write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "STAGED: .agents/scripts/validate_memory.py.stratosphere-new" in res.stdout
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/validate_memory.py" in res.stdout
+    
+    staged_file = script_dir / "validate_memory.py.stratosphere-new"
+    assert staged_file.exists(), "Dry-run should stage .stratosphere-new for review"
+    assert target_script.read_text(encoding="utf-8") == user_content, "Dry run must not overwrite original script"
+    
+    # Assert lockfile was not touched
+    lock_after = json.loads(lock_file.read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/validate_memory.py"]["sha256_at_install"] == "old_hash"
+    print("Script dry run test passed!")
+
+def test_script_repair_lock():
+    print("--- Test: Script Repair Lock ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_repair_lock")
+    
+    # Place scripts
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    (script_dir / "validate_memory.py").write_text("print('val')\n", encoding="utf-8")
+    (script_dir / "reconcile.py").write_text("print('rec')\n", encoding="utf-8")
+    
+    design_dir = script_dir / "design"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    (design_dir / "design_theme.py").write_text("console.log('theme')\n", encoding="utf-8")
+    
+    # Run repair-lock
+    res = run_cmd([sys.executable, str(scaffold_script), "--repair-lock"], cwd=tmp)
+    assert "Repaired .stratosphere-lock.json" in res.stdout
+    
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    arts = lock_after.get("artifacts", {})
+    assert ".agents/scripts/validate_memory.py" in arts
+    assert ".agents/scripts/reconcile.py" in arts
+    assert ".agents/scripts/design/design_theme.py" in arts
+    for k in arts:
+        assert "\\" not in k, f"Path key '{k}' must be strictly POSIX formatted"
+    print("Script repair lock test passed!")
+
+def test_orphan_prune_does_not_touch_scripts():
+    print("--- Test: Orphan Prune Does Not Touch Scripts ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_orphan_script_isolation")
+    
+    script_dir = tmp / ".agents" / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    script_file = script_dir / "validate_memory.py"
+    content = "print('isolated')\n"
+    script_file.write_text(content, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "3.5.0",
+        "artifacts": {
+            ".agents/scripts/validate_memory.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash(content)
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "PRUNED: .agents/scripts/validate_memory.py" not in res.stdout
+    assert "WOULD PRUNE: .agents/scripts/validate_memory.py" not in res.stdout
+    assert script_file.exists(), "Script must not be pruned by orphan pruner"
+    print("Orphan prune does not touch scripts test passed!")
+
+def test_script_locally_edited_upstream_unchanged_silent():
+    print("--- Test: Script Locally Edited Upstream Unchanged Silent ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_up_unchanged")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// My local customized theme\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    baseline_content = "// Upstream baseline\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(baseline_content, encoding="utf-8")
+    
+    baseline_hash = _versioning.body_hash(baseline_content)
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": baseline_hash
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # 1. Run update. Upstream unchanged -> local edit preserved silently without review noise
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" not in res.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" not in res.stdout
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert not staged_file.exists(), "Should not stage .stratosphere-new when upstream is unchanged"
+    assert target_script.read_text(encoding="utf-8") == user_content
+    
+    # 2. Lockfile baseline hash must remain baseline_hash (NOT overwritten by user's content hash)
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == baseline_hash
+    
+    # 3. Now upstream updates to newer version!
+    new_upstream_content = "// Newer Upstream baseline\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(new_upstream_content, encoding="utf-8")
+    
+    res2 = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res2.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" in res2.stdout
+    assert staged_file.exists(), "Should stage .stratosphere-new now that upstream changed"
+    assert staged_file.read_text(encoding="utf-8") == new_upstream_content
+    assert target_script.read_text(encoding="utf-8") == user_content
+    print("Script locally edited upstream unchanged silent test passed!")
+
+def test_script_staging_deferred_on_verification_failure():
+    print("--- Test: Script Staging Deferred On Verification Failure ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_staging_deferred")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    target_script.write_text("// User customized theme\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// New upstream theme\n", encoding="utf-8")
+    
+    base_file = (
+        "---\n"
+        "type: backlog\n"
+        "title: Backlog Map\n"
+        "version: \"1.1.3\"\n"
+        "---\n"
+        "# BACKLOG MAP\n\n"
+        "## Rules\n"
+        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "- Operational rules\n"
+        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "## Label Registry\n"
+        "- **Area (`area:xxx`)**: area:FE-login\n"
+        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "- Labels\n"
+        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "## Backlog\n"
+        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
+        "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
+        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
+    )
+    (tmp / ".memory").mkdir(parents=True, exist_ok=True)
+    p_mem = tmp / ".memory" / "BACKLOG_MAP.md"
+    p_mem.write_text(base_file, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "1.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash("// Old theme baseline\n")
+            },
+            ".memory/BACKLOG_MAP.md": {
+                "version": "1.1.3",
+                "sha256_at_install": "unknown",
+                "blocks": {
+                    "backlog-rules": _versioning.block_hash(base_file, "backlog-rules"),
+                    "label-canonical": _versioning.block_hash(base_file, "label-canonical"),
+                    "backlog-header": _versioning.block_hash(base_file, "backlog-header")
+                }
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # Staged memory file that trips row invariant (dropping BT-001)
+    tripped_mem = base_file.replace('| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n', '')
+    p_mem.with_name("BACKLOG_MAP.md.stratosphere-new").write_text(tripped_mem, encoding="utf-8")
+    
+    # Register BACKLOG_MAP.md in mock_plugin versions.json with bumped version so update evaluates it
+    versions_data = json.loads((mock_plugin / "versions.json").read_text(encoding="utf-8"))
+    versions_data["artifacts"]["assets/templates/memory/BACKLOG_MAP.md"] = {
+        "version": "1.1.4",
+        "timestamp": "2026-09-25",
+        "sha256": "dummy"
+    }
+    (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
+
+    staged_script = script_dir / "design_theme.py.stratosphere-new"
+    if staged_script.exists():
+        staged_script.unlink()
+        
+    proc = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp), capture_output=True, text=True)
+    assert proc.returncode != 0, "Update must fail when invariant check fails"
+    assert "=== Invariant Verification Failed ===" in proc.stdout
+    assert "Error: Update verification failed. No changes were written." in (proc.stdout + proc.stderr)
+    assert not staged_script.exists(), "Script .stratosphere-new must NOT be written when invariant verification fails"
+    print("Script staging deferred on verification failure test passed!")
+
+def test_script_resolution_hint():
+    print("--- Test: Script Resolution Hint ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_hint")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    (script_dir / "design_theme.py").write_text("// User modified script\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// Upstream version\n", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash("// Baseline\n")
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # Check dry run
+    res_dry = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update." in res_dry.stdout
+    
+    # Check apply run
+    res_apply = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update." in res_apply.stdout
+    print("Script resolution hint test passed!")
+
 if __name__ == "__main__":
     test_pristine_update()
     test_conflict_update()
@@ -1844,4 +2650,24 @@ if __name__ == "__main__":
     test_constitution_needs_review()
     test_malformed_template_skip()
     test_template_adds_block()
+    test_orphan_prune_on_skill_rename_or_drop()
+    test_orphan_prune_dual_placed_twins()
+    test_absent_twin_is_benign()
+    test_modified_orphan_preserved_in_needs_review()
+    test_twin_modification_preserves_both()
+    test_ghost_orphan_cleaned_from_lock()
+    test_user_content_in_orphan_dir_preserved()
+    test_orphan_prune_dry_run()
+    test_script_pristine_refresh()
+    test_script_locally_edited_preserved()
+    test_script_nested_preservation()
+    test_script_resolve_workflow()
+    test_script_legacy_project_fallback()
+    test_script_crlf_normalization()
+    test_script_dry_run()
+    test_script_repair_lock()
+    test_orphan_prune_does_not_touch_scripts()
+    test_script_locally_edited_upstream_unchanged_silent()
+    test_script_staging_deferred_on_verification_failure()
+    test_script_resolution_hint()
     print("All update E2E tests passed successfully.")

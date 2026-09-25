@@ -218,6 +218,7 @@ def assert_tree(tool, scope, home, proj):
     check("scaffold: okf_view.py", (p / ".agents" / "scripts" / "okf_view.py").exists())
     check("scaffold: okf_viewer/generator.py", (p / ".agents" / "scripts" / "okf_viewer" / "generator.py").exists())
     check("scaffold: docs/knowledge/index.md", (p / "docs" / "knowledge" / "index.md").exists())
+    check("scaffold: docs/nightly/index.md", (p / "docs" / "nightly" / "index.md").exists())
 
 
 def main():
