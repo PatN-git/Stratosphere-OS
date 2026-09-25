@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.3"
-timestamp: 2026-09-24
+version: "1.1.4"
+timestamp: 2026-09-25
 ---
 
 # Nightly Consolidation
@@ -16,11 +16,17 @@ timestamp: 2026-09-24
 Do not modify files without user approval.
 
 ## Phase 1: Review Sessions
-- Review sessions across models from past 24 hours.
-- Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes.
+1. Determine the unanalyzed delta:
+   - Read `docs/nightly/.last-run.json`. If present and valid JSON, extract `last_run` timestamp.
+   - Delta start = `last_run` if present; if `.last-run.json` is absent or malformed, default to `24 hours ago`.
+2. Inspect the delta across all branches with fresh eyes (do not read prior nightly proposal text here to prevent anchoring on old issues):
+   - Run `git log --all --since="<delta start>" --stat --no-merges` to identify tasks, branches, and files touched across the project.
+   - Review session transcripts or telemetry since `delta start` for tool failures, syntax errors (e.g. shell quoting), and redundant reads.
+3. Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes specific to this delta.
 
 ## Phase 2: Distill Plan
-- Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
+- Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
+- Update `docs/nightly/.last-run.json` with `last_run` ISO-8601 timestamp and `sessions_reviewed` list.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
 ## Phase 3: Crystallize Memory

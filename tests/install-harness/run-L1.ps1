@@ -40,6 +40,7 @@ function Assert-ScaffoldTree([string]$proj) {
     AssertPathExists "scaffold: okf_viewer/generator.py" (Join-Path $proj ".agents\scripts\okf_viewer\generator.py")
     AssertPathExists "scaffold: docs/discovery/.gitkeep" (Join-Path $proj "docs\discovery\.gitkeep")
     AssertPathExists "scaffold: docs/knowledge/index.md" (Join-Path $proj "docs\knowledge\index.md")
+    AssertPathExists "scaffold: docs/nightly/index.md" (Join-Path $proj "docs\nightly\index.md")
     $gi = Get-Content (Join-Path $proj ".gitignore") -Raw -ErrorAction SilentlyContinue
     Assert "scaffold: .gitignore contains *.work.md" ($gi -match '\*\.work\.md')
 }

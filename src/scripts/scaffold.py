@@ -410,9 +410,10 @@ FOLDERS = [
     "docs/research",
     "docs/design",
     "docs/knowledge",
+    "docs/nightly",
     ".tmp",
 ]
-KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", "docs/knowledge", ".tmp"}  # add .gitkeep so they survive git
+KEEP_EMPTY = {"docs/discovery", "docs/prds", "docs/research", "docs/design", "docs/knowledge", "docs/nightly", ".tmp"}  # add .gitkeep so they survive git
 
 
 def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "preserved"):
@@ -1141,7 +1142,8 @@ def main():
         ("docs/discovery", "Discovery Briefs", "Early problem framing and exploration briefs."),
         ("docs/research", "Research Documents", "Topic and competitive landscape research."),
         ("docs/design", "Design Blueprints", "Visual layouts and interface contracts."),
-        ("docs/knowledge", "External Knowledge References", "Ingested external OKF bundles.")
+        ("docs/knowledge", "External Knowledge References", "Ingested external OKF bundles."),
+        ("docs/nightly", "Nightly Consolidation Proposals", "Daily session reviews, pattern analysis, and memory crystallization proposals.")
     ]
     for rel_dir, title, desc in sub_indices:
         idx_file = project / rel_dir / "index.md"
