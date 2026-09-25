@@ -2465,6 +2465,168 @@ def test_orphan_prune_does_not_touch_scripts():
     assert script_file.exists(), "Script must not be pruned by orphan pruner"
     print("Orphan prune does not touch scripts test passed!")
 
+def test_script_locally_edited_upstream_unchanged_silent():
+    print("--- Test: Script Locally Edited Upstream Unchanged Silent ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_up_unchanged")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    user_content = "// My local customized theme\n"
+    target_script.write_text(user_content, encoding="utf-8")
+    
+    baseline_content = "// Upstream baseline\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(baseline_content, encoding="utf-8")
+    
+    baseline_hash = _versioning.body_hash(baseline_content)
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": baseline_hash
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # 1. Run update. Upstream unchanged -> local edit preserved silently without review noise
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" not in res.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" not in res.stdout
+    staged_file = script_dir / "design_theme.py.stratosphere-new"
+    assert not staged_file.exists(), "Should not stage .stratosphere-new when upstream is unchanged"
+    assert target_script.read_text(encoding="utf-8") == user_content
+    
+    # 2. Lockfile baseline hash must remain baseline_hash (NOT overwritten by user's content hash)
+    lock_after = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert lock_after["artifacts"][".agents/scripts/design/design_theme.py"]["sha256_at_install"] == baseline_hash
+    
+    # 3. Now upstream updates to newer version!
+    new_upstream_content = "// Newer Upstream baseline\n"
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text(new_upstream_content, encoding="utf-8")
+    
+    res2 = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "NEEDS-REVIEW (modified script): .agents/scripts/design/design_theme.py" in res2.stdout
+    assert "STAGED: .agents/scripts/design/design_theme.py.stratosphere-new" in res2.stdout
+    assert staged_file.exists(), "Should stage .stratosphere-new now that upstream changed"
+    assert staged_file.read_text(encoding="utf-8") == new_upstream_content
+    assert target_script.read_text(encoding="utf-8") == user_content
+    print("Script locally edited upstream unchanged silent test passed!")
+
+def test_script_staging_deferred_on_verification_failure():
+    print("--- Test: Script Staging Deferred On Verification Failure ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_staging_deferred")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    target_script = script_dir / "design_theme.py"
+    target_script.write_text("// User customized theme\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// New upstream theme\n", encoding="utf-8")
+    
+    base_file = (
+        "---\n"
+        "type: backlog\n"
+        "title: Backlog Map\n"
+        "version: \"1.1.3\"\n"
+        "---\n"
+        "# BACKLOG MAP\n\n"
+        "## Rules\n"
+        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "- Operational rules\n"
+        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "## Label Registry\n"
+        "- **Area (`area:xxx`)**: area:FE-login\n"
+        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "- Labels\n"
+        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "## Backlog\n"
+        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
+        "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
+        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
+    )
+    (tmp / ".memory").mkdir(parents=True, exist_ok=True)
+    p_mem = tmp / ".memory" / "BACKLOG_MAP.md"
+    p_mem.write_text(base_file, encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "1.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash("// Old theme baseline\n")
+            },
+            ".memory/BACKLOG_MAP.md": {
+                "version": "1.1.3",
+                "sha256_at_install": "unknown",
+                "blocks": {
+                    "backlog-rules": _versioning.block_hash(base_file, "backlog-rules"),
+                    "label-canonical": _versioning.block_hash(base_file, "label-canonical"),
+                    "backlog-header": _versioning.block_hash(base_file, "backlog-header")
+                }
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # Staged memory file that trips row invariant (dropping BT-001)
+    tripped_mem = base_file.replace('| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n', '')
+    p_mem.with_name("BACKLOG_MAP.md.stratosphere-new").write_text(tripped_mem, encoding="utf-8")
+    
+    # Register BACKLOG_MAP.md in mock_plugin versions.json with bumped version so update evaluates it
+    versions_data = json.loads((mock_plugin / "versions.json").read_text(encoding="utf-8"))
+    versions_data["artifacts"]["assets/templates/memory/BACKLOG_MAP.md"] = {
+        "version": "1.1.4",
+        "timestamp": "2026-09-25",
+        "sha256": "dummy"
+    }
+    (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
+
+    staged_script = script_dir / "design_theme.py.stratosphere-new"
+    if staged_script.exists():
+        staged_script.unlink()
+        
+    proc = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp), capture_output=True, text=True)
+    assert proc.returncode != 0, "Update must fail when invariant check fails"
+    assert "=== Invariant Verification Failed ===" in proc.stdout
+    assert "Error: Update verification failed. No changes were written." in (proc.stdout + proc.stderr)
+    assert not staged_script.exists(), "Script .stratosphere-new must NOT be written when invariant verification fails"
+    print("Script staging deferred on verification failure test passed!")
+
+def test_script_resolution_hint():
+    print("--- Test: Script Resolution Hint ---")
+    tmp, scaffold_script = setup_orphan_test_env("test_script_hint")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    
+    script_dir = tmp / ".agents" / "scripts" / "design"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    (script_dir / "design_theme.py").write_text("// User modified script\n", encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "design_theme.py").write_text("// Upstream version\n", encoding="utf-8")
+    
+    lock_data = {
+        "installed_plugin_version": "4.0.0",
+        "artifacts": {
+            ".agents/scripts/design/design_theme.py": {
+                "version": "unknown",
+                "sha256_at_install": _versioning.body_hash("// Baseline\n")
+            }
+        }
+    }
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    
+    # Check dry run
+    res_dry = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update." in res_dry.stdout
+    
+    # Check apply run
+    res_apply = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert "Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update." in res_apply.stdout
+    print("Script resolution hint test passed!")
+
 if __name__ == "__main__":
     test_pristine_update()
     test_conflict_update()
@@ -2505,4 +2667,7 @@ if __name__ == "__main__":
     test_script_dry_run()
     test_script_repair_lock()
     test_orphan_prune_does_not_touch_scripts()
+    test_script_locally_edited_upstream_unchanged_silent()
+    test_script_staging_deferred_on_verification_failure()
+    test_script_resolution_hint()
     print("All update E2E tests passed successfully.")

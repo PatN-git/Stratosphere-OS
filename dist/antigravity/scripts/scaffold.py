@@ -792,7 +792,8 @@ def main():
             "refreshed_scripts": [],
             "created_scripts": [],
             "needs_review_scripts": [],
-            "unchanged_scripts": []
+            "unchanged_scripts": [],
+            "upstream_unchanged_scripts": []
         }
         
         proposed_files = {}  # proj_path -> proposed_bytes
@@ -1145,6 +1146,7 @@ def main():
         worklist["needs_review_orphans"] = [r["canonical"] for r in needs_review_orphans]
 
         # Project-local scripts (.agents/scripts/**)
+        staged_scripts = {}  # new_p (Path) -> src_bytes (bytes)
         for src, dst, rel_proj_path in get_bundled_project_scripts(project):
             src_bytes = src.read_bytes()
             src_text = src_bytes.decode("utf-8")
@@ -1186,11 +1188,15 @@ def main():
                     proposed_files[rel_proj_path] = normalize_proposed_bytes(new_p.read_bytes(), dst)
                 else:
                     proposed_files[rel_proj_path] = normalize_proposed_bytes(src_bytes, dst)
+            elif expected_hash and src_hash == expected_hash:
+                # 3-way check: User modified dst locally, but upstream has not changed since install/repair baseline.
+                # Suppress staging and review notices; preserve local customizations silently without noise.
+                worklist["upstream_unchanged_scripts"].append(rel_proj_path)
+                continue
             else:
                 worklist["needs_review_scripts"].append(rel_proj_path)
-                # Stage incoming version at .stratosphere-new
-                new_p.parent.mkdir(parents=True, exist_ok=True)
-                new_p.write_bytes(src_bytes)
+                # Defer staging incoming version until invariant verification passes
+                staged_scripts[new_p] = src_bytes
 
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -1221,6 +1227,11 @@ def main():
             for f in failures:
                 print(f"  * {f}")
             raise SystemExit("Error: Update verification failed. No changes were written.")
+
+        # Stage incoming versions of modified scripts only after invariant verification passes
+        for p_new, p_bytes in staged_scripts.items():
+            p_new.parent.mkdir(parents=True, exist_ok=True)
+            p_new.write_bytes(p_bytes)
             
         if dry:
             for proj_path, prop_bytes in proposed_files.items():
@@ -1237,6 +1248,8 @@ def main():
             for proj_path in worklist.get("needs_review_scripts", []):
                 print(f"STAGED: {proj_path}.stratosphere-new")
                 print(f"NEEDS-REVIEW (modified script): {proj_path}")
+            if worklist.get("needs_review_scripts"):
+                print("Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update.")
 
             simulated_pruned = set()
             all_pruned_files = []
@@ -1298,6 +1311,8 @@ def main():
         for proj_path in worklist.get("needs_review_scripts", []):
             print(f"STAGED: {proj_path}.stratosphere-new")
             print(f"NEEDS-REVIEW (modified script): {proj_path}")
+        if worklist.get("needs_review_scripts"):
+            print("Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update.")
             
         # Prune verified pristine orphans and their twin copies
         all_pruned_files = []
