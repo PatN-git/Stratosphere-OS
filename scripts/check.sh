@@ -13,8 +13,8 @@ echo "== build ==";           python build/build.py
 echo "== validate ==";        python build/validate.py .
 echo "== bump-guard ==";      python build/bump_guard.py . || echo "(bump-guard is PR-only; non-fatal locally)"
 echo "== pytest ==";          python -m pytest            # pytest.ini restricts to -m 'not integration'
-echo "== verify_scripts ==";  python tests/verify_scripts.py
-echo "== plan-html (node) =="; node tests/verify_plan_html.mjs
+echo "== verify_scripts ==";  python tests/runners/verify_scripts.py
+echo "== plan-html (node) =="; node tests/runners/verify_plan_html.mjs
 echo "== install-harness L1 =="; bash tests/install-harness/run-L1.sh
 
 echo "== dist drift =="
