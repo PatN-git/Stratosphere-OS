@@ -29,6 +29,7 @@ class MockOrchestrator:
         self.results = {}
         self.features = {}
         self.git_log = []
+        self.promoted_parents = set()
 
     def step_1b_preflight(self):
         kept = []
@@ -60,12 +61,24 @@ class MockOrchestrator:
     def run_slice_loop(self, queue, mock_responder):
         for s in queue:
             sid = s["id"]
+            parent = s.get("parent")
+
+            # Step 2A.1: Activate Slice (Orchestrator)
+            if self.ship_mode == "auto-PR":
+                self.git_log.append(
+                    f"gh issue edit {sid} --remove-label status:planned --remove-label status:needs_spec "
+                    f"--remove-label status:blocked --remove-label status:in review --add-label status:in progress"
+                )
+                if parent and parent not in self.promoted_parents:
+                    self.git_log.append(f"gh issue edit {parent} --remove-label status:planned --add-label status:in progress")
+                    self.promoted_parents.add(parent)
+
             attempt = 1
             max_attempts = 3
             uncovered_report = None
             
             while attempt <= max_attempts:
-                # Step 2A: Implement (sets status:in progress)
+                # Step 2A.2: Implement (Subagent)
                 impl_res = mock_responder.implement(sid, attempt, uncovered_report)
                 
                 # Step 2B: Verify
@@ -174,6 +187,14 @@ def test_simulation(ship_mode="auto-PR"):
 
     # C2.1 Assertion: verify status:blocked label transition command was logged
     assert f"gh issue edit BT-103 --remove-label status:in progress --add-label status:blocked" in orch.git_log
+
+    # Step 2A.1 Assertion: verify orchestrator transitions slice to status:in progress and promotes parent epic
+    if ship_mode == "auto-PR":
+        assert (
+            "gh issue edit BT-101 --remove-label status:planned --remove-label status:needs_spec "
+            "--remove-label status:blocked --remove-label status:in review --add-label status:in progress"
+        ) in orch.git_log
+        assert "gh issue edit FEAT-10 --remove-label status:planned --add-label status:in progress" in orch.git_log
 
     # Verify ship pass
     shipped = orch.phase_3_ship(queue)

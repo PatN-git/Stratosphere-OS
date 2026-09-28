@@ -261,9 +261,9 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "6cbe5cb8be895f30656ba07c4c2cf7242faeadb3a8f3875b3b87fa79f4ba1df5",
-      "timestamp": "2026-07-24",
-      "version": "1.1.0"
+      "sha256": "6c5f21af350d4e63a1533213afbe7db59c4b90974bcc05d23b2b1bbea161a05e",
+      "timestamp": "2026-09-28",
+      "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
       "sha256": "b6034cee933a11f6db37f21d20ec44173cdf8c19035429961d8d946eab8e3b16",

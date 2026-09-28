@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.1.0"
-timestamp: 2026-07-24
+version: "1.2.0"
+timestamp: 2026-09-28
 ---
 
 # AFK END-TO-END LOOP
@@ -43,8 +43,13 @@ _Done when:_ user authorized slice list and ship mode.
 ## Phase 2: Sequential Slice Loop
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
-### Step 2A: Implement (Subagent)
-1. **Dispatch** (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it): "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory`, creates/restores the branch, and runs the first-slice `status:in progress` + epic promotion — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd). Do NOT push; do NOT open PR."
+### Step 2A: Implement
+1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
+   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
+   Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
+2. **Dispatch Implementer (Subagent):**
+   (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
+   "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the feature branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd). Do NOT push; do NOT open PR."
 _Done when:_ subagent returns valid JSON and git status is clean.
 
 ### Step 2B: Verify (Subagent)
