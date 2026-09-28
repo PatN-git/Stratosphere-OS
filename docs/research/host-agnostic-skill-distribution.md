@@ -2,9 +2,10 @@
 type: research
 title: "Research: Host-Agnostic Skill Distribution & Per-Host Installer Retirement"
 description: "Comprehensive cross-host investigation into skill discovery, invocation policies, leading digits, and vercel-labs/skills compatibility across Claude Code, Antigravity, Cursor, Codex, Copilot, Devin, OpenClaw, and extended ecosystem."
+version: "1.0.1"
 generated:
-  by: 1a-research
-  at: "2026-09-25T22:15:00-04:00"
+  by: 2c-reconcile-specs
+  at: "2026-09-28"
 sources:
   - resource: "https://github.com/vercel-labs/skills"
     title: "vercel-labs/skills CLI Source Code & Architecture"
@@ -283,7 +284,7 @@ In StratosphereOS, adopting `dist/skills/` rather than a root `skills/` director
    - For **global** installations, because `skills.sh` has a known upstream path bug with Antigravity (`~/.gemini/antigravity/` vs `~/.gemini/config/` + Issue #633), keep a lightweight global bridge or document `agy plugin install` / `skills add --copy` until the upstream PR lands.
 4. **Slice S4 (`dist/` Architecture Collapse to `dist/skills/`):**
    - Collapse byte-identical `dist/antigravity/skills` and `dist/claude-code/skills` into a single canonical `dist/skills/` directory.
-   - Host-specific directories retain only their packaging manifests: `dist/claude-code/.claude-plugin/plugin.json` and `dist/antigravity/plugin.json`.
+   - Packaging manifests reside in their canonical locations: `.claude-plugin/marketplace.json` at repository root for Claude Code, `dist/antigravity/plugin.json` for Antigravity.
    - Update `build/build.py`, `scripts/check.sh`, and `tests/install-harness` drift checks.
 5. **Slice S5 (Documentation & Scaffolding Split):**
    - Update README and docs to establish the clean separation: `skills.sh` gets the skills onto the machine; `stratosphere-setup` / `scaffold.py` bootstraps the project memory and constitution.

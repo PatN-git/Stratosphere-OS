@@ -3,12 +3,15 @@ type: interface-design
 title: "Design: BT-108 - Host-Agnostic Skill Distribution Framework"
 description: "Technical interface and contract design for host-agnostic skill distribution across 8+ AI agent hosts, establishing canonical dist/skills bundling, dual-track distribution, and decoupled repository scaffolding."
 timestamp: 2026-09-28
+generated:
+  by: 2c-reconcile-specs
+  at: 2026-09-28
 status: approved
 slug: host-agnostic-skill-distribution
 bt: BT-108
 prd: docs/prds/BT-108-host-agnostic-skill-distribution.md
 surface: non-ui
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # Design: BT-108 - Host-Agnostic Skill Distribution Framework
@@ -61,7 +64,7 @@ This design defines the technical distribution interface, packaging contracts, a
 | Adverse Condition | Failure Mode | Required Handling / Mitigation |
 | :--- | :--- | :--- |
 | **Offline / air-gapped consumer environment without Node.js or git** | Track A (`npx skills add`) fails with `npx: command not found` or DNS timeout; git clone fails. Automated package fetchers crash, blocking skill acquisition. | Document and support Track B (Direct Copy): provide clear instructions for copying a pre-downloaded archive or local clone of `dist/skills/` into `.agents/skills/`. Ensure `build.py` emits zero-dependency standalone skill folders with self-contained relative references requiring no runtime Node.js or network access. |
-| **Partial skill cherry-picking via interactive `skills add`** | Consumer selectively installs a subset of skills (e.g. cherry-picking `3d-implement-issue` while omitting `1a-research`, `2a-write-prd`, or `4a-verify-and-ship`). Mid-cycle handoffs fail at runtime when referencing missing orchestrators. | Scaffolding Seam: `stratosphere-setup` and `stratosphere-update` execute a strict suite integrity validation check asserting the presence of all 22 core lifecycle skills. Missing skills trigger a non-fatal halt with an actionable list of absent skills and the full command (`npx skills add PatN-git/Stratosphere-OS/dist/skills -y`). `0a-start-session` remains completely unburdened by checks. |
+| **Partial skill cherry-picking via interactive `skills add`** | Consumer selectively installs a subset of skills (e.g. cherry-picking `3d-implement-issue` while omitting `1a-research`, `2a-write-prd`, or `4a-verify-and-ship`). Mid-cycle handoffs fail at runtime when referencing missing orchestrators. | Scaffolding Seam: `stratosphere-setup` and `stratosphere-update` execute a strict suite integrity validation check asserting the presence of all 22 core lifecycle skills. Missing skills trigger a non-fatal halt with an actionable list of absent skills and the full command (`npx skills add PatN-git/Stratosphere-OS/dist/skills --copy -y`). `0a-start-session` remains completely unburdened by checks. |
 | **Upstream `skills.sh` breaking change, registry outage, or network timeout** | `npx skills add` hangs, returns HTTP 5xx / socket timeout, or CLI flags (`--agent`, `--copy`) break after an upstream `vercel-labs/skills` release. | Document Track B (Direct Copy/Paste) and Track C (Native Claude Marketplace `/plugin marketplace add`) as verified zero-network-dependency fallbacks in `README.md`; pin recommended invocation syntax and advise local path targeting (`npx skills add ./dist/skills`). |
 | **Windows symlink permissions (Developer Mode disabled / non-admin)** | `npx skills add` defaults to creating NTFS symlinks; Windows throws `EPERM: operation not permitted, symlink`, or Antigravity IDE fails to traverse symlinks into `references/` (upstream Issue #633). | Mandate the `--copy` flag in all Track A documentation and automation (`npx skills add ... --copy -y`); ensure Track D Antigravity fallback bridge uses physical recursive file copying rather than filesystem symlinks. |
 | **Upgrading from legacy v4.0.0 (`dist/claude-code`, duplicate `dist/antigravity`, or retired shell scripts)** | Stale duplicate skills in `dist/claude-code` or `~/.gemini/antigravity/skills/` shadow new versions; deprecated `commands/` directory collides with modern workflow definitions. | `stratosphere-update` audits legacy installation directories, displays migration alerts, safely deletes or deprecates legacy paths (`dist/claude-code`, `dist/antigravity`, `commands/`), and updates host pointers to the unified `dist/skills/` bundle. |
@@ -78,12 +81,12 @@ This design defines the technical distribution interface, packaging contracts, a
   - S1: Compile to `dist/skills/` and verify `skills.sh` subpath packaging.
   - S2: Delete `scripts/install-claude-code.{sh,ps1}`, remove dead `commands/` copy, update harness and docs.
   - S3: Implement lightweight Antigravity fallback bridge; standardize project-level Antigravity on `.agents/skills/`.
-  - S4: Collapse `dist/` into `dist/skills/` with thin manifests (`dist/claude-code/.claude-plugin/plugin.json`, `dist/antigravity/plugin.json`).
+  - S4: Collapse `dist/` into `dist/skills/` with packaging manifests (`.claude-plugin/marketplace.json` at repository root for Claude Code, `dist/antigravity/plugin.json` in `dist/antigravity/`).
   - S5: Implement suite integrity check in `stratosphere-setup` and `stratosphere-update`; update README with dual-track instructions.
 - **4a / Audit Assertions:**
-  - Assert that `scripts/install-claude-code.sh` and `scripts/install-claude-code.ps1` no longer exist in the working tree.
+  - Assert that legacy installer scripts (`scripts/install-claude-code.{sh,ps1}` and `scripts/install-antigravity.{sh,ps1}`) no longer exist in the working tree.
   - Assert that running `python build/build.py` succeeds with zero errors and emits exactly 26 skill directories in `dist/skills/`.
-  - Assert that all 26 skills in `dist/skills/` contain their required HITL sidecars and relative `references/`.
+  - Assert that all 22 Layer 1 lifecycle skills in `dist/skills/` contain their required HITL sidecars (`agents/openai.yaml`, `disable-model-invocation: true`, `triggers: ["user"]`), and all 26 skills preserve relative `references/`.
   - Assert that `tests/install-harness` passes 100% against the new canonical bundle.
 
 ---
@@ -114,11 +117,18 @@ npx skills update
 ##### Track B: Direct Zero-Dependency Copy/Paste Contract
 ```bash
 # POSIX (Linux/macOS)
+# Universal / Multi-agent (.agents/skills)
 mkdir -p .agents/skills && cp -r dist/skills/* .agents/skills/
+# Claude Code workspace (.claude/skills)
+mkdir -p .claude/skills && cp -r dist/skills/* .claude/skills/
 
 # Windows (PowerShell)
+# Universal / Multi-agent (.agents\skills)
 New-Item -ItemType Directory -Force -Path .agents\skills
 Copy-Item -Recurse -Force dist\skills\* .agents\skills\
+# Claude Code workspace (.claude\skills)
+New-Item -ItemType Directory -Force -Path .claude\skills
+Copy-Item -Recurse -Force dist\skills\* .claude\skills\
 ```
 
 ##### Track C: Claude Code Marketplace Manifest Contract
@@ -131,19 +141,30 @@ Located at `.claude-plugin/marketplace.json`:
   "skills": [
     "./dist/skills/0a-start-session",
     "./dist/skills/0b-stop-session",
+    "./dist/skills/0c-handoff",
+    "./dist/skills/0d-nightly-consolidation",
     "./dist/skills/1a-research",
     "./dist/skills/1b-concept-framing",
+    "./dist/skills/1c-concept-map",
     "./dist/skills/2a-write-prd",
     "./dist/skills/2b-interface-design",
+    "./dist/skills/2c-reconcile-specs",
     "./dist/skills/3a-version-planning",
     "./dist/skills/3b-create-issue",
     "./dist/skills/3c-sprint-planning",
     "./dist/skills/3d-implement-issue",
+    "./dist/skills/3x-jules-dispatch",
+    "./dist/skills/3z-afk-loop",
     "./dist/skills/4a-verify-and-ship",
     "./dist/skills/4b-audit-architecture-drift",
     "./dist/skills/4c-codebase-health-audit",
+    "./dist/skills/concept-brainstorm",
+    "./dist/skills/load-memory",
+    "./dist/skills/micro-tdd",
+    "./dist/skills/plan-html",
     "./dist/skills/stratosphere-setup",
-    "./dist/skills/stratosphere-update"
+    "./dist/skills/stratosphere-update",
+    "./dist/skills/sync-skills"
   ]
 }
 ```

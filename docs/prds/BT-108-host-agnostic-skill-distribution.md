@@ -4,9 +4,12 @@ title: "BT-108: Host-Agnostic Skill Distribution Framework"
 description: "Product Requirements Document for transitioning StratosphereOS from bespoke shell script installers to an open-ecosystem dual-track distribution framework via skills.sh, direct GitHub copy-paste, and native marketplaces, backed by a canonical dist/skills bundle."
 bt: BT-108
 timestamp: 2026-09-28
+generated:
+  by: 2c-reconcile-specs
+  at: 2026-09-28
 resource: https://github.com/PatN-git/Stratosphere-OS/issues/108
 status: approved
-version: "1.0.0"
+version: "1.0.1"
 ---
 
 # BT-108: Host-Agnostic Skill Distribution Framework
@@ -26,7 +29,7 @@ version: "1.0.0"
 - **Cost of inaction:** Adding support for each new AI agent host costs a pair of custom platform scripts, multiplying maintenance overhead. Concurrently, new contributors encounter confusing directory drift and broken installation edge cases on Windows and headless environments.
 
 ## 2. Solution (user view)
-StratosphereOS skills install through the open agent-skills ecosystem using standard tools developers already know. Developers can install the entire 26-skill suite into any supported host using a single ecosystem command (`npx skills add PatN-git/Stratosphere-OS/dist/skills`), through native agent marketplaces where available, or via an un-opinionated direct copy-paste from GitHub for offline or zero-dependency setups. All compiled skills live in a single canonical bundle with sidecars and relative references intact. Repository setup (installing constitutions, rules, and memory templates) is decoupled from skill copying and is triggered cleanly from inside the agent using a dedicated onboarding skill.
+StratosphereOS skills install through the open agent-skills ecosystem using standard tools developers already know. Developers can install the entire 26-skill suite into any supported host using a single ecosystem command (`npx skills add PatN-git/Stratosphere-OS/dist/skills --copy -y`), through native agent marketplaces where available, or via an un-opinionated direct copy-paste from GitHub for offline or zero-dependency setups. All compiled skills live in a single canonical bundle with sidecars and relative references intact. Repository setup (installing constitutions, rules, and memory templates) is decoupled from skill copying and is triggered cleanly from inside the agent using a dedicated onboarding skill.
 
 ## 3. Goals
 - **Single Canonical Distribution Package:** Consolidate all compiled skills into one unified distribution directory, eliminating byte-identical duplicate trees.
@@ -38,7 +41,7 @@ StratosphereOS skills install through the open agent-skills ecosystem using stan
 
 ## 4. Non-Goals
 - **Altering Skill Content:** Principled exclusion — This effort strictly addresses packaging, distribution, and scaffolding orchestration. No workflow logic, prompts, or lifecycle phases are modified.
-- **Runtime Session Guards in Daily Workflows:** Principled exclusion — No suite completeness checks will be injected into routine session start workflows (`0a-start-session`) to prevent runtime latency and cognitive bloat; verification belongs strictly in setup and update routines.
+- **Runtime Session Guards in Daily Workflows:** Principled exclusion — No suite completeness checks will be injected into routine session start workflows (`0a-start-session`) to prevent runtime latency and cognitive bloat; verification belongs strictly in setup and update routines (affirming existing 0a-start-session pre-condition check for .memory/ presence is permitted; adding full suite integrity validation loops to 0a is strictly excluded).
 - **Standalone Global Antigravity Engine Rewrite:** Principled exclusion — We will not implement a proprietary global daemon or plugin loader for Google Antigravity to bypass upstream package manager directory mismatches; a minimal bridge is retained until the upstream ecosystem fix lands.
 - **Deprecating Native Claude Marketplace:** Principled exclusion — Claude Code's native plugin marketplace path remains a supported, first-class distribution channel.
 - **Dark Pattern / Lock-in Exclusion:** Principled exclusion — StratosphereOS will never require proprietary account creation, telemetry telemetry reporting, or cloud dependencies to install or execute skills.
@@ -53,7 +56,7 @@ StratosphereOS skills install through the open agent-skills ecosystem using stan
 
 ### Journey Step 1: Framework Packaging & Release
 1. **[BASELINE]** As a framework maintainer, I want `build.py` to compile all 26 skills into a single canonical distribution directory, so that I do not maintain duplicated byte-identical trees for different hosts. (ODI: 9.2 [HIGH])
-2. **[BASELINE]** As a framework maintainer, I want every skill in the distribution directory to package its transitive references and host-specific HITL sidecars, so that agent hosts correctly enforce human authorization. (ODI: 8.8 [HIGH])
+2. **[BASELINE]** As a framework maintainer, I want every Layer 1 lifecycle skill in the distribution directory to package its transitive references and host-specific HITL sidecars, so that agent hosts correctly enforce human authorization. (ODI: 8.8 [HIGH])
 3. **[BASELINE]** As a framework maintainer, I want CI drift checks and automated test harnesses to validate the distribution directory without requiring legacy shell installers. (ODI: 8.5 [HIGH])
 
 ### Journey Step 2: Consumer Skill Acquisition & Placement
@@ -76,9 +79,10 @@ StratosphereOS skills install through the open agent-skills ecosystem using stan
 - **Surgical Integrity Validation:** Suite completeness checks must be confined exclusively to `stratosphere-setup` and `stratosphere-update`, leaving routine session start workflows (`0a-start-session`) lightweight and fast.
 
 ## 8. Definition of Done
-- All legacy Claude Code shell installers (`scripts/install-claude-code.{sh,ps1}`) and dead `commands/` copy logic are deleted.
+- All legacy shell installers (`scripts/install-claude-code.{sh,ps1}` and `scripts/install-antigravity.{sh,ps1}`) and dead `commands/` copy logic are deleted upon delivery of the fallback bridge.
 - Single unified `dist/skills/` directory contains all 26 compiled, spec-conformant skills with sidecars and relative references intact.
-- Host-specific directories under `dist/` contain only their respective packaging manifests (`plugin.json`, `marketplace.json`).
+- Host packaging manifests reside in their canonical locations (`.claude-plugin/marketplace.json` at repository root for Claude Code, `dist/antigravity/plugin.json` for Antigravity).
+- Global Antigravity fallback bridge (`scripts/install-antigravity-bridge.{sh,ps1}`) is implemented, verified for Windows and POSIX, and documented.
 - `build/build.py`, `scripts/check.sh`, and `tests/install-harness` are updated and passing 100% on the new distribution structure.
 - Dual-track installation instructions (`skills.sh` + direct copy-paste + marketplace) are documented in `README.md`.
 - `stratosphere-setup` and `stratosphere-update` validate lifecycle suite integrity without introducing overhead to `0a-start-session`.
