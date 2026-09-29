@@ -355,3 +355,37 @@ def test_ref_cite_pattern_matches_build_py():
     build_src = (REPO_ROOT / "build" / "build.py").read_text(encoding="utf-8")
     m = re.search(r"REF_CITE = re\.compile\(\s*r'(.*?)'\s*r'(.*?)'\)", build_src, re.S)
     assert m and check_suite.REF_CITE.pattern == m.group(1) + m.group(2)
+
+
+def test_setup_and_update_halt_cleanly_when_installed_plugin_predates_check_suite():
+    for rel in ("commands/stratosphere-setup/SKILL.md", "commands/stratosphere-update/SKILL.md"):
+        text = _read(rel)
+        assert "check_suite.py` is missing" in text and "predates the integrity check" in text, rel
+
+
+# --- legacy: skills.sh globals under ~/.gemini/antigravity/skills ----------
+
+def test_legacy_flags_bundled_skills_in_gemini_antigravity_runtime_dir(proj):
+    project, home = proj
+    runtime = home / ".gemini" / "antigravity" / "skills"
+    touch(runtime / "3d-implement-issue" / "SKILL.md")
+    touch(runtime / "load-memory" / "SKILL.md")  # execution skills are bundled too
+    touch(runtime / "my-own-skill" / "SKILL.md")  # foreign skill must survive
+    r = legacy(project, home)
+    assert r.returncode == 1
+    assert "3d-implement-issue" in r.stdout and "load-memory" in r.stdout and "my-own-skill" not in r.stdout
+    assert legacy(project, home, "--apply").returncode == 0
+    assert sorted(p.name for p in runtime.iterdir()) == ["my-own-skill"]
+
+
+def test_legacy_leaves_config_skills_bridge_target_alone(proj):
+    project, home = proj
+    touch(home / ".gemini" / "config" / "skills" / "3d-implement-issue" / "SKILL.md")
+    assert legacy(project, home).returncode == 0
+
+
+def test_bundled_skill_names_match_the_dist_bundle():
+    """Drift guard for the names the runtime-dir cleanup keys on (22 lifecycle + 4 execution)."""
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    assert sorted(check_suite.BUNDLED_SKILLS) == sorted(d.name for d in DIST_SKILLS.iterdir() if (d / "SKILL.md").is_file())

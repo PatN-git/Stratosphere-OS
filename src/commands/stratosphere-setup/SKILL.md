@@ -99,7 +99,7 @@ If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaff
 python <plugin>/scripts/check_suite.py suite
 ```
 
-Exit 1 = incomplete suite (a cherry-picked or damaged install). **Non-fatal halt:** print its report verbatim (missing/corrupt list + the `npx skills add ... --copy -y` remediation), do **not** scaffold, and tell the user to fix the install and re-run `/stratosphere-setup`. Exit 0 → continue.
+If `<plugin>/scripts/check_suite.py` is missing, the installed plugin predates the integrity check: print `Installed StratOS plugin predates the integrity check; update it (re-run your install method), then re-run /stratosphere-setup.` and halt. Exit 1 = incomplete suite (a cherry-picked or damaged install). **Non-fatal halt:** print its report verbatim (missing/corrupt list + the `npx skills add ... --copy -y` remediation), do **not** scaffold, and tell the user to fix the install and re-run `/stratosphere-setup`. Exit 0 → continue.
 
 Then run the scaffolder from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 

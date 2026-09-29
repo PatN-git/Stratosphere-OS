@@ -60,14 +60,15 @@ Before running the local scaffolding update, verify if the installed Stratospher
        `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
        Then **HALT** execution. (If the user explicitly instructs to proceed anyway, continue against the stale plugin with a loud warning).
        
-     - **Antigravity Install** (path is under `~/.gemini/config/plugins/` or `./.agents/plugins/`):
-       The installed directory is a copy, not a git checkout — **self-update it from the recorded source** so the user never re-installs by hand. Read `<plugin>/.install-source.json` for `source_repo`, `scope`, and `plugin_dir`.
-       1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS plugin to v<latest_version>? This refreshes <plugin> from <source_repo>. [y/N]`. On decline → HALT.
-       2. **Refresh the plugin bytes:**
-          - **`.install-source.json` missing or unreadable/invalid** (install predates provenance — a one-time bootstrap): print `One-time manual step (this install predates auto-update): git pull your StratOS clone and re-run scripts/install-antigravity-bridge.sh (or .ps1), then re-run /stratosphere-update. Future updates will be automatic.` and HALT.
-          - **Otherwise — install the release tag from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> <source_repo> <tmp>`, then run its bridge: `bash <tmp>/scripts/install-antigravity-bridge.sh` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1`). For `local` scope, also pass `--target <project-root>/.agents/skills` where `<project-root>` is `<plugin>` with the trailing `/.agents/plugins/stratosphere-os` removed (or `plugin_dir` from provenance, same derivation). Delete `<tmp>` afterward. **Only ever clone the `source_repo` recorded at install — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
+     - **Retired v4 plugin install** (path is under a `plugins/stratosphere-os/` directory: `~/.claude/plugins/`, `./.claude/plugins/`, `~/.gemini/config/plugins/`, `./.agents/plugins/`):
+       Print `This is a retired v4 plugin install. Install the canonical bundle (README Tracks A-D), then re-run /stratosphere-update.` and **HALT**. The old directory can be deleted once the new install works.
+
+     - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/` or `~/.agents/skills/`):
+       The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills` or `<project>/.agents/skills`).
+       1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS skills to v<latest_version>? This refreshes <skills-dir> from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
+       2. **Refresh the skill bytes from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then run its bridge against the same directory: `bash <tmp>/scripts/install-antigravity-bridge.sh --target <skills-dir>` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1 --target <skills-dir>`). Delete `<tmp>` afterward. **Only ever clone the canonical URL above — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
        3. Re-read `<plugin>/versions.json` for the **actual** installed version and print `StratOS plugin updated to v<actual_version> — reload plugins and re-run /stratosphere-update.` verbatim, then **HALT**. (The re-run executes the *new* workflow + scaffold cleanly — avoids self-modifying the running workflow mid-flight.)
-       
+
      - **In-place Git Checkout** (plugin directory contains a `.git` folder):
        This is a development setup. Ask the user for confirmation:
        `Latest version v<latest_version> is newer than installed v<installed_version>. Pull updates from git?`
@@ -113,6 +114,8 @@ _Completion criterion:_ either the project is confirmed v4-shaped, or the user h
 ## Phase 0.6: Suite Integrity & Legacy Cleanup (non-fatal halt)
 
 Skills refresh from the canonical `dist/skills/` bundle (the located `<plugin>`'s sibling skills; Phase 1's scaffolder places them). Before computing scope, verify that bundle is whole and clear pre-canonical-bundle leftovers. Both checks are deterministic scripts — relay their output, do not re-derive it.
+
+0. **Old plugin guard:** if `<plugin>/scripts/check_suite.py` is missing, the installed plugin predates the integrity check — print `Installed StratOS plugin predates the integrity check; update it (re-run your install method), then re-run /stratosphere-update.` and **HALT** (never call a missing script).
 
 1. **Suite integrity:**
    ```bash

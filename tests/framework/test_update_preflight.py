@@ -36,15 +36,16 @@ def test_preflight_instructions():
             "marketplace update",
             "HALT"
         ],
-        "Antigravity copy self-update pathway": [
-            ".install-source.json",
-            "source_repo",
-            "git clone --depth 1 --branch v<latest_version> <source_repo>",
+        "Antigravity copy self-update pathway (bridge)": [
+            "git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git",
             "install-antigravity-bridge",
-            "--target <project-root>",
-            "predates auto-update",
+            "--target <skills-dir>",
             "actual",
             "reload plugins and re-run",
+            "HALT"
+        ],
+        "Retired v4 plugin install halt": [
+            "retired v4 plugin install",
             "HALT"
         ],
         "In-place git pull pathway": [
@@ -63,6 +64,9 @@ def test_preflight_instructions():
             "HALT"
         ]
     }
+
+    # The bridge (BT-120) records no provenance; a self-update must not depend on it.
+    assert ".install-source.json" not in content, "stale .install-source.json provenance reference"
 
     failed = False
     print("--- Verifying stratosphere-update preflight instructions ---")

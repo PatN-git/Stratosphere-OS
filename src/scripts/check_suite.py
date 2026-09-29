@@ -3,7 +3,8 @@
 
   check_suite.py suite       [--skills-dir DIR]   all 22 lifecycle skills present + uncorrupted
   check_suite.py visibility  [--project P] [--host claude|agents|auto]   system pack visible to the host
-  check_suite.py legacy      [--project P] [--apply]   stale pre-canonical-bundle paths
+  check_suite.py legacy      [--project P] [--apply]   stale pre-canonical-bundle paths (incl. skills.sh globals
+                                                       in ~/.gemini/antigravity/skills)
 
 Exit 0 = clean, 1 = problems found (a non-fatal halt: the caller prints the report and stops).
 Never invoked by 0a-start-session (zero-session-overhead invariant).
@@ -28,6 +29,10 @@ LIFECYCLE_SKILLS = [
     "4a-verify-and-ship", "4b-audit-architecture-drift", "4c-codebase-health-audit",
     "stratosphere-setup", "stratosphere-update", "sync-skills",
 ]
+
+# The 4 Layer 3 skills; with LIFECYCLE_SKILLS these are every skill the bundle ships.
+EXECUTION_SKILLS = ["concept-brainstorm", "load-memory", "micro-tdd", "plan-html"]
+BUNDLED_SKILLS = LIFECYCLE_SKILLS + EXECUTION_SKILLS
 
 SUITE_REMEDIATION = "npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y"
 
@@ -166,6 +171,11 @@ def find_legacy(project: Path, home: Path):
             found.append((antigravity_dir, None))
         if (root / "commands").is_dir() and (files := stale_command_files(root / "commands")):
             found.append((root / "commands", files))
+    # skills.sh installs globally to Antigravity's runtime dir, which Antigravity does not read
+    # (vercel-labs/skills#633); those copies only shadow the bridge's ~/.gemini/config/skills.
+    runtime_dir = home / ".gemini" / "antigravity" / "skills"
+    if runtime_dir.is_dir():
+        found += [(runtime_dir / name, None) for name in BUNDLED_SKILLS if (runtime_dir / name).is_dir()]
     return found
 
 
