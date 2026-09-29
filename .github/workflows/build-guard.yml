@@ -51,10 +51,10 @@ jobs:
         run: python scripts/place-dev-skills.py --check
 
       - name: Validate utility scripts
-        run: python tests/verify_scripts.py
+        run: python tests/runners/verify_scripts.py
 
       - name: Verify plan-html behavioral correctness
-        run: node tests/verify_plan_html.mjs
+        run: node tests/runners/verify_plan_html.mjs
 
       - name: Fail if dist/ drifted from src/
         run: |

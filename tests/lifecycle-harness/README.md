@@ -97,7 +97,7 @@ everywhere, so `_cli_roots()` searches it first. `CLAUDE_CLI` overrides discover
 ```bash
 python tests/lifecycle-harness/run-L3.py          # build/prove/remove the environment; no agent, no network
 python tests/lifecycle-harness/spike_1b.py        # exit 2 = claude unavailable, nothing proven
-python -m pytest tests/test_l3_responder.py tests/test_l3_env.py tests/test_l3_run.py -q
+python -m pytest tests/lifecycle/test_l3_responder.py tests/lifecycle/test_l3_env.py tests/lifecycle/test_l3_run.py -q
 ```
 
 `--handoff` runs every phase at minimum depth: 3 turns per round, 1 round, a 600s budget
