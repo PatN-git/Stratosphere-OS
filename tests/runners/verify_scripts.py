@@ -282,8 +282,8 @@ def test_orphan_guard():
             # Check exclusions
             if "__pycache__" in rel.parts or rel_str.endswith(".pyc"):
                 continue
-            if rel_str == "scripts/sync_skills.py":
-                # sync_skills.py is run within plugin scope by sync-skills command; never copied to project
+            if rel_str in ("scripts/sync_skills.py", "scripts/check_suite.py"):
+                # Run within plugin scope (sync-skills command; setup/update integrity checks); never copied to project
                 continue
             if rel.parts[0] in ("SKILL.md", "agents", "references"):
                 # The setup skill's own skill files: skills are placed by skill installers, not scaffolded from the payload.
