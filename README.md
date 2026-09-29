@@ -73,20 +73,67 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 
 ## Getting Started (Installation)
 
-### 1. Direct Plugin Installation (Recommended)
+### 1. Install the Skills
+StratosphereOS ships as one canonical bundle, `dist/skills/` (26 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
 
-**Claude Code:**
+| Your situation | Use |
+|:---|:---|
+| Claude Code, want auto-updating skills | [Track C](#track-c--claude-code-marketplace) |
+| Any other host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track A](#track-a--skillssh-npx) |
+| Offline, air-gapped, or no Node.js | [Track B](#track-b--direct-copy-offline--no-nodejs) |
+| Global Google Antigravity install | [Track D](#track-d--antigravity-bridge) |
+
+### Track A — skills.sh (`npx`)
+```bash
+# Project-level, into one agent's skills directory
+npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y
+
+# Global (user-level)
+npx skills add PatN-git/Stratosphere-OS/dist/skills -g -a <agent> --copy -y
+
+# Later, refresh
+npx skills update
+```
+`<agent>` is a [skills.sh](https://github.com/vercel-labs/skills) agent id, e.g. `claude-code`, `cursor`, `codex`, `github-copilot`, `devin`, `openclaw`, `windsurf`, `zed`; repeat `-a` for several agents. Run `npx skills add --help` for the full list.
+
+- **Always pass `--copy`.** Without it the CLI symlinks, which fails on Windows without Developer Mode (`EPERM: operation not permitted, symlink`) and breaks hosts that do not follow symlinks into `references/`.
+- **Always include the `/dist/skills` subpath.** The bundle lives there; the repository root is not a skills root.
+- **Keep `-y`** so all 26 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
+- No network? Run it against a local clone: `npx skills add ./dist/skills -a <agent> --copy -y`.
+
+### Track B — Direct copy (offline / no Node.js)
+Needs only a copy of this repo's `dist/skills/` — from `git clone https://github.com/PatN-git/Stratosphere-OS.git`, a release/ZIP download, or a USB stick. It works fully offline and air-gapped: no Node.js, `npx`, network or shell scripts required. Run the block for your shell from your **project root**, replacing `<repo>` with the path to that copy:
+
+```bash
+# macOS / Linux — universal .agents/skills (Cursor, Codex, Antigravity, Devin, OpenClaw, …)
+mkdir -p .agents/skills && cp -r <repo>/dist/skills/* .agents/skills/
+# Claude Code workspace
+mkdir -p .claude/skills && cp -r <repo>/dist/skills/* .claude/skills/
+```
+```powershell
+# Windows PowerShell — universal .agents\skills
+New-Item -ItemType Directory -Force -Path .agents\skills
+Copy-Item -Recurse -Force <repo>\dist\skills\* .agents\skills\
+# Claude Code workspace
+New-Item -ItemType Directory -Force -Path .claude\skills
+Copy-Item -Recurse -Force <repo>\dist\skills\* .claude\skills\
+```
+Copy the whole folders — each skill's `agents/` sidecar and `references/` are what keep lifecycle skills user-invoked only.
+
+### Track C — Claude Code marketplace
 ```text
 /plugin marketplace add PatN-git/Stratosphere-OS
 /plugin install stratosphere-os@stratosphere-os
 ```
 
-**Google Antigravity:**
+### Track D — Antigravity bridge
+`skills.sh` installs Antigravity skills globally to a directory Antigravity does not read ([vercel-labs/skills#633](https://github.com/vercel-labs/skills/issues/633)). Until that is fixed upstream, this bridge physically copies `dist/skills/` (no symlinks) into `~/.gemini/config/skills/`:
 ```bash
-git clone https://github.com/PatN-git/Stratosphere-OS.git
+git clone https://github.com/PatN-git/Stratosphere-OS.git && cd Stratosphere-OS
 bash scripts/install-antigravity-bridge.sh
 # Windows: powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-bridge.ps1
 ```
+Pass `--target <skills-dir>` to install elsewhere (for example a project's `.agents/skills`). Restart Antigravity afterwards. For per-project Antigravity installs, Track A or B into `.agents/skills` works without the bridge.
 
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**
@@ -94,7 +141,7 @@ bash scripts/install-antigravity-bridge.sh
 > `Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS. Check dependencies (Python, Git, GitHub CLI gh), verify GitHub auth/connection, and assist with setup if needed.`
 
 ### 2. Instantiate Project Memory
-After installing the plugin, restart your app or agent session, navigate to your target project repository, and run:
+After installing the skills, restart your app or agent session, navigate to your target project repository, and run:
 ```text
 /stratosphere-setup
 ```
@@ -127,7 +174,8 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 > [!TIP]
 > **Keeping the Plugin Fresh**
 > - **Claude Code users:** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
-> - **Google Antigravity users:** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
+> - **Track A users:** `npx skills update`.
+> - **Google Antigravity users (Track D):** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
 
 ---
 
