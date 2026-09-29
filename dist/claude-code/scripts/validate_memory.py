@@ -441,7 +441,7 @@ def main():
                 k, v = line.split(':', 1)
                 top[k.strip()] = re.sub(r'\s+#.*$', '', v).strip().strip('"' + "'")
             if 'timestamp' in top:
-                warnings.append(f"OKF v0.2: {display_path} carries retired 'timestamp:' - use 'generated: {{by, at}}'.")
+                warnings.append(f"OKF v0.2: {display_path} carries retired 'timestamp:' - use 'generated: {{by, at}}' (frontmatter-only edit).")
             status = top.get('status')
             if (status and status not in ('draft', 'stable', 'deprecated')
                     and top.get('type') != 'discovery-brief'):
