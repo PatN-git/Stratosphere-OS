@@ -77,6 +77,10 @@ jobs:
         with:
           python-version: "3.13"
 
+      - uses: actions/setup-node@v4   # Track A runs `npx skills add`
+        with:
+          node-version: "22"
+
       - name: Build dist/ (installers require it)
         run: python build/build.py
 

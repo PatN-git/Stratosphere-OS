@@ -1,8 +1,10 @@
 <#
   L1 - deterministic install/scaffold/sync E2E for the canonical dist/skills bundle (no agent).
-  Matrix: {.claude/skills, .agents/skills} x {local, global}, Track B direct copy
-  (Copy-Item). There is no per-host installer: a skills installer only places skill
-  folders, and stratosphere-setup carries its own scaffolder payload.
+  Track B (plain copy, Copy-Item): {.claude/skills, .agents/skills} x {local, global}, + scaffold/sync.
+  Track A (npx skills add ./dist/skills --copy -y): same 2x2 matrix; SKIPs without npx/network.
+  Track D (Antigravity bridge, scripts\install-antigravity-bridge.ps1 --target).
+  There is no per-host installer: a skills installer only places skill folders, and
+  stratosphere-setup carries its own scaffolder payload.
 
   Isolation: each cell uses a throwaway project dir under $env:TEMP. --global
   cells also redirect HOME to a throwaway dir (real ~/.claude and ~/.gemini are
@@ -27,6 +29,16 @@ if (-not (Test-Path (Join-Path $repo "dist\skills"))) {
 }
 
 $realBefore = Get-RealHomeSnapshot
+
+function Assert-BundleTree([string]$base, [string]$t) {
+    Assert "${t}: 26 skills" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count -eq 26)
+    Assert "${t}: 22 HITL sidecars" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "agents\openai.yaml") }).Count -eq 22)
+    AssertPathExists "${t}: skills/micro-tdd" (Join-Path $base "micro-tdd\SKILL.md")
+    Assert "${t}: no legacy commands/workflows dir" (-not ((Test-Path (Join-Path $base "commands")) -or (Test-Path (Join-Path $base "workflows"))))
+    AssertPathExists "${t}: setup carries scaffold.py" (Join-Path $base "stratosphere-setup\scripts\scaffold.py")
+    AssertPathExists "${t}: setup carries versions.json" (Join-Path $base "stratosphere-setup\versions.json")
+    AssertPathExists "${t}: setup carries templates" (Join-Path $base "stratosphere-setup\assets\templates\memory")
+}
 
 function Assert-ScaffoldTree([string]$proj) {
     foreach ($f in @("AGENTS.md","CLAUDE.md","GEMINI.md",".gitignore",".gitattributes","index.md")) {
@@ -62,13 +74,7 @@ function Run-Cell([string]$hostDir, [string]$scope) {
         $bundle = Join-Path $base "stratosphere-setup"
 
         # --- assert bundle tree ---
-        Assert "install: 26 skills" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count -eq 26)
-        Assert "install: 22 HITL sidecars" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "agents\openai.yaml") }).Count -eq 22)
-        AssertPathExists "install: skills/micro-tdd" (Join-Path $base "micro-tdd\SKILL.md")
-        Assert "install: no legacy commands/workflows dir" (-not ((Test-Path (Join-Path $base "commands")) -or (Test-Path (Join-Path $base "workflows"))))
-        AssertPathExists "install: setup carries scaffold.py" (Join-Path $bundle "scripts\scaffold.py")
-        AssertPathExists "install: setup carries versions.json" (Join-Path $bundle "versions.json")
-        AssertPathExists "install: setup carries templates" (Join-Path $bundle "assets\templates\memory")
+        Assert-BundleTree $base "install"
 
         # --- scaffold (pure file creation in cwd) ---
         $scaffold = Join-Path $bundle "scripts\scaffold.py"
@@ -102,11 +108,87 @@ function Run-Cell([string]$hostDir, [string]$scope) {
     }
 }
 
+# Track A: the skills.sh CLI installing the local bundle. No -a flag targets the universal
+# .agents/skills; -a claude-code targets .claude/skills; -g redirects into the home dir.
+# Runs native npx with the same HOME redirection as Invoke-PyWithHome (node reads USERPROFILE).
+function Invoke-Npx([string]$tmpHome, [string]$workDir, [string[]]$npxArgs) {
+    $old = @{ UP = $env:USERPROFILE; HM = $env:HOME }
+    $eap = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"   # native stderr must not become a terminating error
+        $env:USERPROFILE = $tmpHome; $env:HOME = $tmpHome
+        Push-Location $workDir
+        $out = & npx.cmd @npxArgs 2>&1 | Out-String
+        Pop-Location
+        return @{ Code = $LASTEXITCODE; Out = $out }
+    } finally {
+        $ErrorActionPreference = $eap
+        $env:USERPROFILE = $old.UP; $env:HOME = $old.HM
+    }
+}
+
+function Run-TrackACell([string]$hostDir, [string]$scope) {
+    Section "Track A: npx skills add / $hostDir / $scope (ps1)"
+    $proj = New-TempDir "sos-proj"; $tmpHome = New-TempDir "sos-home"
+    try {
+        $npxArgs = @('-y', 'skills', 'add', (Join-Path $repo "dist\skills"), '--copy', '-y')
+        if ($hostDir -eq ".claude") { $npxArgs += @('-a', 'claude-code') }
+        if ($scope -eq "global") { $npxArgs += '-g' }
+        $r = Invoke-Npx $tmpHome $proj $npxArgs
+        Assert "trackA: npx skills add exit 0 ($hostDir/$scope)" ($r.Code -eq 0)
+        $root = if ($scope -eq "local") { $proj } else { $tmpHome }
+        Assert-BundleTree (Join-Path $root "$hostDir\skills") "trackA"
+    }
+    finally { Remove-Temp $proj; Remove-Temp $tmpHome }
+}
+
+function Run-TrackA {
+    # One npm cache for all four cells: the skills CLI is fetched once, not per cell.
+    $cache = New-TempDir "sos-npmcache"; $oldCache = $env:npm_config_cache
+    try {
+        $env:npm_config_cache = $cache
+        if (-not (Get-Command npx.cmd -ErrorAction SilentlyContinue)) {
+            Write-Host "`n  SKIP  Track A: npx not found (install Node.js to cover 'npx skills add')" -ForegroundColor Yellow
+        } elseif ((Invoke-Npx $env:TEMP $env:TEMP @('-y', 'skills', '--version')).Code -ne 0) {
+            Write-Host "`n  SKIP  Track A: skills CLI unavailable (offline or npm registry unreachable)" -ForegroundColor Yellow
+        } else {
+            foreach ($hostDir in @(".claude",".agents")) {
+                foreach ($scope in @("local","global")) { Run-TrackACell $hostDir $scope }
+            }
+        }
+    }
+    finally { $env:npm_config_cache = $oldCache; Remove-Temp $cache }
+}
+
+# Track D: the Antigravity bridge copies the bundle to an explicit --target; re-running replaces
+# shipped skills (drops stale files) and leaves foreign skills untouched.
+function Run-TrackDCell {
+    Section "Track D: antigravity bridge --target (ps1)"
+    $root = New-TempDir "sos-bridge"
+    try {
+        $tgt = Join-Path $root "skills"
+        $bridge = Join-Path $repo "scripts\install-antigravity-bridge.ps1"
+        $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $bridge --target $tgt 2>&1 | Out-String
+        Assert "trackD: bridge exit 0" ($LASTEXITCODE -eq 0)
+        Assert "trackD: bridge reports 26 copied" ($out -match 'Copied 26 skills')
+        Assert-BundleTree $tgt "trackD"
+        New-Item -ItemType Directory -Force -Path (Join-Path $tgt "foreign-skill") | Out-Null
+        Set-Content -Path (Join-Path $tgt "foreign-skill\SKILL.md") -Value "x"
+        Set-Content -Path (Join-Path $tgt "micro-tdd\stale.txt") -Value "x"
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $bridge --target $tgt 2>&1 | Out-Null
+        AssertPathExists "trackD: rerun preserves foreign skill" (Join-Path $tgt "foreign-skill\SKILL.md")
+        Assert "trackD: rerun drops stale file in shipped skill" (-not (Test-Path (Join-Path $tgt "micro-tdd\stale.txt")))
+    }
+    finally { Remove-Temp $root }
+}
+
 foreach ($hostDir in @(".claude",".agents")) {
     foreach ($scope in @("local","global")) {
         Run-Cell $hostDir $scope
     }
 }
+Run-TrackA
+Run-TrackDCell
 
 Section "leak check"
 $realAfter = Get-RealHomeSnapshot

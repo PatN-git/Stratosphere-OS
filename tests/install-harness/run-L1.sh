@@ -1,7 +1,9 @@
 #!/bin/bash
-# L1 - deterministic install/scaffold/sync E2E for the canonical dist/skills bundle
-# (Track B: direct copy), for Linux/CI. Mirrors run-L1.ps1:
-#   {.claude/skills, .agents/skills} x {local, global}.
+# L1 - deterministic install/scaffold/sync E2E for the canonical dist/skills bundle, for
+# Linux/CI. Mirrors run-L1.ps1:
+#   Track B (plain copy)  {.claude/skills, .agents/skills} x {local, global}, + scaffold/sync
+#   Track A (npx skills add ./dist/skills --copy -y)  same 2x2 matrix; SKIPs without npx/network
+#   Track D (Antigravity bridge, scripts/install-antigravity-bridge.sh --target)
 # There is no per-host installer any more: a skills installer (skills.sh, marketplace, or
 # a plain copy) only places skill folders, and stratosphere-setup carries its own payload.
 # Isolation: temp project per cell; --global cells redirect HOME to a temp dir
@@ -24,6 +26,17 @@ exists()  { [ -e "$1" ] && echo 1 || echo 0; }
 nmd()     { local n; n=$(find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l); echo "$((n))"; }
 
 [ -d "$REPO/dist/skills" ] || "$PY" "$REPO/build/build.py" >/dev/null
+
+assert_bundle_tree() { # $1 skills dir  $2 label prefix
+  local base="$1" t="$2"
+  assert "$t: 26 skills" "$([ "$(ls -1 "$base"/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+  assert "$t: 22 HITL sidecars" "$([ "$(ls -1 "$base"/*/agents/openai.yaml 2>/dev/null | wc -l | tr -d " ")" = "22" ] && echo 1 || echo 0)"
+  assert "$t: micro-tdd skill" "$(exists "$base/micro-tdd/SKILL.md")"
+  assert "$t: no legacy commands/workflows dir" "$([ -d "$base/commands" ] || [ -d "$base/workflows" ] && echo 0 || echo 1)"
+  assert "$t: setup carries scaffold.py" "$(exists "$base/stratosphere-setup/scripts/scaffold.py")"
+  assert "$t: setup carries versions.json" "$(exists "$base/stratosphere-setup/versions.json")"
+  assert "$t: setup carries templates" "$(exists "$base/stratosphere-setup/assets/templates/memory")"
+}
 
 assert_scaffold_tree() { # $1 proj
   local p="$1"
@@ -56,14 +69,7 @@ run_cell() { # $1 host dir (.claude|.agents)  $2 scope
   mkdir -p "$base" && cp -r "$REPO"/dist/skills/* "$base"/
   bundle="$base/stratosphere-setup"
 
-  # bundle-tree assertions
-  assert "install: 26 skills" "$([ "$(ls -1 "$base"/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
-  assert "install: 22 HITL sidecars" "$([ "$(ls -1 "$base"/*/agents/openai.yaml 2>/dev/null | wc -l | tr -d " ")" = "22" ] && echo 1 || echo 0)"
-  assert "install: micro-tdd skill" "$(exists "$base/micro-tdd/SKILL.md")"
-  assert "install: no legacy commands/workflows dir" "$([ -d "$base/commands" ] || [ -d "$base/workflows" ] && echo 0 || echo 1)"
-  assert "install: setup carries scaffold.py" "$(exists "$bundle/scripts/scaffold.py")"
-  assert "install: setup carries versions.json" "$(exists "$bundle/versions.json")"
-  assert "install: setup carries templates" "$(exists "$bundle/assets/templates/memory")"
+  assert_bundle_tree "$base" "install"
 
   # scaffold
   if [ "$scope" = "local" ]; then
@@ -87,11 +93,62 @@ run_cell() { # $1 host dir (.claude|.agents)  $2 scope
   rm -rf "$proj"; [ "$scope" = "global" ] && rm -rf "$home"
 }
 
+# Track A: the skills.sh CLI installing the local bundle. No -a flag targets the universal
+# .agents/skills; -a claude-code targets .claude/skills; -g redirects into HOME.
+run_trackA_cell() { # $1 host dir (.claude|.agents)  $2 scope
+  local hostdir="$1" scope="$2" agent="" g="" proj home base rc
+  [ "$hostdir" = ".claude" ] && agent="-a claude-code"
+  [ "$scope" = "global" ] && g="-g"
+  echo ""; echo "== Track A: npx skills add / $hostdir / $scope (sh) =="
+  proj="$(mktemp -d)"; home="$(mktemp -d)"
+  if [ "$scope" = "global" ]; then base="$home/$hostdir/skills"; else base="$proj/$hostdir/skills"; fi
+  # shellcheck disable=SC2086
+  ( cd "$proj" && HOME="$home" USERPROFILE="$home" npx -y skills add "$REPO/dist/skills" --copy -y $agent $g >/tmp/npx-add.out 2>&1 )
+  rc=$?
+  assert "trackA: npx skills add exit 0 ($hostdir/$scope)" "$([ "$rc" = 0 ] && echo 1 || echo 0)"
+  assert_bundle_tree "$base" "trackA"
+  rm -rf "$proj" "$home"
+}
+
+run_trackA() {
+  # One npm cache for all four cells: the skills CLI is fetched once, not per cell.
+  local cache; cache="$(mktemp -d)"; export npm_config_cache="$cache"
+  if ! command -v npx >/dev/null 2>&1; then
+    echo ""; echo "  SKIP  Track A: npx not found (install Node.js to cover 'npx skills add')"
+  elif ! npx -y skills --version >/dev/null 2>&1; then
+    echo ""; echo "  SKIP  Track A: skills CLI unavailable (offline or npm registry unreachable)"
+  else
+    for hostdir in .claude .agents; do
+      for scope in local global; do run_trackA_cell "$hostdir" "$scope"; done
+    done
+  fi
+  rm -rf "$cache"; unset npm_config_cache
+}
+
+# Track D: the Antigravity bridge copies the bundle to an explicit --target; re-running replaces
+# shipped skills (drops stale files) and leaves foreign skills untouched.
+run_trackD_cell() {
+  echo ""; echo "== Track D: antigravity bridge --target (sh) =="
+  local root tgt rc; root="$(mktemp -d)"; tgt="$root/skills"
+  bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >/tmp/bridge.out 2>&1
+  rc=$?
+  assert "trackD: bridge exit 0" "$([ "$rc" = 0 ] && echo 1 || echo 0)"
+  grep -q 'Copied 26 skills' /tmp/bridge.out && assert "trackD: bridge reports 26 copied" 1 || assert "trackD: bridge reports 26 copied" 0
+  assert_bundle_tree "$tgt" "trackD"
+  mkdir -p "$tgt/foreign-skill"; echo x > "$tgt/foreign-skill/SKILL.md"; echo x > "$tgt/micro-tdd/stale.txt"
+  bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >/dev/null 2>&1
+  assert "trackD: rerun preserves foreign skill" "$(exists "$tgt/foreign-skill/SKILL.md")"
+  assert "trackD: rerun drops stale file in shipped skill" "$([ -e "$tgt/micro-tdd/stale.txt" ] && echo 0 || echo 1)"
+  rm -rf "$root"
+}
+
 for hostdir in .claude .agents; do
   for scope in local global; do
     run_cell "$hostdir" "$scope"
   done
 done
+run_trackA
+run_trackD_cell
 
 echo ""; echo "----- install-harness L1 (sh): $pass passed, $fail failed -----"
 if [ "$fail" -gt 0 ]; then printf '  - %s\n' "${failures[@]}"; exit 1; fi
