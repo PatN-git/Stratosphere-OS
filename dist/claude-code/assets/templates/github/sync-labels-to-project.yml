@@ -57,9 +57,11 @@ jobs:
               }
             }
 
-            // Determine status field value override on close/reopen
+            // Determine status field value override. Keyed on issue STATE, not the event, so a
+            // later label edit on a completed issue that still carries e.g. status:planned
+            // cannot reset its card.
             let statusOverrideVal = null;
-            if (context.payload.action === 'closed') {
+            if (context.payload.issue.state === 'closed') {
               if (context.payload.issue.state_reason === 'completed' || !context.payload.issue.state_reason) {
                 statusOverrideVal = 'done';
               } else {
