@@ -5,13 +5,12 @@ Drives `claude -p` (same approach as .agents/skills/skill-creator/scripts/run_ev
 inside an isolated temp HOME + temp project, with a fully pre-answered prompt so the
 agent never needs an interactive answer (no AskUserQuestion can block a headless run).
 
-It asserts the agent drove the DETERMINISTIC scripts (install-* / scaffold.py /
+It asserts the agent drove the DETERMINISTIC scripts (scaffold.py /
 sync_skills.py) rather than hand-copying files, and that the resulting tree matches
 what L1 checks. Requires the `claude` CLI on PATH, authenticated, with network access.
 
 Usage:
-  python run-L2.py --repo <repo-root> --scope local
-  python run-L2.py --repo <repo-root> --scope global
+  python run-L2.py --repo <repo-root> --scope local     # claude-code only; the legacy installer cells were retired (BT-119)
   python run-L2.py --repo <repo-root> --marketplace      # only valid post-merge to main
 
 Exit code 0 = all checks passed, 1 = failure.
@@ -237,6 +236,8 @@ def main():
     else:
         prompt_prefix = "claude" if args.tool == "claude-code" else "antigravity"
         prompt_file = here / "prompts" / f"{prompt_prefix}-{args.scope}.txt"
+        if not prompt_file.exists():
+            sys.exit(f"no L2 prompt for {args.tool}/{args.scope} (legacy installer cells retired in BT-119)")
         scope = args.scope
 
     tmp = Path(tempfile.gettempdir())
@@ -295,14 +296,7 @@ def main():
         # scaffold.py check: tool blob OR filesystem evidence (in case stream-json fails)
         scaffold_ran = "scaffold.py" in blob or (proj / "AGENTS.md").exists()
         check("agent ran scaffold.py", scaffold_ran)
-        if not args.marketplace:
-            if args.tool == "claude-code":
-                # Since we pre-installed the plugin locally, the agent doesn't run the installer script
-                check("agent ran install script", True)
-            else:
-                installer_name = "install-claude-code" if args.tool == "claude-code" else "install-antigravity"
-                check("agent ran install script", installer_name in blob)
-        else:
+        if args.marketplace:
             check("agent used /plugin marketplace", "marketplace add" in blob or "plugin install" in blob.lower())
         # guard: must not hand-write the constitution instead of scaffolding
         if args.tool == "claude-code":
