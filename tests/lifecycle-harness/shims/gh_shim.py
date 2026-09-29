@@ -201,6 +201,12 @@ def get(state: dict, number: str) -> dict:
     return issue
 
 
+# Real `gh` renders these two relations as GraphQL connections, not lists. The store
+# keeps plain lists; they are wrapped here, the one output boundary shared by
+# `issue view`, `issue list --json` and `pr view`.
+CONNECTION_FIELDS = ("subIssues", "blockedBy")
+
+
 def project(issue: dict, fields: list[str]) -> dict:
     """`--json a,b` returns exactly those fields, as real `gh` does.
 
@@ -212,13 +218,17 @@ def project(issue: dict, fields: list[str]) -> dict:
     if unknown:
         raise Failure(EXIT_UNKNOWN,
                       f"unknown JSON field(s) for issue: {', '.join(unknown)}")
-    return {f: issue[f] for f in fields}
+    out = {f: issue[f] for f in fields}
+    for f in CONNECTION_FIELDS:
+        if f in out:
+            out[f] = {"nodes": out[f], "totalCount": len(out[f])}
+    return out
 
 
 def brief(issue: dict) -> dict:
     """The shape a nested reference takes: `subIssues`, `parent`, `blockedBy`."""
-    return {"number": issue["number"], "title": issue["title"],
-            "state": issue["state"]}
+    return {"id": issue["id"], "number": issue["number"], "title": issue["title"],
+            "state": issue["state"], "url": issue["url"]}
 
 
 # --- subcommands -------------------------------------------------------------
