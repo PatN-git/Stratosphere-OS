@@ -135,7 +135,7 @@ def cmd_visibility(args):
             fetch.append(name)
             continue
         print(f"Remediation ({name}):")
-        print(f'  bash:       cp -r "{src}" "{dest_root / name}"')
+        print(f'  bash:       mkdir -p "{dest_root.as_posix()}" && cp -r "{src.as_posix()}" "{(dest_root / name).as_posix()}"')
         print(f'  PowerShell: Copy-Item -Recurse "{src}" "{dest_root / name}"')
     if fetch:
         print(f"Not found on disk: {', '.join(fetch)}. Remediation: run /sync-skills (system pack), then re-run this check.")
@@ -161,9 +161,9 @@ def find_legacy(project: Path, home: Path):
     for root in legacy_roots(project, home):
         if (root / "dist" / "claude-code").is_dir():
             found.append((root / "dist" / "claude-code", None))
-        anti = root / "dist" / "antigravity"  # the current one holds only plugin.json; a payload means the old duplicate tree
-        if anti.is_dir() and any((anti / sub).exists() for sub in ("skills", "scripts", "assets")):
-            found.append((anti, None))
+        antigravity_dir = root / "dist" / "antigravity"  # the current one holds only plugin.json; a payload means the old duplicate tree
+        if antigravity_dir.is_dir() and any((antigravity_dir / sub).exists() for sub in ("skills", "scripts", "assets")):
+            found.append((antigravity_dir, None))
         if (root / "commands").is_dir() and (files := stale_command_files(root / "commands")):
             found.append((root / "commands", files))
     return found

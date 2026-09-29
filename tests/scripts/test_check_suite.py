@@ -326,3 +326,32 @@ def test_start_session_without_memory_gives_one_line_setup_guidance():
     assert "Repository uninitialized. Please run /stratosphere-setup first." in text
     # the guidance is gated on a plain `.memory/` presence check, before any hydration
     assert text.index(".memory/` is absent") < text.index("## Phase A")
+
+
+def test_update_flow_cannot_route_past_phase_0_6():
+    """Every path out of Phase 0/0.5 must land on Phase 0.6, never jump straight to Phase 1."""
+    text = _read("commands/stratosphere-update/SKILL.md")
+    before = text[:text.index("## Phase 0.6")]
+    assert not re.search(r"(?<!not )(?<!not\s)(proceed|continue) to \*{0,2}Phase 1\b", before, re.I)
+    assert "Phase 0.6" in before  # the earlier phases name it as their next step
+
+
+def test_bash_remediation_creates_the_destination_dir(proj):
+    project, home = proj
+    install(project / ".agents" / "skills")
+    r = visibility(project, home, "claude")
+    assert 'mkdir -p "' in r.stdout
+    # and the printed bash line actually works when .claude/skills does not exist yet
+    line = next(l for l in r.stdout.splitlines() if l.strip().startswith("bash:")).split("bash:", 1)[1].strip()
+    if shutil.which("bash"):
+        assert subprocess.run(["bash", "-c", line], capture_output=True).returncode == 0
+        assert (project / ".claude" / "skills" / "code-simplifier" / "SKILL.md").is_file()
+
+
+def test_ref_cite_pattern_matches_build_py():
+    """check_suite ships standalone (cannot import build.py); guard the copied regex against drift."""
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    build_src = (REPO_ROOT / "build" / "build.py").read_text(encoding="utf-8")
+    m = re.search(r"REF_CITE = re\.compile\(\s*r'(.*?)'\s*r'(.*?)'\)", build_src, re.S)
+    assert m and check_suite.REF_CITE.pattern == m.group(1) + m.group(2)

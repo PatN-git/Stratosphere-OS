@@ -40,7 +40,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
    
    - **Offline / No GH fallback:** If `gh` is not installed or not authenticated (`gh auth status` fails), or if the network is unreachable (timeout/error), print the following warning line verbatim to the console:
      `Could not verify latest StratOS release (offline/no gh); proceeding under installed v<installed_version>. If the release changed the update procedure, re-run when online.`
-     and immediately proceed to **Phase 1: Compute Update Scope**.
+     and immediately proceed to **Phase 0.5: Pre-v4 Layout Detection**.
    
    - If the check succeeds, normalize the retrieved release tag by stripping any leading `v` (e.g. `v1.1.0` becomes `1.1.0`). Let this be `<latest_version>`.
 
@@ -49,7 +49,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
    
    - **Up to date:** If `<latest_version>` <= `<installed_version>`: print the following line:
      `StratOS plugin is current (v<installed_version>).`
-     and proceed to **Phase 1: Compute Update Scope**.
+     and proceed to **Phase 0.5: Pre-v4 Layout Detection**.
      
    - **Out of date:** If `<latest_version>` > `<installed_version>`: detect the installation type by checking `<plugin>`'s path and run the matching update path:
      
@@ -87,7 +87,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
 Before computing scope, detect whether this project predates v4.0.0.
 
 1. **Check:** does `.agents/workflows/` exist, or does `.gitignore` contain a bare `.agents/skills/` line?
-2. **If neither:** the project is already on the v4 layout. Continue to Phase 1.
+2. **If neither:** the project is already on the v4 layout. Continue to Phase 0.6.
 3. **If either:** HALT and instruct the user. `stratosphere-update` **cannot** complete this migration on its own:
    - `reconcile_gitignore()` only *adds* entries, so the stale `.agents/skills/` line survives and every skill installed by this update lands in an ignored directory — silently untracked.
    - This flow has no removal phase, so the superseded `.agents/workflows/*.md` remain. Until 2026-11-01 Antigravity indexes both trees, and `/0a_start-session` and `/0a-start-session` both resolve, to different versions of the same skill.
