@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.4"
-timestamp: 2026-09-25
+version: "1.1.5"
+timestamp: 2026-09-29
 ---
 
 # Nightly Consolidation
@@ -54,7 +54,7 @@ Recommend the next planning skill from backlog state. **Read-only. Emit the reco
 2. **Ground-truth against GitHub:** run `gh auth status`.
    - **Connected** → GitHub is authoritative; enrich each base-state row (status != done):
      - milestones + open issues + epics: `gh issue list --state open --json number,milestone,labels,subIssues` (fetching epic sub-issues in bulk rather than looping individual views); open milestones via `gh api repos/{owner}/{repo}/milestones`.
-     - epic children: parse `subIssues` from the batched issue list query — count child slices per `tier:epic`.
+     - epic children: parse `subIssues.nodes` from the batched issue list query — count child slices per `tier:epic`.
      - a base-state row whose mapped issue is **absent from the open list** is *closed* on GitHub, not milestone-cleared — reconcile it as done for the advisory and do **not** emit `[DRIFT]`.
      - only when the mapped issue is **present (open)** and any of its **5 mirror fields** — status, milestone, `Labels`, `Parent`, `Blocked by` — disagrees with GitHub → emit `[DRIFT] BT-<padded>: <field> map=<x> github=<y>` and trust GitHub for the advisory (compare bare `status` token to the `Status` column, non-status labels to `Labels`, sub-issue parent to `Parent`, blocked-by to `Blocked by`).
      - **stale-blocker check:** if a row's `Blocked by` names a blocker already at `status:in review` or `status:done` → emit `[DRIFT] BT-<padded>: stale blocker <id> should be cleared` (4a/merge should have removed it).

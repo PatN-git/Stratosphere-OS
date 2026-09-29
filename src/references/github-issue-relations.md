@@ -1,7 +1,7 @@
 ---
 description: Canonical gh commands for GitHub issue relations (sub-issue parent/child, blocked-by dependencies). Native `gh api graphql`; no `gh-sub-issue` extension.
-version: "1.0.0"
-timestamp: 2026-07-28
+version: "1.0.1"
+timestamp: 2026-09-29
 ---
 
 # GitHub Issue Relations
@@ -16,6 +16,6 @@ No native `gh sub-issue` subcommand or `--blocked-by` flag exists; no extension.
 
 **Remove blocked-by** (clear `<blocker>` from `<issue>`): as above with `removeBlockedBy`.
 
-**Read:** `gh issue view <n> --json subIssues` | `gh issue view <n> --json blockedBy`
+**Read:** `gh issue view <n> --json subIssues` | `gh issue view <n> --json blockedBy` — each is a connection `{"nodes": [{number,state,title,url,…}], "totalCount": n}` (also under `gh issue list --json`): read `.nodes`, never iterate the value itself. `parent` is a plain object or `null`.
 
 **Fallback** (gh absent / mutation errors on older GHES): keep `Blocked by: <BT-ids>` text in the issue body + `Parent`/`Blocked by` columns of `.memory/BACKLOG_MAP.md`; reconcile later.

@@ -34,7 +34,7 @@ Lifecycle order: `needs_spec → planned → in progress → in review → done`
 ## Action rules the vocabulary depends on
 
 - An issue carries exactly one `status:*` label (Single Status Invariant, `BACKLOG_MAP.md`). The Action does not strip stale labels: with two, the last one in the payload wins.
-- Closing an issue as completed sets `done` regardless of label; closing as *not planned* leaves the board untouched. Reopening restores the issue's `status:*` label, or `planned` if it has none. This is why `closed ≡ status:done`.
+- An issue that is closed as completed is `done` on **every** event, not just the `closed` one, regardless of its label — so a later label edit cannot reset its card. Still, set `status:done` when closing (`closed ≡ status:done`) so labels, `BACKLOG_MAP` and the board agree. Closing as *not planned* is not forced to `done`. Reopening restores the issue's `status:*` label, or `planned` if it has none.
 - Issues with any `concept:*` label are excluded from the board.
 - Other `key:value` labels (`type`, `size`, `priority`, …) only sync if the board has a single-select field of that name. Board #2 has none today, so they are skipped.
 

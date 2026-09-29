@@ -199,7 +199,7 @@ def test_add_sub_issue_sets_both_ends(store, capsys):
     _, parent, _ = run(["issue", "view", "2", "--json", "parent"], capsys)
     _, kids, _ = run(["issue", "view", "1", "--json", "subIssues"], capsys)
     assert json.loads(parent)["parent"]["number"] == 1
-    assert [s["number"] for s in json.loads(kids)["subIssues"]] == [2]
+    assert [s["number"] for s in json.loads(kids)["subIssues"]["nodes"]] == [2]
 
 
 def test_blocked_by_can_be_added_and_removed(store, capsys):
@@ -207,11 +207,11 @@ def test_blocked_by_can_be_added_and_removed(store, capsys):
     run(["issue", "create", "--title", "second"], capsys)
     run(_mutation("addBlockedBy", gh.node_id(2), gh.node_id(1)), capsys)
     _, out, _ = run(["issue", "view", "2", "--json", "blockedBy"], capsys)
-    assert [b["number"] for b in json.loads(out)["blockedBy"]] == [1]
+    assert [b["number"] for b in json.loads(out)["blockedBy"]["nodes"]] == [1]
 
     run(_mutation("removeBlockedBy", gh.node_id(2), gh.node_id(1)), capsys)
     _, out, _ = run(["issue", "view", "2", "--json", "blockedBy"], capsys)
-    assert json.loads(out)["blockedBy"] == []
+    assert json.loads(out)["blockedBy"] == {"nodes": [], "totalCount": 0}
 
 
 def test_an_unknown_mutation_fails_by_name(store, capsys):

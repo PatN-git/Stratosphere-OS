@@ -2,7 +2,9 @@
 type: discovery-brief
 title: "Discovery: Host-agnostic skill distribution retiring per-host installers"
 description: "Implementation-ready concept brief for host-agnostic skill distribution — replacing bespoke shell scripts with dual-track distribution via skills.sh, direct GitHub copy-paste, and native marketplaces, backed by a canonical dist/skills bundle."
-timestamp: 2026-09-28
+generated:
+  by: 1b-concept-framing
+  at: 2026-09-28
 status: ready-for-prd
 slug: host-agnostic-skill-distribution
 linked-prd: BT-108

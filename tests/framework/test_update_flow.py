@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """E2E/Integration tests for the StratosphereOS in-place update pipeline."""
 import json
+import re
 import os
 import sys
 import shutil
@@ -1405,7 +1406,7 @@ def test_dr016_backref_restored():
     print("--- Test: DR-016 Back-Reference Restored ---")
     # Read build template
     template_rules = (REPO_ROOT / "src" / "memory-templates" / "DESIGN_RULES.md").read_text(encoding="utf-8")
-    assert "version: \"1.0.6\"" in template_rules
+    assert re.search(r'^version: "\d+\.\d+\.\d+"$', template_rules, re.M)  # any version: pinning one breaks every bump
     assert "one display/serif + one neutral/sans ([[DR-011]])." in template_rules
     print("DR-016 backref test passed!")
 
@@ -2303,9 +2304,10 @@ def test_script_legacy_project_fallback():
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
     
-    # Script A: Historical shipped content (from v4.0.0 validate_memory.py)
+    # Script A: Historical shipped content — a frozen v4.0.0 copy, NOT current src, so
+    # editing src/scripts/validate_memory.py can't silently break the known-hash lookup.
     script_a = script_dir / "validate_memory.py"
-    v4_content = (REPO_ROOT / "src" / "scripts" / "validate_memory.py").read_text(encoding="utf-8")
+    v4_content = (REPO_ROOT / "tests" / "fixtures" / "legacy" / "validate_memory.v4.0.0.py").read_text(encoding="utf-8")
     script_a.write_text(v4_content, encoding="utf-8")
     
     # Mock plugin has a newer version of validate_memory.py

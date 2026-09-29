@@ -35,14 +35,19 @@ BACKLOG = """\
 
 
 def gh_issue(status="in review", milestone="v1.2.0", extra_labels=None, blocked=("6",),
-             parent_num="5", comments=None, with_blockedby=True, with_parent=True):
+             parent_num="5", comments=None, with_blockedby=True, with_parent=True,
+             blocked_shape="nodes"):
     labels = [{"name": f"status:{status}"}] if status else []
     labels += [{"name": n} for n in (extra_labels if extra_labels is not None
                                       else ["area:api", "type:feature", "tier:slice", "size:small"])]
     d = {"number": 7, "labels": labels,
          "milestone": {"title": milestone} if milestone else None}
     if with_blockedby:
-        d["blockedBy"] = [{"number": int(n)} for n in blocked]
+        # Real `gh issue view --json blockedBy` is a connection, not a list.
+        nodes = [{"id": f"I_{n}", "number": int(n), "state": "OPEN", "title": f"t{n}",
+                  "url": f"https://github.com/o/r/issues/{n}"} for n in blocked]
+        d["blockedBy"] = ({"nodes": nodes, "totalCount": len(nodes)} if blocked_shape == "nodes"
+                          else nodes if blocked_shape == "list" else None)
     if with_parent:
         d["parent"] = {"number": int(parent_num)} if parent_num else None
     if comments is not None:
@@ -78,6 +83,19 @@ def main():
     check("status drift", any("status" in x for x in rec.compare(r7, gh_issue(status="in progress"), ALL, False)))
     check("milestone drift", any("milestone" in x for x in rec.compare(r7, gh_issue(milestone="v1.3.0"), ALL, False)))
     check("blocked_by drift", any("blocked_by" in x for x in rec.compare(r7, gh_issue(blocked=("6", "8")), ALL, False)))
+
+    # blockedBy shapes: real gh is {"nodes": [...], "totalCount": n}; flat list and None tolerated
+    check("blockedBy nodes shape agrees", rec.compare(r7, gh_issue(blocked_shape="nodes"), ALL, False) == [])
+    check("blockedBy flat list agrees", rec.compare(r7, gh_issue(blocked_shape="list"), ALL, False) == [])
+    r9 = rows["BT-009"]
+    check("blockedBy empty nodes agrees with no blockers",
+          rec.compare(r9, gh_issue(blocked=(), parent_num=None, extra_labels=["type:feature", "tier:epic"],
+                                   milestone=None, status="planned"), ALL, False) == [])
+    check("blockedBy None treated as no blockers",
+          rec.compare(r9, gh_issue(blocked_shape="none", parent_num=None, status="planned", milestone=None,
+                                   extra_labels=["type:feature", "tier:epic"]), ALL, False) == [])
+    nodes_drift = rec.compare(r7, gh_issue(blocked=("6", "8")), ALL, False)
+    check("blockedBy nodes drift reports both ids", any("BT-008" in x for x in nodes_drift))
     check("parent drift", any("parent" in x for x in rec.compare(r7, gh_issue(parent_num="99"), ALL, False)))
 
     # labels: swapped and SUPERSET (GitHub carries a label the map doesn't mirror)
@@ -129,9 +147,15 @@ def main():
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
-        sys.exit(1)
+        return False
     print("\nAll reconcile tests PASSED.")
+    return True
+
+
+def test_reconcile():
+    # Collected by pytest (this file used to be a __main__-only runner nothing ran).
+    assert main(), f"reconcile checks failed: {FAILS}"
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(0 if main() else 1)

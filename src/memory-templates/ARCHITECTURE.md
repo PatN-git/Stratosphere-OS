@@ -2,8 +2,10 @@
 type: architecture
 title: Architecture
 description: Tech stack, structure, data flow, and architectural laws.
-timestamp: 2026-06-22
-version: "1.0.4"
+generated:
+  by: stratosphere-setup
+  at: 2026-09-29
+version: "1.0.5"
 ---
 # ARCHITECTURE
 

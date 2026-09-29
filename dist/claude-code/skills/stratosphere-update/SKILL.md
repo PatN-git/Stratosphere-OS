@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-07-28
+version: "1.2.0"
+timestamp: 2026-09-29
 ---
 
 # StratosphereOS Update Flow
@@ -135,6 +135,7 @@ For each block in `preserved_files` flagged with `status: "conflict"`, you must 
 - **New Block Content:** Read the block content in the new template file under `<plugin>/assets/templates/memory/`.
 - **Merge action:** Merge the framework improvements into the block while preserving the user's custom edits. Do **NOT** touch any content outside the block.
 - **Write back:** Write the fully merged file to its path suffix: `<filepath>.stratosphere-new` (e.g. `.memory/BACKLOG_MAP.md.stratosphere-new`).
+- **Frontmatter:** copy the project file's frontmatter verbatim; never adopt the template's (a changed frontmatter, e.g. `timestamp:` → `generated:`, aborts the update).
 
 ### 2. Constitution Files (`needs_review_constitution`)
 For each constitution file that has changed:
@@ -147,6 +148,13 @@ For each constitution file that has changed:
 - If the file has no `SOS:BLOCK` markers, do **NOT** attempt to overwrite or merge.
 - Print the guard notice: *"Unmarked framework file `<path>` — run `python scripts/migrations/inject_markers.py` to enable in-place updates."*
 - If the notice is not already acknowledged, prompt the user to migrate. Skip updating the file content.
+
+### 4. Modified Scripts (`needs_review_scripts`)
+- Merge `<script>.stratosphere-new` into the **real** script (keep local fixes, take upstream features), then delete the `.stratosphere-new`. Never edit the `.stratosphere-new`: every update run re-stages it.
+- A script still differing from upstream stays flagged on later runs (update writes no lock baseline for it); once it equals upstream, the next `--update` baselines it. To keep intentional local changes, run `scaffold.py --repair-lock` only after reviewing — it re-baselines **every** managed file from the workspace.
+
+### 5. Retired `timestamp:` in `.memory/`
+- `validate_memory.py` warns per file (exit 2) and no update fixes it: preserved files keep their frontmatter. Fix by hand, frontmatter only: `timestamp: <D>` → `generated:` with `by: stratosphere-setup` and `at: <D>` (indented).
 
 ---
 

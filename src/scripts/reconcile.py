@@ -87,7 +87,12 @@ def compare(row, gh, fields, check_pr):
                          f"gh_only={sorted(gh_nonstatus - row['labels'])}")
 
     if 'blocked_by' in fields and 'blockedBy' in gh:
-        gh_bb = {f"BT-{int(i['number']):03d}" for i in (gh.get('blockedBy') or [])}
+        # Real gh returns a connection {"nodes": [...], "totalCount": n} (not paginated
+        # past its first page here); a flat list and None are tolerated.
+        bb = gh.get('blockedBy') or []
+        if isinstance(bb, dict):
+            bb = bb.get('nodes') or []
+        gh_bb = {f"BT-{int(i['number']):03d}" for i in bb}
         if row['blocked_by'] != gh_bb:
             drift.append(f"blocked_by map={sorted(row['blocked_by'])} gh={sorted(gh_bb)}")
 

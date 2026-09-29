@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Plan — Host-Agnostic Install Framework"
+description: "Retire per-host installers in favour of a host-agnostic, skills.sh-style install framework."
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-17
+status: draft
+version: "4.1.0"
+---
 # Plan — Host-Agnostic Install Framework
 
 **Status:** Proposed — follow-on to PR #107 (v4.0.0). Not scoped into that PR.

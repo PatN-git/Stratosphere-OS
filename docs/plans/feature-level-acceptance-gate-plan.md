@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Plan — Feature-Level Acceptance Gate (4a) + 0a Zero-Test Invariant"
+description: "Feature-level acceptance gate in 4a plus the 0a zero-test invariant."
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-17
+status: stable
+version: "4.1.0"
+---
 # Plan — Feature-Level Acceptance Gate (4a) + 0a Zero-Test Invariant
 
 **Status:** Implemented on `feat/spec-conformance-v4` (PR #107).

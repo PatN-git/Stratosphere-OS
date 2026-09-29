@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Plan — Lifecycle-Run Defects (StratOS 3.3.0 field report)"
+description: "Defects found in a full StratOS 3.3.0 lifecycle run on CleanTechHub, and their fixes."
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-22
+status: stable
+version: "4.1.0"
+---
 # Plan — Lifecycle-Run Defects (StratOS 3.3.0 field report)
 
 **Status:** Implemented on `feat/spec-conformance-v4` (PR #107), shipping in 4.0.0. See §4 for deviations from the draft.

@@ -4,7 +4,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-REQUIRED_FRONTMATTER_KEYS = ("type", "title", "description", "timestamp")
+# OKF v0.2: `type` is the only strict requirement; `timestamp` is retired in favour of the
+# nested `generated: {by, at}`, which this flat parser cannot represent as a single value.
+REQUIRED_FRONTMATTER_KEYS = ("type",)
 
 _FRONTMATTER_DELIM = "---"
 

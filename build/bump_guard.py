@@ -5,12 +5,13 @@ release tag but build.py VERSION did not advance.
 This closes the gap that let a feature merge without a version bump: validate.py's
 existing guards only catch a *modified* .md whose frontmatter version didn't bump
 (§5) and VERSION *consistency* (§2.9) — neither catches a NEW artifact or a non-.md
-framework change (e.g. scaffold.py) landing without a plugin-VERSION bump.
+framework change (any shipped script) landing without a plugin-VERSION bump.
 
 Signals of "shipped content changed since <tag>":
   1. the dist versions.json artifact manifest differs (covers every .md artifact:
      workflows, commands, skills, rules, memory templates, references), OR
-  2. a tracked non-.md framework file changed (scaffold.py).
+  2. a shipped non-.md framework file changed (src/scripts/**, the GitHub Action template,
+     external-skills index; tracked or new, test dirs excluded).
 If either changed AND VERSION <= the last tag's version -> error.
 
 Doc-only / test-only / CI-only changes don't touch (1) or (2), so they pass (matching
@@ -24,12 +25,19 @@ import sys
 from pathlib import Path
 
 ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
-FRAMEWORK_FILES = ["src/scripts/scaffold.py"]  # non-.md files that also warrant a bump
+# Non-.md files build.py ships (it copies all of src/scripts minus __pycache__/test dirs,
+# plus the GitHub Action template and the external-skills index): a change to any of
+# them warrants a bump even though it never appears in the artifact manifest.
+FRAMEWORK_PATHS = ["src/scripts", "src/github", "src/external-skills.json",
+                   "src/commands/sync-skills/scripts", ":(exclude,glob)**/test/**"]
 MANIFEST = "dist/antigravity/versions.json"
 
 
 def sh(*args):
-    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True)
+    # utf-8 explicitly: on Windows text=True decodes git output as cp1252, so any
+    # non-ASCII byte in a blob differs from the same file read as utf-8.
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
 
 
 def semver(v):
@@ -72,10 +80,10 @@ def main():
         removed = sorted(set(tag_manifest) - set(cur_manifest))
         changed = sorted(p for p in cur_manifest if p in tag_manifest and cur_manifest[p] != tag_manifest[p])
         reasons.append(f"artifact manifest changed (added={added[:5]} removed={removed[:5]} changed={changed[:5]})")
-    for f in FRAMEWORK_FILES:
-        cur = (ROOT / f).read_text(encoding="utf-8") if (ROOT / f).exists() else None
-        if cur is not None and cur != blob_at(tag, f):
-            reasons.append(f"{f} changed")
+    changed_fw = set(sh("diff", "--name-only", tag, "--", *FRAMEWORK_PATHS).stdout.split())
+    changed_fw |= set(sh("ls-files", "--others", "--exclude-standard", "--", *FRAMEWORK_PATHS).stdout.split())
+    for f in sorted(changed_fw):
+        reasons.append(f"{f} changed")
 
     if not reasons:
         print(f"bump-guard: no shipped-content change since {tag} — OK.")

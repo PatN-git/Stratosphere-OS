@@ -11,9 +11,9 @@ The script lives in the installed plugin at `<plugin>/scripts/scaffold.py`.
 Run it FROM THE PROJECT ROOT (cwd = project), e.g.:
 
   python <plugin>/scripts/scaffold.py
-  python <plugin>/scripts/scaffold.py --dry-run
+  python <plugin>/scripts/scaffold.py --dry-run           # preview; stages only *.stratosphere-new proposals
   python <plugin>/scripts/scaffold.py --update            # refresh managed files
-  python <plugin>/scripts/scaffold.py --update --dry-run  # preview the refresh
+  python <plugin>/scripts/scaffold.py --update --dry-run  # preview the refresh (also writes .tmp/ worklist)
 
 Plugin assets/templates and bundled skills are resolved relative to the script's
 own location; the project is resolved from the current directory.
@@ -644,7 +644,7 @@ def main():
     print(f"Resolved plugin root: {plugin_root_resolved} ({scope})")
 
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")
-    ap.add_argument("--dry-run", action="store_true", help="report what would happen without writing")
+    ap.add_argument("--dry-run", action="store_true", help="preview: changes no project file, but stages *.stratosphere-new proposals and a .tmp/ worklist")
     ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")

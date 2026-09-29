@@ -2,8 +2,10 @@
 type: glossary
 title: Glossary
 description: Shared domain vocabulary used across docs and code.
-timestamp: 2026-06-23
-version: "1.0.4"
+generated:
+  by: stratosphere-setup
+  at: 2026-09-29
+version: "1.0.5"
 ---
 # GLOSSARY
 

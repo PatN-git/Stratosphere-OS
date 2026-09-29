@@ -3,8 +3,10 @@ type: status
 title: Status
 description: Per-session resume hint (last focus, next step). NOT the authoritative active-work set.
 stale_after: <ISO 8601>   # STATUS is a per-session hint; treat as stale past this instant
-timestamp: 2026-07-17
-version: "1.1.0"
+generated:
+  by: stratosphere-setup
+  at: 2026-09-29
+version: "1.1.1"
 ---
 # STATUS
 
