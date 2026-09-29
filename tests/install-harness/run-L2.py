@@ -225,7 +225,7 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", required=True, help="repo root (local checkout)")
-    ap.add_argument("--scope", choices=["local", "global"], default="local")
+    ap.add_argument("--scope", choices=["local"], default="local")  # claude-global cell retired (BT-119)
     ap.add_argument("--marketplace", action="store_true", help="real marketplace cell (post-merge)")
     ap.add_argument("--tool", choices=["claude-code", "antigravity"], default=default_tool)
     args = ap.parse_args()

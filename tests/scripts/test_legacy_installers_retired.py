@@ -15,7 +15,7 @@ LEGACY = [
     "scripts/install-antigravity.sh",
     "scripts/install-antigravity.ps1",
 ]
-LIVE_ROOTS = ["README.md", "src", "scripts", "build", "tests", ".github", "dist/skills"]
+LIVE_ROOTS = ["README.md", "RELEASING.md", "src", "scripts", "build", "tests", ".github", ".claude-plugin", "dist/skills"]
 # `install-antigravity-bridge` is the replacement, not a legacy reference.
 REF = re.compile(r"install-claude-code|install-antigravity(?!-bridge)")
 TEXT_SUFFIXES = {".md", ".sh", ".ps1", ".py", ".txt", ".yml", ".yaml", ".json"}
@@ -24,7 +24,8 @@ TEXT_SUFFIXES = {".md", ".sh", ".ps1", ".py", ".txt", ".yml", ".yaml", ".json"}
 def _live_files():
     for root in LIVE_ROOTS:
         p = REPO / root
-        files = [p] if p.is_file() else p.rglob("*") if p.is_dir() else []
+        assert p.exists(), f"scan root missing (renamed?): {root}"
+        files = [p] if p.is_file() else p.rglob("*")
         for f in files:
             if f.is_file() and f.suffix in TEXT_SUFFIXES and "__pycache__" not in f.parts and f != SELF:
                 yield f
