@@ -4,6 +4,7 @@ Physical copy only (no symlinks), per-skill replace so stale files inside a ship
 skill are dropped while foreign skills survive, and an actionable error when the
 bundle has not been built. `--target` overrides the destination for testing.
 """
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -23,19 +24,24 @@ def _bash_path(p: Path) -> str:
     return s
 
 
-def _run_bash(script: Path, *args):
+def _env(home: Path):
+    """Sandbox the default target too: a run that ignores --target must not touch the real ~/.gemini."""
+    return {**os.environ, "HOME": str(home), "USERPROFILE": str(home)}
+
+
+def _run_bash(script: Path, *args, home: Path):
     bash = shutil.which("bash")
     if not bash:
         pytest.skip("bash not available")
-    return subprocess.run([bash, _bash_path(script), *map(str, args)], capture_output=True, text=True)
+    return subprocess.run([bash, _bash_path(script), *map(str, args)], capture_output=True, text=True, env=_env(home))
 
 
-def _run_ps(script: Path, *args):
+def _run_ps(script: Path, *args, home: Path):
     ps = shutil.which("pwsh") or shutil.which("powershell")
     if not ps:
         pytest.skip("PowerShell not available")
     return subprocess.run([ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), *map(str, args)],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, env=_env(home))
 
 
 RUNNERS = pytest.mark.parametrize(
@@ -63,7 +69,7 @@ def test_copies_every_skill_with_references(tmp_path, run, script):
     """BT-120 AC1/AC2: all bundled skills land in the target, references/ included."""
     skills = _bundle_skills()
     dest = tmp_path / "skills"
-    r = run(script, "--target", dest)
+    r = run(script, "--target", dest, home=tmp_path / "home")
     assert r.returncode == 0, r.stderr
     assert sorted(p.name for p in dest.iterdir()) == skills
     for name in skills:
@@ -79,7 +85,7 @@ def test_creates_no_symlinks(tmp_path, run, script):
     """BT-120 AC4: physical copy only."""
     _bundle_skills()
     dest = tmp_path / "skills"
-    assert run(script, "--target", dest).returncode == 0
+    assert run(script, "--target", dest, home=tmp_path / "home").returncode == 0
     assert _symlinks(dest) == []
 
 
@@ -93,7 +99,7 @@ def test_replaces_shipped_skills_and_keeps_foreign(tmp_path, run, script):
     for f in (stale, foreign):
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text("planted", encoding="utf-8")
-    assert run(script, "--target", dest).returncode == 0
+    assert run(script, "--target", dest, home=tmp_path / "home").returncode == 0
     assert not stale.exists(), "stale file inside a shipped skill survived"
     assert foreign.exists(), "foreign skill was deleted"
     assert (dest / skills[0] / "SKILL.md").is_file()
@@ -106,8 +112,31 @@ def test_missing_bundle_fails_with_actionable_error(tmp_path, run, script):
     (fake_repo / "scripts").mkdir(parents=True)
     shutil.copy(script, fake_repo / "scripts" / script.name)
     dest = tmp_path / "skills"
-    r = run(fake_repo / "scripts" / script.name, "--target", dest)
+    r = run(fake_repo / "scripts" / script.name, "--target", dest, home=tmp_path / "home")
     assert r.returncode != 0
     assert "dist/skills" in r.stderr
     assert "build.py" in r.stderr
     assert not dest.exists(), "nothing should be written on failure"
+
+
+@RUNNERS
+def test_default_target_is_gemini_config_skills(tmp_path, run, script):
+    """BT-120 AC1/AC2: with no --target the skills land in <home>/.gemini/config/skills."""
+    skills = _bundle_skills()
+    home = tmp_path / "home"
+    r = run(script, home=home)
+    assert r.returncode == 0, r.stderr
+    default = home / ".gemini" / "config" / "skills"
+    assert sorted(p.name for p in default.iterdir()) == skills
+    assert (default / skills[0] / "SKILL.md").is_file()
+
+
+@RUNNERS
+def test_target_without_value_fails_fast(tmp_path, run, script):
+    """A dangling --target must error, never silently fall back to the real config dir."""
+    _bundle_skills()
+    home = tmp_path / "home"
+    r = run(script, "--target", home=home)
+    assert r.returncode != 0
+    assert "--target" in r.stderr
+    assert not (home / ".gemini").exists(), "nothing should be written on a usage error"

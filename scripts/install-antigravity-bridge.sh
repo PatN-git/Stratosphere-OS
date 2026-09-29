@@ -12,7 +12,12 @@ TARGET="$HOME/.gemini/config/skills"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --target) TARGET="$2"; shift 2 ;;
+        --target)
+            if [ $# -lt 2 ]; then
+                echo "Error: --target requires a <skills-dir> value." >&2
+                exit 1
+            fi
+            TARGET="$2"; shift 2 ;;
         *) shift ;;
     esac
 done

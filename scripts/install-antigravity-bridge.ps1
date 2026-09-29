@@ -11,7 +11,13 @@ $baseHome = if ($env:USERPROFILE) { $env:USERPROFILE } elseif ($env:HOME) { $env
 $target = Join-Path $baseHome ".gemini\config\skills"
 
 for ($i = 0; $i -lt $args.Count; $i++) {
-    if ($args[$i] -eq "--target" -and ($i + 1) -lt $args.Count) { $target = $args[$i + 1]; $i++ }
+    if ($args[$i] -eq "--target") {
+        if (($i + 1) -ge $args.Count) {
+            [Console]::Error.WriteLine("Error: --target requires a <skills-dir> value.")
+            exit 1
+        }
+        $target = $args[$i + 1]; $i++
+    }
 }
 
 if (-not (Test-Path $src) -or -not (Get-ChildItem $src -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1)) {
