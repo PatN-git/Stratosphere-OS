@@ -87,12 +87,17 @@ def run_agent(prompt, cwd, env):
     return "".join(text), tool_uses, is_error, raw_lines, proc.returncode
 
 
-def assert_tree(scope, home, proj):
+def marketplace_skills_dir(home):
+    """A marketplace install caches the whole repo, with the bundle at <plugin>/dist/skills."""
+    hits = sorted((Path(home) / ".claude" / "plugins" / "cache").glob("*/stratosphere-os/*/dist/skills"))
+    return hits[-1] if hits else Path(home) / ".claude" / "plugins" / "cache" / "<stratosphere-os not installed>"
+
+
+def assert_tree(skills_dir, proj):
     # install tree
-    base = Path(home) / ".claude" if scope != "local" else Path(proj) / ".claude"
-    setup_dir = base / "skills" / "stratosphere-setup"  # scaffolder payload rides inside setup
-    check("install: 26 skills", len(list((base / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS if (base / "skills").exists() else False)
-    check("install: micro-tdd skill", (base / "skills" / "micro-tdd").exists())
+    setup_dir = skills_dir / "stratosphere-setup"  # scaffolder payload rides inside setup
+    check("install: 26 skills", len(list(skills_dir.glob("*/SKILL.md"))) == EXPECTED_SKILLS if skills_dir.exists() else False)
+    check("install: micro-tdd skill", (skills_dir / "micro-tdd").exists())
     check("install: bundled scaffold.py", (setup_dir / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
     p = Path(proj)
@@ -131,13 +136,14 @@ def main():
     shutil.copytree(Path(args.repo).resolve(), repo_dest)
     subprocess.run([sys.executable, "build/build.py"], cwd=repo_dest, check=True)
 
-    # Pre-install StratosphereOS to proj/.claude/ so the headless agent only needs
-    # to run scaffold.py. Avoids ~/.claude/ write-permission refusals in headless runs.
-    build_dir = repo_dest / "dist" / "skills"
-    claude_dir = proj / ".claude"
-    shutil.copytree(str(build_dir), str(claude_dir / "skills"), dirs_exist_ok=True)
-    skill_count = len(list((claude_dir / "skills").glob("*/SKILL.md")))
-    print(f"[installed] local .claude/skills ({skill_count} skills)")
+    if not args.marketplace:
+        # Pre-install StratosphereOS to proj/.claude/ so the headless agent only needs
+        # to run scaffold.py. Avoids ~/.claude/ write-permission refusals in headless runs.
+        build_dir = repo_dest / "dist" / "skills"
+        claude_dir = proj / ".claude"
+        shutil.copytree(str(build_dir), str(claude_dir / "skills"), dirs_exist_ok=True)
+        skill_count = len(list((claude_dir / "skills").glob("*/SKILL.md")))
+        print(f"[installed] local .claude/skills ({skill_count} skills)")
     prompt_content = prompt_file.read_text(encoding="utf-8")
     prompt = (prompt_content
               .replace("<REPO>", str(repo_dest))
@@ -186,7 +192,7 @@ def main():
         harness_done = "HARNESS_DONE" in text or any("HARNESS_DONE" in l for l in raw_lines)
         check("agent printed HARNESS_DONE", harness_done)
         check("agent run not is_error", is_error is False)
-        assert_tree(scope, home, proj)
+        assert_tree(marketplace_skills_dir(home) if args.marketplace else proj / ".claude" / "skills", proj)
     finally:
         shutil.rmtree(home, ignore_errors=True)
         shutil.rmtree(proj, ignore_errors=True)
