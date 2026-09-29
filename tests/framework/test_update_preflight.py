@@ -40,7 +40,7 @@ def test_preflight_instructions():
             ".install-source.json",
             "source_repo",
             "git clone --depth 1 --branch v<latest_version> <source_repo>",
-            "install-antigravity",
+            "install-antigravity-bridge",
             "--target <project-root>",
             "predates auto-update",
             "actual",

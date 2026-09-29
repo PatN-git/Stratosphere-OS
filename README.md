@@ -84,8 +84,8 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 **Google Antigravity:**
 ```bash
 git clone https://github.com/PatN-git/Stratosphere-OS.git
-bash scripts/install-antigravity.sh --global
-# Windows: powershell -ExecutionPolicy Bypass -File scripts/install-antigravity.ps1 --global
+bash scripts/install-antigravity-bridge.sh
+# Windows: powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-bridge.ps1
 ```
 
 > [!TIP]
@@ -127,7 +127,7 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 > [!TIP]
 > **Keeping the Plugin Fresh**
 > - **Claude Code users:** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
-> - **Google Antigravity users:** update your local repository clone via `git pull` and re-run `scripts/install-antigravity.sh` or `scripts/install-antigravity.ps1` to install the latest templates.
+> - **Google Antigravity users:** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
 
 ---
 

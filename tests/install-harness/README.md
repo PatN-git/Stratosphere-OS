@@ -8,18 +8,18 @@ Two automated layers plus a manual checklist:
 
 | Layer | Covers | Needs | Isolation |
 |---|---|---|---|
-| **L1** (`run-L1.ps1` / `run-L1.sh`) | All install paths (`--local`/`--global`, Claude + Antigravity), `scaffold.py`, `sync_skills.py --dry-run` — no agent | Python + PowerShell or bash | temp project per cell; `--global` cells redirect `HOME`/`USERPROFILE` to a temp dir |
+| **L1** (`run-L1.ps1` / `run-L1.sh`) | Plain-copy install of `dist/skills` (`.claude/skills`, `.agents/skills` × local/global), `scaffold.py`, `sync_skills.py --dry-run` — no agent | Python + PowerShell or bash | temp project per cell; `--global` cells redirect `HOME`/`USERPROFILE` to a temp dir |
 | **L2** (`run-L2.py`) | The agentic flow: a headless `claude -p` reads the README, runs the deterministic scripts, scaffolds | `claude` CLI on PATH, authenticated, network | temp `HOME` + temp project; pre-answered prompt; `--dangerously-skip-permissions` |
 | **L4** (manual, below) | Antigravity agent (no headless runner); real GitHub marketplace; Windows dependency-missing `winget` branch | a real app / VM | a throwaway temp home |
 
 ## Run L1 (fast, no auth)
 
 ```powershell
-# Windows (tests the .ps1 installers):
+# Windows (PowerShell runner):
 powershell -ExecutionPolicy Bypass -File tests/install-harness/run-L1.ps1
 ```
 ```bash
-# Linux/macOS/CI (tests the .sh installers):
+# Linux/macOS/CI (bash runner):
 bash tests/install-harness/run-L1.sh           # PYTHON=python to override python3
 ```
 Exit 0 = all cells pass. Each cell asserts the install tree, the scaffold tree
@@ -37,8 +37,7 @@ Notes on isolation:
 ## Run L2 (headless agent — needs `claude` CLI + auth + network)
 
 ```bash
-python tests/install-harness/run-L2.py --repo <path-to-this-repo> --scope local
-python tests/install-harness/run-L2.py --repo <path-to-this-repo> --scope global
+python tests/install-harness/run-L2.py --repo <path-to-this-repo> --scope local   # claude-code only
 python tests/install-harness/run-L2.py --repo <path-to-this-repo> --marketplace   # only after the PR merges to main
 ```
 The prompts in `prompts/` pre-answer every decision (scope, deps, Stitch, skill
@@ -57,11 +56,11 @@ or locally.
 **Antigravity agent** (no headless runner) — in the Antigravity app, with a throwaway profile:
 - [ ] Paste the install prompt; agent identifies Antigravity + OS, runs `python`/`git --version`.
 - [ ] On a missing dep it asks via `ask_question` and never installs silently.
-- [ ] Agent asks install scope once; runs `install-antigravity.ps1 --global|--local`.
-- [ ] Global tree under `~/.gemini/config/plugins/stratosphere-os/`; local under `.agents/plugins/stratosphere-os/`.
+- [ ] Agent asks install scope once; runs `scripts/install-antigravity-bridge.ps1` (global) or copies `dist/skills` to `.agents/skills` (local).
+- [ ] Global skills land under `~/.gemini/config/skills/`; local under `.agents/skills/`.
 - [ ] Restart → `/stratosphere-setup` is discoverable (proves `.agents/workflows/` surfacing after scaffold).
 - [ ] Checkpoint 9 derives skill scope from install scope (no second scope question on a local install).
-- [ ] Re-running the installer preserves externally-synced skills (overlay per-skill merge).
+- [ ] Re-running the bridge preserves externally-synced skills (overlay per-skill merge).
 
 **Real GitHub marketplace** (after the install PR merges to `main`):
 - [ ] `/plugin marketplace add PatN-git/Stratosphere-OS` (owner/repo shorthand) resolves.

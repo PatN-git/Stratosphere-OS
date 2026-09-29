@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
+version: "1.2.2"
 timestamp: 2026-09-29
 ---
 
@@ -64,8 +64,8 @@ Before running the local scaffolding update, verify if the installed Stratospher
        The installed directory is a copy, not a git checkout — **self-update it from the recorded source** so the user never re-installs by hand. Read `<plugin>/.install-source.json` for `source_repo`, `scope`, and `plugin_dir`.
        1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS plugin to v<latest_version>? This refreshes <plugin> from <source_repo>. [y/N]`. On decline → HALT.
        2. **Refresh the plugin bytes:**
-          - **`.install-source.json` missing or unreadable/invalid** (install predates provenance — a one-time bootstrap): print `One-time manual step (this install predates auto-update): git pull your StratOS clone and re-run scripts/install-antigravity.sh (or .ps1) --global|--local, then re-run /stratosphere-update. Future updates will be automatic.` and HALT.
-          - **Otherwise — install the release tag from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> <source_repo> <tmp>`, then run its installer: `bash <tmp>/scripts/install-antigravity.sh --<scope>` (on Windows use `powershell -File <tmp>/scripts/install-antigravity.ps1 --<scope>`). For `local` scope, also pass `--target <project-root>` where `<project-root>` is `<plugin>` with the trailing `/.agents/plugins/stratosphere-os` removed (or `plugin_dir` from provenance, same derivation). Delete `<tmp>` afterward. **Only ever clone the `source_repo` recorded at install — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
+          - **`.install-source.json` missing or unreadable/invalid** (install predates provenance — a one-time bootstrap): print `One-time manual step (this install predates auto-update): git pull your StratOS clone and re-run scripts/install-antigravity-bridge.sh (or .ps1), then re-run /stratosphere-update. Future updates will be automatic.` and HALT.
+          - **Otherwise — install the release tag from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> <source_repo> <tmp>`, then run its bridge: `bash <tmp>/scripts/install-antigravity-bridge.sh` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1`). For `local` scope, also pass `--target <project-root>/.agents/skills` where `<project-root>` is `<plugin>` with the trailing `/.agents/plugins/stratosphere-os` removed (or `plugin_dir` from provenance, same derivation). Delete `<tmp>` afterward. **Only ever clone the `source_repo` recorded at install — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
        3. Re-read `<plugin>/versions.json` for the **actual** installed version and print `StratOS plugin updated to v<actual_version> — reload plugins and re-run /stratosphere-update.` verbatim, then **HALT**. (The re-run executes the *new* workflow + scaffold cleanly — avoids self-modifying the running workflow mid-flight.)
        
      - **In-place Git Checkout** (plugin directory contains a `.git` folder):
