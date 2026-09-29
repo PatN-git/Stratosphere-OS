@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
+version: "1.1.2"
 timestamp: 2026-09-17
 ---
 
@@ -16,6 +16,8 @@ timestamp: 2026-09-17
 Restore session context (read-only), then activate: restore the branch and transition the active slice's status.
 
 **Zero Test/Build Invariant:** never run test suites, linters, or build scripts here — `/0a` is administrative context hydration and branch alignment only.
+
+**Pre-check:** if `.memory/` is absent → output exactly `Repository uninitialized. Please run /stratosphere-setup first.` and HALT. This presence check is the only validation here — no skill or suite checks.
 
 ## Phase A — Hydrate (read-only)
 1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues in `.memory/BACKLOG_MAP.md`/GitHub: exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task. (`.memory/STATUS.md` may hint the last focus but is not authoritative.)
