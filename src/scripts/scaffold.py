@@ -324,7 +324,8 @@ def bundled_skill_names():
     hold third-party skills (sync-skills installs there), which must never be re-placed."""
     try:
         artifacts = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8")).get("artifacts", {})
-    except Exception:
+    except (OSError, ValueError) as e:
+        print(f"WARNING: cannot read bundle manifest {PLUGIN_ROOT / 'versions.json'}: {e}; no skills will be placed")
         return set()
     return {k.split("/")[1] for k in artifacts if k.startswith("skills/")}
 

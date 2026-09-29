@@ -43,7 +43,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "4.2.0"
+VERSION = "4.2.1"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a first-party skill, on-demand external skills, and a one-command project installer."
@@ -207,7 +207,7 @@ def build_bundle():
     BUNDLE.mkdir(parents=True)
     ref_dir = SRC / "references"
 
-    # 1. Execution skills (self-contained by construction)
+    # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():
         if skill.is_dir():
             dst = BUNDLE / skill.name
@@ -215,6 +215,11 @@ def build_bundle():
             sk = dst / "SKILL.md"
             if sk.exists():
                 copy_md_with_frontmatter(sk, sk, name=skill.name)
+                # Same self-containment invariant as lifecycle skills: what SKILL.md cites must ship inside it.
+                missing = sorted(n for n in cited_refs(sk.read_text(encoding="utf-8"))
+                                 if not (dst / "references" / n).is_file())
+                if missing:
+                    sys.exit(f"ERROR: {skill.name} cites references it does not ship: {', '.join(missing)}")
 
     # 2. Lifecycle skills + their transitive references. One canonical shape for
     #    every host: <skills dir>/<name>/SKILL.md, invocable as /<name>.
@@ -238,7 +243,7 @@ def build_bundle():
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "github", assets / "github")
 
-    # 4.5 Post-copy pass to stamp version into asset templates
+    # 5. Post-copy pass to stamp version into asset templates
     for path in assets.rglob("*.md"):
         if path.is_file():
             text = path.read_text(encoding="utf-8")

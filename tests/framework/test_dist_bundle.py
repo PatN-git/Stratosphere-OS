@@ -5,6 +5,8 @@ Asserts on the committed bundle (drift-guarded by check.sh) and on build.py's fa
 import importlib.util
 import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -72,11 +74,49 @@ def test_every_cited_reference_is_shipped_inside_the_skill():
             assert (d / "references" / name).is_file(), f"{d.name}: references/{name} not shipped"
 
 
-def test_missing_cited_reference_is_a_fatal_build_error(tmp_path, capsys):
-    build = _load_build()
-    with pytest.raises(SystemExit) as exc:
-        build.closure_for("see references/does-not-exist.md", tmp_path)
-    assert exc.value.code not in (0, None)
+@pytest.fixture
+def sandbox(tmp_path):
+    """A throwaway copy of build/ + src/, so the real build entrypoint can be broken safely."""
+    for d in ("build", "src"):
+        shutil.copytree(REPO_ROOT / d, tmp_path / d, ignore=shutil.ignore_patterns("__pycache__"))
+    return tmp_path
+
+
+def _run_build(root):
+    return subprocess.run([sys.executable, str(root / "build" / "build.py")], capture_output=True, text=True)
+
+
+def test_sandbox_build_succeeds_unmodified(sandbox):
+    r = _run_build(sandbox)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert len([p for p in (sandbox / "dist" / "skills").iterdir() if (p / "SKILL.md").is_file()]) == EXPECTED_SKILLS
+
+
+def _cite(path, ref):
+    path.write_text(path.read_text(encoding="utf-8") + f"\nSee references/{ref}\n", encoding="utf-8")
+
+
+def test_missing_cited_reference_fails_the_build_with_status_1(sandbox):
+    _cite(sandbox / "src" / "workflows" / "0a-start-session.md", "does-not-exist.md")
+    r = _run_build(sandbox)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "does-not-exist.md" in r.stderr
+
+
+def test_missing_transitive_reference_fails_the_build_with_status_1(sandbox):
+    (sandbox / "src" / "references" / "chain-a.md").write_text(
+        '---\nversion: "1.0.0"\n---\nSee references/chain-missing.md\n', encoding="utf-8")
+    _cite(sandbox / "src" / "workflows" / "0a-start-session.md", "chain-a.md")
+    r = _run_build(sandbox)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "chain-missing.md" in r.stderr
+
+
+def test_execution_skill_with_missing_reference_fails_the_build_with_status_1(sandbox):
+    _cite(sandbox / "src" / "skills" / "micro-tdd" / "SKILL.md", "does-not-exist.md")
+    r = _run_build(sandbox)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "does-not-exist.md" in r.stderr
 
 
 def test_setup_skill_carries_its_own_scaffold_payload():
@@ -102,8 +142,6 @@ def test_antigravity_manifest_stays_in_its_canonical_location():
 
 
 def _sync_destination(tmp_path, host_dir):
-    import shutil
-    import subprocess
     skills = tmp_path / host_dir / "skills"
     shutil.copytree(DIST_SKILLS, skills)
     proj = tmp_path / "proj"
@@ -125,4 +163,18 @@ def test_sync_skills_follows_a_claude_install_to_dot_claude_skills(tmp_path):
 
 def test_sync_skills_defaults_to_dot_agents_skills_elsewhere(tmp_path):
     dest, proj = _sync_destination(tmp_path, ".agents")
+    assert dest == proj / ".agents" / "skills"
+
+
+def test_sync_skills_skill_points_at_the_setup_skill_payload():
+    """sync_skills.py ships only inside stratosphere-setup/scripts/, so the skill that
+    documents it must not send the agent to a retired plugin directory."""
+    body = (DIST_SKILLS / "sync-skills" / "SKILL.md").read_text(encoding="utf-8")
+    assert "stratosphere-setup" in body
+    assert "plugins/stratosphere-os" not in body
+
+
+def test_sync_skills_ignores_a_claude_worktree_checkout(tmp_path):
+    """A bare `.claude` path segment is not a Claude install: worktrees live under .claude/worktrees/."""
+    dest, proj = _sync_destination(tmp_path, ".claude/worktrees/feature")
     assert dest == proj / ".agents" / "skills"

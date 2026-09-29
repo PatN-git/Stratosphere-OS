@@ -6,17 +6,17 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.1"
-timestamp: 2026-06-17
+version: "1.0.2"
+timestamp: 2026-09-29
 ---
 
 # Sync Skills
 
-Third-party skills are **not bundled** with the plugin. They are fetched on demand from their upstream GitHub repos, driven by the registry at the plugin's `external-skills.json` (the single source of truth). This command wraps the deterministic `sync_skills.py` fetcher.
+Third-party skills are **not bundled** with the skill suite. They are fetched on demand from their upstream GitHub repos, driven by the registry at the setup skill's `external-skills.json` (the single source of truth). This command wraps the deterministic `sync_skills.py` fetcher.
 
 ## Usage
 
-Run from the **project root**. `sync_skills.py` lives in the installed plugin (not the project) and reads the plugin's `external-skills.json` automatically; invoke it with the plugin path — `<plugin>` is `~/.claude/plugins/stratosphere-os/` on Claude Code, or the global staged plugin dir `~/.gemini/config/plugins/stratosphere-os/` on Antigravity.
+Run from the **project root**. `sync_skills.py` lives in the installed `stratosphere-setup` skill (not the project) and reads that skill's `external-skills.json` automatically; invoke it with that skill's path — `<plugin>` is the first of `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/` (or the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/`) that contains `scripts/sync_skills.py`.
 
 ```bash
 # See what's available (asterisk = installed by default)

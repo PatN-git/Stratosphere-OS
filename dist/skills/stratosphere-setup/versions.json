@@ -416,10 +416,10 @@
       "version": "1.2.1"
     },
     "skills/sync-skills/SKILL.md": {
-      "sha256": "608446665c47980ff8970952ef4852a6dd4ba9ec94dd247047346ef0d09a74d3",
-      "timestamp": "2026-06-17",
-      "version": "1.0.1"
+      "sha256": "e8460002497c2de965a7f5af619007b70850aad11589e1266880358d9425a7b2",
+      "timestamp": "2026-09-29",
+      "version": "1.0.2"
     }
   },
-  "plugin_version": "4.2.0"
+  "plugin_version": "4.2.1"
 }

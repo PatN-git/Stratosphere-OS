@@ -10,7 +10,6 @@ Coverage the v4.0.0 migration needs and nothing previously had:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 

@@ -363,7 +363,7 @@ def main():
     # Determine scope and skills base folder
     # The bundle carries no host manifest; a Claude install is one that sits under a .claude/ dir
     # (~/.claude/skills, <project>/.claude/skills, or the ~/.claude/plugins marketplace cache).
-    is_claude = ".claude" in here.parts
+    is_claude = any(a == ".claude" and b in ("skills", "plugins") for a, b in zip(here.parts, here.parts[1:]))
     
     if args.global_scope:
         if is_claude:
