@@ -80,3 +80,18 @@ def test_test_dirs_do_not_ship(repo):
     write(repo, "src/scripts/design/test/skip.py", "# edited test\n")
     rc, out = guard(repo)
     assert rc == 0, out
+
+
+def test_manifest_moved_to_bundle_still_compares_against_legacy_tag(repo):
+    """BT-118 moved versions.json from dist/antigravity/ to the setup skill; a tag cut before
+    the move must still be a valid baseline, and an unchanged manifest must not demand a bump."""
+    (repo / "dist/antigravity/versions.json").rename(repo / "legacy.json")
+    write(repo, "dist/skills/stratosphere-setup/versions.json", json.dumps({"artifacts": {}}))
+    (repo / "legacy.json").unlink()
+    rc, out = guard(repo)
+    assert rc == 0 and "no shipped-content change" in out, out
+
+    write(repo, "dist/skills/stratosphere-setup/versions.json",
+          json.dumps({"artifacts": {"skills/x/SKILL.md": {"version": "1.0.0"}}}))
+    rc, out = guard(repo)
+    assert rc == 1 and "artifact manifest changed" in out, out

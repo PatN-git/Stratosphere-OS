@@ -82,7 +82,11 @@ def main():
     if last_tag:
         print(f"Last release tag found: {last_tag}")
         # 2. Get baseline manifest
-        git_show = run_cmd(["git", "show", f"{last_tag}:dist/claude-code/versions.json"])
+        # The manifest moved into the setup skill (BT-118); older tags hold it at the legacy path.
+        for manifest_path in ("dist/skills/stratosphere-setup/versions.json", "dist/claude-code/versions.json"):
+            git_show = run_cmd(["git", "show", f"{last_tag}:{manifest_path}"])
+            if git_show.returncode == 0:
+                break
         if git_show.returncode == 0:
             try:
                 baseline_data = json.loads(git_show.stdout)
@@ -92,7 +96,7 @@ def main():
             except Exception as e:
                 print(f"Warning: Could not parse baseline manifest: {e}")
         else:
-            print("Warning: Could not read dist/claude-code/versions.json from last tag.")
+            print("Warning: Could not read versions.json from last tag.")
     else:
         print("No prior release tag found. Using current build.py version as baseline without derivation.")
 
@@ -120,9 +124,9 @@ def main():
             print(f"Error compiling artifacts: {build_res.stderr}")
             sys.exit(1)
 
-        new_versions_file = ROOT / "dist/claude-code/versions.json"
+        new_versions_file = ROOT / "dist/skills/stratosphere-setup/versions.json"
         if not new_versions_file.exists():
-            print("Error: build.py succeeded but dist/claude-code/versions.json was not created.")
+            print("Error: build.py succeeded but dist/skills/stratosphere-setup/versions.json was not created.")
             sys.exit(1)
 
         new_data = json.loads(new_versions_file.read_text(encoding="utf-8"))

@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Build StratosphereOS plugins for Claude Code and Antigravity from a single src/ tree.
+"""Build the StratosphereOS skill bundle from a single src/ tree.
 
 Run:  python build/build.py
 Outputs:
-  dist/claude-code/   - Claude Code plugin (.claude-plugin/plugin.json, commands/, skills/)
-  dist/antigravity/   - Antigravity plugin (plugin.json, workflows/, skills/)
+  dist/skills/                     - the canonical, host-agnostic bundle: one self-contained
+                                     directory per skill (SKILL.md + references/ + HITL sidecars)
+  dist/skills/stratosphere-setup/  - also carries the scaffolder payload (scripts/, assets/,
+                                     versions.json, external-skills.json), so every install
+                                     track (skills.sh, copy-paste, marketplace) is self-contained
+  dist/antigravity/plugin.json     - Antigravity packaging manifest
   .claude-plugin/marketplace.json  - repo-root marketplace so `/plugin marketplace add` works
 
-Skills are byte-identical between platforms; only the manifest and the
-workflow-vs-command directory naming differ. Project-instance content
-(constitution, memory templates, rules) ships as assets/templates/
-and is written into a project by the stratosphere-setup skill, not on install.
+There is one skill tree, not one per host. Project-instance content (constitution, memory
+templates, rules) ships as assets/templates/ and is written into a project by the
+stratosphere-setup skill, not on install.
 """
 import json
 import os
@@ -27,14 +30,14 @@ import _versioning
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 DIST = ROOT / "dist"
+BUNDLE = DIST / "skills"
+SETUP_SKILL = BUNDLE / "stratosphere-setup"
 
 # --- Version Signal Propagation ---------------------------------------------
 # Bumping this VERSION propagates to the following files upon running build:
-# 1. dist/claude-code/.claude-plugin/plugin.json (version)
-# 2. dist/antigravity/plugin.json (version)
-# 3. dist/claude-code/versions.json (plugin_version)
-# 4. dist/antigravity/versions.json (plugin_version)
-# 5. .claude-plugin/marketplace.json (via DESCRIPTION / metadata)
+# 1. dist/antigravity/plugin.json (version)
+# 2. dist/skills/stratosphere-setup/versions.json (plugin_version)
+# 3. .claude-plugin/marketplace.json (version + DESCRIPTION)
 #
 # NOTE: The version badge in README.md (~line 4) is auto-stamped by
 # scripts/release.py during the release process, and validate.py
@@ -164,8 +167,7 @@ def closure_for(text: str, ref_dir) -> set:
             continue
         src = ref_dir / name
         if not src.exists():
-            print(f"  WARNING: cited reference not found: {name}")
-            continue
+            sys.exit(f"ERROR: cited reference not found: {name}")
         seen.add(name)
         queue.extend(cited_refs(src.read_text(encoding="utf-8")) - seen)
     return seen
@@ -198,108 +200,86 @@ def emit_skill(src_md, name, skills_dir, ref_dir):
     return len(refs)
 
 
-# --- per-platform assembly -------------------------------------------------
+# --- bundle assembly --------------------------------------------------------
 
-def build_platform(kind: str):
-    out = DIST / ("claude-code" if kind == "claude" else "antigravity")
-    force_rmtree(out)
-    out.mkdir(parents=True)
-
-    skills_dir = out / "skills"
-    skills_dir.mkdir(parents=True, exist_ok=True)
+def build_bundle():
+    force_rmtree(BUNDLE)
+    BUNDLE.mkdir(parents=True)
     ref_dir = SRC / "references"
 
     # 1. Execution skills (self-contained by construction)
     for skill in (SRC / "skills").iterdir():
         if skill.is_dir():
-            dst = skills_dir / skill.name
+            dst = BUNDLE / skill.name
             copytree(skill, dst)
             sk = dst / "SKILL.md"
             if sk.exists():
                 copy_md_with_frontmatter(sk, sk, name=skill.name)
 
     # 2. Lifecycle skills + their transitive references. One canonical shape for
-    #    every host: .agents/skills/<name>/SKILL.md, invocable as /<name>.
+    #    every host: <skills dir>/<name>/SKILL.md, invocable as /<name>.
     total_refs = 0
     for wf in sorted((SRC / "workflows").glob("*.md")):
-        total_refs += emit_skill(wf, wf.stem, skills_dir, ref_dir)
+        total_refs += emit_skill(wf, wf.stem, BUNDLE, ref_dir)
 
     # 3. Install/upgrade/sync drivers - skills like everything else
-    for dirname, name in (("stratosphere-setup", "stratosphere-setup"),
-                          ("stratosphere-update", "stratosphere-update"),
-                          ("sync-skills", "sync-skills")):
-        src_md = SRC / "commands" / dirname / "SKILL.md"
-        total_refs += emit_skill(src_md, name, skills_dir, ref_dir)
-    copytree(SRC / "commands" / "sync-skills" / "scripts", out / "scripts")
-    shutil.copy2(SRC / "external-skills.json", out / "external-skills.json")
-    print(f"  {kind}: {len(list(skills_dir.iterdir()))} skills, {total_refs} reference copies")
+    for name in ("stratosphere-setup", "stratosphere-update", "sync-skills"):
+        total_refs += emit_skill(SRC / "commands" / name / "SKILL.md", name, BUNDLE, ref_dir)
+    print(f"  {len(list(BUNDLE.iterdir()))} skills, {total_refs} reference copies")
 
-    # 5. Project-instance templates (written into a project by the installer)
-    assets = out / "assets" / "templates"
+    # 4. Scaffolder payload rides inside stratosphere-setup: skill installers place only
+    #    skill folders, and setup must still find its scripts and project-instance templates.
+    copytree(SRC / "commands" / "sync-skills" / "scripts", SETUP_SKILL / "scripts")
+    copytree(SRC / "scripts", SETUP_SKILL / "scripts")
+    shutil.copy2(SRC / "external-skills.json", SETUP_SKILL / "external-skills.json")
+    assets = SETUP_SKILL / "assets" / "templates"
     copytree(SRC / "constitution", assets / "constitution")
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "github", assets / "github")
-    copytree(SRC / "scripts", out / "scripts")
 
-    # 5.5 Post-copy pass to stamp version into asset templates
+    # 4.5 Post-copy pass to stamp version into asset templates
     for path in assets.rglob("*.md"):
         if path.is_file():
             text = path.read_text(encoding="utf-8")
             fm, _ = split_frontmatter(text)
             fm_keys = top_level_keys(fm) if fm is not None else set()
             if "version" not in fm_keys:
-                out_content = ensure_frontmatter(text, version=VERSION)
-                write_lf(path, out_content)
+                write_lf(path, ensure_frontmatter(text, version=VERSION))
 
-    # 6. Manifest
-    if kind == "claude":
-        manifest_dir = out / ".claude-plugin"
-        manifest_dir.mkdir(parents=True)
-        manifest = {
-            "name": "stratosphere-os",
-            "version": VERSION,
-            "description": DESCRIPTION,
-            "author": {"name": AUTHOR},
-        }
-        write_lf(manifest_dir / "plugin.json", json.dumps(manifest, indent=2) + "\n")
-    else:
-        manifest = {
-            "name": "stratosphere-os",
-            "version": VERSION,
-            "description": DESCRIPTION,
-            "author": AUTHOR,
-        }
-        write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
+    write_versions_manifest()
 
-    # 7. Generate versions.json
+
+def write_versions_manifest():
+    """Artifact manifest consumed by scaffold/update. Keys keep the historical plugin-root
+    shape (`skills/<name>/...`, `assets/...`, `scripts/...`) regardless of where files sit."""
     artifacts = {}
-    for root_dir, _, files in os.walk(out):
-        for f in files:
-            if not f.endswith(".md"): continue
-            p = Path(root_dir) / f
-            rel = p.relative_to(out).as_posix()
-            text = p.read_text(encoding="utf-8")
-            v, ts = _versioning.read_version(text, p)
-            if v:
-                artifacts[rel] = {
-                    "version": v,
-                    "sha256": _versioning.body_hash(text),
-                    "timestamp": ts
-                }
-            else:
-                raise ValueError(f"Missing versioning marker in {p}. Every .md file in the plugin MUST have a version stamp in its YAML frontmatter.")
-    
-    versions_manifest = {
-        "plugin_version": VERSION,
-        "artifacts": artifacts
-    }
-    write_lf(out / "versions.json", json.dumps(versions_manifest, indent=2, sort_keys=True) + "\n")
+    for p in sorted(BUNDLE.rglob("*.md")):
+        rel = p.relative_to(BUNDLE)
+        if rel.parts[0] == "stratosphere-setup" and rel.parts[1] in ("assets", "scripts"):
+            key = Path(*rel.parts[1:]).as_posix()
+        else:
+            key = "skills/" + rel.as_posix()
+        text = p.read_text(encoding="utf-8")
+        v, ts = _versioning.read_version(text, p)
+        if not v:
+            raise ValueError(f"Missing versioning marker in {p}. Every .md file in the bundle MUST have a version stamp in its YAML frontmatter.")
+        artifacts[key] = {"version": v, "sha256": _versioning.body_hash(text), "timestamp": ts}
+    manifest = {"plugin_version": VERSION, "artifacts": artifacts}
+    write_lf(SETUP_SKILL / "versions.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
-    return out
+
+def write_antigravity_manifest():
+    out = DIST / "antigravity"
+    force_rmtree(out)
+    out.mkdir(parents=True)
+    manifest = {"name": "stratosphere-os", "version": VERSION, "description": DESCRIPTION, "author": AUTHOR}
+    write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
 
 def write_marketplace():
+    """One plugin entry over the whole repo: `source` is the repo root and `strict: false`
+    (no plugin.json) lets the entry's explicit skills list be the manifest."""
     mk_dir = ROOT / ".claude-plugin"
     mk_dir.mkdir(parents=True, exist_ok=True)
     marketplace = {
@@ -308,8 +288,12 @@ def write_marketplace():
         "plugins": [
             {
                 "name": "stratosphere-os",
-                "source": "./dist/claude-code",
+                "source": "./",
                 "description": DESCRIPTION,
+                "version": VERSION,
+                "author": {"name": AUTHOR},
+                "strict": False,
+                "skills": [f"./dist/skills/{d.name}" for d in sorted(BUNDLE.iterdir()) if d.is_dir()],
             }
         ],
     }
@@ -318,9 +302,11 @@ def write_marketplace():
 
 def main():
     DIST.mkdir(exist_ok=True)
-    for kind in ("claude", "antigravity"):
-        out = build_platform(kind)
-        print(f"[built] {out.relative_to(ROOT)}")
+    force_rmtree(DIST / "claude-code")  # retired per-host tree
+    build_bundle()
+    print(f"[built] {BUNDLE.relative_to(ROOT)}")
+    write_antigravity_manifest()
+    print("[built] dist/antigravity/plugin.json")
     write_marketplace()
     print("[built] .claude-plugin/marketplace.json")
 
