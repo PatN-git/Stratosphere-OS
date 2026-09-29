@@ -16,19 +16,19 @@
       "version": "1.2.0"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "b7b82515c46995c6172e75deda06ee4b858e7d1b5689c61f660e614272f5a35f",
-      "timestamp": "2026-06-22",
-      "version": "1.0.4"
+      "sha256": "c67a4aece96f6923e3d21bd3b391c84605d7a81af6effdd5b7e0ee189ecfa186",
+      "timestamp": "2026-09-29",
+      "version": "1.0.5"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "d0229bdcfb1ad5856c3d266cc7fe9cef7567d3e1d03a17507969c8546f3b7c80",
-      "timestamp": "2026-09-22",
-      "version": "1.3.0"
+      "sha256": "a5ab6bca21e4eee2bfd99f2defb209351cb4c07729551f2a73c5c8124a825586",
+      "timestamp": "2026-09-29",
+      "version": "1.3.1"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
-      "sha256": "29ce2d8b2f1940d6c0eb0453d29341ca78bd96679535a0d1b4921c1ec57dc757",
-      "timestamp": "2026-06-17",
-      "version": "1.0.3"
+      "sha256": "691964469a9f714c242493a02e0698572e38b2529724bdd3105786509b01cac3",
+      "timestamp": "2026-09-29",
+      "version": "1.0.4"
     },
     "assets/templates/memory/DESIGN.md": {
       "sha256": "7f874477820899722d2bd2982efd9537b2f561e1806d0d8191b40ed9bc9eea2e",
@@ -36,24 +36,24 @@
       "version": "1.0.2"
     },
     "assets/templates/memory/DESIGN_RULES.md": {
-      "sha256": "14214b3257300a90500bc38ec2c36ae72a30206da709ee5bde50a997682bab7f",
-      "timestamp": "2026-07-08",
-      "version": "1.0.6"
+      "sha256": "aa38c403d78361453d9cd0d4a5b62d569314c8e195b4df78a0cc19ada33eacb3",
+      "timestamp": "2026-09-29",
+      "version": "1.0.7"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "d756bea4a6328da9fd0152f1945e64e9f1841752882de83d5ec1a69959909d99",
-      "timestamp": "2026-06-23",
-      "version": "1.0.4"
+      "sha256": "6cfd0c1bdd9f617d12e8e30339207fcff79440b8fa7fd49e434c325d84e75d31",
+      "timestamp": "2026-09-29",
+      "version": "1.0.5"
     },
     "assets/templates/memory/LEARNINGS.md": {
-      "sha256": "58eb2de5260cd97b4eb1851c486695f43364783e6bd26691127e71c8e181395d",
-      "timestamp": "2026-06-17",
-      "version": "1.0.3"
+      "sha256": "5ce840851c39c21028618554b0a55aff789ce1e4405c35da2d1513bc49076585",
+      "timestamp": "2026-09-29",
+      "version": "1.0.4"
     },
     "assets/templates/memory/STATUS.md": {
-      "sha256": "5027a0e189cd9eec73a0155ebcaed93c5405ef0174c07b3c0a13c75ee1387b16",
-      "timestamp": "2026-07-17",
-      "version": "1.1.0"
+      "sha256": "25c15ed19dfcccb6a73f2fa3417137b9b6d9a92271c2ea424abef1696fa44bb3",
+      "timestamp": "2026-09-29",
+      "version": "1.1.1"
     },
     "assets/templates/rules/memory-protocol.md": {
       "sha256": "cfe6a93c29e9f976d9f4a51d2e4674b294aa53900483d3df03823794efe0f7a1",

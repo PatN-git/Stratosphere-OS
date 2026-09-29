@@ -2,8 +2,10 @@
 type: design-rules
 title: Design Rules
 description: Project structural rules and operational design governance.
-timestamp: 2026-07-08
-version: "1.0.6"
+generated:
+  by: stratosphere-setup
+  at: 2026-09-29
+version: "1.0.7"
 ---
 # DESIGN RULES
 

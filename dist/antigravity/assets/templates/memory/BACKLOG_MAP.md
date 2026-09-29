@@ -2,8 +2,10 @@
 type: backlog
 title: Backlog Map
 description: Authoritative registry and status mapping of all project issues.
-timestamp: 2026-09-22
-version: "1.3.0"
+generated:
+  by: stratosphere-setup
+  at: 2026-09-29
+version: "1.3.1"
 ---
 # BACKLOG MAP
 
