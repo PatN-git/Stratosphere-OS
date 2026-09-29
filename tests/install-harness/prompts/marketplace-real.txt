@@ -9,7 +9,7 @@ All decisions are already made — do NOT ask me anything; proceed fully autonom
     /plugin install stratosphere-os@stratosphere-os
 - Then run the StratosphereOS setup to scaffold THIS project: locate the installed
   plugin's scripts/scaffold.py — for a marketplace install it lives under
-  ~/.claude/plugins/cache/*/stratosphere-os/*/ — and run it with Python from the
+  ~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/ — and run it with Python from the
   project root. For setup questions: Stitch = no; skill categories = system only;
   skill scope = global.
 

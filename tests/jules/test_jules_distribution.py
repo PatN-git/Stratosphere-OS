@@ -18,7 +18,7 @@ import scaffold  # noqa: E402
 
 def test_no_experimental_in_dist():
     print("--- test_no_experimental_in_dist ---")
-    for plat in ("dist/claude-code", "dist/antigravity"):
+    for plat in ("dist/skills",):
         pdir = REPO_ROOT / plat
         leaked = [p.relative_to(REPO_ROOT).as_posix() for p in pdir.rglob("*")
                   if "experimental" in p.relative_to(pdir).parts]
@@ -37,9 +37,8 @@ def test_external_skills_entry_opt_in():
     assert e["default"] is False, "must be opt-in (default: false)"
     assert e["category"] == "experimental"
     assert e["targetPath"] == ".agents/skills/jules-dispatch"
-    # flows into both dist copies
-    for plat in ("dist/claude-code", "dist/antigravity"):
-        assert _entry(f"{plat}/external-skills.json") is not None, f"entry missing in {plat}"
+    # flows into the bundle (carried by the setup skill)
+    assert _entry("dist/skills/stratosphere-setup/external-skills.json") is not None, "entry missing in dist bundle"
     print("PASS"); return True
 
 
@@ -51,7 +50,7 @@ def test_bundled_skills_are_guarded_from_packs():
     lifecycle skill — enforced by sync_skills.assert_not_reserved().
     """
     print("--- test_bundled_skills_are_guarded_from_packs ---")
-    versions = json.loads((REPO_ROOT / "dist/antigravity/versions.json").read_text(encoding="utf-8"))
+    versions = json.loads((REPO_ROOT / "dist/skills/stratosphere-setup/versions.json").read_text(encoding="utf-8"))
     artifacts = versions.get("artifacts", {})
     assert artifacts, "expected a non-empty bundled manifest"
 

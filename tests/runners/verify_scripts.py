@@ -10,8 +10,8 @@ def test_validate_memory():
     # Write a fake memory file with a secret
     (tmp_mem / "fake.md").write_text("Hello\nSecret: sk-123456789012345678901234567890123456789012345678\nWorld", encoding="utf-8")
     
-    # Run validate_memory.py from dist/antigravity/scripts/
-    result = subprocess.run([sys.executable, "dist/antigravity/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
+    # Run validate_memory.py from the setup skill payload
+    result = subprocess.run([sys.executable, "dist/skills/stratosphere-setup/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
     print("Exit code:", result.returncode)
     if result.returncode == 1 and "Secret detected" in result.stdout:
         print("validate_memory test passed!")
@@ -62,7 +62,7 @@ version: "1.1.1"
 """
     (tmp_mem / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
     
-    result = subprocess.run([sys.executable, "dist/antigravity/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "dist/skills/stratosphere-setup/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
     print("Exit code:", result.returncode)
     
     # Assertions
@@ -108,8 +108,8 @@ version: "1.1.1"
 
 def test_sync_skills():
     print("\n--- Testing sync_skills.py ---")
-    # Run sync_skills.py from dist/antigravity/scripts/
-    result = subprocess.run([sys.executable, "dist/antigravity/scripts/sync_skills.py", "--list"], capture_output=True, text=True)
+    # Run sync_skills.py from the setup skill payload
+    result = subprocess.run([sys.executable, "dist/skills/stratosphere-setup/scripts/sync_skills.py", "--list"], capture_output=True, text=True)
     print("Exit code:", result.returncode)
     if result.returncode == 0:
         print("sync_skills.py test passed!")
@@ -120,8 +120,8 @@ def test_sync_skills():
 
 def test_scaffold():
     print("\n--- Testing scaffold.py ---")
-    # Run scaffold.py from dist/antigravity/scripts/
-    result = subprocess.run([sys.executable, "dist/antigravity/scripts/scaffold.py", "--dry-run"], capture_output=True, text=True)
+    # Run scaffold.py from the setup skill payload
+    result = subprocess.run([sys.executable, "dist/skills/stratosphere-setup/scripts/scaffold.py", "--dry-run"], capture_output=True, text=True)
     print("Exit code:", result.returncode)
     if result.returncode == 0:
         print("scaffold.py test passed!")
@@ -135,7 +135,7 @@ import shutil
 def test_scaffold_repair_lock():
     print("\n--- Testing scaffold.py --repair-lock ---")
     repo_root = Path(__file__).resolve().parents[2]
-    scaffold_script = repo_root / "dist" / "antigravity" / "scripts" / "scaffold.py"
+    scaffold_script = repo_root / "dist" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py"
     
     # Create temp directory inside repo's .tmp/ for testing
     tmp_project = repo_root / ".tmp" / "repair_lock_test_project"
@@ -218,10 +218,10 @@ def test_update_preflight():
 def test_orphan_guard():
     print("\n--- Testing Orphan-Guard Anti-Recurrence Check ---")
     repo_root = Path(__file__).resolve().parents[2]
-    scaffold_script = repo_root / "dist" / "antigravity" / "scripts" / "scaffold.py"
+    scaffold_script = repo_root / "dist" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py"
     
-    # 1. Add dist/antigravity/scripts to sys.path so we can import scaffold
-    sys.path.insert(0, str(repo_root / "dist" / "antigravity" / "scripts"))
+    # 1. Add the setup skill payload scripts to sys.path so we can import scaffold
+    sys.path.insert(0, str(repo_root / "dist" / "skills" / "stratosphere-setup" / "scripts"))
     import scaffold
     
     # Define EXCLUDE lists
@@ -232,7 +232,7 @@ def test_orphan_guard():
     }
     
     # Helper to scan and map dist files
-    dist_dir = repo_root / "dist" / "antigravity"
+    dist_dir = repo_root / "dist" / "skills" / "stratosphere-setup"
     
     # We will build two fixtures
     # Fixture 1: "no board"
@@ -270,7 +270,7 @@ def test_orphan_guard():
             print("Scaffold update on Fixture 2 failed:", up2.stderr)
             return False
             
-        # Walk and check every file in dist/antigravity
+        # Walk and check every payload file in the setup skill
         failures = []
         for p in dist_dir.rglob("*"):
             if not p.is_file():
@@ -285,8 +285,8 @@ def test_orphan_guard():
             if rel_str == "scripts/sync_skills.py":
                 # sync_skills.py is run within plugin scope by sync-skills command; never copied to project
                 continue
-            if rel_str.startswith("skills/"):
-                # Skills are on-demand and third-party, gitignored. Documented exclude.
+            if rel.parts[0] in ("SKILL.md", "agents", "references"):
+                # The setup skill's own skill files: skills are placed by skill installers, not scaffolded from the payload.
                 continue
             if rel_str.startswith("scripts/_versioning.py") or rel_str.startswith("scripts/scaffold.py"):
                 # Scaffold script itself lives in plugin/scripts, not copied to project root

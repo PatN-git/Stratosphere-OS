@@ -34,7 +34,7 @@ PASS, FAIL = [], []
 # Derived, never hardcoded: a count literal silently rots and then fails as
 # "wrong count" rather than "layout changed".
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-EXPECTED_SKILLS = len(list((_REPO_ROOT / "dist" / "antigravity" / "skills").glob("*/SKILL.md")))
+EXPECTED_SKILLS = len(list((_REPO_ROOT / "dist" / "skills").glob("*/SKILL.md")))
 
 def check(label, cond):
     (PASS if cond else FAIL).append(label)
@@ -197,7 +197,7 @@ def assert_tree(tool, scope, home, proj):
     # install tree
     if tool == "claude-code":
         base = Path(home) / ".claude" if scope != "local" else Path(proj) / ".claude"
-        plugin = base / "plugins" / "stratosphere-os"
+        plugin = base / "skills" / "stratosphere-setup"  # scaffolder payload rides inside setup
         check("install: 26 skills", len(list((base / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS if (base / "skills").exists() else False)
         check("install: micro-tdd skill", (base / "skills" / "micro-tdd").exists())
     else:
@@ -251,16 +251,11 @@ def main():
     if args.tool == "claude-code":
         # Pre-install StratosphereOS to proj/.claude/ so the headless agent only needs
         # to run scaffold.py. Avoids ~/.claude/ write-permission refusals in headless runs.
-        build_dir = repo_dest / "dist" / "claude-code"
+        build_dir = repo_dest / "dist" / "skills"
         claude_dir = proj / ".claude"
-        (claude_dir / "commands").mkdir(parents=True, exist_ok=True)
-        (claude_dir / "plugins" / "stratosphere-os").mkdir(parents=True, exist_ok=True)
-        if (build_dir / "skills").exists():
-            shutil.copytree(str(build_dir / "skills"), str(claude_dir / "skills"), dirs_exist_ok=True)
-        shutil.copytree(str(build_dir / "commands"), str(claude_dir / "commands"), dirs_exist_ok=True)
-        shutil.copytree(str(build_dir), str(claude_dir / "plugins" / "stratosphere-os"), dirs_exist_ok=True)
-        cmd_count = len(list((claude_dir / "commands").glob("*.md")))
-        print(f"[installed] local .claude/ ({cmd_count} commands)")
+        shutil.copytree(str(build_dir), str(claude_dir / "skills"), dirs_exist_ok=True)
+        skill_count = len(list((claude_dir / "skills").glob("*/SKILL.md")))
+        print(f"[installed] local .claude/skills ({skill_count} skills)")
     prompt_content = prompt_file.read_text(encoding="utf-8")
     prompt = (prompt_content
               .replace("<REPO>", str(repo_dest))

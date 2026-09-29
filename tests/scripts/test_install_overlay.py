@@ -46,7 +46,7 @@ def _assert_overlay(claude_dir: Path, orphans, foreign):
 
 def _require_build():
     if not (REPO / "dist/claude-code/skills/plan-html").is_dir():
-        pytest.skip("dist/claude-code not built")
+        pytest.skip("dist/claude-code retired by BT-118; this installer test is removed with the installer in BT-119")
 
 
 def test_bash_installer_replaces_shipped_entries(tmp_path):

@@ -1,6 +1,8 @@
 <#
-  L1 - deterministic install/scaffold/sync E2E (no agent).
-  Matrix: {Claude, Antigravity} x {local, global}, PowerShell installers.
+  L1 - deterministic install/scaffold/sync E2E for the canonical dist/skills bundle (no agent).
+  Matrix: {.claude/skills, .agents/skills} x {local, global}, Track B direct copy
+  (Copy-Item). There is no per-host installer: a skills installer only places skill
+  folders, and stratosphere-setup carries its own scaffolder payload.
 
   Isolation: each cell uses a throwaway project dir under $env:TEMP. --global
   cells also redirect HOME to a throwaway dir (real ~/.claude and ~/.gemini are
@@ -19,7 +21,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repo = (Resolve-Path (Join-Path $here "..\..")).Path
 Write-Host "Repo: $repo"
 
-if (-not (Test-Path (Join-Path $repo "dist\claude-code")) -or -not (Test-Path (Join-Path $repo "dist\antigravity"))) {
+if (-not (Test-Path (Join-Path $repo "dist\skills"))) {
     Write-Host "Building dist/ ..."
     python (Join-Path $repo "build\build.py") | Out-Null
 }
@@ -35,6 +37,7 @@ function Assert-ScaffoldTree([string]$proj) {
     Assert "scaffold: .agents/skills 26 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 26)
     Assert "scaffold: no legacy .agents/workflows" (-not (Test-Path (Join-Path $proj ".agents\workflows")))
     Assert "scaffold: copilot skills 26" ((Get-ChildItem -Path (Join-Path $proj ".github\copilot\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 26)
+    Assert "scaffold: setup payload not copied into copilot skill" (-not (Test-Path (Join-Path $proj ".github\copilot\skills\stratosphere-setup\scripts")))
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
     AssertPathExists "scaffold: okf_view.py" (Join-Path $proj ".agents\scripts\okf_view.py")
     AssertPathExists "scaffold: okf_viewer/generator.py" (Join-Path $proj ".agents\scripts\okf_viewer\generator.py")
@@ -45,40 +48,30 @@ function Assert-ScaffoldTree([string]$proj) {
     Assert "scaffold: .gitignore contains *.work.md" ($gi -match '\*\.work\.md')
 }
 
-function Run-Cell([string]$tool, [string]$scope) {
-    # $tool: "claude-code" | "antigravity"   $scope: "local" | "global"
-    Section "$tool / $scope (ps1)"
+function Run-Cell([string]$hostDir, [string]$scope) {
+    # $hostDir: ".claude" | ".agents"   $scope: "local" | "global"
+    Section "$hostDir / $scope (ps1)"
     $proj = New-TempDir "sos-proj"
     $tmpHome = if ($scope -eq "global") { New-TempDir "sos-home" } else { $null }
     try {
-        $installer = Join-Path $repo "scripts\install-$tool.ps1"
+        # --- Track B: plain copy of the canonical bundle, exactly as documented ---
+        $root = if ($scope -eq "local") { $proj } else { $tmpHome }
+        $base = Join-Path $root "$hostDir\skills"
+        New-Item -ItemType Directory -Force -Path $base | Out-Null
+        Copy-Item -Recurse -Force (Join-Path $repo "dist\skills\*") $base
+        $bundle = Join-Path $base "stratosphere-setup"
 
-        # --- install (failure throws via the installer's ErrorActionPreference=Stop) ---
-        if ($scope -eq "local") {
-            Push-Location $proj
-            & $installer --local | Write-Host
-            Pop-Location
-        } else {
-            Invoke-PsInstallerGlobal $tmpHome $installer @('--global')
-        }
-
-        # --- resolve landing spot + assert install tree ---
-        if ($tool -eq "claude-code") {
-            $base = if ($scope -eq "local") { Join-Path $proj ".claude" } else { Join-Path $tmpHome ".claude" }
-            $pluginRoot = Join-Path $base "plugins\stratosphere-os"
-            Assert "install: no legacy commands dir" (-not (Test-Path (Join-Path $pluginRoot "commands")))
-            AssertPathExists "install: skills/micro-tdd" (Join-Path $base "skills\micro-tdd")
-            AssertPathExists "install: skills/plan-html" (Join-Path $base "skills\plan-html")
-        } else {
-            $pluginRoot = if ($scope -eq "local") { Join-Path $proj ".agents\plugins\stratosphere-os" } else { Join-Path $tmpHome ".gemini\config\plugins\stratosphere-os" }
-            AssertPathExists "install: plugin.json" (Join-Path $pluginRoot "plugin.json")
-            Assert "install: no legacy workflows dir" (-not (Test-Path (Join-Path $pluginRoot "workflows")))
-            Assert "install: stratosphere-setup is a skill" (Test-Path (Join-Path $pluginRoot "skills\stratosphere-setup\SKILL.md"))
-        }
-        AssertPathExists "install: bundled scaffold.py" (Join-Path $pluginRoot "scripts\scaffold.py")
+        # --- assert bundle tree ---
+        Assert "install: 26 skills" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count -eq 26)
+        Assert "install: 22 HITL sidecars" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "agents\openai.yaml") }).Count -eq 22)
+        AssertPathExists "install: skills/micro-tdd" (Join-Path $base "micro-tdd\SKILL.md")
+        Assert "install: no legacy commands/workflows dir" (-not ((Test-Path (Join-Path $base "commands")) -or (Test-Path (Join-Path $base "workflows"))))
+        AssertPathExists "install: setup carries scaffold.py" (Join-Path $bundle "scripts\scaffold.py")
+        AssertPathExists "install: setup carries versions.json" (Join-Path $bundle "versions.json")
+        AssertPathExists "install: setup carries templates" (Join-Path $bundle "assets\templates\memory")
 
         # --- scaffold (pure file creation in cwd) ---
-        $scaffold = Join-Path $pluginRoot "scripts\scaffold.py"
+        $scaffold = Join-Path $bundle "scripts\scaffold.py"
         if ($scope -eq "local") {
             Push-Location $proj
             $out = & python $scaffold 2>&1 | Out-String
@@ -90,7 +83,7 @@ function Run-Cell([string]$tool, [string]$scope) {
         Assert-ScaffoldTree $proj
 
         # --- sync (offline dry-run) ---
-        $sync = Join-Path $pluginRoot "scripts\sync_skills.py"
+        $sync = Join-Path $bundle "scripts\sync_skills.py"
         $syncArgs = @($sync, '--category', 'system', '--dry-run')
         if ($scope -eq "global") { $syncArgs += '--global' }
         if ($scope -eq "local") {
@@ -109,9 +102,9 @@ function Run-Cell([string]$tool, [string]$scope) {
     }
 }
 
-foreach ($tool in @("claude-code","antigravity")) {
+foreach ($hostDir in @(".claude",".agents")) {
     foreach ($scope in @("local","global")) {
-        Run-Cell $tool $scope
+        Run-Cell $hostDir $scope
     }
 }
 

@@ -1,6 +1,9 @@
 #!/bin/bash
-# L1 - deterministic install/scaffold/sync E2E (bash installers), for Linux/CI.
-# Mirrors run-L1.ps1: {claude-code, antigravity} x {local, global}.
+# L1 - deterministic install/scaffold/sync E2E for the canonical dist/skills bundle
+# (Track B: direct copy), for Linux/CI. Mirrors run-L1.ps1:
+#   {.claude/skills, .agents/skills} x {local, global}.
+# There is no per-host installer any more: a skills installer (skills.sh, marketplace, or
+# a plain copy) only places skill folders, and stratosphere-setup carries its own payload.
 # Isolation: temp project per cell; --global cells redirect HOME to a temp dir
 # (bash honours a runtime HOME, and Python's Path.home() uses HOME on POSIX).
 # The current scaffold.py does no system mutation, so no venv is needed.
@@ -20,7 +23,7 @@ assert() { # $1 label  $2 cond(0/1)
 exists()  { [ -e "$1" ] && echo 1 || echo 0; }
 nmd()     { local n; n=$(find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l); echo "$((n))"; }
 
-[ -d "$REPO/dist/claude-code" ] && [ -d "$REPO/dist/antigravity" ] || "$PY" "$REPO/build/build.py" >/dev/null
+[ -d "$REPO/dist/skills" ] || "$PY" "$REPO/build/build.py" >/dev/null
 
 assert_scaffold_tree() { # $1 proj
   local p="$1"
@@ -32,6 +35,7 @@ assert_scaffold_tree() { # $1 proj
   assert "scaffold: .agents/skills 26 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
   assert "scaffold: no legacy .agents/workflows" "$([ -d "$p/.agents/workflows" ] && echo 0 || echo 1)"
   assert "scaffold: copilot skills 26" "$([ "$(ls -1 "$p"/.github/copilot/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+  assert "scaffold: setup payload not copied into copilot skill" "$([ -e "$p/.github/copilot/skills/stratosphere-setup/scripts" ] && echo 0 || echo 1)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"
   assert "scaffold: okf_view.py" "$(exists "$p/.agents/scripts/okf_view.py")"
   assert "scaffold: okf_viewer/generator.py" "$(exists "$p/.agents/scripts/okf_viewer/generator.py")"
@@ -41,55 +45,31 @@ assert_scaffold_tree() { # $1 proj
   grep -q '\*\.work\.md' "$p/.gitignore" 2>/dev/null && assert "scaffold: .gitignore has *.work.md" 1 || assert "scaffold: .gitignore has *.work.md" 0
 }
 
-run_cell() { # $1 tool  $2 scope
-  local tool="$1" scope="$2"
-  echo ""; echo "== $tool / $scope (sh) =="
-  local proj home plugin base seed
+run_cell() { # $1 host dir (.claude|.agents)  $2 scope
+  local hostdir="$1" scope="$2"
+  echo ""; echo "== $hostdir / $scope (sh) =="
+  local proj home base bundle
   proj="$(mktemp -d)"
-  if [ "$scope" = "global" ]; then home="$(mktemp -d)"; fi
+  if [ "$scope" = "global" ]; then home="$(mktemp -d)"; base="$home/$hostdir/skills"; else base="$proj/$hostdir/skills"; fi
 
-  # Seed the v3 leftovers an upgrade would carry in, so the "no legacy dir"
-  # assertions below test the UPGRADE path, not just a fresh install.
-  if [ "$tool" = "claude-code" ]; then
-    if [ "$scope" = "local" ]; then seed="$proj/.claude/plugins/stratosphere-os"; else seed="$home/.claude/plugins/stratosphere-os"; fi
-  else
-    if [ "$scope" = "local" ]; then seed="$proj/.agents/plugins/stratosphere-os"; else seed="$home/.gemini/config/plugins/stratosphere-os"; fi
-  fi
-  mkdir -p "$seed/workflows/.reference" "$seed/commands"
-  echo "# stale v3" > "$seed/workflows/0a_start-session.md"
-  echo "# stale v3" > "$seed/commands/0a_start-session.md"
+  # Track B: plain copy of the canonical bundle, exactly as documented.
+  mkdir -p "$base" && cp -r "$REPO"/dist/skills/* "$base"/
+  bundle="$base/stratosphere-setup"
 
-  # install
-  if [ "$scope" = "local" ]; then
-    ( cd "$proj" && bash "$REPO/scripts/install-$tool.sh" --local >/dev/null )
-  else
-    # USERPROFILE too: on Windows git-bash, Python's Path.home() reads USERPROFILE, not HOME.
-    HOME="$home" USERPROFILE="$home" bash "$REPO/scripts/install-$tool.sh" --global >/dev/null
-  fi
-
-  # install-tree assertions + resolve plugin root
-  if [ "$tool" = "claude-code" ]; then
-    if [ "$scope" = "local" ]; then base="$proj/.claude"; else base="$home/.claude"; fi
-    plugin="$base/plugins/stratosphere-os"
-    assert "install: no legacy commands dir" "$([ -d "$plugin/commands" ] && echo 0 || echo 1)"
-    assert "install: no legacy workflows dir" "$([ -d "$plugin/workflows" ] && echo 0 || echo 1)"
-    assert "install: no legacy commands dir" "$([ -d "$plugin/commands" ] && echo 0 || echo 1)"
-    assert "install: 26 plugin skills" "$([ "$(ls -1 "$plugin"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
-    assert "install: micro-tdd skill" "$(exists "$plugin/skills/micro-tdd")"
-  else
-    if [ "$scope" = "local" ]; then plugin="$proj/.agents/plugins/stratosphere-os"; else plugin="$home/.gemini/config/plugins/stratosphere-os"; fi
-    assert "install: plugin.json" "$(exists "$plugin/plugin.json")"
-    assert "install: no legacy workflows dir" "$([ -d "$plugin/workflows" ] && echo 0 || echo 1)"
-    assert "install: 26 plugin skills" "$([ "$(ls -1 "$plugin"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
-    assert "install: stratosphere-setup is a skill" "$(exists "$plugin/skills/stratosphere-setup/SKILL.md")"
-  fi
-  assert "install: bundled scaffold.py" "$(exists "$plugin/scripts/scaffold.py")"
+  # bundle-tree assertions
+  assert "install: 26 skills" "$([ "$(ls -1 "$base"/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "26" ] && echo 1 || echo 0)"
+  assert "install: 22 HITL sidecars" "$([ "$(ls -1 "$base"/*/agents/openai.yaml 2>/dev/null | wc -l | tr -d " ")" = "22" ] && echo 1 || echo 0)"
+  assert "install: micro-tdd skill" "$(exists "$base/micro-tdd/SKILL.md")"
+  assert "install: no legacy commands/workflows dir" "$([ -d "$base/commands" ] || [ -d "$base/workflows" ] && echo 0 || echo 1)"
+  assert "install: setup carries scaffold.py" "$(exists "$bundle/scripts/scaffold.py")"
+  assert "install: setup carries versions.json" "$(exists "$bundle/versions.json")"
+  assert "install: setup carries templates" "$(exists "$bundle/assets/templates/memory")"
 
   # scaffold
   if [ "$scope" = "local" ]; then
-    ( cd "$proj" && "$PY" "$plugin/scripts/scaffold.py" >/tmp/sc.out 2>&1 )
+    ( cd "$proj" && "$PY" "$bundle/scripts/scaffold.py" >/tmp/sc.out 2>&1 )
   else
-    ( cd "$proj" && HOME="$home" USERPROFILE="$home" "$PY" "$plugin/scripts/scaffold.py" >/tmp/sc.out 2>&1 )
+    ( cd "$proj" && HOME="$home" USERPROFILE="$home" "$PY" "$bundle/scripts/scaffold.py" >/tmp/sc.out 2>&1 )
   fi
   grep -q 'StratosphereOS scaffold (applied)' /tmp/sc.out && assert "scaffold reports applied" 1 || assert "scaffold reports applied" 0
   assert_scaffold_tree "$proj"
@@ -97,9 +77,9 @@ run_cell() { # $1 tool  $2 scope
   # sync (dry-run, offline)
   local g=""; [ "$scope" = "global" ] && g="--global"
   if [ "$scope" = "local" ]; then
-    ( cd "$proj" && "$PY" "$plugin/scripts/sync_skills.py" --category system --dry-run $g >/tmp/sy.out 2>&1 )
+    ( cd "$proj" && "$PY" "$bundle/scripts/sync_skills.py" --category system --dry-run $g >/tmp/sy.out 2>&1 )
   else
-    ( cd "$proj" && HOME="$home" USERPROFILE="$home" "$PY" "$plugin/scripts/sync_skills.py" --category system --dry-run $g >/tmp/sy.out 2>&1 )
+    ( cd "$proj" && HOME="$home" USERPROFILE="$home" "$PY" "$bundle/scripts/sync_skills.py" --category system --dry-run $g >/tmp/sy.out 2>&1 )
   fi
   grep -q "($scope scope)" /tmp/sy.out && assert "sync reports $scope scope" 1 || assert "sync reports $scope scope" 0
   grep -q '\[DRY\]' /tmp/sy.out && assert "sync is dry-run" 1 || assert "sync is dry-run" 0
@@ -107,9 +87,9 @@ run_cell() { # $1 tool  $2 scope
   rm -rf "$proj"; [ "$scope" = "global" ] && rm -rf "$home"
 }
 
-for tool in claude-code antigravity; do
+for hostdir in .claude .agents; do
   for scope in local global; do
-    run_cell "$tool" "$scope"
+    run_cell "$hostdir" "$scope"
   done
 done
 

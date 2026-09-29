@@ -1,7 +1,7 @@
 Your ONE and ONLY task is to run the scaffold script then print a sentinel:
 
 Step 1 — Run this exact command from the project root:
-  python .claude/plugins/stratosphere-os/scripts/scaffold.py
+  python .claude/skills/stratosphere-setup/scripts/scaffold.py
 
 Step 2 — After the script exits, print exactly this string on its own line:
   HARNESS_DONE

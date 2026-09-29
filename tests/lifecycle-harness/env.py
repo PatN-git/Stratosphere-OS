@@ -341,7 +341,7 @@ def vendor_skills(repo_root: Path, project: Path, child: dict,
     as `3d` behaving oddly for no visible reason, so both the exit code and the
     resulting directory are checked - the `--yes` lesson from Slice 0.
     """
-    script = script or (repo_root / "dist" / "claude-code" / "scripts" /
+    script = script or (repo_root / "dist" / "skills" / "stratosphere-setup" / "scripts" /
                         "sync_skills.py")
     if not script.exists():
         raise RuntimeError(f"no sync_skills.py at {script} - build first")
@@ -620,18 +620,17 @@ def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) ->
     """Build the bundle and scaffold it into the project (Slice 1's core)."""
     subprocess.run(["python", "build/build.py"], cwd=str(repo_root), check=True,
                    capture_output=True)
-    dist = repo_root / "dist" / "claude-code"
+    dist = repo_root / "dist" / "skills"
     claude_dir = home / ".claude"
-    (claude_dir / "plugins").mkdir(parents=True, exist_ok=True)
-    shutil.copytree(dist, claude_dir / "plugins" / "stratosphere-os", dirs_exist_ok=True)
-    if (dist / "skills").is_dir():
-        shutil.copytree(dist / "skills", claude_dir / "skills", dirs_exist_ok=True)
+    # The canonical bundle is what a skills installer places: skill folders, with the
+    # scaffolder payload riding inside stratosphere-setup.
+    shutil.copytree(dist, claude_dir / "skills", dirs_exist_ok=True)
     # No `--yes` flag exists - scaffold.py takes --dry-run/--repair-lock/--update/
     # --verify and nothing else. Passing it made argparse exit 2, and
     # capture_output with no check swallowed that completely: the first real
     # full-depth run drove 1b against a project with no .agents/ and no .memory/
     # at all, and nothing said so. Fail loudly instead.
-    r = subprocess.run(["python", str(dist / "scripts" / "scaffold.py")],
+    r = subprocess.run(["python", str(claude_dir / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py")],
                        cwd=str(project), env=child, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(
