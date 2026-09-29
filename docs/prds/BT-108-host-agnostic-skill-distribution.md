@@ -3,12 +3,11 @@ type: prd
 title: "BT-108: Host-Agnostic Skill Distribution Framework"
 description: "Product Requirements Document for transitioning StratosphereOS from bespoke shell script installers to an open-ecosystem dual-track distribution framework via skills.sh, direct GitHub copy-paste, and native marketplaces, backed by a canonical dist/skills bundle."
 bt: BT-108
-timestamp: 2026-09-28
 generated:
   by: 2c-reconcile-specs
   at: 2026-09-28
 resource: https://github.com/PatN-git/Stratosphere-OS/issues/108
-status: approved
+status: stable
 version: "1.0.1"
 ---
 

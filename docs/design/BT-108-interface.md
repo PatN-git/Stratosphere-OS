@@ -2,11 +2,10 @@
 type: interface-design
 title: "Design: BT-108 - Host-Agnostic Skill Distribution Framework"
 description: "Technical interface and contract design for host-agnostic skill distribution across 8+ AI agent hosts, establishing canonical dist/skills bundling, dual-track distribution, and decoupled repository scaffolding."
-timestamp: 2026-09-28
 generated:
   by: 2c-reconcile-specs
   at: 2026-09-28
-status: approved
+status: stable
 slug: host-agnostic-skill-distribution
 bt: BT-108
 prd: docs/prds/BT-108-host-agnostic-skill-distribution.md
