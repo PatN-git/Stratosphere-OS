@@ -53,8 +53,8 @@ Global Antigravity plugin is **4.0.0**; Claude global is 4.1.0. After 4.1.1 is r
 
 - **F1** Memory templates (e.g. `STATUS.md`) and the BT-108 docs from 2a/2b/2c carry `timestamp:` beside `generated:`, and `status: approved` outside the v0.2 vocabulary; the v3→v4 migration would double the `generated:` key.
 - **F2** `concept-map-operations.md:76` and `3c-sprint-planning.md:30` describe `blockedBy` loosely (list-like).
-- **F3** `scaffold.py --update --dry-run` writes: `.tmp/stratosphere-update-worklist.json`, `*.stratosphere-new` for changed files (documented by design, gitignored), and — observed here — created the 26 missing bundled skills under `.agents/skills/`.
-- **F4** Scripts absent from the lockfile always land in "modified script / NEEDS-REVIEW".
+- **F3** `scaffold.py --update --dry-run` stages `*.stratosphere-new` proposals and `.tmp/stratosphere-update-worklist.json` by design (documented in code, gitignored; the update flow's Phase 1 depends on it). It does *not* create the real skill files — an earlier note here saying it created 26 skills was wrong (it created their directories holding only staged proposals). Only the `--dry-run` help text was misleading; fixed in the hygiene plan.
+- **F4** Scripts with no lock baseline land in "modified script / NEEDS-REVIEW" and *stay* there (update writes no baseline for them) until the local script equals upstream or `--repair-lock` runs; the update skill had no step for it — added in the hygiene plan.
 - **F5** `bump_guard.FRAMEWORK_FILES` lists only `scaffold.py`; other shipped non-`.md` files (e.g. `reconcile.py`, `validate_memory.py`) can change without a required bump.
 Offer to file these as issues; none block this PR.
 

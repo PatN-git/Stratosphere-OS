@@ -5,13 +5,13 @@ description: "Sized plan for the F1–F5 observations from the 4.1 follow-ups: f
 generated:
   by: Claude Sonnet 5.5
   at: 2026-09-29
-status: draft
+status: stable
 version: "4.1.0"
 ---
 
 # Plan — StratOS 4.1.1 Hygiene (F1–F5)
 
-**Branch / PR:** same draft PR #124 (`chore/BT-116-stratos-v4-1-0-update`), on top of the reconcile fix. All product prose edits are **patch** bumps, so `release.py` derives 4.1.1 — the version the reconcile fix already set. No further version change.
+**Branch / PR:** same draft PR #124 (`chore/BT-116-stratos-v4-1-0-update`), on top of the reconcile fix. *(As implemented: the F4 skill step is guidance, i.e. a minor bump per `docs/VERSIONING.md`, so `release.py` derived **4.2.0** — see Review outcome.)*
 **Sizing was verified by reading the code and by an empirical scratch-project run**, which corrected two claims in `stratos-4-1-followups-plan.md` (see F3, F4).
 
 | # | Item | Size | Do now? |
@@ -56,3 +56,15 @@ Empirical run in a scratch project: `--dry-run` (fresh) writes `.gitignore/.gita
 - F1b severity: warning-by-default means drift is surfaced, not blocked; chosen to avoid breaking consumers with v0.1 docs. Upgrading to error later is a one-flag decision.
 - F5 widening means future unbumped script edits fail CI — intended, but note this PR's own edits (`validate_memory.py`, `scaffold.py`) are covered by the existing 4.1.1.
 - `release.py` may derive something other than 4.1.1 if a prose edit is mis-bumped (minor); the plan keeps all bumps patch.
+
+## Review outcome (rev 2) — what changed from the draft above
+
+An independent review verified the plan against the code; all findings were confirmed and applied:
+
+- **F4 was wrong.** A `needs_review_scripts` entry gets **no lock baseline** on `--update` (only refreshed/created/unchanged scripts do, `scaffold.py` ~1398-1403), so it recurs until the local script equals upstream, or `--repair-lock` baselines it (which re-baselines *every* managed file). The step-4 prose states exactly that. Because it adds guidance, `stratosphere-update` got a **minor** bump → release **4.2.0**, not 4.1.1.
+- **F1b severity.** `okf_as_error` is hard-coded `True` (no warning-by-default switch); the two checks append to `warnings` explicitly (exit 2), docs-only, top-level keys only, trailing `# comment` and quotes stripped. Real hit avoided: a `status: deprecated  # was: …` plan. Effect on CleanTechHub (verified): exactly two real warnings, its `timestamp`-only audit doc and a `status: completed` research doc.
+- **F1a.** The discovery brief had `timestamp:` and **no** `generated:`; it was converted (`by: 1b-concept-framing`), not just deleted. Landed before F1b.
+- **F5 diagnosis.** Not CRLF (`git ls-files --eol` is lf/lf): git output was decoded as cp1252 while files were read as utf-8, so non-ASCII in `scaffold.py` produced a phantom change. Fixed with utf-8 decoding and a pathspec `git diff` over everything `build.py` ships (`src/scripts`, `src/github`, `external-skills.json`, `sync-skills/scripts`, test dirs excluded), plus untracked files.
+- **F2.** One source of truth: the shape sentence lives in `github-issue-relations.md`; other files just say `.nodes`.
+- **Found while implementing:** `test_script_legacy_project_fallback` used current `src` validate_memory as "historical v4.0.0" and would break on any edit; it now uses a frozen `tests/fixtures/legacy/` copy.
+- **F3 / F1c unchanged:** wording only; F1c still deferred. Precedent for F1c: CleanTechHub converted its `.memory/`+`docs/` frontmatter with a one-shot `migrate_v3_to_v4.py` run (commit c54116f) rather than through templates, so only fresh installs and unmigrated v3 projects still meet `timestamp:` in memory templates.
