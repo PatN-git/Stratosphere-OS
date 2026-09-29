@@ -3,8 +3,8 @@
 `timestamp:` is retired inside the bundle scope (replaced by `generated:`) and
 `status:` is exactly `draft | stable | deprecated` (discovery briefs keep their
 routing vocab). Both are WARNINGS (exit 2), never errors, so a consumer project with
-legacy v0.1 docs is nudged rather than blocked; `.memory/` is exempt until its
-templates stop shipping `timestamp:` (docs/plans/stratos-4-1-1-hygiene-plan.md F1c).
+legacy v0.1 docs is nudged rather than blocked. Applies to docs/ and .memory/ (the
+memory templates now ship `generated:`, so nothing legitimate still carries timestamp:).
 """
 import subprocess
 import sys
@@ -28,7 +28,7 @@ def run(root):
     return r.returncode, r.stdout.decode("utf-8", errors="replace")
 
 
-def test_flags_timestamp_and_bad_status_in_docs_only_as_warnings(tmp_path):
+def test_flags_timestamp_and_bad_status_as_warnings(tmp_path):
     doc(tmp_path, "docs/prds/ts.md", "type: prd\ntimestamp: 2026-09-28\ngenerated:\n  by: x\n  at: 2026-09-28")
     doc(tmp_path, "docs/prds/bad-status.md", "type: prd\ngenerated:\n  by: x\n  at: 2026-09-28\nstatus: approved")
     (tmp_path / "docs/prds/good.md").write_text(GOOD, encoding="utf-8")
@@ -46,7 +46,8 @@ def test_flags_timestamp_and_bad_status_in_docs_only_as_warnings(tmp_path):
     assert any("ts.md" in w and "timestamp" in w for w in warnings), warnings
     assert any("bad-status.md" in w and "approved" in w for w in warnings), warnings
     flagged = " ".join(warnings)
-    for clean in ("good.md", "brief.md", "comment.md", "quoted.md", "old.md", "STATUS.md"):
+    assert any("STATUS.md" in w and "timestamp" in w for w in warnings), warnings
+    for clean in ("good.md", "brief.md", "comment.md", "quoted.md", "old.md"):
         assert clean not in flagged, f"{clean} should not be flagged: {warnings}"
 
 
