@@ -3,11 +3,14 @@
   "owner": {
     "name": "PatN-git"
   },
+  "metadata": {
+    "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills."
+  },
   "plugins": [
     {
       "name": "stratosphere-os",
       "source": "./",
-      "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a first-party skill, on-demand external skills, and a one-command project installer.",
+      "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
       "version": "4.2.1",
       "author": {
         "name": "Gravity Technologies"

@@ -46,7 +46,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 VERSION = "4.2.1"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
-    "a first-party skill, on-demand external skills, and a one-command project installer."
+    "a setup skill that scaffolds your project, and on-demand external skills."
 )
 AUTHOR = "Gravity Technologies"
 
@@ -290,6 +290,7 @@ def write_marketplace():
     marketplace = {
         "name": "stratosphere-os",
         "owner": {"name": "PatN-git"},
+        "metadata": {"description": DESCRIPTION},
         "plugins": [
             {
                 "name": "stratosphere-os",

@@ -138,6 +138,14 @@ def test_marketplace_lists_all_26_skills_via_valid_plugins_schema():
     assert len(plugin["skills"]) == EXPECTED_SKILLS
 
 
+def test_marketplace_describes_itself_and_no_longer_advertises_an_installer():
+    """`claude plugin validate` warns when the marketplace has no description; the plugin
+    text must not sell the per-host installers that BT-119 deleted."""
+    mk = json.loads((REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    assert mk["metadata"]["description"].strip()
+    assert "installer" not in mk["plugins"][0]["description"].lower()
+
+
 def test_antigravity_manifest_stays_in_its_canonical_location():
     assert (REPO_ROOT / "dist" / "antigravity" / "plugin.json").is_file()
 
