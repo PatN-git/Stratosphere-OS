@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """E2E/Integration tests for the StratosphereOS in-place update pipeline."""
 import json
+import re
 import os
 import sys
 import shutil
@@ -1405,7 +1406,7 @@ def test_dr016_backref_restored():
     print("--- Test: DR-016 Back-Reference Restored ---")
     # Read build template
     template_rules = (REPO_ROOT / "src" / "memory-templates" / "DESIGN_RULES.md").read_text(encoding="utf-8")
-    assert "version: \"1.0.6\"" in template_rules
+    assert re.search(r'^version: "\d+\.\d+\.\d+"$', template_rules, re.M)  # any version: pinning one breaks every bump
     assert "one display/serif + one neutral/sans ([[DR-011]])." in template_rules
     print("DR-016 backref test passed!")
 

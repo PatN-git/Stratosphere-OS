@@ -15,13 +15,15 @@ def split_frontmatter(text):
     return None, text
 
 def read_version(text, path):
-    """Extracts (version, timestamp) from YAML frontmatter."""
+    """Extracts (version, timestamp) from YAML frontmatter. `timestamp` is the legacy key;
+    OKF v0.2 documents carry `generated: {by, at}` instead, so fall back to its `at`."""
     text = normalize(text)
-    
+
     fm, _ = split_frontmatter(text)
     if fm is not None:
         v_match = re.search(r'^version:\s*"?([^"\n\s]+)"?', fm, re.M)
-        ts_match = re.search(r'^timestamp:\s*"?([^"\n\s]+)"?', fm, re.M)
+        ts_match = (re.search(r'^timestamp:\s*"?([^"\n\s]+)"?', fm, re.M)
+                    or re.search(r'^generated:[ \t]*\n(?:[ \t]+\S.*\n)*?[ \t]+at:\s*"?([^"\n\s]+)"?', fm + "\n", re.M))
         if v_match:
             return v_match.group(1), (ts_match.group(1) if ts_match else "")
             
