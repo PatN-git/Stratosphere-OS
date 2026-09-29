@@ -114,17 +114,27 @@ function Run-Cell([string]$hostDir, [string]$scope) {
 function Invoke-Npx([string]$tmpHome, [string]$workDir, [string[]]$npxArgs) {
     $old = @{ UP = $env:USERPROFILE; HM = $env:HOME }
     $eap = $ErrorActionPreference
+    Push-Location $workDir
     try {
         $ErrorActionPreference = "Continue"   # native stderr must not become a terminating error
         $env:USERPROFILE = $tmpHome; $env:HOME = $tmpHome
-        Push-Location $workDir
         $out = & npx.cmd @npxArgs 2>&1 | Out-String
-        Pop-Location
         return @{ Code = $LASTEXITCODE; Out = $out }
     } finally {
+        Pop-Location
         $ErrorActionPreference = $eap
         $env:USERPROFILE = $old.UP; $env:HOME = $old.HM
     }
+}
+
+# Runs the Antigravity bridge in a child PowerShell (same stderr handling as Invoke-Npx).
+function Invoke-Bridge([string]$bridge, [string]$target) {
+    $eap = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $bridge --target $target 2>&1 | Out-String
+        return @{ Code = $LASTEXITCODE; Out = $out }
+    } finally { $ErrorActionPreference = $eap }
 }
 
 function Run-TrackACell([string]$hostDir, [string]$scope) {
@@ -168,14 +178,14 @@ function Run-TrackDCell {
     try {
         $tgt = Join-Path $root "skills"
         $bridge = Join-Path $repo "scripts\install-antigravity-bridge.ps1"
-        $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $bridge --target $tgt 2>&1 | Out-String
-        Assert "trackD: bridge exit 0" ($LASTEXITCODE -eq 0)
-        Assert "trackD: bridge reports 26 copied" ($out -match 'Copied 26 skills')
+        $r = Invoke-Bridge $bridge $tgt
+        Assert "trackD: bridge exit 0" ($r.Code -eq 0)
+        Assert "trackD: bridge reports 26 copied" ($r.Out -match 'Copied 26 skills')
         Assert-BundleTree $tgt "trackD"
         New-Item -ItemType Directory -Force -Path (Join-Path $tgt "foreign-skill") | Out-Null
         Set-Content -Path (Join-Path $tgt "foreign-skill\SKILL.md") -Value "x"
         Set-Content -Path (Join-Path $tgt "micro-tdd\stale.txt") -Value "x"
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $bridge --target $tgt 2>&1 | Out-Null
+        Invoke-Bridge $bridge $tgt | Out-Null
         AssertPathExists "trackD: rerun preserves foreign skill" (Join-Path $tgt "foreign-skill\SKILL.md")
         Assert "trackD: rerun drops stale file in shipped skill" (-not (Test-Path (Join-Path $tgt "micro-tdd\stale.txt")))
     }

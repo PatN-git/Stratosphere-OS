@@ -103,7 +103,7 @@ run_trackA_cell() { # $1 host dir (.claude|.agents)  $2 scope
   proj="$(mktemp -d)"; home="$(mktemp -d)"
   if [ "$scope" = "global" ]; then base="$home/$hostdir/skills"; else base="$proj/$hostdir/skills"; fi
   # shellcheck disable=SC2086
-  ( cd "$proj" && HOME="$home" USERPROFILE="$home" npx -y skills add "$REPO/dist/skills" --copy -y $agent $g >/tmp/npx-add.out 2>&1 )
+  ( cd "$proj" && HOME="$home" USERPROFILE="$home" npx -y skills add "$REPO/dist/skills" --copy -y $agent $g >"$home/npx-add.out" 2>&1 )
   rc=$?
   assert "trackA: npx skills add exit 0 ($hostdir/$scope)" "$([ "$rc" = 0 ] && echo 1 || echo 0)"
   assert_bundle_tree "$base" "trackA"
@@ -112,7 +112,8 @@ run_trackA_cell() { # $1 host dir (.claude|.agents)  $2 scope
 
 run_trackA() {
   # One npm cache for all four cells: the skills CLI is fetched once, not per cell.
-  local cache; cache="$(mktemp -d)"; export npm_config_cache="$cache"
+  local cache prev="${npm_config_cache-}" had="${npm_config_cache+1}"
+  cache="$(mktemp -d)"; export npm_config_cache="$cache"
   if ! command -v npx >/dev/null 2>&1; then
     echo ""; echo "  SKIP  Track A: npx not found (install Node.js to cover 'npx skills add')"
   elif ! npx -y skills --version >/dev/null 2>&1; then
@@ -122,7 +123,8 @@ run_trackA() {
       for scope in local global; do run_trackA_cell "$hostdir" "$scope"; done
     done
   fi
-  rm -rf "$cache"; unset npm_config_cache
+  rm -rf "$cache"
+  if [ -n "$had" ]; then export npm_config_cache="$prev"; else unset npm_config_cache; fi
 }
 
 # Track D: the Antigravity bridge copies the bundle to an explicit --target; re-running replaces
@@ -130,10 +132,10 @@ run_trackA() {
 run_trackD_cell() {
   echo ""; echo "== Track D: antigravity bridge --target (sh) =="
   local root tgt rc; root="$(mktemp -d)"; tgt="$root/skills"
-  bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >/tmp/bridge.out 2>&1
+  bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >"$root/bridge.out" 2>&1
   rc=$?
   assert "trackD: bridge exit 0" "$([ "$rc" = 0 ] && echo 1 || echo 0)"
-  grep -q 'Copied 26 skills' /tmp/bridge.out && assert "trackD: bridge reports 26 copied" 1 || assert "trackD: bridge reports 26 copied" 0
+  grep -q 'Copied 26 skills' "$root/bridge.out" && assert "trackD: bridge reports 26 copied" 1 || assert "trackD: bridge reports 26 copied" 0
   assert_bundle_tree "$tgt" "trackD"
   mkdir -p "$tgt/foreign-skill"; echo x > "$tgt/foreign-skill/SKILL.md"; echo x > "$tgt/micro-tdd/stale.txt"
   bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >/dev/null 2>&1

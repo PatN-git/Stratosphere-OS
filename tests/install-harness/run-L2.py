@@ -90,10 +90,10 @@ def run_agent(prompt, cwd, env):
 def assert_tree(scope, home, proj):
     # install tree
     base = Path(home) / ".claude" if scope != "local" else Path(proj) / ".claude"
-    plugin = base / "skills" / "stratosphere-setup"  # scaffolder payload rides inside setup
+    setup_dir = base / "skills" / "stratosphere-setup"  # scaffolder payload rides inside setup
     check("install: 26 skills", len(list((base / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS if (base / "skills").exists() else False)
     check("install: micro-tdd skill", (base / "skills" / "micro-tdd").exists())
-    check("install: bundled scaffold.py", (plugin / "scripts" / "scaffold.py").exists())
+    check("install: bundled scaffold.py", (setup_dir / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
     p = Path(proj)
     for f in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".gitignore", ".gitattributes", "index.md"):
