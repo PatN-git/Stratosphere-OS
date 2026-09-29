@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Plan — PR #107 Review Response"
+description: "Responses to the 13 inline review comments on PR #107."
+generated:
+  by: Patrick Nennewitz
+  at: 2026-09-17
+status: stable
+version: "4.1.0"
+---
 # Plan — PR #107 Review Response
 
 **Status:** Applied on `feat/spec-conformance-v4` (PR #107). All 13 threads answered on GitHub.

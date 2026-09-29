@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Plan — Unified Audit Pipeline: Report → Proposal → Maintenance Epic (4b + 4c → 3b)"
+description: "Unified audit pipeline: report, proposal, then maintenance epic (4b and 4c into 3b)."
+generated:
+  by: Claude
+  at: 2026-09-24
+status: stable
+version: "4.1.0"
+---
 # Plan — Unified Audit Pipeline: Report → Proposal → Maintenance Epic (4b + 4c → 3b)
 
 **Status:** Implemented on feat/spec-conformance-v4 (PR #107). Rev 2 — PR #107 review fixes applied; see §9a for post-review deviations.
