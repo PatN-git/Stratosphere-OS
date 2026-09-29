@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
+version: "1.2.0"
 timestamp: 2026-09-29
 ---
 
@@ -91,7 +91,17 @@ Find `<plugin>` by checking these locations in order and using the first that co
 - **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
 - **Legacy v4 plugin installs** (pre-canonical-bundle): `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
-If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above. Then run it from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
+If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
+
+**Suite integrity check (before scaffolding):** assert the 22 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
+
+```bash
+python <plugin>/scripts/check_suite.py suite
+```
+
+Exit 1 = incomplete suite (a cherry-picked or damaged install). **Non-fatal halt:** print its report verbatim (missing/corrupt list + the `npx skills add ... --copy -y` remediation), do **not** scaffold, and tell the user to fix the install and re-run `/stratosphere-setup`. Exit 0 → continue.
+
+Then run the scaffolder from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 
 ```bash
 # <plugin> = the path you found above
@@ -320,8 +330,14 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    ```
    (Where `<plugin>` is the installed `stratosphere-setup` directory located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/`.)
 
-5. **Design note:** External design generators are OPTIONAL; native projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
-6. **Re-runnable:** Re-invoke this skill/script with updated categories or new files anytime.
+5. **Host-visibility check (after the sync):** the `system` pack must be visible to the *running host*, not just present on disk — Claude Code reads `.claude/skills/` (not `.agents/skills/`), `.agents/skills` hosts read `.agents/skills/`. Run (pass `--host claude` on Claude Code, `--host agents` otherwise):
+   ```bash
+   python <plugin>/scripts/check_suite.py visibility --host <claude|agents>
+   ```
+   Exit 1 = invisible pack. **Non-fatal halt:** print the report verbatim (it lists the skills plus a copy command, or `/sync-skills` if absent), have the user run the copy (or offer to), then re-run the check before finishing setup.
+
+6. **Design note:** External design generators are OPTIONAL; native projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
+7. **Re-runnable:** Re-invoke this skill/script with updated categories or new files anytime.
 
 ## Constraints
 

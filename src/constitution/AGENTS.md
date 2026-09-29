@@ -1,7 +1,7 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.0.0"
+version: "3.1.0"
 timestamp: 2026-09-15
 ---
  
@@ -67,7 +67,8 @@ timestamp: 2026-09-15
 - **Host activation.** One canonical body; placement differs, content never does.
   - *Always-on rules:* **this file is the body.** Most hosts read `AGENTS.md` natively (Codex, Cursor, Devin, Copilot, Jules, Gemini CLI); the two that don't get a two-line pointer to it — `CLAUDE.md` (Claude Code) and `GEMINI.md` (Antigravity). Adding a host means checking whether it needs a pointer, never restating the rules.
   - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`). Contract: `okf-protocol.md` §2.1.
-  - *Skills:* `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw) and `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). Claude Code needs no project copy; its plugin registers them globally.
+  - *Skills:* per-host skill dirs — Claude Code `.claude/skills/` or `~/.claude/skills/` (Claude Code does **not** read `.agents/skills/`; its plugin also registers the bundled suite); `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw); `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). External/system-pack skills (`code-simplifier`, `skill-creator`, …) are fetched into `.agents/skills/` by `/sync-skills` and must also be visible to the running host.
+  - *Skill resolution:* if a named skill is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable. Workflows name skills only, never paths.
 - **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only; the field carrying that varies:
 
   | Host | Manual-only field |

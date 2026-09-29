@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.2"
+version: "1.3.0"
 timestamp: 2026-09-29
 ---
 
@@ -110,6 +110,26 @@ Before computing scope, detect whether this project predates v4.0.0.
 
 _Completion criterion:_ either the project is confirmed v4-shaped, or the user has been given the migration command and this run has stopped.
 
+## Phase 0.6: Suite Integrity & Legacy Cleanup (non-fatal halt)
+
+Skills refresh from the canonical `dist/skills/` bundle (the located `<plugin>`'s sibling skills; Phase 1's scaffolder places them). Before computing scope, verify that bundle is whole and clear pre-canonical-bundle leftovers. Both checks are deterministic scripts — relay their output, do not re-derive it.
+
+1. **Suite integrity:**
+   ```bash
+   python <plugin>/scripts/check_suite.py suite
+   ```
+   Exit 1 → print the report verbatim (missing/corrupt lifecycle skills + the `npx skills add ... --copy -y` remediation) and **HALT** without touching the project. Exit 0 → continue.
+
+2. **Legacy paths** (`dist/claude-code`, a payload-carrying `dist/antigravity`, stale lifecycle files in `commands/`, in the project and in old plugin install roots). Never deletes without confirmation:
+   ```bash
+   python <plugin>/scripts/check_suite.py legacy
+   ```
+   Exit 0 → continue. Exit 1 → show the listed paths and ask once (`AskUserQuestion` / `ask_question`): delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply` and log the migration summary; on no, continue and note they remain (they can shadow the new skills).
+
+_Completion criterion:_ the suite is confirmed whole, and legacy paths are removed, declined, or absent.
+
+---
+
 ## Phase 1: Compute Update Scope
 
 1. **Run the preview dry-run:**
@@ -189,3 +209,9 @@ For each constitution file that has changed:
    Because domain-specific skills are third-party, gitignored, and fetched on-demand, they are not bundled directly into `scaffold.py`. Remind the user to run, or offer to run:
    `/sync-skills`
    to ensure that all local skill definitions are fully synchronized with their latest upstream sources and not orphaned.
+
+2. **Host-visibility check (also after a sync):** the `system` pack (`code-simplifier`, `skill-creator`) must be visible to the running host, not only on disk. Run (`--host claude` on Claude Code, `--host agents` otherwise):
+   ```bash
+   python <plugin>/scripts/check_suite.py visibility --host <claude|agents>
+   ```
+   Exit 1 → non-fatal halt: print the report verbatim (skills + copy command, or `/sync-skills` if absent) and re-run after the fix.
