@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-07-28
+version: "1.2.0"
+timestamp: 2026-09-29
 ---
 
 # StratosphereOS Update Flow
@@ -147,6 +147,10 @@ For each constitution file that has changed:
 - If the file has no `SOS:BLOCK` markers, do **NOT** attempt to overwrite or merge.
 - Print the guard notice: *"Unmarked framework file `<path>` — run `python scripts/migrations/inject_markers.py` to enable in-place updates."*
 - If the notice is not already acknowledged, prompt the user to migrate. Skip updating the file content.
+
+### 4. Modified Scripts (`needs_review_scripts`)
+- Merge `<script>.stratosphere-new` into the **real** script (keep local fixes, take upstream features), then delete the `.stratosphere-new`. Never edit the `.stratosphere-new`: every update run re-stages it.
+- A script still differing from upstream stays flagged on later runs (update writes no lock baseline for it); once it equals upstream, the next `--update` baselines it. To keep intentional local changes, run `scaffold.py --repair-lock` only after reviewing — it re-baselines **every** managed file from the workspace.
 
 ---
 

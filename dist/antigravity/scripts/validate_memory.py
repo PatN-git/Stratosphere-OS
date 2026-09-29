@@ -390,6 +390,7 @@ def main():
             okf_files_to_check.append(path)
             
     docs_dir = Path('docs')
+    docs_files = set()  # v0.1-drift lint below applies to docs/ only (.memory/ templates still ship timestamp:)
     if docs_dir.exists() and docs_dir.is_dir():
         for path in docs_dir.glob('**/*.md'):
             if path.name == "index.md":
@@ -404,6 +405,7 @@ def main():
             except ValueError:
                 pass
             okf_files_to_check.append(path)
+            docs_files.add(path)
 
     for path in okf_files_to_check:
         try:
@@ -432,6 +434,22 @@ def main():
                     k, v = line.split(':', 1)
                     fm[k.strip()] = v.strip()
             
+            if path in docs_files:
+                # Top-level keys only (nested generated.by/at are indented); warnings, not
+                # errors, so legacy v0.1 docs in a consumer project are nudged, not blocked.
+                top = {}
+                for line in fm_text.splitlines():
+                    if line[:1] in (' ', chr(9)) or ':' not in line:
+                        continue
+                    k, v = line.split(':', 1)
+                    top[k.strip()] = re.sub(r'\s+#.*$', '', v).strip().strip('"' + "'")
+                if 'timestamp' in top:
+                    warnings.append(f"OKF v0.2: {display_path} carries retired 'timestamp:' - use 'generated: {{by, at}}'.")
+                status = top.get('status')
+                if (status and status not in ('draft', 'stable', 'deprecated')
+                        and top.get('type') != 'discovery-brief'):
+                    warnings.append(f"OKF v0.2: {display_path} has status '{status}' - must be draft | stable | deprecated.")
+
             if 'type' not in fm or not fm['type']:
                 msg = f"OKF conformance: {display_path} is missing a non-empty 'type' field in frontmatter."
                 if okf_as_error:

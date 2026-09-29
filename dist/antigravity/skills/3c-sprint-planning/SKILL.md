@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.3.0"
-timestamp: 2026-09-24
+version: "2.3.1"
+timestamp: 2026-09-29
 ---
 
 # Sprint planning
@@ -27,7 +27,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - List leaf issues labeled `[NEEDS_SPEC]`.
 
 ## Phase 2: Filter & Sort Engine
-1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
+1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`; read `blockedBy.nodes`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
    - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
    - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.
