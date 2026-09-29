@@ -339,8 +339,9 @@ def bundled_file(rel_path: str) -> Path:
 # Host read paths for project-level skills. One canonical body, placed per host.
 #   .agents/skills/        - Cursor, Codex, Antigravity, Devin, OpenClaw
 #   .github/copilot/skills/ - VS Code Copilot (NOT .github/skills/, a Devin path)
-# Claude Code is intentionally absent: its plugin registers bundled skills
-# globally on install, so a project-level .claude/skills/ copy is redundant.
+# Claude Code is intentionally absent: it reads only .claude/skills/ (never .agents/skills/),
+# and its own install (marketplace, `npx skills add -a claude-code`, or a plain copy) already
+# put the bundle there.
 SKILL_TARGETS = [".agents/skills", ".github/copilot/skills"]
 
 # NOTE: `.agents/skills/` is NOT ignored. It holds the bundled lifecycle skills,
@@ -649,18 +650,18 @@ def main():
     cwd = Path.cwd().resolve()
 
     claude_cache = (home / ".claude" / "plugins" / "cache").resolve()
-    if plugin_root_resolved == (home / ".claude" / "plugins" / "stratosphere-os").resolve():
-        scope = "global Claude Code"
-    elif plugin_root_resolved.is_relative_to(claude_cache):
+    # The bundle installs as <skills dir>/stratosphere-setup, so the scope is read off the skills dir.
+    scopes = {
+        (home / ".claude" / "skills").resolve(): "global Claude Code",
+        (cwd / ".claude" / "skills").resolve(): "local Claude Code",
+        (home / ".gemini" / "config" / "skills").resolve(): "global Antigravity",
+        (home / ".agents" / "skills").resolve(): "global skills",
+        (cwd / ".agents" / "skills").resolve(): "local skills",
+    }
+    if plugin_root_resolved.is_relative_to(claude_cache):
         scope = "marketplace Claude Code"
-    elif plugin_root_resolved == (cwd / ".claude" / "plugins" / "stratosphere-os").resolve():
-        scope = "local Claude Code"
-    elif plugin_root_resolved == (home / ".gemini" / "config" / "plugins" / "stratosphere-os").resolve():
-        scope = "global Antigravity"
-    elif plugin_root_resolved == (cwd / ".agents" / "plugins" / "stratosphere-os").resolve():
-        scope = "local Antigravity"
     else:
-        scope = "(custom path)"
+        scope = scopes.get(plugin_root_resolved.parent, "custom path")
     print(f"Resolved plugin root: {plugin_root_resolved} ({scope})")
 
     ap = argparse.ArgumentParser(description="Scaffold a StratosphereOS project (deterministic).")

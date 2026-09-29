@@ -3,6 +3,7 @@ skills, HITL sidecars intact — replacing the per-host dist/claude-code + dist/
 Asserts on the committed bundle (drift-guarded by check.sh) and on build.py's fatal paths.
 """
 import importlib.util
+import os
 import json
 import re
 import shutil
@@ -178,3 +179,50 @@ def test_sync_skills_ignores_a_claude_worktree_checkout(tmp_path):
     """A bare `.claude` path segment is not a Claude install: worktrees live under .claude/worktrees/."""
     dest, proj = _sync_destination(tmp_path, ".claude/worktrees/feature")
     assert dest == proj / ".agents" / "skills"
+
+
+def _sync_global_destination(tmp_path, host_dir):
+    skills = tmp_path / host_dir / "skills"
+    shutil.copytree(DIST_SKILLS, skills)
+    home, proj = tmp_path / "home", tmp_path / "proj"
+    home.mkdir(), proj.mkdir()
+    env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home)}
+    r = subprocess.run([sys.executable, str(skills / "stratosphere-setup" / "scripts" / "sync_skills.py"),
+                        "--category", "system", "--dry-run", "--global", "--project-root", str(proj)],
+                       capture_output=True, text=True, cwd=proj, env=env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    line = next(l for l in r.stdout.splitlines() if l.startswith("Skills destination directory"))
+    return Path(line.split(": ", 1)[1].rsplit(" (", 1)[0]), home
+
+
+def test_sync_skills_global_from_a_claude_install_targets_home_dot_claude_skills(tmp_path):
+    dest, home = _sync_global_destination(tmp_path, ".claude")
+    assert dest == home / ".claude" / "skills"
+
+
+def test_sync_skills_global_elsewhere_targets_a_directory_the_host_reads(tmp_path):
+    """The retired ~/.gemini/config/plugins/stratosphere-os/skills is read by nothing, so the pack
+    would land invisible; the destination must be one of check_suite's visible global dirs."""
+    dest, home = _sync_global_destination(tmp_path, ".agents")
+    assert dest == home / ".gemini" / "config" / "skills"
+
+
+@pytest.mark.parametrize("host_dir,scope_root,label", [
+    (".claude/skills", "proj", "local Claude Code"),
+    (".claude/skills", "home", "global Claude Code"),
+    (".agents/skills", "proj", "local skills"),
+    (".agents/skills", "home", "global skills"),
+    (".gemini/config/skills", "home", "global Antigravity"),
+])
+def test_scaffold_labels_a_skills_dir_install_instead_of_custom_path(tmp_path, host_dir, scope_root, label):
+    """The scope label compared against retired plugins/stratosphere-os paths, so every
+    skill-directory install printed '(custom path)'."""
+    home, proj = tmp_path / "home", tmp_path / "proj"
+    home.mkdir(), proj.mkdir()
+    skills = (proj if scope_root == "proj" else home) / host_dir
+    shutil.copytree(DIST_SKILLS, skills)
+    env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home)}
+    r = subprocess.run([sys.executable, str(skills / "stratosphere-setup" / "scripts" / "scaffold.py"), "--dry-run"],
+                       capture_output=True, text=True, cwd=proj, env=env)
+    line = next(l for l in r.stdout.splitlines() if l.startswith("Resolved plugin root"))
+    assert f"({label})" in line, r.stdout + r.stderr

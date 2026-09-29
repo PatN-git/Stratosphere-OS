@@ -140,3 +140,25 @@ def test_target_without_value_fails_fast(tmp_path, run, script):
     assert r.returncode != 0
     assert "--target" in r.stderr
     assert not (home / ".gemini").exists(), "nothing should be written on a usage error"
+
+
+@RUNNERS
+def test_unrecognised_argument_fails_without_touching_default_target(tmp_path, run, script):
+    """A mistyped flag must not silently fall back to the real ~/.gemini/config/skills."""
+    _bundle_skills()
+    home = tmp_path / "home"
+    r = run(script, "--bogus", home=home)
+    assert r.returncode != 0
+    assert "--bogus" in r.stderr
+    assert not (home / ".gemini").exists()
+
+
+@RUNNERS
+def test_target_equals_form_is_honoured(tmp_path, run, script):
+    """`--target=<dir>` is the common spelling; ignoring it would overwrite the default target."""
+    skills = _bundle_skills()
+    home, dest = tmp_path / "home", tmp_path / "skills"
+    r = run(script, f"--target={dest}", home=home)
+    assert r.returncode == 0, r.stderr
+    assert sorted(p.name for p in dest.iterdir()) == skills
+    assert not (home / ".gemini").exists()

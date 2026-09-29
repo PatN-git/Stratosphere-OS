@@ -18,7 +18,11 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             TARGET="$2"; shift 2 ;;
-        *) shift ;;
+        --target=?*)
+            TARGET="${1#--target=}"; shift ;;
+        *)
+            echo "Error: unrecognised argument '$1'. Usage: install-antigravity-bridge.sh [--target <skills-dir>]" >&2
+            exit 1 ;;
     esac
 done
 

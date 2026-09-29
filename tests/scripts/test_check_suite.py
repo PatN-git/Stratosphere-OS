@@ -389,3 +389,27 @@ def test_bundled_skill_names_match_the_dist_bundle():
     sys.path.insert(0, str(SCRIPT.parent))
     import check_suite
     assert sorted(check_suite.BUNDLED_SKILLS) == sorted(d.name for d in DIST_SKILLS.iterdir() if (d / "SKILL.md").is_file())
+
+
+def test_legacy_apply_unlinks_a_symlinked_runtime_skill_without_touching_its_target(proj, tmp_path):
+    """skills.sh installs without --copy are symlinks; shutil.rmtree refuses them, so --apply
+    used to crash midway. The link goes, the target it points at must survive."""
+    project, home = proj
+    runtime = home / ".gemini" / "antigravity" / "skills"
+    runtime.mkdir(parents=True)
+    target = tmp_path / "elsewhere" / "3d-implement-issue"
+    touch(target / "SKILL.md", "keep me")
+    link = runtime / "3d-implement-issue"
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError:
+        if os.name != "nt":
+            pytest.skip("symlinks not permitted on this host")
+        # Windows without symlink privilege: a junction is the same rmtree trap and needs none.
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], check=True, capture_output=True)
+    touch(runtime / "load-memory" / "SKILL.md")   # a real dir alongside the link
+    r = legacy(project, home, "--apply")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not (runtime / "3d-implement-issue").exists() and not (runtime / "3d-implement-issue").is_symlink()
+    assert not (runtime / "load-memory").exists()
+    assert (target / "SKILL.md").read_text(encoding="utf-8") == "keep me"

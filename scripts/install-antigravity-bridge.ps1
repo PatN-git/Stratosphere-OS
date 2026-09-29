@@ -17,6 +17,11 @@ for ($i = 0; $i -lt $args.Count; $i++) {
             exit 1
         }
         $target = $args[$i + 1]; $i++
+    } elseif ($args[$i] -like "--target=?*") {
+        $target = $args[$i].Substring("--target=".Length)
+    } else {
+        [Console]::Error.WriteLine("Error: unrecognised argument '$($args[$i])'. Usage: install-antigravity-bridge.ps1 [--target <skills-dir>]")
+        exit 1
     }
 }
 

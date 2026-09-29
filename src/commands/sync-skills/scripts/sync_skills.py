@@ -369,7 +369,7 @@ def main():
         if is_claude:
             skills_base = Path.home() / ".claude" / "skills"
         else:
-            skills_base = Path.home() / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills"
+            skills_base = Path.home() / ".gemini" / "config" / "skills"
     else:
         if is_claude:
             skills_base = project_root / ".claude" / "skills"

@@ -14,6 +14,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import sys
 from pathlib import Path
 
@@ -179,6 +180,17 @@ def find_legacy(project: Path, home: Path):
     return found
 
 
+def remove_tree(path: Path):
+    """Delete a legacy dir. skills.sh installs without --copy are symlinks (junctions on Windows):
+    rmtree refuses those, so drop the link itself and leave what it points at."""
+    if path.is_symlink():
+        path.unlink()
+    elif getattr(path.lstat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+        os.rmdir(path)
+    else:
+        shutil.rmtree(path)
+
+
 def cmd_legacy(args):
     found = find_legacy(Path(args.project).resolve(), Path(args.home).expanduser())
     if not found:
@@ -192,7 +204,7 @@ def cmd_legacy(args):
         return 1
     for path, files in found:
         if files is None:
-            shutil.rmtree(path)
+            remove_tree(path)
         else:
             for f in files:
                 f.unlink()
