@@ -1,8 +1,8 @@
 ---
 name: concept-map-operations
 description: CLI verbs and local fallbacks for executing concept map tracker operations.
-timestamp: 2026-07-28
-version: "1.0.1"
+timestamp: 2026-09-29
+version: "1.0.2"
 ---
 
 # Concept Map Tracker Operations
@@ -73,7 +73,7 @@ Identify the set of open, unblocked, unassigned decision tickets (the "frontier"
      gh issue view <ticket#> --json state,blockedBy,assignees
      ```
   3. Filter to find the frontier:
-     `state == "OPEN" && length(blockedBy containing open issues) == 0 && length(assignees) == 0`
+     `state == "OPEN" && length(blockedBy.nodes containing open issues) == 0 && length(assignees) == 0`
 - **BT-LOCAL Fallback:**
   Parse `docs/discovery/<slug>.map.md`'s ticket table, selecting rows where `status == open`, no listed `Blocked by` local IDs are open, and `assignee` is empty.
 

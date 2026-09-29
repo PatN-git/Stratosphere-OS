@@ -2303,9 +2303,10 @@ def test_script_legacy_project_fallback():
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
     
-    # Script A: Historical shipped content (from v4.0.0 validate_memory.py)
+    # Script A: Historical shipped content — a frozen v4.0.0 copy, NOT current src, so
+    # editing src/scripts/validate_memory.py can't silently break the known-hash lookup.
     script_a = script_dir / "validate_memory.py"
-    v4_content = (REPO_ROOT / "src" / "scripts" / "validate_memory.py").read_text(encoding="utf-8")
+    v4_content = (REPO_ROOT / "tests" / "fixtures" / "legacy" / "validate_memory.v4.0.0.py").read_text(encoding="utf-8")
     script_a.write_text(v4_content, encoding="utf-8")
     
     # Mock plugin has a newer version of validate_memory.py
