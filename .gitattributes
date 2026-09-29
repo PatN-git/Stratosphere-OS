@@ -11,3 +11,4 @@
 *.zip  binary
 *.woff  binary
 *.woff2 binary
+docs/okf-view.html linguist-generated=true -diff
