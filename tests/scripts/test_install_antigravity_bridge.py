@@ -4,7 +4,6 @@ Physical copy only (no symlinks), per-skill replace so stale files inside a ship
 skill are dropped while foreign skills survive, and an actionable error when the
 bundle has not been built. `--target` overrides the destination for testing.
 """
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -50,12 +49,13 @@ def _bundle_skills():
     return sorted(p.name for p in BUNDLE.iterdir() if p.is_dir())
 
 
-def _symlinks(root: Path):
-    return [p for p in root.rglob("*") if p.is_symlink() or (os.name == "nt" and _is_reparse(p))]
-
-
 def _is_reparse(p: Path) -> bool:
+    """Windows reparse point (symlink/junction); st_file_attributes is absent elsewhere."""
     return bool(getattr(p.lstat(), "st_file_attributes", 0) & 0x400)
+
+
+def _symlinks(root: Path):
+    return [p for p in root.rglob("*") if p.is_symlink() or _is_reparse(p)]
 
 
 @RUNNERS
