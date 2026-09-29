@@ -313,8 +313,27 @@ except ImportError:
 
 
 ASSETS = PLUGIN_ROOT / "assets" / "templates"
-# Every bundled artifact is a skill: <plugin>/skills/<name>/SKILL.md (+ references/).
-SKILLS_SRC = PLUGIN_ROOT / "skills"
+# Every bundled artifact is a skill. PLUGIN_ROOT is the stratosphere-setup skill directory,
+# so the bundled skills are its siblings: <skills dir>/<name>/SKILL.md (+ references/).
+SKILLS_SRC = PLUGIN_ROOT.parent
+SETUP_PAYLOAD = {"scripts", "assets", "versions.json", "external-skills.json"}
+
+
+def bundled_skill_names():
+    """Skill directories this bundle ships, per its manifest. The sibling directory may also
+    hold third-party skills (sync-skills installs there), which must never be re-placed."""
+    try:
+        artifacts = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8")).get("artifacts", {})
+    except Exception:
+        return set()
+    return {k.split("/")[1] for k in artifacts if k.startswith("skills/")}
+
+
+def bundled_file(rel_path: str) -> Path:
+    """Resolve a manifest key (`skills/...` or `assets/...`) to its file in this bundle."""
+    if rel_path.startswith("skills/"):
+        return SKILLS_SRC / rel_path[len("skills/"):]
+    return PLUGIN_ROOT / rel_path
 
 # Host read paths for project-level skills. One canonical body, placed per host.
 #   .agents/skills/        - Cursor, Codex, Antigravity, Devin, OpenClaw
@@ -820,7 +839,7 @@ def main():
             new_p = p.parent / (p.name + ".stratosphere-new")
             has_new_file = new_p.exists()
             
-            b_file = PLUGIN_ROOT / rel_path
+            b_file = bundled_file(rel_path)
             if not b_file.exists():
                 continue
             bundled_bytes = b_file.read_bytes()
@@ -1442,10 +1461,12 @@ def main():
 
     # 5. Bundled skills -> one canonical body, placed per host.
     #    A new host is an entry in SKILL_TARGETS, never a content fork (AGENTS.md §1).
-    if SKILLS_SRC.exists():
-        for src in sorted(SKILLS_SRC.rglob("*")):
+    for skill in sorted(bundled_skill_names()):
+        for src in sorted((SKILLS_SRC / skill).rglob("*")):
             if src.is_file():
                 rel = src.relative_to(SKILLS_SRC)
+                if src.is_relative_to(PLUGIN_ROOT) and rel.parts[1] in SETUP_PAYLOAD:
+                    continue  # scaffolder payload stays in the bundle; it is not a project skill file
                 for target in SKILL_TARGETS:
                     place(src, project.joinpath(*target.split("/")) / rel,
                           res, dry, update=update, tier="managed")

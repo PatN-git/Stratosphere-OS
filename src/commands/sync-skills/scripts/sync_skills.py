@@ -361,7 +361,9 @@ def main():
     project_root = Path(args.project_root).resolve()
     
     # Determine scope and skills base folder
-    is_claude = (here.parent / ".claude-plugin").exists() or (here.parent.parent / ".claude-plugin").exists()
+    # The bundle carries no host manifest; a Claude install is one that sits under a .claude/ dir
+    # (~/.claude/skills, <project>/.claude/skills, or the ~/.claude/plugins marketplace cache).
+    is_claude = ".claude" in here.parts
     
     if args.global_scope:
         if is_claude:

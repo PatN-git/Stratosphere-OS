@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-09-29
 ---
 
@@ -25,14 +25,11 @@ Your `.memory/` data (such as backlog tasks, active learning logs, custom glossa
 Before running the local scaffolding update, verify if the installed StratosphereOS plugin is up to date with the latest release on GitHub.
 
 1. **Locate Installed Plugin:**
-   Locate the installed plugin root directory `<plugin>` using the following search order:
-   - **Claude Code:**
-     - Marketplace install: `~/.claude/plugins/cache/*/stratosphere-os/*/` (glob — pick the newest version directory)
-     - Manual/global: `~/.claude/plugins/stratosphere-os/`
-     - Manual/local: `./.claude/plugins/stratosphere-os/`
-   - **Antigravity:**
-     - Global: `~/.gemini/config/plugins/stratosphere-os/`
-     - Local: `./.agents/plugins/stratosphere-os/`
+   Locate the installed `stratosphere-setup` skill directory `<plugin>` (it carries the scaffolder payload: `scripts/`, `assets/`, `versions.json`) using the first of these that contains `scripts/scaffold.py`:
+   - **Project-level:** `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`
+   - **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
+   - **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
+   - **Legacy v4 plugin installs:** `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
 2. **Read Installed Version:**
    Read and parse `<plugin>/versions.json`. Extract the `"plugin_version"` field. Let this be `<installed_version>`.

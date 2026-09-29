@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-09-22
+version: "1.1.1"
+timestamp: 2026-09-29
 ---
 
 # Instantiate StratosphereOS
@@ -32,7 +32,7 @@ Cold starts are expensive! A small, durable memory layer eliminates re-derivatio
 
 ## Template source (read before any file creation)
 
-All templates ship **bundled with the plugin** under its `assets/templates/` directory. Locate the installed plugin's `assets/templates/` and read the relevant template file before creating any project file — never reconstruct templates from memory:
+All templates ship **bundled inside this skill** under its `assets/templates/` directory (the scaffolder payload — `scripts/`, `assets/`, `versions.json` — rides in the `stratosphere-setup` skill folder so every install channel carries it). Locate the installed skill's `assets/templates/` (Checkpoint 0 finds it) and read the relevant template file before creating any project file — never reconstruct templates from memory:
 - `assets/templates/constitution/` → `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
@@ -82,19 +82,16 @@ Before any file operations:
 
 ## Checkpoint 0: Scaffold (deterministic — both paths)
 
-The plugin is **already installed** (from the install step) — do not re-stage or re-choose a scope here. Instead, **locate the installed plugin root** (`<plugin>`), then run its bundled scaffolder from the **project root** (cwd = your project). `scaffold.py` resolves its templates relative to its own location, so any valid install path works.
+The skills are **already installed** (skills.sh, marketplace, direct copy, or the Antigravity bridge) — do not re-stage or re-choose a scope here. Instead, **locate this skill's own directory** (`<plugin>` — the installed `stratosphere-setup` folder that carries the scaffolder payload), then run its bundled scaffolder from the **project root** (cwd = your project). `scaffold.py` resolves its templates and the sibling skills relative to its own location, so any valid install path works.
 
 Find `<plugin>` by checking these locations in order and using the first that contains `scripts/scaffold.py`:
 
-- **Claude Code:**
-  - Marketplace install: `~/.claude/plugins/cache/*/stratosphere-os/*/` (glob — pick the newest version directory)
-  - Manual/global: `~/.claude/plugins/stratosphere-os/`
-  - Manual/local: `./.claude/plugins/stratosphere-os/`
-- **Antigravity:**
-  - Global: `~/.gemini/config/plugins/stratosphere-os/`
-  - Local: `./.agents/plugins/stratosphere-os/`
+- **Project-level:** `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`
+- **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
+- **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
+- **Legacy v4 plugin installs** (pre-canonical-bundle): `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
-If none match (e.g. a custom path), search for `stratosphere-os/scripts/scaffold.py` under the plugin roots above. Then run it from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
+If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above. Then run it from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 
 ```bash
 # <plugin> = the path you found above
@@ -254,7 +251,7 @@ GitHub labels already exist and may differ from the registry.
 1. **Programmatic Check:** Before prompting or setting up, search for any existing Project V2 board for the owner by running `gh project list --owner <owner>`. If a board is detected, query its fields (`gh project view <number> --owner <owner> --json fields`) to verify if the `Status` single-select field is configured.
 2. **Field & Action Integration:** If a project board exists:
    - Verify or extend its `Status` single-select column with `needs_spec` and `blocked` options.
-   - Install the project sync workflow: copy `.github/workflows/sync-labels-to-project.yml` from asset templates (`dist/antigravity/assets/templates/github/sync-labels-to-project.yml` or global assets) into the project repository's `.github/workflows/sync-labels-to-project.yml`.
+   - Install the project sync workflow: copy `.github/workflows/sync-labels-to-project.yml` from asset templates (`<plugin>/assets/templates/github/sync-labels-to-project.yml`) into the project repository's `.github/workflows/sync-labels-to-project.yml`.
    - Set the required secrets and variables in the repository using the GitHub CLI:
      ```bash
      gh secret set PROJECT_TOKEN --body "<PAT_WITH_PROJECT_SCOPES>"
@@ -308,8 +305,8 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
 
 3. **Determine skill scope — derive it from how StratosphereOS itself is installed; only ask when ambiguous:**
    You already located the plugin root `<plugin>` in Checkpoint 0. Use it:
-   - If `<plugin>` is a **project-local** path (`./.claude/plugins/…` or `./.agents/plugins/…`), install skills **locally** too — do **not** ask. A project-scoped install implies project-scoped skills (and on Antigravity, global skills have no coherent home without a global plugin).
-   - If `<plugin>` is **global** (`~/.claude/…`, `~/.gemini/config/plugins/…`, or the Claude Code marketplace cache `~/.claude/plugins/cache/…`), the choice is genuine — use the native `AskUserQuestion` (Claude Code) / `ask_question` (Antigravity) tool to ask (do not ask in prose):
+   - If `<plugin>` is a **project-local** path (`./.claude/…` or `./.agents/…`), install skills **locally** too — do **not** ask. A project-scoped install implies project-scoped skills (and on Antigravity, global skills have no coherent home without a global install).
+   - If `<plugin>` is **global** (`~/.claude/…`, `~/.agents/…`, `~/.gemini/config/…`, or the Claude Code marketplace cache `~/.claude/plugins/cache/…`), the choice is genuine — use the native `AskUserQuestion` (Claude Code) / `ask_question` (Antigravity) tool to ask (do not ask in prose):
      `Install third-party skills globally (system-wide) or locally (just for this project)? [global/local]`
 
 4. **Sync the selected skill packs:**
@@ -321,7 +318,7 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    # Global install
    python <plugin>/scripts/sync_skills.py --category system database --global
    ```
-   (Where `<plugin>` is the installed plugin root located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/`.)
+   (Where `<plugin>` is the installed `stratosphere-setup` directory located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/`.)
 
 5. **Design note:** External design generators are OPTIONAL; native projects bootstrap the design system from human-supplied references (e.g. template sites) + native model composition, with `impeccable` as optional polish. Brand tokens live in `.memory/DESIGN.md`.
 6. **Re-runnable:** Re-invoke this skill/script with updated categories or new files anytime.
