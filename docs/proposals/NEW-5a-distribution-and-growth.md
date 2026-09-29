@@ -2,7 +2,9 @@
 name: 5a_distribution-and-growth
 description: Proposal for distribution and growth workflow detailing user acquisition and loops.
 type: proposal
-
+generated:
+  by: PatN-git
+  at: 2026-06-23
 ---
 
 # Workflow Proposal: 5a_distribution-and-growth

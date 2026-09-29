@@ -18,7 +18,7 @@ version: "4.1.0"
 |---|---|---|---|
 | F1a | 3 BT-108 docs carry retired `timestamp:` / out-of-vocab `status` | XS | yes |
 | F1b | Lint so it can't recur (`validate_memory.py`) | S | yes |
-| F1c | Memory templates carry `timestamp:` (build field) into in-scope `.memory/` docs | M | **no — needs a decision** |
+| F1c | Memory templates carry `timestamp:` (build field) into in-scope `.memory/` docs | M | **done (owner decision, see Addendum)** |
 | F2 | Two references describe `blockedBy` as list-like | XS | yes |
 | F3 | `--dry-run` help says "without writing" but stages files | XS | yes (wording) |
 | F4 | `stratosphere-update` has no step for modified scripts | XS | yes (prose) |
@@ -68,3 +68,15 @@ An independent review verified the plan against the code; all findings were conf
 - **F2.** One source of truth: the shape sentence lives in `github-issue-relations.md`; other files just say `.nodes`.
 - **Found while implementing:** `test_script_legacy_project_fallback` used current `src` validate_memory as "historical v4.0.0" and would break on any edit; it now uses a frozen `tests/fixtures/legacy/` copy.
 - **F3 / F1c unchanged:** wording only; F1c still deferred. Precedent for F1c: CleanTechHub converted its `.memory/`+`docs/` frontmatter with a one-shot `migrate_v3_to_v4.py` run (commit c54116f) rather than through templates, so only fresh installs and unmigrated v3 projects still meet `timestamp:` in memory templates.
+
+## Addendum — F1c executed (owner: "migrate from timestamp to generated for everything", keep 4.2.0)
+
+Decision: templates that mint in-scope documents ship the OKF v0.2 change-record; `timestamp:` stays only as a build field on out-of-scope `src/` files (okf-protocol §1).
+
+- **Templates:** the 7 memory templates (`DESIGN.md` is exempt — Google's spec, okf-protocol §5) replace `timestamp: D` with `generated: {by: stratosphere-setup, at: 2026-09-29}`; patch bump each (so release stays 4.2.0). `by` is the workflow that instantiates them.
+- **Manifest reader:** `_versioning.read_version` falls back to `generated.at` when `timestamp` is absent, so `versions.json` keeps a real date for these artifacts. `body_hash`/`scaffold` strip lists are deliberately **unchanged** (no hash-semantics change for existing lock baselines; preserved-tier files are updated by block, not whole-file hash).
+- **Lint:** the F1b exemption for `.memory/` is removed — nothing legitimate ships `timestamp:` any more.
+- **Viewer:** `okf_viewer/document.py` `REQUIRED_FRONTMATTER_KEYS` listed `timestamp` (dead code — `validate()` is never called, and its flat parser can't represent the nested mapping anyway); now `("type",)` per OKF.
+- **This repo:** 7 local (gitignored) `.memory/*.md` converted once by hand-run edit (no script); `docs/proposals/NEW-5a-distribution-and-growth.md` gained the `generated:` it never had. Validator: 0 warnings; `migrate_v3_to_v4.py` dry-run: "frontmatter already OKF v0.2".
+- **Tests:** new `test_memory_templates_frontmatter.py` (templates carry `generated`, not `timestamp`; reader fallback + legacy); lint test extended to `.memory/`; `test_dr016_backref_restored` no longer pins a template version string (it broke on any bump).
+- **Not touched:** other repos. CleanTechHub still has two legacy docs (`docs/audits/health-2026-09-23.md` `timestamp`, `docs/research/job-scraper-open-source.md` `status: completed`); the new lint reports them there.
