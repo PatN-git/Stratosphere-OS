@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-09-29
+version: "1.4.0"
+timestamp: 2026-09-30
 ---
 
 # StratosphereOS Update Flow
@@ -54,7 +54,12 @@ Before running the local scaffolding update, verify if the installed Stratospher
    - **Out of date:** If `<latest_version>` > `<installed_version>`: detect the installation type by checking `<plugin>`'s path and run the matching update path:
      
      - **Claude Marketplace Cache** (path starts with `~/.claude/plugins/cache/`):
-       Do **NOT** touch the cache folder directly and do **NOT** attempt any git operations on it. Print the following notification verbatim:
+       Do **NOT** touch the cache folder directly and do **NOT** attempt any git operations on it. The interactive `/plugin` dialog is unavailable in the Claude desktop app, so drive the non-interactive CLI instead:
+       1. **Find the CLI:** `claude` on PATH, else the newest `claude-code/<ver>/claude.exe` under the desktop app package (`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code\`).
+       2. **Confirm once** (single HITL gate): `Update the StratOS plugin to v<latest_version> via the Claude Code plugin CLI? [y/N]`. On decline → HALT.
+       3. Run `claude plugin marketplace update stratosphere-os`, then `claude plugin update stratosphere-os`. Non-zero exit → HALT with its output; never claim success.
+       4. Print `StratOS plugin update to v<latest_version> requested — restart Claude Code, then re-run /stratosphere-update.` and **HALT**. (The restart is required for the update to apply.)
+       If no CLI is found, print the following notification verbatim instead:
        `Newer StratOS v<latest_version> available (you have v<installed_version>). Update via:`
        `  /plugin marketplace update stratosphere-os`
        `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
@@ -63,8 +68,8 @@ Before running the local scaffolding update, verify if the installed Stratospher
      - **Retired v4 plugin install** (path is under a `plugins/stratosphere-os/` directory: `~/.claude/plugins/`, `./.claude/plugins/`, `~/.gemini/config/plugins/`, `./.agents/plugins/`):
        Print `This is a retired v4 plugin install. Install the canonical bundle (README Tracks A-D), then re-run /stratosphere-update.` and **HALT**. The old directory can be deleted once the new install works.
 
-     - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/` or `~/.agents/skills/`):
-       The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills` or `<project>/.agents/skills`).
+     - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` — Antigravity and Claude Code copies alike):
+       The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills`, `~/.claude/skills` or `<project>/.agents/skills`).
        1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS skills to v<latest_version>? This refreshes <skills-dir> from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
        2. **Refresh the skill bytes from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then run its bridge against the same directory: `bash <tmp>/scripts/install-antigravity-bridge.sh --target <skills-dir>` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1 --target <skills-dir>`). Delete `<tmp>` afterward. **Only ever clone the canonical URL above — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
        3. Re-read `<plugin>/versions.json` for the **actual** installed version and print `StratOS plugin updated to v<actual_version> — reload plugins and re-run /stratosphere-update.` verbatim, then **HALT**. (The re-run executes the *new* workflow + scaffold cleanly — avoids self-modifying the running workflow mid-flight.)
