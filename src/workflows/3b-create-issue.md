@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.4.0"
-timestamp: 2026-09-24
+version: "2.4.1"
+timestamp: 2026-09-30
 ---
 
 # Create issue
@@ -70,12 +70,13 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Sub-issue Linkage:** If derived from parent epic, link via the `addSubIssue` mutation per `references/github-issue-relations.md` (native `gh api graphql`; no `gh-sub-issue` extension).
    - **Audit epic (audit-sourced, when the proposal has `## Epic`):** mint it before any slice:
      ```bash
-     gh issue create --title "<Epic Title>" --label "tier:epic,type:maintenance,area:<x>,status:planned" --milestone "<vX.Y.0>" --body-file <tmp epic body>
+     gh issue create --title "<Epic Title>" --label "tier:epic,type:maintenance,area:<x>,status:planned" --milestone "<vX.Y.0>" --body-file .tmp/3b-epic-body.md
      ```
      Epic body per `references/audit-to-slices.md` §10. Audit slices then mint with the rules above, body = the proposal's `## Slice <N>` section verbatim: epic children link as sub-issues; `(standalone)` slices take no parent and no sub-issue link, and take the §8 milestone. Slice `type:bug` for Security/Correctness findings, else `type:maintenance`; scope label `scope:baseline`.
    - **Dependencies:** Wire blockers via the `addBlockedBy` mutation (same reference). Mirror "Blocked by: [IDs]" in the issue body and BACKLOG_MAP.
 5. **Backlog Sync:** Append entry (`BT-<padded>`) to `.memory/BACKLOG_MAP.md` adhering to `[[memory-protocol.md#8-backlog-id-minting-late-binding]]` Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. (first real entry: purge placeholders) — 9-column schema. Write bucketed priority, size, type, execution mode, tier, and scope label to the Labels column (never the status), the bare status token (`planned`/`needs_spec`) to the Status column, and ICE details to ICE. In the **`Parent`** column write the single `BT-<parentPadded>` (or `—` for a standalone slice); in the **`Blocked by`** column write the comma-list of bare sibling blocker IDs (or `—`). Set milestone to parent feature release `vX.Y.0` (default `v1.0.0`; Template A spikes are milestone-exempt → `—`). Audit epic row: `| BT-<n> | <title> | planned | area:<x>, tier:epic, type:maintenance | vX.Y.0 | — | — | ICE: - | <cited laws or —> |`; report paths go in issue bodies, never in `Ref`. sprint digit Z assigned by 3c.
 6. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of created BT-<padded>, audit epic included>` (all fields — these are freshly created rows) per `references/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded before hand-off.
+   - **Scratch cleanup (on gate pass only):** `rm -f .tmp/BT-<padded>-issue-drafts.md .tmp/3b-epic-body.md` — the drafts and epic body are ephemeral and already minted; keep them if the gate halted so healing can re-read them.
 7. **Hand-off:** Slices created. Run `/3c-sprint-planning` to sequence, or `/3d-implement-issue` for single ready slice.
 
 ---

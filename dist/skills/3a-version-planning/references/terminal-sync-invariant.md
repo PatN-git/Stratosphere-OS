@@ -1,7 +1,7 @@
 ---
 description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
-version: "1.0.0"
-timestamp: 2026-07-23
+version: "1.0.1"
+timestamp: 2026-09-30
 ---
 
 # Terminal Sync Invariant
@@ -18,7 +18,7 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 - Non-zero exit → **HALT. Do not close/ship.** The output lists each `[MIRROR-DRIFT BT-<n>: <field> map=<x> gh=<y>]`.
 - **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared **plus** the parent epic when it flipped it to `in review`.
 - `--fields` = only the mirror fields this phase wrote (default: all 5 — `status,milestone,labels,parent,blocked_by`). Scoping keeps a gate from false-blocking on drift in a field outside its concern (e.g. 3a passes `--fields milestone`).
-- `--pr-id` = the single id that must carry a PR-link comment (the shipped slice); co-passed ids are not required to carry it.
+- `--pr-id` = the single id that must carry a PR-link comment (the shipped slice); co-passed ids are not required to carry it. A PR-link comment is one whose body contains the full `/pull/` URL (`https://github.com/<owner>/<repo>/pull/<n>`); a bare `#<n>` does not count.
 
 ## Heal
 For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<padded>`** — find-or-replace the row/field. **Never append** (appending double-writes the row). Then **re-run `reconcile.py` until it exits 0.** Log each fix as `[HEALED <field> BT-<n>]`.
