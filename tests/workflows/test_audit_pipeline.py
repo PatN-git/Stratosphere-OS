@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-HOSTS = ["dist/antigravity", "dist/claude-code"]
+HOSTS = ["dist"]  # one canonical bundle: dist/skills
 CONTRACT = "audit-to-slices.md"
 PROPOSAL = ".tmp/refactor-proposal-<report-stem>.md"
 

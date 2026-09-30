@@ -30,7 +30,9 @@ ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
 # them warrants a bump even though it never appears in the artifact manifest.
 FRAMEWORK_PATHS = ["src/scripts", "src/github", "src/external-skills.json",
                    "src/commands/sync-skills/scripts", ":(exclude,glob)**/test/**"]
-MANIFEST = "dist/antigravity/versions.json"
+# The artifact manifest lives in the setup skill; release tags cut before BT-118 hold it at
+# the legacy per-host path. Newest first.
+MANIFESTS = ["dist/skills/stratosphere-setup/versions.json", "dist/antigravity/versions.json"]
 
 
 def sh(*args):
@@ -66,12 +68,13 @@ def main():
         print("bump-guard: no release tag found — skipping.")
         return 0
 
-    tag_manifest_raw = blob_at(tag, MANIFEST)
+    tag_manifest_raw = next((b for b in (blob_at(tag, m) for m in MANIFESTS) if b is not None), None)
     if tag_manifest_raw is None:
-        print(f"bump-guard: cannot read {MANIFEST} at {tag} (are tags fetched? use checkout fetch-depth: 0) — skipping.")
+        print(f"bump-guard: cannot read {MANIFESTS[0]} at {tag} (are tags fetched? use checkout fetch-depth: 0) — skipping.")
         return 0
 
-    cur_manifest = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8")).get("artifacts", {})
+    cur_path = next(ROOT / m for m in MANIFESTS if (ROOT / m).exists())
+    cur_manifest = json.loads(cur_path.read_text(encoding="utf-8")).get("artifacts", {})
     tag_manifest = json.loads(tag_manifest_raw).get("artifacts", {})
 
     reasons = []

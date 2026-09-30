@@ -3,11 +3,47 @@
   "owner": {
     "name": "PatN-git"
   },
+  "metadata": {
+    "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills."
+  },
   "plugins": [
     {
       "name": "stratosphere-os",
-      "source": "./dist/claude-code",
-      "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a first-party skill, on-demand external skills, and a one-command project installer."
+      "source": "./",
+      "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
+      "version": "4.2.1",
+      "author": {
+        "name": "Gravity Technologies"
+      },
+      "strict": false,
+      "skills": [
+        "./dist/skills/0a-start-session",
+        "./dist/skills/0b-stop-session",
+        "./dist/skills/0c-handoff",
+        "./dist/skills/0d-nightly-consolidation",
+        "./dist/skills/1a-research",
+        "./dist/skills/1b-concept-framing",
+        "./dist/skills/1c-concept-map",
+        "./dist/skills/2a-write-prd",
+        "./dist/skills/2b-interface-design",
+        "./dist/skills/2c-reconcile-specs",
+        "./dist/skills/3a-version-planning",
+        "./dist/skills/3b-create-issue",
+        "./dist/skills/3c-sprint-planning",
+        "./dist/skills/3d-implement-issue",
+        "./dist/skills/3x-jules-dispatch",
+        "./dist/skills/3z-afk-loop",
+        "./dist/skills/4a-verify-and-ship",
+        "./dist/skills/4b-audit-architecture-drift",
+        "./dist/skills/4c-codebase-health-audit",
+        "./dist/skills/concept-brainstorm",
+        "./dist/skills/load-memory",
+        "./dist/skills/micro-tdd",
+        "./dist/skills/plan-html",
+        "./dist/skills/stratosphere-setup",
+        "./dist/skills/stratosphere-update",
+        "./dist/skills/sync-skills"
+      ]
     }
   ]
 }

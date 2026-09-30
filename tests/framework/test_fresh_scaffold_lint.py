@@ -7,7 +7,7 @@ import sys
 
 from conftest import REPO_ROOT
 
-PLUGIN = REPO_ROOT / "dist" / "claude-code"
+PLUGIN = REPO_ROOT / "dist" / "skills" / "stratosphere-setup"
 
 
 def test_fresh_scaffold_is_lint_clean(tmp_path):

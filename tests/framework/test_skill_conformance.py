@@ -10,14 +10,13 @@ Coverage the v4.0.0 migration needs and nothing previously had:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-HOSTS = ["dist/antigravity", "dist/claude-code"]
+HOSTS = ["dist"]  # one canonical bundle: dist/skills
 NAME_RE = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 
 # a citation is either skill-relative or, at a subagent boundary, absolute
@@ -111,25 +110,11 @@ def test_execution_skills_are_not_manual_only(host):
     assert not wrong, "execution skills must stay model-invocable: " + ", ".join(wrong)
 
 
-def test_hosts_are_byte_identical():
-    """C3: one canonical skill set, no content fork."""
-    a, b = (REPO_ROOT / h / "skills" for h in HOSTS)
-    if not (a.is_dir() and b.is_dir()):
-        pytest.skip("skills not built for both hosts")
-    import shutil
-    if shutil.which("diff"):
-        res = subprocess.run(["diff", "-rq", str(a), str(b)], capture_output=True, text=True)
-        assert res.returncode == 0, f"hosts diverged:\n{res.stdout}"
-    else:
-        import filecmp
-        def _diff_dirs(d1, d2):
-            cmp = filecmp.dircmp(d1, d2)
-            diffs = list(cmp.left_only) + list(cmp.right_only) + list(cmp.diff_files)
-            for sub in cmp.common_dirs:
-                diffs.extend(_diff_dirs(d1 / sub, d2 / sub))
-            return diffs
-        diffs = _diff_dirs(a, b)
-        assert not diffs, f"hosts diverged: {diffs}"
+def test_no_second_host_tree_exists():
+    """C3: one canonical skill set, no content fork. Byte-identity used to be diffed between
+    dist/claude-code and dist/antigravity; BT-118 made the fork structurally impossible."""
+    assert not (REPO_ROOT / "dist" / "claude-code").exists()
+    assert not (REPO_ROOT / "dist" / "antigravity" / "skills").exists()
 
 
 def test_skills_dir_is_not_gitignored():

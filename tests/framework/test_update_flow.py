@@ -25,10 +25,10 @@ def run_cmd(args, cwd, expect_code=0):
     return res
 
 def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
-    mock_plugin = tmp_dir / ".agents" / "plugins" / "stratosphere-os"
-    if mock_plugin.exists():
-        shutil.rmtree(mock_plugin)
-    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    mock_plugin = tmp_dir / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    if mock_plugin.parent.exists():
+        shutil.rmtree(mock_plugin.parent)
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
     
     # Write mock versions.json listing BACKLOG_MAP.md
     versions_data = {
@@ -383,8 +383,8 @@ def test_invariant_trips():
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
     # Build local mock plugin root to satisfy locate_plugin_root search
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
-    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
     scaffold_script = mock_plugin / "scripts" / "scaffold.py"
     
     # Case A: Trip whole row count / IDs check
@@ -1618,13 +1618,13 @@ def test_managed_file_refresh():
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
-    if mock_plugin.exists():
-        shutil.rmtree(mock_plugin)
-    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    if mock_plugin.parent.exists():
+        shutil.rmtree(mock_plugin.parent)
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
     
-    (mock_plugin / "skills" / "3b-create-issue").mkdir(parents=True, exist_ok=True)
-    (mock_plugin / "skills" / "3b-create-issue" / "SKILL.md").write_text("New skill content", encoding="utf-8")
+    (mock_plugin.parent / "3b-create-issue").mkdir(parents=True, exist_ok=True)
+    (mock_plugin.parent / "3b-create-issue" / "SKILL.md").write_text("New skill content", encoding="utf-8")
     
     versions_data = {
         "artifacts": {
@@ -1666,10 +1666,10 @@ def test_constitution_needs_review():
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
-    if mock_plugin.exists():
-        shutil.rmtree(mock_plugin)
-    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    if mock_plugin.parent.exists():
+        shutil.rmtree(mock_plugin.parent)
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
     
     (mock_plugin / "assets" / "templates" / "constitution").mkdir(parents=True, exist_ok=True)
     (mock_plugin / "assets" / "templates" / "constitution" / "AGENTS.md").write_text("New constitution", encoding="utf-8")
@@ -1830,8 +1830,8 @@ def setup_orphan_test_env(test_name):
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
-    shutil.copytree(REPO_ROOT / "dist" / "antigravity", mock_plugin)
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
     
     # Pre-place matching constitution templates via binary copy to ensure exact byte match
     ctpl = mock_plugin / "assets" / "templates" / "constitution"
@@ -1842,8 +1842,8 @@ def setup_orphan_test_env(test_name):
                 (tmp / name).write_bytes(src_f.read_bytes())
                 
     # Mock bundle contains a new skill (so legacy skills/rules are orphans)
-    (mock_plugin / "skills" / "new-bundled-skill").mkdir(parents=True, exist_ok=True)
-    (mock_plugin / "skills" / "new-bundled-skill" / "SKILL.md").write_bytes(b"---\nname: new-bundled-skill\n---\nNew\n")
+    (mock_plugin.parent / "new-bundled-skill").mkdir(parents=True, exist_ok=True)
+    (mock_plugin.parent / "new-bundled-skill" / "SKILL.md").write_bytes(b"---\nname: new-bundled-skill\n---\nNew\n")
 
     versions_data = {
         "plugin_version": "4.0.0",
@@ -2152,7 +2152,7 @@ def test_orphan_prune_dry_run():
 def test_script_pristine_refresh():
     print("--- Test: Script Pristine Refresh ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_pristine_refresh")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2185,7 +2185,7 @@ def test_script_pristine_refresh():
 def test_script_locally_edited_preserved():
     print("--- Test: Script Locally Edited Preserved ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_edited_preserved")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "design"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2224,7 +2224,7 @@ def test_script_locally_edited_preserved():
 def test_script_nested_preservation():
     print("--- Test: Script Nested Preservation ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_nested_preservation")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "okf_viewer" / "templates"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2258,7 +2258,7 @@ def test_script_nested_preservation():
 def test_script_resolve_workflow():
     print("--- Test: Script Resolve Workflow ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_resolve_workflow")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "design"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2299,7 +2299,7 @@ def test_script_resolve_workflow():
 def test_script_legacy_project_fallback():
     print("--- Test: Script Legacy Project Fallback ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_legacy_fallback")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2342,7 +2342,7 @@ def test_script_legacy_project_fallback():
 def test_script_crlf_normalization():
     print("--- Test: Script CRLF Normalization ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_crlf_norm")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2377,7 +2377,7 @@ def test_script_crlf_normalization():
 def test_script_dry_run():
     print("--- Test: Script Dry Run ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_dry_run")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2470,7 +2470,7 @@ def test_orphan_prune_does_not_touch_scripts():
 def test_script_locally_edited_upstream_unchanged_silent():
     print("--- Test: Script Locally Edited Upstream Unchanged Silent ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_up_unchanged")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "design"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2520,7 +2520,7 @@ def test_script_locally_edited_upstream_unchanged_silent():
 def test_script_staging_deferred_on_verification_failure():
     print("--- Test: Script Staging Deferred On Verification Failure ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_staging_deferred")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "design"
     script_dir.mkdir(parents=True, exist_ok=True)
@@ -2602,7 +2602,7 @@ def test_script_staging_deferred_on_verification_failure():
 def test_script_resolution_hint():
     print("--- Test: Script Resolution Hint ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_hint")
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     
     script_dir = tmp / ".agents" / "scripts" / "design"
     script_dir.mkdir(parents=True, exist_ok=True)
