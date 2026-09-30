@@ -53,3 +53,24 @@ def test_3b_mints_every_issue_from_one_tmp_body_file():
     assert re.search(r"\*\*Generate \(Atomic Minting\):\*\* Execute `gh issue create --body-file \.tmp/3b-issue-body\.md`", text), \
         "3b step 4 must mint slices and epics via --body-file .tmp/3b-issue-body.md"
     assert "3b-epic-body" not in text
+
+
+def _4a():
+    return (WF / "4a-verify-and-ship.md").read_text(encoding="utf-8")
+
+
+def test_4a_runs_release_bump_before_push_when_repo_has_one():
+    text = _4a()
+    assert "scripts/release.py" in text, "4a never mentions the release.py bump the CI bump-guard requires"
+    assert text.index("scripts/release.py") < text.index("Push the branch"), "release bump must precede the push"
+
+
+def test_4a_closing_lines_are_bare_and_read_back():
+    text = _4a()
+    assert "Closes #<n>." in text, "closing lines must be the bare `Closes #<n>.` form that GitHub links"
+    assert "closingIssuesReferences" in text, "4a must read back the PR's closing links after create/edit"
+
+
+def test_4a_closing_readback_has_a_bounded_fallback():
+    text = _4a()
+    assert "[NO-AUTOCLOSE" in text and "once" in text, "read-back needs a single retry then an explicit fallback"
