@@ -69,3 +69,8 @@ def test_4a_closing_lines_are_bare_and_read_back():
     text = _4a()
     assert "Closes #<n>." in text, "closing lines must be the bare `Closes #<n>.` form that GitHub links"
     assert "closingIssuesReferences" in text, "4a must read back the PR's closing links after create/edit"
+
+
+def test_4a_closing_readback_has_a_bounded_fallback():
+    text = _4a()
+    assert "[NO-AUTOCLOSE" in text and "once" in text, "read-back needs a single retry then an explicit fallback"
