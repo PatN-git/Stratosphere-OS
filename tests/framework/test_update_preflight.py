@@ -65,6 +65,18 @@ def test_preflight_instructions():
         ]
     }
 
+    # BT-133: Claude Code copied-skills installs self-update; marketplace branch drives the CLI.
+    def branch(start, end):
+        i = content.index(start)
+        return content[i:content.index(end, i)]
+
+    copied = branch("**Antigravity / copied-skills Install**", "**In-place Git Checkout**")
+    for path in ("`~/.claude/skills/`", "`./.claude/skills/`"):
+        assert path in copied, f"copied-skills branch does not cover {path}"
+    market = branch("**Claude Marketplace Cache**", "**Retired v4 plugin install**")
+    for needle in ("claude plugin marketplace update stratosphere-os", "claude plugin update stratosphere-os", "claude-code"):
+        assert needle in market, f"marketplace branch missing {needle!r}"
+
     # The bridge (BT-120) records no provenance; a self-update must not depend on it.
     assert ".install-source.json" not in content, "stale .install-source.json provenance reference"
 
