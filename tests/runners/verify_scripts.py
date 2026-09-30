@@ -1,3 +1,4 @@
+import atexit
 import os
 import sys
 import subprocess
@@ -364,6 +365,7 @@ def test_orphan_guard():
         shutil.rmtree(tmp_with_board, ignore_errors=True)
 
 if __name__ == "__main__":
+    atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in (Path(".tmp/dummy_memory"), Path(".tmp/dummy_memory_backlog"))])
     success = True
     if not test_validate_memory():
         success = False
