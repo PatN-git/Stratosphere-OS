@@ -46,3 +46,10 @@ def test_3b_issue_drafts_scratch_is_removed():
     text = (WF / "3b-create-issue.md").read_text(encoding="utf-8")
     assert re.search(r"rm -f [^\n]*\.tmp/BT-<padded>-issue-drafts\.md", text), \
         "3b never deletes .tmp/BT-<padded>-issue-drafts.md after minting"
+
+
+def test_3b_mints_every_issue_from_one_tmp_body_file():
+    text = (WF / "3b-create-issue.md").read_text(encoding="utf-8")
+    assert re.search(r"\*\*Generate \(Atomic Minting\):\*\* Execute `gh issue create --body-file \.tmp/3b-issue-body\.md`", text), \
+        "3b step 4 must mint slices and epics via --body-file .tmp/3b-issue-body.md"
+    assert "3b-epic-body" not in text
