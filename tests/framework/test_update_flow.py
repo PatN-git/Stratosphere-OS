@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """E2E/Integration tests for the StratosphereOS in-place update pipeline."""
+import atexit
 import json
 import re
 import os
@@ -8,12 +9,31 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src" / "scripts"))
 import _versioning
 import scaffold
 
 MIGRATION_SCRIPT = REPO_ROOT / "scripts" / "migrations" / "inject_markers.py"
+
+def _tmp_test_dirs():
+    return set((REPO_ROOT / ".tmp").glob("test_*"))
+
+
+def _remove_new_test_dirs(before):
+    """Remove the .tmp/test_* sandboxes created since `before`; many tests never clean up."""
+    for d in _tmp_test_dirs() - before:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+@pytest.fixture(autouse=True)
+def _clean_tmp_test_dirs():
+    before = _tmp_test_dirs()
+    yield
+    _remove_new_test_dirs(before)
+
 
 def run_cmd(args, cwd, expect_code=0):
     res = subprocess.run(args, cwd=str(cwd), capture_output=True, text=True)
@@ -2630,6 +2650,8 @@ def test_script_resolution_hint():
     print("Script resolution hint test passed!")
 
 if __name__ == "__main__":
+    # verify_scripts.py runs this file standalone, where the pytest fixture does not apply.
+    atexit.register(_remove_new_test_dirs, _tmp_test_dirs())
     test_pristine_update()
     test_conflict_update()
     test_invariant_trips()
