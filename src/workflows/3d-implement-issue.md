@@ -47,6 +47,6 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no write
 2. Produce an **exhaustive coverage map**: for every AC, name the passing test that covers it or mark it `[UNCOVERED]` — list each by name, never summarize as "looks complete."
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced.
-5. Done also requires `git status --porcelain` to show no path outside `.memory/`, `docs/`, `.tmp/` (all work committed per Phase 2.3); `/4a-verify-and-ship` halts `[UNCOMMITTED]` otherwise.
+5. Done also requires a clean tree (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.

@@ -3,6 +3,8 @@
 
 1. 4a step 6's slice comment must satisfy reconcile.py's PR-link predicate (no second comment).
 2. Workflow `--body-file` scratch files live under `.tmp/` and are removed once consumed.
+
+BT-137 guards (bottom of file): 4a clean-tree guard, `stratos-pr` body, risk label, draft rule.
 """
 import importlib.util
 import re
@@ -146,7 +148,9 @@ def _risk_rules():
 
 def test_merge_risk_paths_tag_sql_and_ci():
     rules = _risk_rules()
-    tags = lambda p: {t for rx, t in rules if rx.match(p)}
+    def tags(path):
+        return {t for rx, t in rules if rx.match(path)}
+
     assert tags("docs/database/x.sql") == {"db-migration"}
     assert tags("db/migrations/001_init.py") == {"db-migration"}
     assert tags(".github/workflows/ci.yml") == {"ci"}
@@ -155,9 +159,9 @@ def test_merge_risk_paths_tag_sql_and_ci():
 
 def test_4a_slice_id_rebuild_regex_ignores_unscoped_commits():
     text = _4a()
-    pattern = r"^[a-z]+\(BT-(\d+)\):"
-    assert f"`{pattern}`" in text, "4a must state the BT-scope regex used to rebuild slices from git log"
-    rx = re.compile(pattern)
+    m = re.search(r"subject matches `([^`]+)`", text)
+    assert m, "4a must state the BT-scope regex used to rebuild slices from git log"
+    rx = re.compile(m.group(1))
     subjects = ["feat(BT-12): a", "fix(BT-12): b", "feat(BT-13): c", "release: prepare v1.0.0", "fix(ci): x", "chore: y"]
     assert sorted({rx.match(s).group(1) for s in subjects if rx.match(s)}) == ["12", "13"]
 

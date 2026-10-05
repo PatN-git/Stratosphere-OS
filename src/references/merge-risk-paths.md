@@ -17,6 +17,3 @@ A change that is hard to undo after merge (a database migration, a CI pipeline) 
 
 ## Project extensions
 A project adds its own rules (e.g. scripts that write to live systems) as `<glob> → <tag>` lines under a `## One-way paths` heading in `.memory/ARCHITECTURE.md`. Read that section if present; the rules apply exactly as the table above. Nothing here is judged by the agent: if no glob matches, no tag fires.
-
-## Consequence
-Any tag other than `none` → label the PR `risk:one-way` (4a Phase 5 step 5) and name it in the ship output line.
