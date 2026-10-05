@@ -28,25 +28,26 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 
 ## Phase 1: Execution via Micro-TDD Skill
-Run `micro-tdd` for RED→GREEN→REFACTOR (Fast-Track A/B, stuck protocol, anti-regression). For HITL slices, show RED/GREEN test results (override silent mode; Fast-Track A may run silent).
+Run `micro-tdd` for RED→GREEN→REFACTOR (Fast-Track A/B, stuck protocol, anti-regression). For HITL slices, show RED/GREEN test results (override silent mode; Fast-Track A may run silent). 3d owns the full-suite runs; micro-tdd runs related tests per cycle.
 1. **CLI/Subprocess:** assert on stdout/stderr, not just exit code.
 2. **Requirements:** link test to requirement bare IDs from BACKLOG_MAP.md/issue (not STATUS.md) (e.g., `BT-101`).
 3. **Fallbacks:** prefer native libraries (e.g. sqlite3, argparse) over third-party in mock/simple utility environments.
 
 ## Phase 2: Refactoring & Architecture Checks
 Adhere to:
-1. **Simplify:** run the `code-simplifier` skill on the slice diff under green tests — simplify/refine without changing behavior; re-run the suite after and keep it green.
+1. **Simplify:** run the `code-simplifier` skill on the slice diff under green tests — simplify/refine without changing behavior; re-run related tests after and keep them green.
 2. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
-3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`.
+3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; run related tests before each incremental commit — the full suite runs once, at the Phase 3 gate.
 4. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
 5. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
 
 ## Phase 3: Slice Completion Gate
-Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no writes).
+Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no tracked writes; `.tmp/` scratch only).
 1. Read slice AC.
 2. Produce an **exhaustive coverage map**: for every AC, name the passing test that covers it or mark it `[UNCOVERED]` — list each by name, never summarize as "looks complete."
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced.
 5. Done also requires a clean tree (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
+6. Run the full suite once at HEAD (the only full run in 3d). Write `{"head_sha", "cmd", "observed"}` (the observed summary line) to `.tmp/3d-suite-BT-<padded>.json`.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.
