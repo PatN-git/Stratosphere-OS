@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 try:
+    from okf_viewer.document import OKFDocument
     from okf_viewer.generator import generate_visualization
 except ImportError as e:
     print(f"Error: Could not import okf_viewer. Ensure okf_viewer folder is present. {e}")
@@ -96,10 +97,52 @@ def rewrite_content(content: str, source_rel_path: str, id_map: dict[str, str]) 
     return ID_PATTERN.sub(repl, content)
 
 
+INDEXED_DIRS = (".memory", "docs/prds", "docs/discovery", "docs/research", "docs/design",
+                "docs/knowledge", "docs/nightly")
+
+
+def _title_description(path: Path) -> tuple[str, str]:
+    """Frontmatter title/description of a concept file; title falls back to the file stem."""
+    try:
+        fm = OKFDocument.parse(path.read_text(encoding="utf-8")).frontmatter
+    except Exception:
+        fm = {}
+    return str(fm.get("title") or path.stem), " ".join(str(fm.get("description") or "").split())
+
+
+def rebuild_indices(project_root: Path) -> int:
+    """Rewrite index.md in .memory/ and each docs/ subdir as `* [Title](/path.md) - description`
+    lines from frontmatter. docs/knowledge/ lists one entry per source-bundle subdirectory.
+    Returns the number of indices written; directories that do not exist are skipped."""
+    count = 0
+    for rel in INDEXED_DIRS:
+        directory = project_root / rel
+        if not directory.is_dir():
+            continue
+        lines = []
+        if rel == "docs/knowledge":
+            for bundle in sorted(p for p in directory.iterdir() if p.is_dir()):
+                lines.append(f"* [{bundle.name}](/{rel}/{bundle.name}/index.md)")
+        else:
+            for md in sorted(directory.glob("*.md")):
+                if md.name == "index.md":
+                    continue
+                title, description = _title_description(md)
+                lines.append(f"* [{title}](/{rel}/{md.name})" + (f" - {description}" if description else ""))
+        content = f"# {directory.name}\n"
+        if lines:
+            content += "\n" + "\n".join(lines) + "\n"
+        (directory / "index.md").write_text(content, encoding="utf-8")
+        count += 1
+    return count
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate OKF visualization for StratosphereOS.")
     parser.add_argument("--project-root", default=".", help="Path to the project root directory")
     parser.add_argument("--out", default="docs/okf-view.html", help="Path to write the visualization HTML")
+    parser.add_argument("--rebuild-indices", action="store_true",
+                        help="Rebuild directory index.md files from frontmatter and exit (no visualization)")
     parser.add_argument("--no-rewrite", action="store_true", help="Disable [[ID]] internal reference rewriting")
     args = parser.parse_args()
 
@@ -110,6 +153,10 @@ def main():
         print(f"Error: Directory does not look like a StratosphereOS project: {project_root}")
         print("Could not find '.memory' or 'docs' directory.")
         sys.exit(1)
+
+    if args.rebuild_indices:
+        print(f"{rebuild_indices(project_root)} indices rebuilt")
+        return
 
     # Gather files to copy/visualize
     items_to_copy = []

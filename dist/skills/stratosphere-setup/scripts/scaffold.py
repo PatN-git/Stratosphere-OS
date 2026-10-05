@@ -417,6 +417,7 @@ KNOWN_SHIPPED_SCRIPT_HASHES = {
     ".agents/scripts/reconcile.py": {
         "3452a5d0bef592f6002bcf5b9936cb66b661533b5e4ea0657002102c40cf1ec9",
         "c2ff7cb943c8a04fce1a41555d0a3b4c80852441ffa619ed20d4a5bca49c1224",
+        "8507cbfb11caa51554ce45cac63c7c26e76f0cc68c5c5cee186f8ebf92670d0e",
     },
     ".agents/scripts/validate_memory.py": {
         "2f18a37ab53d79ded5f1b5888c4ad977709e8103c2b464c9bcebd1accae3a568",

@@ -1,13 +1,13 @@
 ---
 name: 0d-nightly-consolidation
-description: "Reconcile sessions, crystallize memory, rebuild indices, and check roadmap health. Invoke only on explicit user request — never autonomously."
+description: "Reconcile sessions, crystallize memory, rebuild indices, and check backlog drift. Invoke only on explicit user request — never autonomously."
 disable-model-invocation: true
 triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.5"
-timestamp: 2026-09-29
+version: "1.2.0"
+timestamp: 2026-10-05
 ---
 
 # Nightly Consolidation
@@ -22,11 +22,14 @@ Do not modify files without user approval.
 2. Inspect the delta across all branches with fresh eyes (do not read prior nightly proposal text here to prevent anchoring on old issues):
    - Run `git log --all --since="<delta start>" --stat --no-merges` to identify tasks, branches, and files touched across the project.
    - Review session transcripts or telemetry since `delta start` for tool failures, syntax errors (e.g. shell quoting), and redundant reads.
-3. Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes specific to this delta.
+   - **Sampling:** if the delta has more than ~15 sessions, review the 5 with the most failed tool calls plus 3 random others, and state the sample in the report.
+3. Identify inefficiencies, redundant tool calls, and recurring main/sub-agent mistakes specific to this delta. Route each finding per `references/environment-fix-ladder.md` (escalation and hypothesis rules apply).
+4. Report findings only: no session roster and no positive observations.
 
 ## Phase 2: Distill Plan
+- Before proposing, read only the `## Decisions` sections of the retained `docs/nightly/` reports. An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
-- Update `docs/nightly/.last-run.json` with `last_run` ISO-8601 timestamp and `sessions_reviewed` list.
+- Update `docs/nightly/.last-run.json` to `{"last_run": "<ISO 8601>"}` and nothing else.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
 ## Phase 3: Crystallize Memory
@@ -36,41 +39,19 @@ Do not modify files without user approval.
     |:---|:---|
     | Duplicate or overlapping entries | Merge? |
     | `[PATTERN]` cited ≥3 times | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (Not for `GLOSSARY.md`) |
-    | `[ASSUMED]` older than 5 sessions, unvalidated | Delete? |
+    | `[ASSUMED]` older than 7 days by its inline `[YYYY-MM-DD]`, unvalidated | Supersede with a `[REMOVED]` tombstone? |
+- A removal is a tombstone under `## Superseded`, never a deletion (memory-protocol §3, §5): deleting leaves an ID gap.
 - **Avoid-list reconciliation:** Migrate or retire `Avoid:` synonyms for superseded terms.
 - Adjust plan if proposals surface. Skip silently if nothing qualifies.
 - Do not scan codebase for `Avoid:` terms.
 
 ## Phase 3.5: Rebuild Directory Indices
-- Rebuild `index.md` for `.memory/` and `docs/` subdirectories (`prds/`, `discovery/`, `research/`, `design/`, `knowledge/`, `nightly/`):
-  - Read frontmatter `title` and `description` from each `.md` file.
-  - Rebuild `index.md` as `* [Title](/path.md) - description` grouped under `# [Directory Name]`.
-  - **Special-case `docs/knowledge/`**: List one entry per source bundle (`docs/knowledge/<source>/` subdirectory).
+Run `python .agents/scripts/okf_view.py --rebuild-indices` and report its `N indices rebuilt` line. Do not rebuild by hand.
 
-## Phase 3.6: Planning-State Advisor
-Recommend the next planning skill from backlog state. **Read-only. Emit the recommendation as text only — never invoke the recommended skill, and never invoke any lifecycle skill from this phase.** The `/<name>` forms below are output for a human to read and type. On Antigravity nothing prevents a model from acting on them, so this guard is the only protection: recommend, then stop.
-
-1. **Base state:** parse `.memory/BACKLOG_MAP.md` rows where `status != done`.
-2. **Ground-truth against GitHub:** run `gh auth status`.
-   - **Connected** → GitHub is authoritative; enrich each base-state row (status != done):
-     - milestones + open issues + epics: `gh issue list --state open --json number,milestone,labels,subIssues` (fetching epic sub-issues in bulk rather than looping individual views); open milestones via `gh api repos/{owner}/{repo}/milestones`.
-     - epic children: parse `subIssues.nodes` from the batched issue list query — count child slices per `tier:epic`.
-     - a base-state row whose mapped issue is **absent from the open list** is *closed* on GitHub, not milestone-cleared — reconcile it as done for the advisory and do **not** emit `[DRIFT]`.
-     - only when the mapped issue is **present (open)** and any of its **5 mirror fields** — status, milestone, `Labels`, `Parent`, `Blocked by` — disagrees with GitHub → emit `[DRIFT] BT-<padded>: <field> map=<x> github=<y>` and trust GitHub for the advisory (compare bare `status` token to the `Status` column, non-status labels to `Labels`, sub-issue parent to `Parent`, blocked-by to `Blocked by`).
-     - **stale-blocker check:** if a row's `Blocked by` names a blocker already at `status:in review` or `status:done` → emit `[DRIFT] BT-<padded>: stale blocker <id> should be cleared` (4a/merge should have removed it).
-   - **Absent/unauth** → compute from `.memory/BACKLOG_MAP.md` only; tag the outlook `[local-only — GitHub not checked]`.
-3. **Recommendation (evaluate in this order — finish in-flight work before starting new planning; first match wins):**
-   | Signal (`status != done`) | Recommend |
-   |---|---|
-   | an open sprint `vX.Y.Z` (Z≥1) with unfinished slices | `/3d-implement-issue` (or `/3z-afk-loop` for `mode:AFK` slices) |
-   | ≥1 ready `tier:slice` (`status:planned`, milestone `vX.Y.0`, no sprint digit Z) and no open sprint `vX.Y.Z` (Z≥1) | `/3c-sprint-planning` |
-   | a current-release `tier:epic` whose slicing is **incomplete** — zero child slices, **or** fewer child slices than its PRD §6 `[BASELINE]`/`[DIFFERENTIATOR]` stories (lazy slicing means a part-sliced epic still needs more) — a `type:maintenance` audit epic (no PRD) is fully sliced at mint by `/3b`; apply only the zero-child test | `/3b-create-issue` — slice `BT-<padded>` |
-   | ≥2 `tier:epic` unassigned to a release (milestone empty/`-`/`—`, or ID absent from `docs/ROADMAP.md`) | `/3a-version-planning` |
-   | `docs/ROADMAP.md` absent and ≥1 `tier:epic` exists | `/3a-version-planning` — initialize roadmap |
-   | none of the above | *"Backlog healthy — no planning action pending."* |
-4. **Output** the top recommended skill (first match), the signal that fired it **naming every `BT-<padded>` involved**, then a one-line **"also pending:"** list of any lower-priority signals that also match (so a running sprint never hides that epics need roadmapping), plus any `[DRIFT]` lines and the `[local-only]` tag. Never summarize as "some features".
-
-_Completion criterion:_ one top recommendation (or the healthy no-op) **plus** the also-pending list emitted; every cited signal names its `BT-<padded>` IDs; drift and local-only state surfaced. This phase invokes no lifecycle skill. Emitting a `/<name>` string is not invocation.
+## Phase 3.6: Backlog Drift Check
+Run `python .agents/scripts/reconcile.py --all-open` (no `--require-gh`: this phase is advisory, and without `gh` the script prints `[local-only — GitHub not checked]` itself). Print its findings verbatim. This phase invokes no lifecycle skill.
 
 ## Phase 4: Await Direction
 Halt. Ask user: *"What aspects of the plan do you want to implement?"*
+
+After the user answers, append `## Decisions` to that night's report: one line per proposed item, `accepted` or `declined`. Phase 2 of later nights reads it.
