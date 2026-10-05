@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.2.0"
-timestamp: 2026-09-28
+version: "1.3.0"
+timestamp: 2026-10-05
 ---
 
 # AFK END-TO-END LOOP
@@ -67,7 +67,7 @@ _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VER
 ### Step 3A: Ship Pass (Orchestrator; auto-PR mode only)
 For each feature whose queued slices are all `VERIFIED`:
 1. **Branch checkout:** Run `git checkout <feature_branch>`.
-2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue. The `ship-only` gate is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass. Design-drift or branch-safety failure → leave local + flag `[BLOCKED-ship]`. Log each outcome to `.tmp/3z-loop.work.md`.
+2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue. The `ship-only` gate is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass. Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them. Design-drift or branch-safety failure → leave local + flag `[BLOCKED-ship]`. Log each outcome to `.tmp/3z-loop.work.md`.
 _Done when:_ every all-passed feature has all its slices `in review` on an open/updated PR (or flagged), and no merge.
 - Features with `status:blocked` slices stay local.
 

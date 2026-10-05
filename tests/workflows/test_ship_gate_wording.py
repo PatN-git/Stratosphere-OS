@@ -74,3 +74,96 @@ def test_4a_closing_lines_are_bare_and_read_back():
 def test_4a_closing_readback_has_a_bounded_fallback():
     text = _4a()
     assert "[NO-AUTOCLOSE" in text and "once" in text, "read-back needs a single retry then an explicit fallback"
+
+
+# --- BT-137: clean-tree guard, stratos-pr body, risk label, draft gate -------------------------
+
+def _3d():
+    return (WF / "3d-implement-issue.md").read_text(encoding="utf-8")
+
+
+def _3z():
+    return (WF / "3z-afk-loop.md").read_text(encoding="utf-8")
+
+
+def test_4a_clean_tree_guard_precedes_context_isolation():
+    text = _4a()
+    for token in ("git status --porcelain", "[UNCOMMITTED]"):
+        assert token in text, f"4a lacks the clean-tree guard token {token!r}"
+        assert text.index(token) < text.index("Context Isolation Rule"), f"{token!r} must precede the audit phase"
+
+
+def test_4a_named_gate_ship_only_runs_the_guard():
+    text = _4a()
+    line = next(l for l in text.splitlines() if l.startswith("> **Named gate — `ship-only`"))
+    assert "clean-tree guard" in line, "ship-only skips Phase 1, so its named-gate line must say the guard runs first"
+
+
+def test_4a_no_unaudited_safety_net_commit():
+    text = _4a()
+    assert "Safety net for uncommitted slice files" not in text, "4a must not commit unaudited slice files"
+    assert text.index("scripts/release.py") < text.index("Push the branch")
+
+
+def test_3d_phase3_requires_clean_tree():
+    text = _3d()
+    phase3 = text[text.index("## Phase 3"):]
+    assert "git status --porcelain" in phase3, "3d Phase 3 must require a clean tree for done"
+
+
+def test_4a_pr_body_is_a_stratos_pr_block():
+    text = _4a()
+    for token in ("```stratos-pr", "risk:one-way", "gh label create", "references/merge-risk-paths.md",
+                  "git log --no-merges", "PENDING", "[DRAFT-RULE]"):
+        assert token in text, f"4a missing {token!r}"
+    assert "noting the re-verification" not in text, "re-verification comment has no consumer"
+    assert "AC↔test coverage table (if audited)" not in text, "AC table no longer belongs in the PR body"
+
+
+def test_4a_step8_adds_parent_closing_link():
+    text = _4a()
+    step8 = text[text.index("8. **Epic Check:**"):text.index("9. **Terminal sync gate:**")]
+    assert "Closes #<parent>." in step8 and "closingIssuesReferences" in step8
+
+
+def test_3z_ship_only_dispatch_passes_verdict_and_rounds():
+    text = _3z()
+    step3a = text[text.index("### Step 3A"):]
+    for token in ("verdict", "audit_rounds", "needs_manual_qa", "post_merge"):
+        assert token in step3a, f"3z Step 3A ship-only dispatch must pass {token!r}"
+
+
+def _risk_rules():
+    """(glob regex, tag) pairs parsed from the `<glob> → <tag>` table in the reference."""
+    text = (ROOT / "src" / "references" / "merge-risk-paths.md").read_text(encoding="utf-8")
+    rules = []
+    for row in re.findall(r"^\|\s*(`[^|]+`)\s*\|\s*`([a-z-]+)`\s*\|", text, re.M):
+        for glob in re.findall(r"`([^`]+)`", row[0]):
+            rx = re.escape(glob).replace(r"\*\*/", "(?:.*/)?").replace(r"\*\*", ".*").replace(r"\*", "[^/]*")
+            rules.append((re.compile(rf"^{rx}$"), row[1]))
+    return rules
+
+
+def test_merge_risk_paths_tag_sql_and_ci():
+    rules = _risk_rules()
+    tags = lambda p: {t for rx, t in rules if rx.match(p)}
+    assert tags("docs/database/x.sql") == {"db-migration"}
+    assert tags("db/migrations/001_init.py") == {"db-migration"}
+    assert tags(".github/workflows/ci.yml") == {"ci"}
+    assert tags("src/workflows/4a-verify-and-ship.md") == set()
+
+
+def test_4a_slice_id_rebuild_regex_ignores_unscoped_commits():
+    text = _4a()
+    pattern = r"^[a-z]+\(BT-(\d+)\):"
+    assert f"`{pattern}`" in text, "4a must state the BT-scope regex used to rebuild slices from git log"
+    rx = re.compile(pattern)
+    subjects = ["feat(BT-12): a", "fix(BT-12): b", "feat(BT-13): c", "release: prepare v1.0.0", "fix(ci): x", "chore: y"]
+    assert sorted({rx.match(s).group(1) for s in subjects if rx.match(s)}) == ["12", "13"]
+
+
+def test_build_ships_merge_risk_paths_into_4a():
+    bspec = importlib.util.spec_from_file_location("build", ROOT / "build" / "build.py")
+    build = importlib.util.module_from_spec(bspec)
+    bspec.loader.exec_module(build)
+    assert "merge-risk-paths.md" in build.closure_for(_4a(), ROOT / "src" / "references"),         "4a must cite references/merge-risk-paths.md so the build fans it into 4a's references/"
