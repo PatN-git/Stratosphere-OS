@@ -248,10 +248,8 @@ def main(argv=None):
 
     sources = [parse_sql(p) for p in args.sql]
     if Path(args.schema).is_file():
-        md = parse_md(args.schema)
-        if md.declares_tables():
-            sources.insert(0, md)
-    sources = [s for s in sources if s.declares_tables()]
+        sources.insert(0, parse_md(args.schema))
+    sources = [s for s in sources if s.declares_tables()]  # a template-only schema declares nothing
     if not sources:
         print("[CONTRACT-SKIP] no schema declared")
         return 0
