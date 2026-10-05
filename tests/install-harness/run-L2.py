@@ -96,7 +96,7 @@ def marketplace_skills_dir(home):
 def assert_tree(skills_dir, proj):
     # install tree
     setup_dir = skills_dir / "stratosphere-setup"  # scaffolder payload rides inside setup
-    check("install: 26 skills", len(list(skills_dir.glob("*/SKILL.md"))) == EXPECTED_SKILLS if skills_dir.exists() else False)
+    check("install: 27 skills", len(list(skills_dir.glob("*/SKILL.md"))) == EXPECTED_SKILLS if skills_dir.exists() else False)
     check("install: micro-tdd skill", (skills_dir / "micro-tdd").exists())
     check("install: bundled scaffold.py", (setup_dir / "scripts" / "scaffold.py").exists())
     # scaffold tree (in project)
@@ -105,7 +105,7 @@ def assert_tree(skills_dir, proj):
         check(f"scaffold: {f}", (p / f).exists())
     check("scaffold: 9 memory files", len(list((p / ".memory").glob("*.md"))) == 9 if (p / ".memory").exists() else False)
     check("scaffold: 3 rule files", len(list((p / ".agents" / "rules").glob("*.md"))) == 3 if (p / ".agents" / "rules").exists() else False)
-    check("scaffold: 26 skills", len(list((p / ".agents" / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS)
+    check("scaffold: 27 skills", len(list((p / ".agents" / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS)
     check("scaffold: no legacy workflows/ dir", not (p / ".agents" / "workflows").exists())
     check("scaffold: lockfile", (p / ".agents" / ".stratosphere-lock.json").exists())
     check("scaffold: okf_view.py", (p / ".agents" / "scripts" / "okf_view.py").exists())

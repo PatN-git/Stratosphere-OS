@@ -27,6 +27,7 @@
         "./dist/skills/2a-write-prd",
         "./dist/skills/2b-interface-design",
         "./dist/skills/2c-reconcile-specs",
+        "./dist/skills/2z-write-spec",
         "./dist/skills/3a-version-planning",
         "./dist/skills/3b-create-issue",
         "./dist/skills/3c-sprint-planning",

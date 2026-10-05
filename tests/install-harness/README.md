@@ -23,11 +23,11 @@ powershell -ExecutionPolicy Bypass -File tests/install-harness/run-L1.ps1
 bash tests/install-harness/run-L1.sh           # PYTHON=python to override python3
 ```
 Exit 0 = all cells pass. Each cell asserts the install tree, the scaffold tree
-(constitution + `.memory` ×9 + `.agents/skills` ×26 + …), and that
+(constitution + `.memory` ×9 + `.agents/skills` ×27 + …), and that
 `sync_skills.py --dry-run` reports the correct scope and downloads nothing. The
 PowerShell runner also asserts the real homes were untouched (leak check).
 
-Install tracks covered (each asserts the same bundle tree: 26 skills, 22 HITL
+Install tracks covered (each asserts the same bundle tree: 27 skills, 23 HITL
 sidecars, `stratosphere-setup` scaffolder payload):
 - **Track B** — plain copy (`cp -r` / `Copy-Item`), plus scaffold + sync.
 - **Track A** — `npx skills add ./dist/skills --copy -y`; no `-a` flag → `.agents/skills`,
