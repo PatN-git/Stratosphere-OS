@@ -9,7 +9,7 @@ version: "1.1.0"
 
 # Implementation Plan: lifecycle improvements (Pocock v1.3 + CleanTechHub evidence)
 
-**Status:** Ready for `/3b`. The rationale and evidence live in [`docs/proposals/FEAT-pocock-v1-3-learnings-proposal.md`](../proposals/FEAT-pocock-v1-3-learnings-proposal.md). This file is **only** the build spec. An implementing agent should not need the proposal, except for the "Why" links.
+**Status:** Ready for `/3b`. The rationale and evidence live in [`docs/proposals/.archive/FEAT-pocock-v1-3-learnings-proposal.md`](../proposals/.archive/FEAT-pocock-v1-3-learnings-proposal.md). This file is **only** the build spec. An implementing agent should not need the proposal, except for the "Why" links.
 
 > **Review pass applied (2026-10-05).** Every path and anchor was checked against `src/`, `tests/`, `build/` and CleanTechHub. Material changes:
 > - **§0.4:** the old-vs-new hash rule is made concrete. Only the OLD `body_hash` is added, and the v4.3.0 `reconcile.py` and `validate_memory.py` hashes are missing from the map today. New scripts need the `verify_scripts.py` orphan mapping instead. §0.5 now commits `dist/` before `check.sh`.
