@@ -52,7 +52,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
-   "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the feature branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd). Do NOT push; do NOT open PR."
+   "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the feature branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\"}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5). Do NOT push; do NOT open PR."
 _Done when:_ subagent returns valid JSON and git status is clean.
 
 ### Step 2B: Verify (Subagent)
@@ -80,7 +80,7 @@ _Done when:_ every all-passed feature has all its slices `in review` on an open/
 _Done when:_ mergeability and path overlaps scanned.
 
 ## Phase 4: Final Report [output]
-Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, **the reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc)**, and manual-test checklist for slices with `needs_manual_qa` set to true.
+Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature: PR # (or `local`), status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on), commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags, **the reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc)**, **the `plan_path` of each slice's 3d plan next to `docs_read`**, and manual-test checklist for slices with `needs_manual_qa` set to true.
 - **Manual QA Gating:** `needs_manual_qa` is advisory; verified by human before merge, does not block push/PR ship.
 _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.
