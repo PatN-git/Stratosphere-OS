@@ -2,8 +2,8 @@
 trigger: always_on
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-09-15
-version: "2.0.0"
+timestamp: 2026-10-05
+version: "2.1.0"
 ---
 
 # Memory Protocol
@@ -75,6 +75,8 @@ When a rule changes, move the old entry to `## Superseded` in the **same file**:
 - Date or version
 
 `## Superseded` is read only when explicitly triggered. No separate archive file.
+
+IDs are never reused. An entry removed without a successor stays as a one-line tombstone under `## Superseded`: `- **[[L-xxx]] [REMOVED] [YYYY-MM-DD]** Reason: <one line>.`
 
 ## 4. Lint (at /stop-session)
 

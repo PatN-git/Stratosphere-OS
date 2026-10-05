@@ -308,6 +308,7 @@ def main():
                     # Parse superseded target
                     sup_match = re.search(r'\[SUPERSEDED BY\s+(?:\[\[)?([A-Za-z0-9_-]+)(?:\]\])?\]', line, re.IGNORECASE)
                     superseded_by = sup_match.group(1) if sup_match else None
+                    removed = '[REMOVED]' in line
                     
                     # Register definition
                     if def_id in definitions:
@@ -320,6 +321,7 @@ def main():
                             'line_num': line_idx,
                             'tag': tag,
                             'superseded_by': superseded_by,
+                            'removed': removed,
                             'in_superseded': in_superseded,
                             'content': stripped
                         }
@@ -466,6 +468,8 @@ def main():
             continue  # Backlog items do not carry trust tags
             
         if info['in_superseded']:
+            if info.get('removed'):
+                continue  # [REMOVED] tombstone: valid terminal marker, no successor needed
             if not info['superseded_by']:
                 errors.append(f"Supersession error: Superseded entry '{def_id}' in {info['file']}:{info['line_num']} is missing a valid [SUPERSEDED BY [[ID]]] target.")
             elif info['superseded_by'] not in definitions:
@@ -484,6 +488,25 @@ def main():
             elif fname == 'GLOSSARY.md':
                 if tag == 'LAW':
                     errors.append(f"Purity error: Glossary term '{def_id}' in {fname}:{info['line_num']} has trust tag '[LAW]'. Glossary entries cannot be '[LAW]'.")
+
+    # 2.5 ID gaps: a hard-deleted entry frees its ID for reuse. Warning only, because
+    # existing projects carry gaps from past deletes; a [REMOVED] tombstone closes one.
+    seqs = {}
+    for def_id in definitions:
+        prefix, _, num = def_id.rpartition('-')
+        if prefix in ('L', 'G', 'A', 'DR') and num.isdigit():
+            seqs.setdefault(prefix, set()).add(int(num))
+    for prefix, nums in sorted(seqs.items()):
+        missing = [n for n in range(min(nums), max(nums) + 1) if n not in nums]
+        runs = []
+        for n in missing:
+            if runs and n == runs[-1][1] + 1:
+                runs[-1][1] = n
+            else:
+                runs.append([n, n])
+        for lo, hi in runs:
+            span = f"{prefix}-{lo:03d}" if lo == hi else f"{prefix}-{lo:03d}..{prefix}-{hi:03d}"
+            warnings.append(f"ID gap: possible hard-delete: {span} missing - add [REMOVED] tombstones to silence.")
 
     # 3. Cross-reference Integrity
     directed_links = set()

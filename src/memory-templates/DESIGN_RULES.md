@@ -5,7 +5,7 @@ description: Project structural rules and operational design governance.
 generated:
   by: stratosphere-setup
   at: 2026-09-29
-version: "1.0.7"
+version: "1.0.8"
 ---
 # DESIGN RULES
 
@@ -82,3 +82,6 @@ Structural source of truth. External generators MUST conform to these.
 > Read only when explicitly asked.
 
 - **DR-XXX [SUPERSEDED BY DR-YYY] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.
+
+- **[[DR-012]] [REMOVED] [2026-10-05]** Reason: reserved for the purged example Immortal Component (Navbar).
+- **[[DR-013]] [REMOVED] [2026-10-05]** Reason: reserved for the purged example Immortal Component (Sidebar).

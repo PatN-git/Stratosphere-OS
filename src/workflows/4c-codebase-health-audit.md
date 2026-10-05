@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-09-24
+version: "1.2.0"
+timestamp: 2026-10-05
 ---
 
 # Codebase Health Audit
@@ -35,6 +35,7 @@ Run the `load-memory` skill to restore session context (read-only).
 | `scripts/` | If exists | All 6 |
 | Config: `.env.example`, `next.config.*`, `supabase/config.toml`, `*.config.js/ts` | If exist | Security, Performance |
 | Migrations: `supabase/migrations/`, `prisma/migrations/`, `drizzle/` | If exist | Security, Performance |
+| Guardrail inputs (Quality Auditor): `.github/workflows/*`, hook config (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`), package manifest and test-runner config, and a runner summary if one exists in `.tmp/` | If exist | Correctness (B2) |
 
 Trigger prompt may narrow scope (e.g. `4c src/features/billing`) — honor it, warn:
 ```

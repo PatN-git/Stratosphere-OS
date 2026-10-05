@@ -1,7 +1,7 @@
 ---
 description: Scan matrix for 4c-codebase-health-audit. Defines what each of the six passes detects.
-version: "1.0.0"
-timestamp: 2026-07-27
+version: "1.1.0"
+timestamp: 2026-10-05
 ---
 
 # Health Audit — Scan Matrix
@@ -72,6 +72,8 @@ For each source file, check for test counterpart (`*.test.*`, `*.spec.*`, `__tes
 | **Skipped tests** | `.skip(`, `.todo(`, `xit(`, `xdescribe(`, `@pytest.mark.skip`, `@pytest.mark.xfail` in test files. |
 | **Missing edge cases** | Functions with `| null`, `| undefined`, `?: T`, `Optional[T]` params — check if tests cover null/empty/boundary. Heuristic; cap 70 confidence. |
 | **Thin test files** | Test file <20% line count of source file. Low impact signal. |
+| **Guardrail** | No pre-commit hook **and** no CI job running lint, typecheck or test → finding. A check script that exists but is not wired into CI → finding: "wire it". |
+| **Test-suite health** | Config-level, always checkable: duplicate CI triggers for the same commit (`push` + `pull_request` without a `concurrency` group); no related/changed test mode configured. Only when the parent passed a runner summary: environment+import time greater than test time. |
 
 ---
 
