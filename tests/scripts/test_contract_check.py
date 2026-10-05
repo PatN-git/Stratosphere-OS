@@ -208,3 +208,22 @@ def test_bare_parenthesised_enum_list_is_parsed(project):
     assert r.returncode != 0
     assert "employment_type='intern' (enum-value, old.md)" in r.stdout
     assert "part_time" not in r.stdout
+
+
+def test_bom_prefixed_files_are_parsed(project):
+    # Windows editors prepend a BOM; it must not swallow a first-line `### table` heading or a first-line span.
+    (project / "bom.md").write_text("### `jobs`\n- `title`: Job title.\n", encoding="utf-8-sig")
+    doc = project / "bom-prd.md"
+    doc.write_text("`jobs.title` `jobs.ghost`\n", encoding="utf-8-sig")
+    r = run("--docs", doc, "--schema", project / "bom.md")
+    assert r.returncode != 0
+    assert "jobs.ghost (column, bom.md)" in r.stdout
+    assert "jobs.title" not in r.stdout
+
+
+def test_table_known_to_one_source_but_absent_from_another_is_kind_table(project):
+    (project / "jobs-only.sql").write_text("CREATE TABLE jobs (id uuid, title text);\n", encoding="utf-8")
+    r = check(project, "`companies.name`\n", "--sql", project / "jobs-only.sql")
+    assert r.returncode != 0
+    assert "companies.name (table, jobs-only.sql)" in r.stdout
+    assert "(column," not in r.stdout

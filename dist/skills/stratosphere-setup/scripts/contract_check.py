@@ -16,12 +16,15 @@ Output (stdout):
 A reference must resolve in EVERY given source; <source> names the one it is missing from.
 
 What is checked (backticked spans and fenced code lines only; prose is never read):
-  - `x.y`  where `x` is a known table  -> `y` must be a column of `x`   (kind: column)
+  - `x.y`  where `x` is a known table  -> `y` must be a column of `x`   (kind: column; kind: table
+                                          when `x` is known to one source but absent from another)
   - an enum literal, only when bound on the same span to a known enum type or to a column
     of that type (`employment_type = 'v'`, `jobs.status: 'v'`, `status IN ('a','b')`)
     -> the value must be a label of that enum                            (kind: enum-value)
 Not checked: bare words, free-floating literals, `x.y` with unknown `x` (`api/submit.js`),
 `x.<ext>` file names, `x.y(` calls, views, and the reverse direction (schema columns no doc uses).
+Known limit: a table with a genuinely missing column named like a file extension (`jobs.json`) is not
+reported; a file name and a column cannot be told apart, and precision wins.
 
 Schema formats (read from CleanTechHub, the reference consumer):
   .memory/DATABASE_SCHEMA.md
@@ -109,7 +112,7 @@ def parse_labels(text):
 def parse_md(path):
     src = Source(Path(path).name)
     table = None
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         h = HEADING_RE.match(line)
         if h:
             table = h.group(1)
@@ -166,7 +169,7 @@ def split_top_level(body):
 
 def parse_sql(path):
     src = Source(Path(path).name)
-    text = strip_sql_comments(Path(path).read_text(encoding="utf-8"))
+    text = strip_sql_comments(Path(path).read_text(encoding="utf-8-sig"))
     for m in SQL_TYPE_RE.finditer(text):
         src.add_enum(m.group(1), QUOTED_RE.findall(m.group(2)))
     for m in SQL_ADD_VALUE_RE.finditer(text):
@@ -193,7 +196,7 @@ def parse_sql(path):
 def spans(doc):
     """Yield (line_no, span_text) for inline backtick spans and every line inside a fenced block."""
     in_fence = False
-    for no, line in enumerate(Path(doc).read_text(encoding="utf-8").splitlines(), 1):
+    for no, line in enumerate(Path(doc).read_text(encoding="utf-8-sig").splitlines(), 1):
         if line.lstrip().startswith("```"):
             in_fence = not in_fence
         elif in_fence:
