@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-09-22
+version: "1.2.0"
+timestamp: 2026-10-05
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -38,7 +38,7 @@ _CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo.
 Surface contradictions and blocking gaps only — not stylistic drift.
 
 ### Scan Matrix
-1. **Contract existence:** every contract the PRD/design references (table, field, enum, type, endpoint, key) exists in the schema source. Check mechanically; reason only where the schema can't answer literally.
+1. **Contract existence:** every contract the PRD/design references (table, field, enum, type, endpoint, key) exists in the schema source. Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared. Reason only where the script can't answer (endpoint, key, type, anything it ignores).
 2. **Semantic contradiction:** behavioral claims agree across Research → PRD → Interface-Design (state transitions, timing/ordering, fallbacks, batching, rate/quota). Flag prose ↔ typed-contract ↔ stress-matrix disagreement.
 3. **Attribute rules:** each attribute is extracted or inherited, with an explicit missing-value rule — required-missing (reject) vs optional-missing (degrade/default).
 4. **Boundary record:** auth/access and runner/quota constraints a slice must honor are recorded (e.g. service-role secret, timeout, quota).

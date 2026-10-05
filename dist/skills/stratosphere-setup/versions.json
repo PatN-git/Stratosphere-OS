@@ -151,9 +151,9 @@
       "version": "1.0.1"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "57d162459151282e306e70a34c55060b1b840cb17b1da237098033a90aa74819",
-      "timestamp": "2026-09-22",
-      "version": "1.4.0"
+      "sha256": "b76b0ef60594a9905d0efd31a011ed0a3daf4d54e2f1286d6a379d98279297da",
+      "timestamp": "2026-10-05",
+      "version": "1.5.0"
     },
     "skills/2a-write-prd/references/PRD-template.md": {
       "sha256": "8a6423c2c242015f8cfef12bcff919dbb829974fe868ba00ee780a2650fdde4d",
@@ -161,9 +161,9 @@
       "version": "2.0.0"
     },
     "skills/2b-interface-design/SKILL.md": {
-      "sha256": "8e9198d88b94483750bd09ec3886f1f856966888a83c2a0af0fab4fec3673c30",
-      "timestamp": "2026-09-22",
-      "version": "1.4.0"
+      "sha256": "7c5235d8a6bb7dc73a8aaef9ff25e6daedca8ad6210a339abc643c38ba94c49f",
+      "timestamp": "2026-10-05",
+      "version": "1.5.0"
     },
     "skills/2b-interface-design/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
@@ -176,9 +176,9 @@
       "version": "2.0.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "cb493fb4c9e39d4934390a76c319740b51d6fad740f9f7c8bdde236402d6c8b4",
-      "timestamp": "2026-09-22",
-      "version": "1.1.0"
+      "sha256": "20f36da58a6a7633293b9a5385e1a697983544a10af51676fdc4c3bfb202a323",
+      "timestamp": "2026-10-05",
+      "version": "1.2.0"
     },
     "skills/2c-reconcile-specs/references/confidence-scale.md": {
       "sha256": "756bf8c4234ac41ca9a410c43454b18682819135289dc3b0de68908db7a1d323",

@@ -305,6 +305,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/reconcile.py"
             elif rel_str == "scripts/okf_view.py":
                 proj_rel_path = ".agents/scripts/okf_view.py"
+            elif rel_str == "scripts/contract_check.py":
+                proj_rel_path = ".agents/scripts/contract_check.py"
             elif rel_str.startswith("scripts/design/"):
                 if "test" in rel.parts:
                     continue # skip design tests

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-09-22
+version: "1.5.0"
+timestamp: 2026-10-05
 ---
 
 # Write PRD
@@ -79,6 +79,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] Ethical: dark-pattern exclusions in §4; profit-alignment in §12
 - [ ] No slice lists anywhere in the doc
 - [ ] All memory refs resolve to existing entries
+- [ ] `python .agents/scripts/contract_check.py --docs <prd> --schema .memory/DATABASE_SCHEMA.md` passes (or prints `[CONTRACT-SKIP]`), or each `[CONTRACT-MISSING]` finding is written as `> open:`
 - [ ] `> open:` markers moved to §10
 - [ ] §7 ADR flag raised if applicable
 
