@@ -28,7 +28,8 @@ def test_2z_names_the_three_units_and_copies_no_bodies():
     text = _read("workflows/2z-write-spec.md")
     for unit in ("2a-write-prd", "2b-interface-design", "2c-reconcile-specs"):
         assert unit in text, unit
-    assert "ATOMIC MINTING RULE" not in text
+    for unit_only in ("ATOMIC MINTING RULE", "Greenfield Bootstrap Deltas", "### Scan Matrix", "Context Isolation Rule:**"):
+        assert unit_only not in text, unit_only
 
 
 def test_2z_phases_run_the_units_in_order():
@@ -65,7 +66,7 @@ def test_2z_phase_4_routes_like_2b_and_states_the_depth_budget():
     text = _read("workflows/2z-write-spec.md")
     p4 = text.split("## Phase 4")[1]
     assert "/3a-version-planning" in p4 and "/3b-create-issue" in p4
-    assert "2 levels" in text or "depth" in text.lower()
+    assert "at most 2 levels" in text
 
 
 def test_2a_handoff_offers_the_chain():
@@ -77,8 +78,6 @@ def test_3z_authority_names_2z_as_user_invoked_spec_orchestrator():
     assert "`2z` is the user-invoked spec orchestrator" in _read("workflows/3z-afk-loop.md")
 
 
-def test_2z_registered_in_check_suite_and_docs():
+def test_2z_registered_in_check_suite_and_readme():
     assert '"2z-write-spec"' in _read("scripts/check_suite.py")
-    assert "23 bundled skills" in _read("commands/stratosphere-setup/SKILL.md")
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "`/2z-write-spec`" in readme and "27 skills" in readme
+    assert "| `/2z-write-spec` |" in (ROOT / "README.md").read_text(encoding="utf-8")

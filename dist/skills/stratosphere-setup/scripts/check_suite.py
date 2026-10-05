@@ -20,7 +20,7 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent  # <skills dir>/stratosphere-setup
 
-# The 22 Layer 1 skills (`stratos.layer: lifecycle`). A test guards this against the bundle.
+# The 23 Layer 1 skills (`stratos.layer: lifecycle`). A test guards this against the bundle.
 LIFECYCLE_SKILLS = [
     "0a-start-session", "0b-stop-session", "0c-handoff", "0d-nightly-consolidation",
     "1a-research", "1b-concept-framing", "1c-concept-map",
