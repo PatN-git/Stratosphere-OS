@@ -43,6 +43,28 @@ def scan_file_for_secrets(file_path):
 def is_placeholder(cid):
     return not cid.rsplit('-', 1)[-1].isdigit()
 
+def find_id_gaps(definitions):
+    """Warnings for missing numbers inside each L-/G-/A-/DR- ID sequence."""
+    seqs = {}
+    for def_id in definitions:
+        prefix, _, num = def_id.rpartition('-')
+        if prefix in ('L', 'G', 'A', 'DR') and num.isdigit():
+            seqs.setdefault(prefix, set()).add(int(num))
+    out = []
+    for prefix, nums in sorted(seqs.items()):
+        runs = []
+        for n in range(min(nums), max(nums) + 1):
+            if n in nums:
+                continue
+            if runs and n == runs[-1][1] + 1:
+                runs[-1][1] = n
+            else:
+                runs.append([n, n])
+        for lo, hi in runs:
+            span = f"{prefix}-{lo:03d}" if lo == hi else f"{prefix}-{lo:03d}..{prefix}-{hi:03d}"
+            out.append(f"ID gap: possible hard-delete: {span} missing - add [REMOVED] tombstones to silence.")
+    return out
+
 def apply_autofix(memory_dir, file_name, line_num, cid):
     fpath = Path(memory_dir) / file_name
     if not fpath.exists():
@@ -491,22 +513,7 @@ def main():
 
     # 2.5 ID gaps: a hard-deleted entry frees its ID for reuse. Warning only, because
     # existing projects carry gaps from past deletes; a [REMOVED] tombstone closes one.
-    seqs = {}
-    for def_id in definitions:
-        prefix, _, num = def_id.rpartition('-')
-        if prefix in ('L', 'G', 'A', 'DR') and num.isdigit():
-            seqs.setdefault(prefix, set()).add(int(num))
-    for prefix, nums in sorted(seqs.items()):
-        missing = [n for n in range(min(nums), max(nums) + 1) if n not in nums]
-        runs = []
-        for n in missing:
-            if runs and n == runs[-1][1] + 1:
-                runs[-1][1] = n
-            else:
-                runs.append([n, n])
-        for lo, hi in runs:
-            span = f"{prefix}-{lo:03d}" if lo == hi else f"{prefix}-{lo:03d}..{prefix}-{hi:03d}"
-            warnings.append(f"ID gap: possible hard-delete: {span} missing - add [REMOVED] tombstones to silence.")
+    warnings.extend(find_id_gaps(definitions))
 
     # 3. Cross-reference Integrity
     directed_links = set()

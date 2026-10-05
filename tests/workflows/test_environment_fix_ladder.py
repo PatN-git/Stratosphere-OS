@@ -17,6 +17,7 @@ def test_ladder_reference_has_six_rungs_and_the_three_rules():
     for rung in ("Deterministic check", "Reviewer standard", "Existing law",
                  "Framework issue", "Issue / `STATUS.md`", "`LEARNINGS.md`"):
         assert rung in text, rung
+    assert "`.agents/skills/` path" in text.split("Framework issue")[1].split("Issue /")[0]
     assert "Escalation" in text
     assert "Evidence rule" in text
     assert "Hypothesis rule" in text
@@ -35,7 +36,7 @@ def test_0b_caps_learnings_proposals_and_tombstones_removals():
     text = _read("workflows/0b-stop-session.md")
     assert "at most one" in text
     assert "[REMOVED]" in text
-    assert "never reused" in text
+    assert "memory-protocol §3" in text
 
 
 def test_0b_proposes_follow_ups_from_post_merge_with_full_label_set():

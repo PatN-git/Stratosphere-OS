@@ -65,7 +65,7 @@ Structural source of truth. External generators MUST conform to these.
 
 ### Active Entries
 
-*Note: The first real Immortal Components registered will trigger the removal/purge of the examples below (DR-012/DR-013).*
+*Note: The first real Immortal Components registered replace the placeholder examples below. DR-012 and DR-013 are reserved by this template and tombstoned under Superseded; new entries continue from the highest ID.*
 
 - **[[DR-XXX]] [LAW]** Example placeholder — replace during brownfield audit or as components are built. Source: BT-XXX.
   - **Component:** `components/layout/Navbar.tsx`
@@ -83,5 +83,5 @@ Structural source of truth. External generators MUST conform to these.
 
 - **DR-XXX [SUPERSEDED BY DR-YYY] [YYYY-MM-DD]** Original entry preserved. Reason: one line. Version: v0.X → v0.Y.
 
-- **[[DR-012]] [REMOVED] [2026-10-05]** Reason: reserved for the purged example Immortal Component (Navbar).
-- **[[DR-013]] [REMOVED] [2026-10-05]** Reason: reserved for the purged example Immortal Component (Sidebar).
+- **[[DR-012]] [REMOVED] [2026-10-05]** Reason: ID reserved by the template for a former example Immortal Component (Navbar); never a project entry.
+- **[[DR-013]] [REMOVED] [2026-10-05]** Reason: ID reserved by the template for a former example Immortal Component (Sidebar); never a project entry.
