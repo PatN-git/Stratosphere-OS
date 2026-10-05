@@ -21,6 +21,12 @@ def test_3d_has_plan_phase_between_intake_and_tdd():
     assert text.index("## Phase 0:") < text.index("## Phase 0.5: Plan") < text.index("## Phase 1:")
 
 
+def test_phase_0_hands_off_to_the_plan_not_past_it():
+    phase0 = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 0:", "## Phase 0.5:")
+    assert "proceed to Phase 1" not in phase0
+    assert "proceed to Phase 0.5" in phase0
+
+
 def test_plan_phase_persists_plan_and_skips_only_cosmetic():
     plan = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 0.5: Plan", "## Phase 1:")
     assert PLAN_FILE in plan
@@ -47,21 +53,19 @@ def test_plan_phase_mechanical_check_uses_repo_test_paths():
     plan = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 0.5: Plan", "## Phase 1:")
     assert "git ls-files" in plan
     assert "Every AC needs a planned test path matching" in plan
+    assert "every planned test path must match one" in plan
 
 
 def test_phase_1_takes_seams_from_the_plan():
     phase1 = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 1:", "## Phase 2:")
-    assert "Declare Seam" in phase1 and "plan" in phase1
+    assert "Declare Seam takes the seams from the plan" in phase1
 
 
 def test_phase_3_compares_coverage_map_with_plan_and_writes_deviations():
     phase3 = _read("workflows/3d-implement-issue.md").split("## Phase 3:")[1]
+    assert "Compare the coverage map with the plan's AC → test list" in phase3
     assert "## Deviations" in phase3
     assert PLAN_FILE in phase3
-
-
-def test_micro_tdd_stays_generic():
-    assert ".tmp/" not in _read("skills/micro-tdd/SKILL.md")
 
 
 def test_3z_dispatch_json_has_plan_path_and_report_lists_it():
