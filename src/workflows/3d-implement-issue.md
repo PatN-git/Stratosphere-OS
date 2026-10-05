@@ -37,7 +37,7 @@ Run `micro-tdd` for RED→GREEN→REFACTOR (Fast-Track A/B, stuck protocol, anti
 Adhere to:
 1. **Simplify:** run the `code-simplifier` skill on the slice diff under green tests — simplify/refine without changing behavior; re-run related tests after and keep them green.
 2. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
-3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; run related tests before each incremental commit — the full suite runs once, at the Phase 3 gate.
+3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; run related tests before each incremental commit.
 4. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
 5. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
 
@@ -46,8 +46,8 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no track
 1. Read slice AC.
 2. Produce an **exhaustive coverage map**: for every AC, name the passing test that covers it or mark it `[UNCOVERED]` — list each by name, never summarize as "looks complete."
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
-4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced.
+4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced, and step 6's full run is green.
 5. Done also requires a clean tree (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
-6. Run the full suite once at HEAD (the only full run in 3d). Write `{"head_sha", "cmd", "observed"}` (the observed summary line) to `.tmp/3d-suite-BT-<padded>.json`.
+6. Run the full suite once at HEAD (the only full run in 3d); red → return to the micro-tdd loop, do not hand off. Write `{"head_sha", "cmd", "observed"}` (the observed summary line) to `.tmp/3d-suite-BT-<padded>.json`.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.
