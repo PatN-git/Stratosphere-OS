@@ -48,6 +48,7 @@ def test_host_matrix_is_accurate():
     for floor in ("2.1.277", "2.1.288", "0.150.0", "0.59.0"):
         assert floor in text, f"version floor {floor} missing from the host matrix"
     assert ".github/skills/" in text, "Copilot reads .github/skills/"
+    assert "never `.agents/skills/`" in text, "Claude Code does not read .agents/skills/ (the constitution no longer says so)"
     assert "Devin path" not in text and ".github/copilot/skills" not in text, "stale Copilot skill path claim"
     assert re.search(r"\|\s*Copilot[^|]*\|[^\n]*`disable-model-invocation`", text), "Copilot row missing"
     assert re.search(r"\|\s*Gemini CLI\s*\|[^\n]*none", text), "Gemini CLI row missing"

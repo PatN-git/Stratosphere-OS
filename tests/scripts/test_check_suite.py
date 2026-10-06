@@ -334,9 +334,10 @@ def test_start_session_has_zero_suite_validation():
 
 def test_constitution_states_skill_locations_and_disk_resolution_rule():
     text = _read("constitution/AGENTS.md")
-    assert ".claude/skills" in text and "does **not** read `.agents/skills/`" in text
+    # Which host reads which dir is a host fact (host-matrix.md); the constitution keeps only the rule.
+    assert ".claude/skills" in text and ".agents/skills" in text
     assert "code-simplifier" in text
-    assert "read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable" in text
+    assert "read `<skills-dir>/<name>/SKILL.md` on disk" in text and "before calling it unavailable" in text
 
 
 def test_start_session_without_memory_gives_one_line_setup_guidance():
