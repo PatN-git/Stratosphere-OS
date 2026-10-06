@@ -32,9 +32,9 @@ def test_0b_cites_the_ladder_and_gates_learnings_on_friction():
     assert "what would have prevented it" in text
 
 
-def test_0b_caps_learnings_proposals_and_tombstones_removals():
+def test_0b_tombstones_removals_and_leaves_learnings_uncapped():
     text = _read("workflows/0b-stop-session.md")
-    assert "at most one" in text
+    assert "at most one" not in text
     assert "[REMOVED]" in text
     assert "memory-protocol §3" in text
 

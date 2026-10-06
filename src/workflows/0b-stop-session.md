@@ -30,7 +30,6 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 4. If a candidate reaches the LEARNINGS rung and is a durable lesson:
    - **Durability gate:** *Would this still be true after the work that prompted it ships?* If no (a current defect, a pending fix, in-flight state) → record it in the issue or `STATUS.md`, not `LEARNINGS.md`.
    - Propose the full entry text (next `[[L-xxx]]`, default tag `[ASSUMED]`, `Source: BT-xxx`); write to `.memory/LEARNINGS.md` only on confirmation. Never self-write.
-   - Propose **at most one** LEARNINGS entry per session unless the user asks for more.
    - To remove an entry, move it to `## Superseded` with a `[REMOVED]` tombstone (see memory-protocol §3).
 5. If term agreed, propose the entry and add to `.memory/GLOSSARY.md` on confirmation (assign next `[[G-xxx]]`, default tag `[ASSUMED]`, record rejected synonyms in `Avoid:` — same as 1b; if an `Avoid:` synonym likely already appears in code, offer the same one-time, module-scoped retrofit (propose-only); cross-reference `Source`).
 6. If architecture changed:
