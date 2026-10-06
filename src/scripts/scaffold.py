@@ -1240,7 +1240,7 @@ def main():
         pkg_bytes = proposed_files.get(design_pkg)
         if pkg_bytes is None and (project / design_pkg).is_file():
             pkg_bytes = (project / design_pkg).read_bytes()
-        drift = design_lockfile_drift(project / ".agents" / "scripts" / "design", pkg_bytes) if pkg_bytes else None
+        drift = design_lockfile_drift((project / design_pkg).parent, pkg_bytes) if pkg_bytes else None
         if drift:
             worklist["design_lockfile_stale"] = True
             print(f"NOTE: design toolchain lockfile pins {drift[0]} but package.json pins {drift[1]}; "

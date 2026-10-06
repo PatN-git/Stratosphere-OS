@@ -2209,7 +2209,8 @@ def _design_lock_env(name, lock_version):
     mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     design = tmp / ".agents" / "scripts" / "design"
     design.mkdir(parents=True, exist_ok=True)
-    pin = lambda v: json.dumps({"dependencies": {"@google/design.md": v}}, indent=2) + "\n"
+    def pin(v):
+        return json.dumps({"dependencies": {"@google/design.md": v}}, indent=2) + "\n"
     (design / "package.json").write_text(pin("0.3.0"), encoding="utf-8")
     (mock_plugin / "scripts" / "design" / "package.json").write_text(pin("0.4.0"), encoding="utf-8")
     if lock_version:
@@ -2229,6 +2230,7 @@ def test_design_lockfile_stale_after_pin_refresh():
     assert "npm install --prefix .agents/scripts/design" in res.stdout
     worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
     assert worklist["design_lockfile_stale"] is True
+    print("Stale design lockfile flag test passed!")
 
 
 def test_design_lockfile_in_sync_or_absent_is_silent():
@@ -2239,6 +2241,7 @@ def test_design_lockfile_in_sync_or_absent_is_silent():
         assert "design toolchain lockfile" not in res.stdout
         worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
         assert worklist["design_lockfile_stale"] is False
+    print("Silent design lockfile test passed!")
 
 
 def test_script_locally_edited_preserved():
@@ -2723,6 +2726,8 @@ if __name__ == "__main__":
     test_orphan_prune_dry_run()
     test_script_pristine_refresh()
     test_script_locally_edited_preserved()
+    test_design_lockfile_stale_after_pin_refresh()
+    test_design_lockfile_in_sync_or_absent_is_silent()
     test_script_nested_preservation()
     test_script_resolve_workflow()
     test_script_legacy_project_fallback()
