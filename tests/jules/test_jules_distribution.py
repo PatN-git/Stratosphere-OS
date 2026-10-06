@@ -8,6 +8,7 @@ a fetched pack survives updates byte-identical.
 Run: python tests/test_jules_distribution.py
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -65,7 +66,21 @@ def test_bundled_skills_are_guarded_from_packs():
     print(f"PASS ({len(skills)} bundled skills in .agents/skills/, pack guard wired)"); return True
 
 
-TESTS = [test_no_experimental_in_dist, test_external_skills_entry_opt_in, test_bundled_skills_are_guarded_from_packs]
+def test_pack_pin_is_not_older_than_the_rename_release():
+    """The pack is fetched at the registry's `ref`. v2.1.0 predates the v4.0.0 rename, so a project that
+    synced it got /4a_verify-and-ship style commands that no longer resolve."""
+    print("--- test_pack_pin_is_not_older_than_the_rename_release ---")
+    data = json.loads((REPO_ROOT / "src/external-skills.json").read_text(encoding="utf-8"))
+    entry = next(s for s in data["skills"] if s["name"] == "jules-dispatch")
+    m = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", entry["ref"])
+    assert m, f"pin a release tag (vX.Y.Z), got {entry['ref']!r}"
+    assert tuple(map(int, m.groups())) >= (4, 0, 0), f"{entry['ref']} predates the v4.0.0 skill rename"
+    assert entry["ref"] in entry["description"], "the description must name the tag it is pinned to"
+    print("PASS"); return True
+
+
+TESTS = [test_no_experimental_in_dist, test_external_skills_entry_opt_in, test_bundled_skills_are_guarded_from_packs,
+         test_pack_pin_is_not_older_than_the_rename_release]
 
 if __name__ == "__main__":
     ok = True
