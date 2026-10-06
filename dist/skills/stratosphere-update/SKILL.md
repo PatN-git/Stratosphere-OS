@@ -30,7 +30,6 @@ Before running the local scaffolding update, verify if the installed Stratospher
    - **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
    - **Antigravity plugin install** (`agy plugin install dist`): `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`
    - **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
-   - **Legacy v4 plugin installs:** `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
 2. **Read Installed Version:**
    Read and parse `<plugin>/versions.json`. Extract the `"plugin_version"` field. Let this be `<installed_version>`.
@@ -66,9 +65,6 @@ Before running the local scaffolding update, verify if the installed Stratospher
        `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
        Then **HALT** execution. (If the user explicitly instructs to proceed anyway, continue against the stale plugin with a loud warning).
        
-     - **Retired v4 plugin install** (`<plugin>` is the plugin root itself, a `plugins/stratosphere-os/` directory with `scripts/` at its top level: `~/.claude/plugins/`, `./.claude/plugins/`, `~/.gemini/config/plugins/`, `./.agents/plugins/`; **not** a `<plugin>` ending in `skills/stratosphere-setup`, which is the Antigravity plugin install below):
-       Print `This is a retired v4 plugin install. Install the canonical bundle (README Tracks A-E), then re-run /stratosphere-update.` and **HALT**. The old directory can be deleted once the new install works.
-
      - **Antigravity plugin install** (path is `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`):
        `agy plugin install` copied `dist/` there and did not record its source, so update by reinstalling from the release tag.
        1. **Find the CLI:** `agy` on PATH. If absent, print `Newer StratOS v<latest_version> available (you have v<installed_version>). Run: agy plugin install <clone>/dist` and **HALT**.

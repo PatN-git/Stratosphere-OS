@@ -44,10 +44,6 @@ def test_preflight_instructions():
             "reload plugins and re-run",
             "HALT"
         ],
-        "Retired v4 plugin install halt": [
-            "retired v4 plugin install",
-            "HALT"
-        ],
         "In-place git pull pathway": [
             ".git",
             "git -C <plugin> pull --ff-only",
@@ -73,7 +69,7 @@ def test_preflight_instructions():
     copied = branch("**Antigravity / copied-skills Install**", "**In-place Git Checkout**")
     for path in ("`~/.claude/skills/`", "`./.claude/skills/`"):
         assert path in copied, f"copied-skills branch does not cover {path}"
-    market = branch("**Claude Marketplace Cache**", "**Retired v4 plugin install**")
+    market = branch("**Claude Marketplace Cache**", "**Antigravity plugin install**")
     for needle in ("claude plugin marketplace update stratosphere-os", "claude plugin update stratosphere-os", "claude-code"):
         assert needle in market, f"marketplace branch missing {needle!r}"
 

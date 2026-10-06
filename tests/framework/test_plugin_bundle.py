@@ -2,8 +2,9 @@
 
 `agy` copies the plugin to ~/.gemini/config/plugins/stratosphere-os/ (manifest + skills/), so the
 installed scaffolder lives at .../plugins/stratosphere-os/skills/stratosphere-setup/. Setup and update
-must find it there without mistaking it for a retired v4 plugin install (which had scripts/ at the
-plugin root), and the release checklist must name both plugin validators.
+must find it there, the retired v4 plugin branch must stay gone (unreachable: the skills only run from
+an installed bundle, and check_suite legacy cleans leftovers), and the release checklist must name both
+plugin validators.
 """
 import pytest
 
@@ -36,9 +37,11 @@ def test_releasing_lists_both_plugin_validators():
     assert "skills: 27 processed" in text, "RELEASING must show the expected agy output and the recorded dry run"
 
 
-def test_update_retired_v4_halt_is_scoped_to_the_plugin_root():
-    assert "skills/stratosphere-setup" in bullet(UPDATE_SKILL, "**Retired v4 plugin install**"), \
-        "the retired-v4 HALT must exclude a <plugin> that ends in skills/stratosphere-setup (the agy plugin layout)"
+@pytest.mark.parametrize("rel", [SETUP_SKILL, UPDATE_SKILL])
+def test_retired_v4_plugin_install_branch_is_gone(rel):
+    text = read(rel).lower()
+    assert "retired v4" not in text and "legacy v4 plugin installs" not in text, \
+        f"{rel}: the retired v4 plugin branch is unreachable prose; check_suite.py legacy handles leftovers"
 
 
 def test_update_refreshes_an_antigravity_plugin_install_by_reinstalling_dist():
