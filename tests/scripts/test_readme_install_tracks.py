@@ -1,4 +1,4 @@
-"""BT-121: README documents all four install tracks (A skills.sh, B copy/paste, C Claude marketplace, D Antigravity bridge)."""
+"""BT-121: README documents all five install tracks (A skills.sh, B copy/paste, C Claude marketplace, D Antigravity bridge, E Antigravity plugin)."""
 import re
 from pathlib import Path
 
@@ -44,6 +44,26 @@ def test_track_d_antigravity_bridge_both_shells_and_target_flag():
     assert "scripts/install-antigravity-bridge.ps1" in d
     assert "--target" in d
     assert "~/.gemini/config/skills" in d
+
+
+def test_track_d_records_the_cli_directory_result():
+    """BT-150 spike C: on agy 1.3.0 the CLI read ~/.gemini/config/skills and not ~/.gemini/antigravity-cli/skills."""
+    d = _track("D")
+    assert "~/.gemini/antigravity-cli/skills" in d
+    assert "agy" in d
+
+
+def test_track_e_antigravity_plugin_install():
+    e = _track("E")
+    assert "agy plugin install dist" in e
+    assert "~/.gemini/config/plugins/stratosphere-os" in e
+    assert re.search(r"reinstall|again", e, re.I), "must say how to update (reinstall over it)"
+    assert "/sync-skills" in e, "the plugin carries only the bundled skills; external ones come from /sync-skills"
+    assert "Track D" in e, "Track D stays available"
+
+
+def test_install_table_routes_antigravity_plugin_installs_to_track_e():
+    assert "(#track-e--antigravity-plugin-install)" in README
 
 
 def test_root_install_without_subpath_is_called_out():

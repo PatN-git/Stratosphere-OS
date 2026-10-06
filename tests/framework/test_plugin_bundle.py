@@ -29,6 +29,13 @@ def test_setup_and_update_find_the_antigravity_plugin_install(rel):
     assert PLUGIN_SETUP_DIR in read(rel), f"{rel} must list the agy plugin install location"
 
 
+def test_releasing_lists_both_plugin_validators():
+    text = read("RELEASING.md")
+    assert "claude plugin validate ." in text
+    assert "agy plugin validate dist" in text
+    assert "skills: 27 processed" in text, "RELEASING must show the expected agy output and the recorded dry run"
+
+
 def test_update_retired_v4_halt_is_scoped_to_the_plugin_root():
     assert "skills/stratosphere-setup" in bullet(UPDATE_SKILL, "**Retired v4 plugin install**"), \
         "the retired-v4 HALT must exclude a <plugin> that ends in skills/stratosphere-setup (the agy plugin layout)"
