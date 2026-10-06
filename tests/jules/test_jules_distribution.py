@@ -68,7 +68,9 @@ def test_bundled_skills_are_guarded_from_packs():
 
 def test_pack_pin_is_not_older_than_the_rename_release():
     """The pack is fetched at the registry's `ref`. v2.1.0 predates the v4.0.0 rename, so a project that
-    synced it got /4a_verify-and-ship style commands that no longer resolve."""
+    synced it got /4a_verify-and-ship style commands that no longer resolve. The pin must also track the
+    release: ref == v + build/build.py VERSION (scripts/release.py stamps it; a manual bump that skips the
+    stamp fails here)."""
     print("--- test_pack_pin_is_not_older_than_the_rename_release ---")
     data = json.loads((REPO_ROOT / "src/external-skills.json").read_text(encoding="utf-8"))
     entry = next(s for s in data["skills"] if s["name"] == "jules-dispatch")
@@ -76,6 +78,8 @@ def test_pack_pin_is_not_older_than_the_rename_release():
     assert m, f"pin a release tag (vX.Y.Z), got {entry['ref']!r}"
     assert tuple(map(int, m.groups())) >= (4, 0, 0), f"{entry['ref']} predates the v4.0.0 skill rename"
     assert entry["ref"] in entry["description"], "the description must name the tag it is pinned to"
+    version = re.search(r'VERSION\s*=\s*"([^"]+)"', (REPO_ROOT / "build/build.py").read_text(encoding="utf-8")).group(1)
+    assert entry["ref"] == f"v{version}", f"pin {entry['ref']} must equal v{version} (build/build.py VERSION)"
     print("PASS"); return True
 
 

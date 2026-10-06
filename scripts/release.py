@@ -62,6 +62,20 @@ def raise_version(v, level):
         return f"{parts[0]}.{parts[1]}.{parts[2]+1}"
     return v
 
+def stamp_pack_pin(text, version):
+    """Return src/external-skills.json text with the jules-dispatch `ref` and its "Pinned to the vX release
+    tag" description set to v<version>. Only that entry changes; raises ValueError if it cannot be stamped."""
+    tag = "v" + version.lstrip("v")
+    entry = re.search(r'\{[^{}]*"name":\s*"jules-dispatch"[^{}]*\}', text)
+    if not entry:
+        raise ValueError("jules-dispatch entry not found in external-skills.json")
+    block, n_ref = re.subn(r'("ref":\s*")[^"]*(")', lambda m: m.group(1) + tag + m.group(2), entry.group(0))
+    block, n_desc = re.subn(r'(Pinned to the )v\d+\.\d+\.\d+( release tag)',
+                            lambda m: m.group(1) + tag + m.group(2), block)
+    if n_ref != 1 or n_desc != 1:
+        raise ValueError("jules-dispatch entry needs one `ref` and one 'Pinned to the vX.Y.Z release tag' description")
+    return text[:entry.start()] + block + text[entry.end():]
+
 def run_cmd(args, capture=True):
     res = subprocess.run(args, cwd=str(ROOT), capture_output=capture, text=True)
     return res
@@ -249,6 +263,15 @@ def main():
             )
             readme_path.write_text(new_readme_content, encoding="utf-8")
             print("Updated README.md badge version.")
+
+        # Keep the jules-dispatch pack pin on the release tag (bytes in/out: no newline translation)
+        pins_path = ROOT / "src" / "external-skills.json"
+        pins_text = pins_path.read_bytes().decode("utf-8")
+        stamped_pins = stamp_pack_pin(pins_text, derived_version)
+        if stamped_pins != pins_text:
+            pins_path.write_bytes(stamped_pins.encode("utf-8"))
+            print("Updated src/external-skills.json jules-dispatch pin.")
+            did_update = True
 
         # If it is a first release (no last_tag) or we updated the version, compile it
         if did_update or not last_tag:
