@@ -16,6 +16,11 @@ timestamp: 2026-10-05
 
 **Orchestrator rule:** AGENTS.md §1 Orchestrators. Each unit still commits its own document (one document per run, AGENTS.md §4).
 
+**Context protection:** main thread keeps HITL, commits and the decision log. Read-heavy, non-HITL steps run in subagents: write only to `.tmp/`, never commit, return the path + ≤10-line summary. A subagent never asks the user; it returns every decision as a gate list. Inline when host has no subagents (AGENTS.md §8).
+- **PRD Drafter** (2a Phase 3). Input: decision log, discovery brief, `references/PRD-template.md`, memory paths. Guardrail: "Write the draft to `.tmp/2z-BT-<padded>-prd-draft.md` only; no other file, no commit. Return the path, a ≤10-line summary and every user gate: cost approval, `[unbacked]` scope tags, ADR flag, `> open:`." Main puts the gates to user, applies answers as surgical edits, then runs 2a Phases 4–5.
+- **Direction Drafter** (2b Phase 2.5 steps 1–3). Input: PRD path, 2b gate result. Guardrail: "Write the 3 directions and 5-Lens notes to `.tmp/2z-BT-<padded>-directions.md` only; no other file, no commit." Main renders via `plan-html` and runs the HITL pick.
+- **Stress Tester** (2b) and **Spec-Reconciliation Auditor** (2c): dispatch as subagents per the unit, never inline.
+
 ---
 
 ## Phase 0: Load & Resume
@@ -27,13 +32,13 @@ timestamp: 2026-10-05
 3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID, then 2z renames it; offline ID `BT-LOCAL-<slug>`; resume checks both names). Append one line per HITL decision; on resume print its last 5 lines. The hand-off reads it too.
 
 ## Phase 1: PRD
-Run `/2a-write-prd`. Its HITL interview and cost gate stay in the main thread; append each decision to the log.
+Run `/2a-write-prd`. Its HITL interview and cost gate stay in the main thread; draft via PRD Drafter; append each decision to the log.
 
 ## Phase 2: Interface Design
 Run `/2b-interface-design`.
 - If 2b takes its no-surface skip path, no design doc is produced; continue to Phase 3.
 - **Path A pause:** 2b halts for the generator. 2z halts too, with a resume note: re-invoke `/2z-write-spec BT-<n>` to resume at 2b (Phase 0 detection, then 2b's own Phase 1 resume check).
-- The HITL direction pick stays in the main thread.
+- The HITL direction pick stays in the main thread; draft the directions via Direction Drafter.
 
 ## Phase 3: Reconcile
 Run `/2c-reconcile-specs` in the main thread. Its own Context Isolation Rule sees that this session authored the artifacts and isolates the scan to its Spec-Reconciliation Auditor subagent. Do **not** wrap 2c itself in a subagent: a subagent cannot run its Phase 4 HALT for user Skips.

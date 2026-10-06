@@ -97,6 +97,15 @@ def test_2a_handoff_offers_the_chain():
     assert "/2z-write-spec BT-<padded>" in p5
 
 
+def test_2z_delegates_read_heavy_steps_and_keeps_hitl_in_main():
+    text = _read("workflows/2z-write-spec.md")
+    section = text.split("**Context protection:**")[1].split("## Phase 0")[0]
+    for name in ("PRD Drafter", "Direction Drafter", "Stress Tester", "Spec-Reconciliation Auditor"):
+        assert name in section
+    assert "never commit" in section and "never asks the user" in section
+    assert "tmp/2z-BT-<padded>-prd-draft.md` only" in section
+
+
 def test_orchestrators_share_one_definition_in_agents_md():
     for rel in ("workflows/2z-write-spec.md", "workflows/3z-afk-loop.md"):
         assert "AGENTS.md §1 Orchestrators" in _read(rel)

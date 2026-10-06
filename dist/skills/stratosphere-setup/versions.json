@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "42221024e36317a04d5756e2be76da74d93a694f2f3b9ade4917119d90a7e8df",
+      "sha256": "d116d4c13fa9242bb2e0e015168c2323f62a8244f463e8cbce6d4106d2e56b0c",
       "timestamp": "2026-10-05",
       "version": "3.2.0"
     },
@@ -201,9 +201,14 @@
       "version": "1.1.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "134c064b3837f5a7be894750dd1d912b295edfc9f87923f27a0c18a28b46c6cf",
+      "sha256": "f268cb9798c74e8c77e9cd6ad1e2fdd4d1df3be98dd91100d45d49e1ab03cea7",
       "timestamp": "2026-10-05",
       "version": "1.0.0"
+    },
+    "skills/2z-write-spec/references/PRD-template.md": {
+      "sha256": "8a6423c2c242015f8cfef12bcff919dbb829974fe868ba00ee780a2650fdde4d",
+      "timestamp": "2026-09-15",
+      "version": "2.0.0"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "613942903ad18f292d78d8588db0d7bd145a2c9424b948991b15b262bc96bdb1",
