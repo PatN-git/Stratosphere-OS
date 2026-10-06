@@ -665,6 +665,7 @@ def main():
         (home / ".claude" / "skills").resolve(): "global Claude Code",
         (cwd / ".claude" / "skills").resolve(): "local Claude Code",
         (home / ".gemini" / "config" / "skills").resolve(): "global Antigravity",
+        (home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills").resolve(): "global Antigravity plugin",
         (home / ".agents" / "skills").resolve(): "global skills",
         (cwd / ".agents" / "skills").resolve(): "local skills",
     }

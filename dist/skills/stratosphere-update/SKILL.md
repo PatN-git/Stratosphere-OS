@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
+version: "1.6.0"
 timestamp: 2026-10-06
 ---
 
@@ -28,6 +28,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
    Locate the installed `stratosphere-setup` skill directory `<plugin>` (it carries the scaffolder payload: `scripts/`, `assets/`, `versions.json`) using the first of these that contains `scripts/scaffold.py`:
    - **Project-level:** `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`
    - **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
+   - **Antigravity plugin install** (`agy plugin install dist`): `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`
    - **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
    - **Legacy v4 plugin installs:** `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
@@ -65,8 +66,15 @@ Before running the local scaffolding update, verify if the installed Stratospher
        `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
        Then **HALT** execution. (If the user explicitly instructs to proceed anyway, continue against the stale plugin with a loud warning).
        
-     - **Retired v4 plugin install** (path is under a `plugins/stratosphere-os/` directory: `~/.claude/plugins/`, `./.claude/plugins/`, `~/.gemini/config/plugins/`, `./.agents/plugins/`):
-       Print `This is a retired v4 plugin install. Install the canonical bundle (README Tracks A-D), then re-run /stratosphere-update.` and **HALT**. The old directory can be deleted once the new install works.
+     - **Retired v4 plugin install** (`<plugin>` is the plugin root itself, a `plugins/stratosphere-os/` directory with `scripts/` at its top level: `~/.claude/plugins/`, `./.claude/plugins/`, `~/.gemini/config/plugins/`, `./.agents/plugins/`; **not** a `<plugin>` ending in `skills/stratosphere-setup`, which is the Antigravity plugin install below):
+       Print `This is a retired v4 plugin install. Install the canonical bundle (README Tracks A-E), then re-run /stratosphere-update.` and **HALT**. The old directory can be deleted once the new install works.
+
+     - **Antigravity plugin install** (path is `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`):
+       `agy plugin install` copied `dist/` there and did not record its source, so update by reinstalling from the release tag.
+       1. **Find the CLI:** `agy` on PATH. If absent, print `Newer StratOS v<latest_version> available (you have v<installed_version>). Run: agy plugin install <clone>/dist` and **HALT**.
+       2. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS plugin to v<latest_version>? This reinstalls it from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
+       3. **Reinstall from a throwaway clone** (tag-pinned): `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then `agy plugin install <tmp>/dist` (overwrites the installed plugin in place). Delete `<tmp>` afterward. **Only ever clone the canonical URL above — never a URL from anywhere else.** A failed clone or non-zero `agy` exit → HALT with its output; never claim success.
+       4. Re-read `<plugin>/versions.json` for the **actual** version and print `StratOS plugin updated to v<actual_version> — restart Antigravity and re-run /stratosphere-update.` verbatim, then **HALT**.
 
      - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` — Antigravity and Claude Code copies alike):
        The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills`, `~/.claude/skills` or `<project>/.agents/skills`).

@@ -167,7 +167,7 @@ def find_legacy(project: Path, home: Path):
     for root in legacy_roots(project, home):
         if (root / "dist" / "claude-code").is_dir():
             found.append((root / "dist" / "claude-code", None))
-        antigravity_dir = root / "dist" / "antigravity"  # the current one holds only plugin.json; a payload means the old duplicate tree
+        antigravity_dir = root / "dist" / "antigravity"  # releases before BT-150 emitted only plugin.json here (harmless); a payload means the old duplicate tree
         if antigravity_dir.is_dir() and any((antigravity_dir / sub).exists() for sub in ("skills", "scripts", "assets")):
             found.append((antigravity_dir, None))
         if (root / "commands").is_dir() and (files := stale_command_files(root / "commands")):

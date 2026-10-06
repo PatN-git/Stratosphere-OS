@@ -229,10 +229,28 @@ def test_legacy_clean_project_passes(proj):
     assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
 
 
-def test_legacy_spares_current_antigravity_manifest_dir(proj):
+def test_legacy_spares_a_manifest_only_antigravity_dir(proj):
+    """Releases before BT-150 emitted only a manifest here; it is harmless, so only a skills payload is flagged."""
     project, home = proj
     touch(project / "dist" / "antigravity" / "plugin.json")
     assert legacy(project, home).returncode == 0
+
+
+def test_legacy_spares_the_antigravity_plugin_install_layout(proj):
+    """`agy plugin install dist` lands in ~/.gemini/config/plugins/stratosphere-os/ (manifest + skills/)."""
+    project, home = proj
+    plugin = home / ".gemini" / "config" / "plugins" / "stratosphere-os"
+    touch(plugin / "plugin.json")
+    touch(plugin / "skills" / "0a-start-session" / "SKILL.md")
+    assert legacy(project, home).returncode == 0
+
+
+def test_suite_check_runs_from_an_installed_antigravity_plugin(tmp_path):
+    skills = tmp_path / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills"
+    shutil.copytree(DIST_SKILLS, skills)
+    installed = skills / "stratosphere-setup" / "scripts" / "check_suite.py"
+    r = subprocess.run([sys.executable, str(installed), "suite"], capture_output=True, text=True)
+    assert r.returncode == 0 and "23/23" in r.stdout, r.stdout + r.stderr
 
 
 def test_legacy_flags_antigravity_dir_carrying_a_skills_payload(proj):

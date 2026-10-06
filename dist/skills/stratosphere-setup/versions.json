@@ -431,7 +431,7 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "a36b7692123b02330e2c0a6aec5bbd5e149097eb93c7da05811bc6b21ae9b486",
+      "sha256": "f16260aad1e3ca6a32ef81d3d68a2a05ef4f5c663c72dc5372a8cea41d733541",
       "timestamp": "2026-10-06",
       "version": "1.3.0"
     },
@@ -441,9 +441,9 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "f83bdf20ff0e70772ebf20fd9b9bf759354737f5ad98588757efcb42721d07cd",
+      "sha256": "0121721f16ac55b4fd57eba915557521f04290213eeb5976152168e4c3496a9f",
       "timestamp": "2026-10-06",
-      "version": "1.5.0"
+      "version": "1.6.0"
     },
     "skills/sync-skills/SKILL.md": {
       "sha256": "e8460002497c2de965a7f5af619007b70850aad11589e1266880358d9425a7b2",

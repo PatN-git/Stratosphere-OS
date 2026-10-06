@@ -228,6 +228,7 @@ def test_sync_skills_global_elsewhere_targets_a_directory_the_host_reads(tmp_pat
     (".agents/skills", "proj", "local skills"),
     (".agents/skills", "home", "global skills"),
     (".gemini/config/skills", "home", "global Antigravity"),
+    (".gemini/config/plugins/stratosphere-os/skills", "home", "global Antigravity plugin"),
 ])
 def test_scaffold_labels_a_skills_dir_install_instead_of_custom_path(tmp_path, host_dir, scope_root, label):
     """The scope label compared against retired plugins/stratosphere-os paths, so every
