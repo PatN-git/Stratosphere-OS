@@ -77,6 +77,8 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 ### 1. Install the Skills
 StratosphereOS ships as one canonical bundle, `dist/skills/` (27 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
 
+> **Trust the project first (Codex, Gemini CLI).** Codex >= 0.150.0 skips project `AGENTS.md` until the project is trusted, and Gemini CLI >= 0.59.0 fails closed on untrusted workspaces. Nothing errors: on Codex the skills can still appear (reported, not verified) while the constitution's precedence, security and git rules are absent. Trust the folder in the host before `/stratosphere-setup`; a skill cannot check this for you.
+
 | Your situation | Use |
 |:---|:---|
 | Claude Code, want auto-updating skills | [Track C](#track-c--claude-code-marketplace) |

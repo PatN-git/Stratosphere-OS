@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
-timestamp: 2026-09-29
+version: "1.3.0"
+timestamp: 2026-10-06
 ---
 
 # Instantiate StratosphereOS
@@ -138,6 +138,8 @@ Checkpoint 0 has placed the rule/protocol files; they govern everything that fol
 - `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
 Confirm they exist. If Checkpoint 0 reported any as `STALE`, `NEEDS-REVIEW`, or `LEFT AS-IS`, ensure you have reviewed the differences before relying on them.
+
+Tell the user to trust the project in the host: Codex (>= 0.150.0) skips project `AGENTS.md` until the project is trusted and Gemini CLI (>= 0.59.0) fails closed on untrusted workspaces, so the constitution is silently absent. Host trust state is unreadable from a skill; state it, do not try to check it.
 
 ## Checkpoint 2: Database audit
 

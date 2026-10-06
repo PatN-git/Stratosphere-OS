@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.2.0"
-timestamp: 2026-10-05
+version: "3.3.0"
+timestamp: 2026-10-06
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -66,9 +66,9 @@ timestamp: 2026-10-05
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
 - **Host activation.** One canonical body; placement differs, content never does.
-  - *Always-on rules:* **this file is the body.** Most hosts read `AGENTS.md` natively (Codex, Cursor, Devin, Copilot, Jules, Gemini CLI); the two that don't get a two-line pointer to it — `CLAUDE.md` (Claude Code) and `GEMINI.md` (Antigravity). Adding a host means checking whether it needs a pointer, never restating the rules.
-  - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`). Contract: `okf-protocol.md` §2.1.
-  - *Skills:* per-host skill dirs — Claude Code `.claude/skills/` or `~/.claude/skills/` (Claude Code does **not** read `.agents/skills/`; its plugin also registers the bundled suite); `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw); `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). External/system-pack skills (`code-simplifier`, `skill-creator`, …) are fetched into `.agents/skills/` by `/sync-skills` and must also be visible to the running host.
+  - *Always-on rules:* **this file is the body.** Codex, Cursor, Devin, Copilot, Jules and Antigravity read `AGENTS.md` natively. Claude Code reads it only when a project has no `CLAUDE.md` (>= 2.1.277, a user setting); Gemini CLI loads only `GEMINI.md` unless `context.fileName` lists `AGENTS.md`. So `CLAUDE.md` and `GEMINI.md` stay as two-line version-safe pointers (`GEMINI.md` serves Gemini CLI and Antigravity). Codex (>= 0.150.0) and Gemini CLI (>= 0.59.0) load project instructions only once the project is trusted. Adding a host means checking whether it needs a pointer, never restating the rules.
+  - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`; >= 2.1.288 loads them when a file is written). Contract: `okf-protocol.md` §2.1.
+  - *Skills:* per-host skill dirs — Claude Code `.claude/skills/` or `~/.claude/skills/` (Claude Code does **not** read `.agents/skills/`; its plugin also registers the bundled suite); `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw, Copilot); Copilot also reads `.github/skills/` and `.claude/skills/`. External/system-pack skills (`code-simplifier`, `skill-creator`, …) are fetched into `.agents/skills/` by `/sync-skills` and must also be visible to the running host.
   - *Skill resolution:* if a named skill is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable. Workflows name skills only, never paths.
 - **Subagent nesting.** Use the depth the host allows, ≤ 2 below the invoking session (leaves one level for an outer orchestrator). Every subagent step must also run inline. Subagents never commit, except a `3d` implementer dispatched by `3z` (the §4 single writer for code); auditors, drafters and scanners are read-only (scratch writes to `.tmp/` excepted). Prefer workspace `shared/inherit` for sequential work: worktree isolation branches from the default branch on Claude Code and lacks untracked deps (e.g. `node_modules`).
 - **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only; the field carrying that varies:
@@ -76,7 +76,9 @@ timestamp: 2026-10-05
   | Host | Manual-only field |
   |---|---|
   | Claude Code, Cursor, OpenClaw | `disable-model-invocation` |
+  | Copilot (VS Code) | `disable-model-invocation` |
   | Devin | `triggers: ["user"]` |
   | Codex | `agents/openai.yaml` sidecar |
   | Antigravity | none — `description` only |
+  | Gemini CLI | none — `description` only |
 ``
