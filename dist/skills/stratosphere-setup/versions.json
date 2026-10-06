@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "220f660694296142b753ab67aa988745c530c568f7bb10e7efcab169fb173b56",
+      "sha256": "a089f643482879795e88adb4dc3456e8f986372b867e270f36e02ccf5f2f8320",
       "timestamp": "2026-10-06",
       "version": "3.3.0"
     },
@@ -61,9 +61,9 @@
       "version": "2.1.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "409eab50422cd50eaf7ceb71eb6c9806d5321e5befee5e1429e46cfe65174e1f",
-      "timestamp": "2026-09-25",
-      "version": "2.0.1"
+      "sha256": "2da07384d8024d4edeb5fb0c143a8d9e623b06d98df257cd50062ab14ffc5ddc",
+      "timestamp": "2026-10-06",
+      "version": "2.0.2"
     },
     "assets/templates/rules/output-mode.md": {
       "sha256": "26f131434fa078b1022f731925cd24c9b7efa65925212113463969989ffcc302",
@@ -96,9 +96,9 @@
       "version": "1.0.3"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "aefebe1e822e6ab0019e2e532de2505918ac82f41e20f3f2706218c071754403",
-      "timestamp": "2026-10-05",
-      "version": "1.2.0"
+      "sha256": "fc6aeaf0888df8b37af60dcc36ea72b101b3aa2995389b88fc0bf505f81f6f4f",
+      "timestamp": "2026-10-06",
+      "version": "1.2.1"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
       "sha256": "30ab1f0a9e88e26a472cf31205b867c8cd1eb749b816b09e8265d06bc9b69035",
@@ -201,9 +201,9 @@
       "version": "1.1.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "e491d8daed12427dc92347b46eb0946114fde1d1da2bed89b4ab7e952281448c",
-      "timestamp": "2026-10-05",
-      "version": "1.0.0"
+      "sha256": "fa61faa6edf5a5895a5a0371efd977776ccb1c9b340a63193b86144c435defa5",
+      "timestamp": "2026-10-06",
+      "version": "1.0.1"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "613942903ad18f292d78d8588db0d7bd145a2c9424b948991b15b262bc96bdb1",
@@ -266,9 +266,9 @@
       "version": "1.0.1"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "232098975d11c27f75a541749ad963424730b63895c63c2c47143f8a9f37be99",
-      "timestamp": "2026-10-05",
-      "version": "2.2.0"
+      "sha256": "a90da270e16333387a2069624b8068d4a9bc74dde9c04a6bd2a478f84a718371",
+      "timestamp": "2026-10-06",
+      "version": "2.3.0"
     },
     "skills/3d-implement-issue/references/shadcn-build-guide.md": {
       "sha256": "cb53c1ac093f79fe08b637acb4da0a0950ac8436eb3476ebe1f307809a3c6793",
@@ -286,9 +286,9 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "679828eb5fdeb6b86e64d04aac6e2657ddd5cd0ad12bbe0a9ebde359a3149dba",
-      "timestamp": "2026-10-05",
-      "version": "1.3.0"
+      "sha256": "2f5d436b98c4faa6c060f90eb55dd8b920791f23a4c5d403a09c7cec38343558",
+      "timestamp": "2026-10-06",
+      "version": "1.3.1"
     },
     "skills/4a-verify-and-ship/references/audit-to-slices.md": {
       "sha256": "eec5d537555f056c92fd2f07e97bc7a1db5f83b2282999105d0eb31516ab3ac0",
@@ -326,9 +326,9 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "09c1d3f6d9123bbd2d946d0154a9508ec28f2b98a86cb295904e443227cd588a",
+      "sha256": "a78bdaadfee9162b9bdd67907674714f4f7bb91b43795703031e1a0da1289e00",
       "timestamp": "2026-10-06",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
       "sha256": "8bf36bfaa09dd74f9d7869e21f0f17c73bf2c1ec680ae62567fd1d4e2cc7cdd6",
@@ -441,14 +441,14 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "6a9a34c82beee6dfe8061b955dee2d0de6a11df064930e1e910adb0bc902604e",
+      "sha256": "e9b287ee0e6a88675aff18eb7386c8e1a69d5f1febed9c2605bc5df5d2daa651",
       "timestamp": "2026-10-06",
       "version": "1.6.0"
     },
     "skills/sync-skills/SKILL.md": {
-      "sha256": "e8460002497c2de965a7f5af619007b70850aad11589e1266880358d9425a7b2",
-      "timestamp": "2026-09-29",
-      "version": "1.0.2"
+      "sha256": "6fedb05e213a82d92553aaaf047cec0ff88b67999b2e03ce9b70b14f4513f8eb",
+      "timestamp": "2026-10-06",
+      "version": "1.0.3"
     }
   },
   "plugin_version": "4.5.0"

@@ -13,9 +13,12 @@ Used by 4a Phase 5 (and 0b for suite reuse); the prior PR body is passed as a fi
     PENDING (no Closes line). post_merge/deviations/refs are unioned (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
+    <base> = --base, else the remote default branch (origin/HEAD), else origin/main|master, main|master; none
+    resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent must be BT-<n> (else exit 2).
   suite  [--dir .tmp]
     Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1. Reusable =
-    head_sha is HEAD, or an ancestor with only `release: prepare` commits since (a bump changes no tested behaviour).
+    head_sha is HEAD, or an ancestor with only `release: prepare` commits since (a bump changes no tested behaviour),
+    and the tree is clean outside .memory/, docs/, .tmp/ (4a's clean-tree guard).
 """
 import argparse
 import json
@@ -33,6 +36,8 @@ EXT_RULE_RE = re.compile(r"^[-*\s]*`?([^`\s→]+)`?\s*(?:→|->)\s*`?([\w-]+)`?\
 STR = r'"(?:[^"\\]|\\.)*"'
 SLICE_RE = re.compile(rf"\{{id: (BT-\d+), summary: ({STR}|[^,}}]*), verdict: (\w+), audit_rounds: (\d+)\}}")
 VERDICTS = ("PASS", "WAIVED", "SKIP")
+PARENT_RE = re.compile(r"BT-\d+")
+DRIFT_OK = (".memory/", "docs/", ".tmp/")  # paths allowed to be dirty (same set as 4a's clean-tree guard)
 
 
 def git(*args):
@@ -47,9 +52,10 @@ def git_ok(*args):
 
 
 def resolve_base(given):
-    if given:
-        return given
-    for cand in ("origin/main", "origin/master", "main", "master"):
+    if given:  # an explicit base must still be a commit, else the diff is empty and risk would read [none]
+        return given if git("rev-parse", "--verify", "--quiet", f"{given}^{{commit}}") else None
+    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+    for cand in (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master"):
         base = git("merge-base", "HEAD", cand)
         if base:
             return base
@@ -121,8 +127,23 @@ def check_suite(rec):
     return rec
 
 
+def tree_is_clean():
+    """True when no tracked change or untracked file lies outside DRIFT_OK (a rename counts both of its paths)."""
+    r = subprocess.run(["git", "status", "--porcelain", "-z"], capture_output=True, text=True, encoding="utf-8")
+    if r.returncode != 0:
+        return False
+    fields = iter(r.stdout.split(chr(0)))
+    for entry in fields:
+        paths = [entry[3:]] + ([next(fields, "")] if "R" in entry[:2] or "C" in entry[:2] else [])
+        if entry and not all(p.startswith(DRIFT_OK) for p in paths):
+            return False
+    return True
+
+
 def reusable_suite(dirpath):
     """Newest reusable suite record from `<dirpath>/3d-suite-BT-*.json`, else None."""
+    if not tree_is_clean():
+        return None
     head = git("rev-parse", "HEAD")
     for f in sorted(Path(dirpath).glob("3d-suite-BT-*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
         try:
@@ -152,12 +173,11 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False)
 
 
-def slice_rows(args, prior, parent):
+def slice_rows(args, prior, parent, base):
     """(id, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new. None if --slice is malformed.
     Commits scoped to the parent itself are not slices (the parent closes only via --close-parent)."""
-    base = resolve_base(args.base)
-    log = (git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or "") if base else ""
+    log = git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or ""
     first_subject = {}  # int id -> (digits, summary of its oldest commit)
     for subject in reversed(log.splitlines()):
         m = SCOPE_RE.match(subject)
@@ -186,15 +206,14 @@ def slice_rows(args, prior, parent):
 
 
 def changed_risk_tags(base, risk_paths):
-    files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines() if base else []
+    files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines()
     rules = risk_rules(risk_paths)
     return sorted({tag for f in files for rx, tag in rules if rx.match(f.replace("\\", "/"))})
 
 
 def render_body(rows, parent, close_parent, rec, tags, lists, notes):
-    closes = [f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"]
-    if close_parent:
-        closes.append(f"Closes #{int(parent[3:])}.")
+    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"],
+                   [f"Closes #{int(parent[3:])}."] if close_parent else [])
     out = [*closes, "", "```stratos-pr", f"feature: {parent}", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
     out += [f"  - {{id: {i}, summary: {s}, verdict: {v}, audit_rounds: {a}}}" for i, s, v, a in rows]
     out += [f'test: {{cmd: {dumps(rec["cmd"])}, observed: {dumps(rec["observed"])}, at: {rec["head_sha"]}}}',
@@ -207,6 +226,9 @@ def render_body(rows, parent, close_parent, rec, tags, lists, notes):
 
 
 def cmd_build(args):
+    if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
+        print(f"[PR-BODY-ERROR] --parent must look like BT-<n>, got {args.parent!r}", file=sys.stderr)
+        return 2
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
     except (OSError, ValueError) as e:
@@ -224,13 +246,20 @@ def cmd_build(args):
         rec = reusable_suite(".tmp")
     if not rec:
         print("[NO-SUITE] no reusable suite result: run the suite once and write {head_sha, cmd, observed} "
-              "to .tmp/3d-suite-BT-<padded>.json", file=sys.stderr)
+              "to .tmp/3d-suite-BT-<padded>.json (HEAD must match and the tree be clean outside .memory/, docs/, "
+              ".tmp/)", file=sys.stderr)
+        return 2
+    base = resolve_base(args.base)
+    if not base:
+        why = f"--base {args.base!r} is not a commit" if args.base else "no origin/HEAD, main or master"
+        print(f"[PR-BODY-ERROR] cannot resolve the base branch ({why}): "
+              "pass --base <default-branch>; risk would otherwise be unverified", file=sys.stderr)
         return 2
 
     parent = args.parent or prior_feature or args.slice
     if args.parent and prior_feature and args.parent != prior_feature:
         print(f"[PR-BODY-WARN] --parent {args.parent} overrides prior feature {prior_feature}", file=sys.stderr)
-    rows = slice_rows(args, prior, parent)
+    rows = slice_rows(args, prior, parent, base)
     if rows is None:
         print(f"[PR-BODY-ERROR] --slice must look like BT-<n>, got {args.slice!r}", file=sys.stderr)
         return 2
@@ -240,7 +269,7 @@ def cmd_build(args):
              "deviations": union(prior_lists["deviations"], args.deviation),
              "refs": union(prior_lists["refs"], args.ref)}
     notes = args.notes if args.notes is not None else prior_notes
-    tags = changed_risk_tags(resolve_base(args.base), args.risk_paths)
+    tags = changed_risk_tags(base, args.risk_paths)
     body = render_body(rows, parent, args.close_parent, rec, tags, lists, notes)
     if args.out:
         Path(args.out).write_text(body, encoding="utf-8", newline="\n")
@@ -263,7 +292,8 @@ def build_parser():
     b.add_argument("--ref", action="append", default=[])
     b.add_argument("--notes")
     b.add_argument("--prior-body-file")
-    b.add_argument("--base", help="base ref; default: merge-base with origin/main|master, then main|master")
+    b.add_argument("--base", help="base ref; default: merge-base with origin/HEAD's branch, then origin/main|master, "
+                                  "main|master; none resolves -> exit 2")
     b.add_argument("--risk-paths", default=DEFAULT_RISK_PATHS)
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
