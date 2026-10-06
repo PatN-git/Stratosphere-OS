@@ -14,7 +14,7 @@ timestamp: 2026-10-05
 
 **Purpose:** Run `/2a-write-prd` → `/2b-interface-design` → `/2c-reconcile-specs` back-to-back for one feature, with one memory load and one decision log. The three units stay standalone and unchanged; 2z only sequences them.
 
-**Orchestrator rule:** invoke each unit by command name and follow its own body; never copy a unit's phases here (AGENTS.md §1, like `1c`). Each unit still commits its own document (one document per run, AGENTS.md §4).
+**Orchestrator rule:** AGENTS.md §1 Orchestrators. Each unit still commits its own document (one document per run, AGENTS.md §4).
 
 ---
 

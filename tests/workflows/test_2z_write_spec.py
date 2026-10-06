@@ -97,8 +97,12 @@ def test_2a_handoff_offers_the_chain():
     assert "/2z-write-spec BT-<padded>" in p5
 
 
-def test_3z_authority_names_2z_as_user_invoked_spec_orchestrator():
-    assert "`2z` is the user-invoked spec orchestrator" in _read("workflows/3z-afk-loop.md")
+def test_orchestrators_share_one_definition_in_agents_md():
+    for rel in ("workflows/2z-write-spec.md", "workflows/3z-afk-loop.md"):
+        assert "AGENTS.md §1 Orchestrators" in _read(rel)
+    for rel in ("constitution/AGENTS.md",):
+        assert "**Orchestrators:**" in _read(rel)
+    assert "**Orchestrators:**" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
 
 def test_2z_registered_in_check_suite_and_readme():
