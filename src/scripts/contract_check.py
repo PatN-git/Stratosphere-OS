@@ -11,6 +11,7 @@ Usage:
 
 Output (stdout):
   [CONTRACT-MISSING] <doc>:<line> <ref> (<kind>, <source>)   one per finding; exit 1
+  [CONTRACT-AMBIGUOUS <col>: <t1>, <t2>]                     advisory, printed before the verdict line; exit code unchanged
   [CONTRACT-SKIP] no schema declared                         exit 0
   [CONTRACT-OK] <n> reference(s) checked                     exit 0
 A reference must resolve in EVERY given source; <source> names the one it is missing from.
@@ -29,6 +30,8 @@ What is checked (backticked spans and fenced code lines only; prose is never rea
   - an enum literal, only when bound on the same span to a known enum type or to a column
     of that type (`employment_type = 'v'`, `jobs.status: 'v'`, `status IN ('a','b')`)
     -> the value must be a label of that enum                            (kind: enum-value)
+    A bare column name binds only when every table declaring it has the same enum type; if the tables disagree
+    (`jobs.status` enum, `notes.status` text) the value check is skipped and one [CONTRACT-AMBIGUOUS] line names them.
     A quoted token followed by `:` is a key, never a value; in fenced lines only `=`-style and IN bind
     (a JSON/YAML `"status": "x"` example is not checked).
 Not checked: bare words, free-floating literals, `x.y` with unknown `x` (`api/submit.js`),
@@ -69,8 +72,9 @@ QUOTED_RE = re.compile(r"""['"]([^'"\s]+)['"]""")
 
 SQL_TABLE_RE = re.compile(r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?(\w+)\s*\(", re.I)
 SQL_TYPE_RE = re.compile(r"CREATE\s+TYPE\s+(?:\w+\.)?(\w+)\s+AS\s+ENUM\s*\(([^)]*)\)", re.I)
-SQL_ADD_COL_RE = re.compile(
-    r"ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?:\w+\.)?(\w+)\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s+(\w+)", re.I)
+SQL_ALTER_RE = re.compile(  # table, then the comma-separated clause list up to the `;` (quoted `;` kept)
+    r"ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?:\w+\.)?(\w+)\s+((?:'[^']*'|[^;'])*)", re.I)
+SQL_ADD_CLAUSE_RE = re.compile(r'ADD\s+(COLUMN\s+)?(?:IF\s+NOT\s+EXISTS\s+)?"?(\w+)"?\s+"?(\w+)', re.I)
 SQL_ADD_VALUE_RE = re.compile(
     r"ALTER\s+TYPE\s+(?:\w+\.)?(\w+)\s+ADD\s+VALUE\s+(?:IF\s+NOT\s+EXISTS\s+)?'([^']+)'", re.I)
 SQL_NON_COLUMN = {"constraint", "primary", "unique", "foreign", "check", "exclude", "like"}
@@ -100,14 +104,27 @@ class Source:
     def declares_tables(self):
         return bool(set(self.tables) - {PLACEHOLDER_TABLE})
 
+    def bare_column_types(self, col):
+        """(tables declaring `col`, their enum types or None) for a bare column name."""
+        owners = sorted(t for t, cols in self.tables.items() if col in cols)
+        return owners, {self.col_enum.get((t, col)) for t in owners}
+
     def enum_for(self, table, col):
-        """Enum type bound by `[table.]col` (or `col` naming an enum type itself), else None."""
+        """Enum type bound by `[table.]col` (or `col` naming an enum type itself), else None.
+        A bare `col` binds only when every table declaring it agrees on one enum type."""
         if table:
             return self.col_enum.get((table, col))
         if col in self.enums:
             return col
-        types = {t for (_, c), t in self.col_enum.items() if c == col}
+        _, types = self.bare_column_types(col)
         return types.pop() if len(types) == 1 else None
+
+    def ambiguous_owners(self, table, col):
+        """Tables that make a bare enum-typed `col` ambiguous (mixed enum/non-enum or different enums), else []."""
+        if table or col in self.enums:
+            return []
+        owners, types = self.bare_column_types(col)
+        return owners if len(types) > 1 else []
 
 
 def parse_labels(text):
@@ -146,14 +163,30 @@ def parse_md(path):
 
 
 def strip_sql_comments(text):
+    """Drop `--` and nestable (Postgres) `/* */` comments; single-quoted literals are copied verbatim."""
     out, i, in_q = [], 0, False
     while i < len(text):
         c = text[i]
-        if c == "'":
-            in_q = not in_q
-        if not in_q and text.startswith("--", i):
+        if in_q:
+            in_q = c != "'"
+        elif c == "'":
+            in_q = True
+        elif text.startswith("--", i):
             while i < len(text) and text[i] != "\n":
                 i += 1
+            continue
+        elif text.startswith("/*", i):
+            depth = 0
+            while i < len(text):
+                if text.startswith("/*", i):
+                    depth, i = depth + 1, i + 2
+                elif text.startswith("*/", i):
+                    depth, i = depth - 1, i + 2
+                    if not depth:
+                        break
+                else:
+                    i += 1
+            out.append(" ")  # a comment still separates tokens
             continue
         out.append(c)
         i += 1
@@ -192,12 +225,17 @@ def parse_sql(path):
         cols = src.tables.setdefault(m.group(1), set())
         for item in split_top_level(text[m.end():i - 1]):
             tok = item.split()
-            if len(tok) >= 2 and tok[0].lower() not in SQL_NON_COLUMN:
+            head = re.split(r"[\s(]", item.strip(), maxsplit=1)[0].lower()  # `UNIQUE(` / `CHECK(` need no space
+            if len(tok) >= 2 and head not in SQL_NON_COLUMN:
                 cols.add(tok[0].strip('"'))
                 src.col_enum[(m.group(1), tok[0].strip('"'))] = tok[1].strip('"')
-    for m in SQL_ADD_COL_RE.finditer(text):
-        src.tables.setdefault(m.group(1), set()).add(m.group(2))
-        src.col_enum[(m.group(1), m.group(2))] = m.group(3)
+    for m in SQL_ALTER_RE.finditer(text):
+        for clause in split_top_level(m.group(2)):
+            c = SQL_ADD_CLAUSE_RE.match(clause.strip())
+            # without COLUMN, `ADD <keyword> ...` is a constraint/index, not a column
+            if c and (c.group(1) or c.group(2).lower() not in SQL_NON_COLUMN | {"index", "key"}):
+                src.tables.setdefault(m.group(1), set()).add(c.group(2))
+                src.col_enum[(m.group(1), c.group(2))] = c.group(3)
     # keep only the column->type bindings whose type is an enum
     src.col_enum = {k: t for k, t in src.col_enum.items() if t in src.enums}
     return src
@@ -224,7 +262,7 @@ def bindings(span, fenced):
 
 
 def check_span(span, sources, known_tables, fenced):
-    """Yield (ref, kind, source_name) for every unresolved reference in one span."""
+    """Yield (ref, kind, source_name) for every unresolved reference in one span; kind "ambiguous" carries the tables instead."""
     for m in REF_RE.finditer(span):
         x, y = m.groups()
         if x not in known_tables:
@@ -241,6 +279,9 @@ def check_span(span, sources, known_tables, fenced):
             typ = s.enum_for(table, col)
             labels = s.enums.get(typ) if typ else None
             if labels is None:
+                owners = s.ambiguous_owners(table, col)
+                if owners:
+                    yield col, "ambiguous", ", ".join(owners)
                 continue
             for v in values:
                 if v not in labels:
@@ -311,15 +352,20 @@ def main(argv=None):
         return 0
 
     known_tables = {t for s in sources for t in s.tables} - {PLACEHOLDER_TABLE}
-    findings, checked = [], 0
+    findings, advisories, checked = [], [], 0
     for doc in args.docs:
         label = Path(doc).as_posix()
         for no, span, fenced in spans(doc):
             checked += count_refs(span, known_tables, fenced)
             for ref, kind, source in check_span(span, sources, known_tables, fenced):
-                line = f"[CONTRACT-MISSING] {label}:{no} {ref} ({kind}, {source})"
-                if line not in findings:
-                    findings.append(line)
+                if kind == "ambiguous":
+                    line, bucket = f"[CONTRACT-AMBIGUOUS {ref}: {source}]", advisories
+                else:
+                    line, bucket = f"[CONTRACT-MISSING] {label}:{no} {ref} ({kind}, {source})", findings
+                if line not in bucket:
+                    bucket.append(line)
+    if advisories:
+        print("\n".join(advisories))
     if findings:
         print("\n".join(findings))
         return 1

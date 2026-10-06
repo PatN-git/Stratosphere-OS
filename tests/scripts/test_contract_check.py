@@ -338,3 +338,159 @@ def test_parity_ignores_docs_and_does_not_require_them(project):
 def test_docs_still_required_without_parity(project):
     r = run("--schema", project / "schema.md")
     assert r.returncode == 2 and "--docs" in r.stderr
+
+
+# --- BT-143 hardening: ALTER TABLE clauses, constraint spelling, enum ambiguity, block comments ---
+
+def jobs_md(*cols):
+    return "### `jobs`\n- `id`: pk.\n" + "".join(f"- `{c}`: documented.\n" for c in cols)
+
+
+def test_parity_registers_every_add_column_clause_of_one_alter(project):
+    sql = "CREATE TABLE jobs (id uuid);\nALTER TABLE jobs ADD COLUMN a text, ADD COLUMN b numeric(10, 2) DEFAULT 0;\n"
+    r = parity(project, md=jobs_md("a", "b"), sql=sql)
+    assert (r.returncode, r.stdout) == (0, "[CONTRACT-OK] parity: 1 table(s) compared\n"), r.stdout
+
+
+def test_parity_registers_add_without_the_column_keyword(project):
+    sql = "CREATE TABLE jobs (id uuid);\nALTER TABLE jobs ADD c text;\nALTER TABLE jobs ADD IF NOT EXISTS d int, ADD e boolean;\n"
+    r = parity(project, md=jobs_md("c", "d", "e"), sql=sql)
+    assert (r.returncode, r.stdout) == (0, "[CONTRACT-OK] parity: 1 table(s) compared\n"), r.stdout
+
+
+def test_alter_add_constraint_clauses_never_register_columns(project):
+    sql = (
+        "CREATE TABLE jobs (id uuid);\n"
+        "ALTER TABLE jobs ADD CONSTRAINT jobs_pk PRIMARY KEY (id), ADD UNIQUE (id), ADD CHECK (id IS NOT NULL),\n"
+        "  ADD FOREIGN KEY (id) REFERENCES other(id), ADD PRIMARY KEY (id), ADD INDEX ix (id),\n"
+        "  ADD EXCLUDE USING gist (id WITH =), ADD COLUMN z int;\n"
+    )
+    r = parity(project, md=jobs_md("z"), sql=sql)
+    assert (r.returncode, r.stdout) == (0, "[CONTRACT-OK] parity: 1 table(s) compared\n"), r.stdout
+
+
+def test_doc_reference_resolves_through_a_later_alter_clause_and_its_enum_type(project):
+    sql = project / "alt.sql"
+    sql.write_text(
+        SCHEMA_SQL + "ALTER TABLE jobs ADD COLUMN a text, ADD stage employment_type, ADD COLUMN IF NOT EXISTS b int;\n",
+        encoding="utf-8",
+    )
+    r = check(project, "`jobs.a` `jobs.stage` `jobs.b` `jobs.ghost` `jobs.stage: 'intern'`\n", "--sql", sql, schema="nope.md")
+    assert r.returncode != 0
+    assert "jobs.ghost (column, alt.sql)" in r.stdout
+    assert "stage='intern' (enum-value, alt.sql)" in r.stdout
+    assert "jobs.a " not in r.stdout and "jobs.stage " not in r.stdout and "jobs.b " not in r.stdout
+
+
+def test_parity_ignores_constraints_written_without_a_space_before_the_paren(project):
+    sql = (
+        "CREATE TABLE jobs (\n"
+        "  id uuid, title text,\n"
+        "  UNIQUE(id, title), unique(title, id), CHECK(id IS NOT NULL),\n"
+        "  CONSTRAINT jobs_u UNIQUE(id, title), PRIMARY KEY(id, title), FOREIGN KEY(id) REFERENCES other(id),\n"
+        "  EXCLUDE USING gist (id WITH =)\n"
+        ");\n"
+    )
+    r = parity(project, md=jobs_md("title"), sql=sql)
+    assert (r.returncode, r.stdout) == (0, "[CONTRACT-OK] parity: 1 table(s) compared\n"), r.stdout
+
+
+AMBIGUOUS_MD = """\
+### `jobs`
+- `status`: Enum `job_status`. Labels `'queued'`, `'done'`.
+
+### `notes`
+- `status`: Free text.
+"""
+
+AMBIGUOUS_SQL = """\
+CREATE TYPE job_status AS ENUM ('queued', 'done');
+CREATE TABLE jobs (id uuid, status job_status);
+CREATE TABLE notes (id uuid, status text);
+"""
+
+
+def test_bare_column_shared_with_a_non_enum_table_is_ambiguous_not_missing(project):
+    (project / "amb.md").write_text(AMBIGUOUS_MD, encoding="utf-8")
+    r = check(project, "A note can be `status = 'pending'`.\n", schema="amb.md")
+    assert r.returncode == 0, r.stdout
+    assert "CONTRACT-MISSING" not in r.stdout
+    assert r.stdout.splitlines() == ["[CONTRACT-AMBIGUOUS status: jobs, notes]", "[CONTRACT-OK] 1 reference(s) checked"]
+
+
+def test_ambiguous_bare_column_in_sql_is_skipped_with_one_advisory_across_sources(project):
+    (project / "amb.md").write_text(AMBIGUOUS_MD, encoding="utf-8")
+    (project / "amb.sql").write_text(AMBIGUOUS_SQL, encoding="utf-8")
+    r = check(project, "`status = 'pending'` and again `status IN ('x', 'y')`\n", "--sql", project / "amb.sql", schema="amb.md")
+    assert r.returncode == 0, r.stdout
+    assert r.stdout.count("[CONTRACT-AMBIGUOUS status: jobs, notes]") == 1
+    assert "CONTRACT-MISSING" not in r.stdout
+
+
+def test_ambiguity_never_masks_real_findings_or_the_exit_code(project):
+    (project / "amb.md").write_text(AMBIGUOUS_MD, encoding="utf-8")
+    r = check(project, "`status = 'pending'` `jobs.status = 'pending'` `jobs.ghost`\n", schema="amb.md")
+    assert r.returncode == 1
+    assert "[CONTRACT-AMBIGUOUS status: jobs, notes]" in r.stdout
+    assert "prd.md:1 status='pending' (enum-value, amb.md)" in r.stdout  # the table-qualified span still binds
+    assert "prd.md:1 jobs.ghost (column, amb.md)" in r.stdout
+
+
+def test_bare_column_bound_when_every_declaring_table_agrees_on_the_enum(project):
+    (project / "same.md").write_text(
+        AMBIGUOUS_MD.replace("Free text.", "Enum `job_status`. Labels `'queued'`, `'done'`."), encoding="utf-8")
+    r = check(project, "`status = 'pending'`\n", schema="same.md")
+    assert r.returncode == 1
+    assert "status='pending' (enum-value, same.md)" in r.stdout
+    assert "AMBIGUOUS" not in r.stdout
+
+
+def test_bare_column_with_different_enums_in_different_tables_is_ambiguous(project):
+    (project / "two.md").write_text(
+        AMBIGUOUS_MD.replace("Free text.", "Enum `order_status`. Labels `'open'`."), encoding="utf-8")
+    r = check(project, "`status = 'pending'`\n", schema="two.md")
+    assert r.returncode == 0, r.stdout
+    assert "[CONTRACT-AMBIGUOUS status: jobs, notes]" in r.stdout
+
+
+def sql_parity(project, sql, *cols):
+    """Parity of a documented `jobs` (id + cols) against `sql`; in sync means exit 0 and no drift lines."""
+    r = parity(project, md=jobs_md(*cols), sql=sql)
+    return r, (r.returncode, r.stdout) == (0, "[CONTRACT-OK] parity: 1 table(s) compared\n")
+
+
+def test_block_comments_are_stripped_across_lines_and_hide_commented_out_schema(project):
+    sql = (
+        "/* retired:\n   CREATE TABLE ghost (id uuid);\n*/\n"
+        "CREATE TABLE jobs (\n  id uuid, /* old column, dropped:\n     slug text, */ title text\n);\n"
+        "/* ALTER TABLE jobs ADD COLUMN nope int; */\n"
+    )
+    r, ok = sql_parity(project, sql, "title")
+    assert ok, r.stdout
+
+
+def test_block_comment_with_an_apostrophe_does_not_open_a_string(project):
+    sql = "CREATE TABLE jobs (\n  id uuid, /* don't drop */ title text, -- it's fine\n  slug text\n);\n"
+    r, ok = sql_parity(project, sql, "title", "slug")
+    assert ok, r.stdout
+
+
+def test_comment_markers_inside_string_literals_are_not_comments(project):
+    sql = "CREATE TABLE jobs (\n  id uuid, note text DEFAULT 'a /* b', slug text DEFAULT '-- c', after text DEFAULT '*/'\n);\n"
+    r, ok = sql_parity(project, sql, "note", "slug", "after")
+    assert ok, r.stdout
+
+
+def test_line_comment_inside_a_block_comment_and_block_marker_inside_a_line_comment(project):
+    sql = (
+        "CREATE TABLE jobs (\n  id uuid, /* old -- not a line comment */ title text,\n"
+        "  -- retired /* still a line comment\n  slug text\n);\n"
+    )
+    r, ok = sql_parity(project, sql, "title", "slug")
+    assert ok, r.stdout
+
+
+def test_nested_block_comments_are_stripped_whole(project):
+    sql = "CREATE TABLE jobs (\n  id uuid, /* outer /* inner */ ghost text, */ title text\n);\n"
+    r, ok = sql_parity(project, sql, "title")
+    assert ok, r.stdout
