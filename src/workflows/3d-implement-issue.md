@@ -28,7 +28,7 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
 
 ## Phase 0.5: Plan
-Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; nothing deletes it).
+Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; 4a deletes it after ship).
 - **HITL:** use the host's native planning mode where one exists (e.g. Antigravity `/plan`, Claude Code plan mode). Any approval prompt is the host's own; add no extra review halt.
 - **AFK** (dispatched by 3z): no approval.
 - **Required sections:** (1) files `[NEW]`/`[MODIFY]`, one-line intent each; (2) seams to test; (3) AC → planned test path; (4) existing tests at risk and how each stays green; (5) cross-cutting touchpoints (state/URL hydration, mocks/fixtures, env stubs needed for CI parity); (6) applicable memory IDs (`[[L/A/DR/G-xxx]]`); (7) open decisions.

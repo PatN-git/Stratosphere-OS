@@ -31,7 +31,7 @@ def test_3d_owns_the_single_full_run_and_records_it():
 
 
 def test_4a_reuses_suite_result_by_head_sha():
-    text = _read("workflows/4a-verify-and-ship.md")
+    text = _read("workflows/4a-verify-and-ship.md") + _read("references/pr-body-and-ship.md")
     assert ".tmp/3d-suite-BT-" in text
     assert "head_sha" in text
     assert "observed" in text

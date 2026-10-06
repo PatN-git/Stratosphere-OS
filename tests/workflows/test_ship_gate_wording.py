@@ -61,6 +61,15 @@ def _4a():
     return (WF / "4a-verify-and-ship.md").read_text(encoding="utf-8")
 
 
+def _ref():
+    return (ROOT / "src" / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
+
+
+def _ship():
+    """4a plus the reference that holds step 5's body, risk-label and read-back detail."""
+    return _4a() + chr(10) + _ref()
+
+
 def test_4a_runs_release_bump_before_push_when_repo_has_one():
     text = _4a()
     assert "scripts/release.py" in text, "4a never mentions the release.py bump the CI bump-guard requires"
@@ -68,13 +77,13 @@ def test_4a_runs_release_bump_before_push_when_repo_has_one():
 
 
 def test_4a_closing_lines_are_bare_and_read_back():
-    text = _4a()
+    text = _ship()
     assert "Closes #<n>." in text, "closing lines must be the bare `Closes #<n>.` form that GitHub links"
     assert "closingIssuesReferences" in text, "4a must read back the PR's closing links after create/edit"
 
 
 def test_4a_closing_readback_has_a_bounded_fallback():
-    text = _4a()
+    text = _ship()
     assert "[NO-AUTOCLOSE" in text and "once" in text, "read-back needs a single retry then an explicit fallback"
 
 
@@ -114,12 +123,27 @@ def test_3d_phase3_requires_clean_tree():
 
 
 def test_4a_pr_body_is_a_stratos_pr_block():
-    text = _4a()
+    text = _ship()
     for token in ("```stratos-pr", "risk:one-way", "gh label create", "references/merge-risk-paths.md",
                   "PENDING", "[DRAFT-RULE]"):
         assert token in text, f"4a missing {token!r}"
     assert "noting the re-verification" not in text, "re-verification comment has no consumer"
     assert "AC↔test coverage table (if audited)" not in text, "AC table no longer belongs in the PR body"
+
+
+def test_4a_step5_points_at_the_reference_instead_of_inlining_it():
+    step5 = _step5()
+    assert "references/pr-body-and-ship.md" in step5
+    for moved in ("```stratos-pr", "gh label create", "[NO-AUTOCLOSE"):
+        assert moved not in step5, f"{moved!r} belongs in references/pr-body-and-ship.md"
+
+
+def test_4a_deletes_the_3d_plan_after_the_terminal_gate_and_3d_says_so():
+    text = _4a()
+    cleanup = text[text.index("10. **Cleanup:**"):text.index("11. Output:")]
+    assert "rm -f .tmp/3d-plan-BT-<padded>.md" in cleanup and ".tmp/3d-suite-BT-<padded>.json" in cleanup
+    assert text.index("9. **Terminal sync gate:**") < text.index("10. **Cleanup:**")
+    assert "4a deletes it after ship" in _3d()
 
 
 def test_4a_step8_adds_parent_closing_link():
@@ -199,7 +223,7 @@ def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
 def test_4a_step5_suite_reuse_goes_through_pr_body_suite():
     step5 = _step5()
     assert "python .agents/scripts/pr_body.py suite" in step5
-    assert ".tmp/3d-suite-BT-<padded>.json" in step5 and "Never delete these files" in step5
+    assert ".tmp/3d-suite-BT-<padded>.json" in _ref() and "Never delete these files" in _ref()
 
 
 def test_4a_step5_drops_the_prose_rules_the_script_now_owns():
@@ -210,7 +234,7 @@ def test_4a_step5_drops_the_prose_rules_the_script_now_owns():
 
 
 def test_4a_step5_keeps_the_gh_side_of_the_body():
-    step5 = _step5()
+    step5 = _step5() + _ref()
     for token in ("--draft", "gh label create", "gh pr edit", "closingIssuesReferences", "[NO-AUTOCLOSE",
                   "references/merge-risk-paths.md"):
         assert token in step5, f"4a step 5 lost {token!r}"

@@ -266,7 +266,7 @@
       "version": "1.0.1"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "c19d7726a3701ae385264aaf0d50185fe3030b0d4f87d4a888977752ec8d2c69",
+      "sha256": "232098975d11c27f75a541749ad963424730b63895c63c2c47143f8a9f37be99",
       "timestamp": "2026-10-05",
       "version": "2.2.0"
     },
@@ -286,7 +286,7 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "c4338ff4b7d3ec775761ed6c7277b6b9e6a3ef9e954a85414cb303135d259bb7",
+      "sha256": "5172c7b8b0f80685ecb8ab3b0c788cbe1b2bc6011a2112b1e95050e7d353ec00",
       "timestamp": "2026-10-05",
       "version": "1.3.0"
     },
@@ -323,6 +323,11 @@
     "skills/4a-verify-and-ship/references/merge-risk-paths.md": {
       "sha256": "e336608028e41463c844ab8504a2ad59f17688177801fb6de23b4bfdf5ada56c",
       "timestamp": "2026-10-05",
+      "version": "1.0.0"
+    },
+    "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
+      "sha256": "09c1d3f6d9123bbd2d946d0154a9508ec28f2b98a86cb295904e443227cd588a",
+      "timestamp": "2026-10-06",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
