@@ -17,7 +17,7 @@ SETUP = f"{BUNDLE}/stratosphere-setup"  # carries the scaffolder payload (script
 VERSIONS_PATHS = [f"{SETUP}/versions.json", "dist/antigravity/versions.json"]
 
 json_files = [
-    "dist/antigravity/plugin.json",
+    "dist/plugin.json",
     ".claude-plugin/marketplace.json",
     "src/external-skills.json",
     f"{SETUP}/external-skills.json",
@@ -89,7 +89,7 @@ for sk in _skills:
         errs.append(f"{BUNDLE}/{name_dir}: carries OKF 'type:' but is outside the bundle scope")
 
 # retired output directories must not reappear
-for legacy in ("dist/claude-code", "dist/antigravity/skills", f"{BUNDLE}/commands", f"{BUNDLE}/workflows"):
+for legacy in ("dist/claude-code", "dist/antigravity", f"{BUNDLE}/commands", f"{BUNDLE}/workflows"):
     if (root / legacy).exists():
         errs.append(f"{legacy}/ still emitted - retired (per-host trees by BT-118, commands/workflows in v4.0.0)")
 if (root / "skills").exists():

@@ -115,7 +115,7 @@ def test_no_second_host_tree_exists():
     """C3: one canonical skill set, no content fork. Byte-identity used to be diffed between
     dist/claude-code and dist/antigravity; BT-118 made the fork structurally impossible."""
     assert not (REPO_ROOT / "dist" / "claude-code").exists()
-    assert not (REPO_ROOT / "dist" / "antigravity" / "skills").exists()
+    assert not (REPO_ROOT / "dist" / "antigravity").exists()
 
 
 def test_skills_dir_is_not_gitignored():

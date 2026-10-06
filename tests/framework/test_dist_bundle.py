@@ -43,7 +43,7 @@ def test_single_bundle_emits_exactly_27_skills():
 
 def test_per_host_duplicate_trees_are_gone():
     assert not (REPO_ROOT / "dist" / "claude-code").exists()
-    assert not (REPO_ROOT / "dist" / "antigravity" / "skills").exists()
+    assert not (REPO_ROOT / "dist" / "antigravity").exists()
 
 
 def test_no_root_skills_dir_is_created():
@@ -146,8 +146,15 @@ def test_marketplace_describes_itself_and_no_longer_advertises_an_installer():
     assert "installer" not in mk["plugins"][0]["description"].lower()
 
 
-def test_antigravity_manifest_stays_in_its_canonical_location():
-    assert (REPO_ROOT / "dist" / "antigravity" / "plugin.json").is_file()
+def test_plugin_manifest_is_the_dist_root():
+    """BT-150: dist/ is itself the plugin root (`agy plugin install dist`): the manifest sits beside
+    dist/skills and no per-host directory stands next to them."""
+    dist = REPO_ROOT / "dist"
+    assert sorted(p.name for p in dist.iterdir()) == ["plugin.json", "skills"]
+    manifest = json.loads((dist / "plugin.json").read_text(encoding="utf-8"))
+    assert manifest["name"] == "stratosphere-os"
+    assert manifest["version"] == _load_build().VERSION
+    assert len(_skill_dirs()) == EXPECTED_SKILLS, "agy reports one processed skill per dist/skills directory"
 
 
 def _sync_destination(tmp_path, host_dir):
