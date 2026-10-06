@@ -16,6 +16,13 @@ def read(rel: str) -> str:
     return (REPO_ROOT / rel).read_text(encoding="utf-8")
 
 
+def test_plan_html_hooks_json_removed():
+    # Dead Stop hook in a shape no host loads (R6). Path parts, not one literal, so a grep for the dead path stays clean.
+    for root in ("src", "dist"):
+        dead = REPO_ROOT / root / "skills" / "plan-html" / "hooks.json"
+        assert not dead.exists(), f"{dead.relative_to(REPO_ROOT).as_posix()} must stay deleted (rebuild dist after removing the source)"
+
+
 def test_jules_contract_is_current():
     api = (JULES / "jules_api.py").read_text(encoding="utf-8")
     contract = (JULES / "CONTRACT.md").read_text(encoding="utf-8")
