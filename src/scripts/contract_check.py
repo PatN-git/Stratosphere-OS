@@ -15,6 +15,14 @@ Output (stdout):
   [CONTRACT-OK] <n> reference(s) checked                     exit 0
 A reference must resolve in EVERY given source; <source> names the one it is missing from.
 
+--parity compares the schema sources with each other instead of reading docs (no --docs):
+  [CONTRACT-DRIFT] <table>.<col> (documented in <a>, missing from <b>)   one per column, every source pair
+  [CONTRACT-DRIFT] <table> (documented in <a>, missing from <b>)         a whole table; its columns are not repeated
+  [CONTRACT-OK] parity: <n> table(s) compared                            exit 0
+Drift exits 1. Fewer than two non-template sources (no --sql, absent or template-only md) -> no output, exit 0.
+Tables and columns only (enums are not compared). Known limit: a table that a source reaches only through
+`ALTER TABLE ... ADD COLUMN` (its CREATE TABLE lives in another file) reports as if it held just those columns.
+
 What is checked (backticked spans and fenced code lines only; prose is never read):
   - `x.y`  where `x` is a known table  -> `y` must be a column of `x`   (kind: column; kind: table
                                           when `x` is known to one source but absent from another)
@@ -243,12 +251,50 @@ def count_refs(span, known_tables, fenced):
     return sum(1 for m in REF_RE.finditer(span) if m.group(1) in known_tables) + sum(1 for _ in bindings(span, fenced))
 
 
+def load_sources(schema, sql_paths):
+    """Parsed schema sources (md first, then each sql); a template-only schema declares nothing and is dropped."""
+    sources = [parse_sql(p) for p in sql_paths]
+    if Path(schema).is_file():
+        sources.insert(0, parse_md(schema))
+    return [s for s in sources if s.declares_tables()]
+
+
+def parity_drift(sources):
+    """Yield (ref, present_in, absent_from) for every table/column one source has and another lacks."""
+    for a in sources:
+        for b in sources:
+            if a is b:
+                continue
+            for table in sorted(set(a.tables) - {PLACEHOLDER_TABLE}):
+                if table not in b.tables:
+                    yield table, a.name, b.name
+                    continue
+                for col in sorted(a.tables[table] - b.tables[table]):
+                    yield f"{table}.{col}", a.name, b.name
+
+
+def run_parity(sources):
+    if len(sources) < 2:
+        return 0
+    findings = [f"[CONTRACT-DRIFT] {ref} (documented in {a}, missing from {b})" for ref, a, b in parity_drift(sources)]
+    if findings:
+        print("\n".join(findings))
+        return 1
+    print(f"[CONTRACT-OK] parity: {len({t for s in sources for t in s.tables} - {PLACEHOLDER_TABLE})} table(s) compared")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Spec-to-schema contract check (detection only).")
-    ap.add_argument("--docs", nargs="+", required=True, help="spec docs to check (PRD, design doc)")
+    ap.add_argument("--docs", nargs="+", default=[], help="spec docs to check (PRD, design doc); not used with --parity")
     ap.add_argument("--schema", default=".memory/DATABASE_SCHEMA.md")
     ap.add_argument("--sql", nargs="+", default=[], help="schema.sql file(s); a reference must resolve in each")
+    ap.add_argument("--parity", action="store_true", help="flag tables/columns present in one schema source but not another")
     args = ap.parse_args(argv)
+    if args.parity and args.docs:
+        ap.error("--parity takes no --docs")
+    if not args.parity and not args.docs:
+        ap.error("the following arguments are required: --docs")
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -257,10 +303,9 @@ def main(argv=None):
         print(f"[CONTRACT-ERROR] file not found: {', '.join(missing)}", file=sys.stderr)
         return 2
 
-    sources = [parse_sql(p) for p in args.sql]
-    if Path(args.schema).is_file():
-        sources.insert(0, parse_md(args.schema))
-    sources = [s for s in sources if s.declares_tables()]  # a template-only schema declares nothing
+    sources = load_sources(args.schema, args.sql)
+    if args.parity:
+        return run_parity(sources)
     if not sources:
         print("[CONTRACT-SKIP] no schema declared")
         return 0

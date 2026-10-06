@@ -255,3 +255,86 @@ def test_fenced_colon_binding_is_not_checked_but_equals_and_in_are(project):
     assert "prd.md:3 status='queued' (enum-value, schema.md)" in r.stdout
     assert "prd.md:4 status='nope' (enum-value, schema.md)" in r.stdout
     assert "status='draft'" not in r.stdout
+
+
+# --- BT-146: --parity (md <-> sql drift) ----------------------------------------
+
+PARITY_MD = """\
+### `jobs` [LAW]
+- `id`: UUID primary key.
+- `title`: Job title.
+- `consecutive_missing_scans`: documented but never created.
+"""
+
+PARITY_SQL = """\
+CREATE TABLE jobs (
+  id    uuid PRIMARY KEY,
+  title text NOT NULL,
+  slug  text
+);
+"""
+
+
+def parity(project, md=PARITY_MD, sql=PARITY_SQL, *extra):
+    (project / "p.md").write_text(md, encoding="utf-8")
+    (project / "p.sql").write_text(sql, encoding="utf-8")
+    return run("--parity", "--schema", project / "p.md", "--sql", project / "p.sql", *extra)
+
+
+def test_parity_flags_column_documented_but_missing_from_sql(project):
+    r = parity(project)
+    assert r.returncode == 1
+    assert "[CONTRACT-DRIFT] jobs.consecutive_missing_scans (documented in p.md, missing from p.sql)" in r.stdout
+
+
+def test_parity_flags_column_in_sql_but_missing_from_md(project):
+    r = parity(project)
+    assert "[CONTRACT-DRIFT] jobs.slug (documented in p.sql, missing from p.md)" in r.stdout
+
+
+def test_parity_does_not_flag_columns_present_in_both(project):
+    r = parity(project)
+    assert "jobs.id" not in r.stdout and "jobs.title" not in r.stdout
+
+
+def test_parity_flags_a_table_present_in_one_source_only(project):
+    r = parity(project, sql=PARITY_SQL + "CREATE TABLE orphans (id uuid);\n")
+    assert "[CONTRACT-DRIFT] orphans (documented in p.sql, missing from p.md)" in r.stdout
+    assert "orphans.id" not in r.stdout
+
+
+def test_parity_in_sync_sources_exit_zero(project):
+    r = parity(project, md="### `jobs`\n- `id`: pk.\n- `title`: t.\n", sql="CREATE TABLE jobs (id uuid, title text);\n")
+    assert r.returncode == 0 and "DRIFT" not in r.stdout
+
+
+def test_parity_without_sql_is_silent_exit_zero(project):
+    (project / "p.md").write_text(PARITY_MD, encoding="utf-8")
+    r = run("--parity", "--schema", project / "p.md")
+    assert (r.returncode, r.stdout) == (0, "")
+
+
+def test_parity_with_template_only_md_is_silent_exit_zero(project):
+    r = parity(project, md=TEMPLATE_MD)
+    assert (r.returncode, r.stdout) == (0, "")
+
+
+def test_parity_with_absent_md_is_silent_exit_zero(project):
+    (project / "p.sql").write_text(PARITY_SQL, encoding="utf-8")
+    r = run("--parity", "--schema", project / "gone.md", "--sql", project / "p.sql")
+    assert (r.returncode, r.stdout) == (0, "")
+
+
+def test_parity_honours_alter_table_add_column(project):
+    r = parity(project, sql=PARITY_SQL + "ALTER TABLE jobs ADD COLUMN consecutive_missing_scans int;\n")
+    assert "consecutive_missing_scans" not in r.stdout
+
+
+def test_parity_ignores_docs_and_does_not_require_them(project):
+    r = parity(project)
+    assert "CONTRACT-ERROR" not in r.stderr and "required" not in r.stderr
+
+
+def test_docs_still_required_without_parity(project):
+    r = run("--schema", project / "schema.md")
+    assert r.returncode == 2 and "--docs" in r.stderr
