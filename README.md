@@ -148,6 +148,8 @@ agy plugin install dist
 ```
 `agy` copies it to `~/.gemini/config/plugins/stratosphere-os/`; `agy plugin list` shows it (the source reads `antigravity`, not the clone path). `/stratosphere-setup` and `/stratosphere-update` find the installed copy there. To update, pull the clone and run `agy plugin install dist` again, which overwrites the plugin in place (`/stratosphere-update` does the same from a release-tag clone). Plugins do not auto-update, and the plugin carries only the bundled skills: external skills still arrive through `/sync-skills`. Track D stays available. Verified on `agy` 1.3.0 only.
 
+Use Track D or Track E, not both: they register the same skills, and `/stratosphere-update` follows the first copy it finds (the Track D one), so the plugin copy is never refreshed. Untested.
+
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**
 > Want your agent to handle the installation, dependency checks, and GitHub integration automatically? Simply paste this prompt into your chat:

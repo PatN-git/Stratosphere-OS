@@ -10,7 +10,7 @@ generated:
 
 # Proposal: StratOS adjustments after the Aug-Oct 2026 upstream review
 
-**Status:** Open proposal, nothing implemented. Evidence and sources: `docs/research/upstream-watch-2026-10-06.md`. "R1-R7" are its Part 1 items (Claude Code, Antigravity, design.md, Stitch); "O1-O7" are its Part 2 items (Cursor, Codex, Copilot, Gemini CLI, Jules, Devin, OpenClaw). Issues are minted by the human via `/3b`.
+**Status:** Implemented in PR #151 (BT-148, BT-149, BT-150). Section 8 of the constitution was later made host-name-free per review, with the per-host facts in `src/dev-skills/improve-workflows-skills/references/host-matrix.md`; this proposal is kept as evidence. `AGENTS.md:69-71` (cited in A) no longer exists: that host table is gone. Evidence and sources: `docs/research/upstream-watch-2026-10-06.md`. "R1-R7" are its Part 1 items (Claude Code, Antigravity, design.md, Stitch); "O1-O7" are its Part 2 items (Cursor, Codex, Copilot, Gemini CLI, Jules, Devin, OpenClaw). Issues are minted by the human via `/3b`.
 
 **Bottom line:** eight adjustments (A-H), one of them urgent in effect (O1: Codex silently drops `AGENTS.md` in untrusted projects), and a list of things to deliberately not do. All ship in **one feature PR** because they come from the same upstream run; the PR is three slices committed in order (see "Order of work"). Most are documentation or dead-code removal; the plugin-shaped bundle (D) is the only build-output change.
 

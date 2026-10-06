@@ -17,10 +17,10 @@ This document describes how to release a new version of the StratosphereOS plugi
    **Then validate the plugin manifests (manual).** Both hosts' validators check what the host really loads, which `tests/framework/test_dist_bundle.py` only approximates. They are not in CI yet because that needs both CLIs installed there; revisit once a checklist run has caught something.
    ```bash
    claude plugin validate .      # Claude Code marketplace + plugin: expect no errors
-   agy plugin validate dist      # Antigravity plugin root: expect [ok] and `skills: 27 processed`
+   agy plugin validate dist      # Antigravity plugin root: expect [ok] and `skills: <N> processed`
    ```
-   The `agy` count equals the number of directories in `dist/skills` (the real output pads the colon: `skills      : 27 processed`); a count of `skipped (not found)` means `dist/plugin.json` or `dist/skills/` is missing.
-   *Recorded dry run (2026-10-06, `agy` 1.3.0, tree at v4.4.0): `agy plugin validate dist` printed `[ok] dist` and `skills: 27 processed`. `claude plugin validate .` could not run: the `claude` CLI is not installed on that machine, so its expected output is not yet recorded.*
+   `<N>` is the number of directories in `dist/skills` (the real output pads the colon: `skills      : <N> processed`); a count of `skipped (not found)` means `dist/plugin.json` or `dist/skills/` is missing.
+   *Recorded dry run (2026-10-06, `agy` 1.3.0, working tree before the 4.5.0 bump): `agy plugin validate dist` printed `[ok] dist` and `skills: 27 processed`. `claude plugin validate .` could not run: the `claude` CLI is not installed on that machine, so its expected output is not yet recorded.*
    
    **First Release Note:** The very first release of the project (`v1.1.0`) was cut manually (rebuild → validate → git tag v1.1.0) since `release.py` requires an existing tag to establish a baseline. Subsequent version bumps are automatically derived by the script.
 

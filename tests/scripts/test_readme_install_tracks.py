@@ -60,6 +60,14 @@ def test_track_e_antigravity_plugin_install():
     assert "Track D" in e, "Track D stays available"
 
 
+def test_track_e_warns_against_combining_with_track_d():
+    """Both tracks register the same skills; /stratosphere-update follows the first copy it finds (Track D's)."""
+    e = " ".join(_track("E").split())
+    assert "Track D or Track E, not both" in e
+    assert "first copy it finds" in e and "never refreshed" in e
+    assert "untested" in e.lower()
+
+
 def test_install_table_routes_antigravity_plugin_installs_to_track_e():
     assert "(#track-e--antigravity-plugin-install)" in README
 

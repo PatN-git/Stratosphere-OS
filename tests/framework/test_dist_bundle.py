@@ -187,7 +187,8 @@ def test_sync_skills_skill_points_at_the_setup_skill_payload():
     documents it must not send the agent to a retired plugin directory."""
     body = (DIST_SKILLS / "sync-skills" / "SKILL.md").read_text(encoding="utf-8")
     assert "stratosphere-setup" in body
-    assert "plugins/stratosphere-os" not in body
+    agy_plugin_install = "~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/"  # BT-150, not a retired dir
+    assert "plugins/stratosphere-os" not in body.replace(agy_plugin_install, "")
 
 
 def test_sync_skills_ignores_a_claude_worktree_checkout(tmp_path):
