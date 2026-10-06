@@ -45,7 +45,7 @@ def test_watermark_is_last_run_only():
 def test_decisions_record_is_read_in_phase2_and_appended_in_phase4():
     phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
     assert "## Decisions" in phase2 and "declined" in phase2
-    assert "grep -h -A" in phase2 and "'^## Decisions'" in phase2  # bounded read, not whole reports
+    assert "`## Decisions`" in phase2 and "30 lines" in phase2 and "last 7" in phase2  # bounded read, not whole reports
     phase4 = TEXT.split("## Phase 4")[1]
     assert "## Decisions" in phase4 and "accepted" in phase4 and "declined" in phase4
 
@@ -77,3 +77,11 @@ def test_constraint_is_scoped_to_the_workflows_own_writes():
     assert "Do not modify files without user approval" in constraint
     for write in ("report", ".last-run.json", "indices", "approved heals"):
         assert write in constraint, write
+
+
+def test_decisions_read_is_host_neutral_and_cannot_hang_without_reports():
+    """`grep ... $(ls docs/nightly/nightly-*.md | tail -7)` reads stdin when no report exists (hangs an unattended run) and is bash-only."""
+    phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
+    assert "$(ls" not in TEXT and "grep" not in phase2 and "tail -7" not in TEXT
+    assert "docs/nightly/nightly-*.md" in phase2
+    assert "none yet" in phase2 and "skip" in phase2
