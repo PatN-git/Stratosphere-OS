@@ -18,16 +18,26 @@ SCRIPT = REPO_ROOT / "src" / "scripts" / "pr_body.py"
 RISK_PATHS = REPO_ROOT / "src" / "references" / "merge-risk-paths.md"
 
 
+def init_repo(path, default_branch):
+    git(path, "init", "-b", default_branch)
+    git(path, "config", "user.name", "t")
+    git(path, "config", "user.email", "t@example.com")
+    (path / ".git" / "info" / "exclude").write_text(".tmp/\n", encoding="utf-8")
+    commit(path, "chore: init", ["README.md"])
+    git(path, "checkout", "-b", "feat/BT-10-x")
+    (path / ".tmp").mkdir()
+    return path
+
+
 @pytest.fixture
 def repo(tmp_path):
-    git(tmp_path, "init", "-b", "main")
-    git(tmp_path, "config", "user.name", "t")
-    git(tmp_path, "config", "user.email", "t@example.com")
-    (tmp_path / ".git" / "info" / "exclude").write_text(".tmp/\n", encoding="utf-8")
-    commit(tmp_path, "chore: init", ["README.md"])
-    git(tmp_path, "checkout", "-b", "feat/BT-10-x")
-    (tmp_path / ".tmp").mkdir()
-    return tmp_path
+    return init_repo(tmp_path, "main")
+
+
+@pytest.fixture
+def develop_repo(tmp_path):
+    """Default branch is `develop`: none of the main/master candidates exist, and there is no remote."""
+    return init_repo(tmp_path, "develop")
 
 
 def run(repo, *args):
@@ -239,6 +249,89 @@ def test_parent_conflicting_with_prior_feature_warns_and_overrides(repo):
                                               suite=write_suite(repo)).stderr
 
 
+@pytest.mark.parametrize("bad", ["136", "BT-", "bt-10", "BT-10x", "BT-1 0", ""])
+def test_parent_must_look_like_bt_n_else_clean_exit_2(repo, bad):
+    commit(repo, "feat(BT-11): one")
+    r = build_raw(repo, "--parent", bad, suite=write_suite(repo))
+    assert_clean_error(r)
+    assert "--parent" in r.stderr
+
+
+def test_close_parent_when_the_slice_is_the_parent_emits_one_closes_line(repo):
+    commit(repo, "feat(BT-10): the whole feature")
+    body = build(repo, "BT-10", "--close-parent", parent="BT-10")
+    assert body.count("Closes #10.") == 1
+    assert body.startswith("Closes #10.\n\n```stratos-pr\n")
+
+
+def test_close_parent_dedup_keeps_closes_order(repo):
+    commit(repo, "feat(BT-8): first")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text(build(repo, "BT-8", parent="BT-10"), encoding="utf-8")
+    commit(repo, "feat(BT-10): the parent as its own slice")
+    body = build(repo, "BT-10", "--close-parent", prior=prior, parent="BT-10")
+    assert body.splitlines()[:3] == ["Closes #8.", "Closes #10.", ""]
+
+
+# --- base resolution (B1) ---------------------------------------------------------------------
+
+def build_no_base(repo, *extra):
+    return run(repo, "build", "--slice", "BT-11", "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
+               "--risk-paths", RISK_PATHS, "--suite-json", write_suite(repo), *extra)
+
+
+def set_remote_head(repo, branch, sha):
+    git(repo, "update-ref", f"refs/remotes/origin/{branch}", sha)
+    git(repo, "symbolic-ref", "refs/remotes/origin/HEAD", f"refs/remotes/origin/{branch}")
+
+
+def test_base_defaults_to_the_remote_default_branch_on_a_develop_repo(develop_repo):
+    set_remote_head(develop_repo, "develop", "develop")
+    commit(develop_repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    r = build_no_base(develop_repo)
+    assert r.returncode == 0, r.stderr
+    assert field(r.stdout, "risk") == "[db-migration]", "risk must not silently become [none] on a non-main default"
+
+
+def test_explicit_base_wins_over_the_remote_default_and_remote_default_over_main(repo):
+    c1 = commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    commit(repo, "feat(BT-12): later, clean", ["src/app.py"])
+    set_remote_head(repo, "develop", c1)
+    by_remote = build_no_base(repo)  # merge-base with origin/develop is c1, so the migration is outside <base>..HEAD
+    assert by_remote.returncode == 0, by_remote.stderr
+    assert field(by_remote.stdout, "risk") == "[none]"
+    explicit = build_no_base(repo, "--base", "main")
+    assert explicit.returncode == 0, explicit.stderr
+    assert field(explicit.stdout, "risk") == "[db-migration]"
+
+
+@pytest.mark.parametrize("default", ["main", "master"])
+def test_base_falls_back_to_main_or_master_without_a_remote(tmp_path, default):
+    repo = init_repo(tmp_path, default)
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    r = build_no_base(repo)
+    assert r.returncode == 0, r.stderr
+    assert field(r.stdout, "risk") == "[db-migration]"
+
+
+def test_unresolvable_base_fails_closed_and_names_the_fix(develop_repo):
+    commit(develop_repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    r = build_no_base(develop_repo)
+    assert_clean_error(r)
+    assert "--base" in r.stderr
+    fixed = build_no_base(develop_repo, "--base", "develop")
+    assert fixed.returncode == 0, fixed.stderr
+    assert field(fixed.stdout, "risk") == "[db-migration]"
+
+
+def test_explicit_base_that_is_not_a_commit_fails_closed(repo):
+    """A typo'd --base used to diff against nothing and report `risk: [none]` for a migration PR."""
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    r = build_no_base(repo, "--base", "no-such-branch")
+    assert_clean_error(r)
+    assert "no-such-branch" in r.stderr and "--base" in r.stderr
+
+
 # --- suite reuse (D3) -------------------------------------------------------------------------
 
 def suite_out(repo):
@@ -285,6 +378,66 @@ def test_suite_not_reused_for_unknown_or_non_ancestor_sha(repo):
 
 def test_suite_with_no_files_exits_1_silently(repo):
     assert suite_out(repo) == (1, "")
+
+
+# --- suite reuse needs a clean tree (B2) ------------------------------------------------------
+
+def dirty_tracked_readme(repo):
+    (repo / "README.md").write_text("edited", encoding="utf-8")
+
+
+def stage_readme(repo):
+    dirty_tracked_readme(repo)
+    git(repo, "add", "README.md")
+
+
+def untracked_src(repo):
+    (repo / "generated.txt").write_text("x", encoding="utf-8")
+
+
+@pytest.mark.parametrize("dirty", [dirty_tracked_readme, stage_readme, untracked_src],
+                         ids=["modified", "staged", "untracked"])
+def test_suite_not_reused_when_the_tree_is_dirty_outside_the_ignored_dirs(repo, dirty):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    dirty(repo)
+    assert suite_out(repo) == (1, "")
+
+
+def test_suite_not_reused_across_a_release_commit_when_the_tree_is_dirty(repo):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    commit(repo, "release: prepare v1.4.0")
+    untracked_src(repo)
+    assert suite_out(repo) == (1, "")
+
+
+def test_suite_not_reused_when_a_rename_moves_a_file_out_of_the_ignored_dirs(repo):
+    commit(repo, "feat(BT-11): one", ["docs/a.md"])
+    write_suite(repo)
+    git(repo, "mv", "docs/a.md", "moved.md")
+    assert suite_out(repo) == (1, "")
+
+
+def test_suite_still_reused_when_only_memory_docs_and_tmp_drift(repo):
+    c = commit(repo, "feat(BT-11): one", ["docs/prd.md", ".memory/notes.md"])
+    write_suite(repo, sha=c)
+    (repo / "docs" / "prd.md").write_text("edited", encoding="utf-8")  # tracked, modified
+    (repo / ".memory" / "new.md").write_text("x", encoding="utf-8")  # untracked
+    (repo / "docs" / "nightly").mkdir()
+    (repo / "docs" / "nightly" / "n.md").write_text("x", encoding="utf-8")  # untracked dir
+    (repo / ".tmp" / "scratch.log").write_text("x", encoding="utf-8")
+    rc, out = suite_out(repo)
+    assert rc == 0 and json.loads(out)["head_sha"] == c
+
+
+def test_build_default_suite_lookup_exits_no_suite_on_a_dirty_tree(repo):
+    commit(repo, "feat(BT-11): one")
+    write_suite(repo)
+    assert build_raw(repo).returncode == 0
+    untracked_src(repo)
+    r = build_raw(repo)
+    assert r.returncode == 2 and "[NO-SUITE]" in r.stderr and not r.stdout
 
 
 def test_pr_body_is_registered_like_contract_check():
