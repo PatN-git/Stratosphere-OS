@@ -83,11 +83,8 @@ class JulesClient:
         sid = str(session_id).split("/")[-1]  # tolerate 'sessions/<id>' — never double-prefix
         return self._call("GET", f"/sessions/{sid}")
 
-    def list_activities(self, session_id, since=None):
-        query = {"pageSize": 30}
-        if since:
-            query["createTime"] = since  # poll marker per docs
-        return self._call("GET", f"/sessions/{session_id}/activities", query=query).get("activities", [])
+    def list_activities(self, session_id):
+        return self._call("GET", f"/sessions/{session_id}/activities", query={"pageSize": 30}).get("activities", [])
 
     def find_pr_url(self, session_id):
         """Return the created PR URL (session.outputs[].pullRequest.url) or None."""
