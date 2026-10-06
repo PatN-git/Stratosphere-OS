@@ -638,6 +638,20 @@ def get_bundled_project_scripts(project: Path):
     return scripts
 
 
+def design_lockfile_drift(design_dir: Path, package_json_bytes: bytes):
+    """(locked, pinned) when a project's committed design package-lock.json resolves a different
+    @google/design.md than package.json pins (`npm ci` would fail), else None."""
+    lock_file = design_dir / "package-lock.json"
+    if not lock_file.is_file():
+        return None
+    try:
+        pinned = json.loads(package_json_bytes)["dependencies"]["@google/design.md"]
+        locked = json.loads(lock_file.read_text(encoding="utf-8"))["packages"]["node_modules/@google/design.md"]["version"]
+    except (ValueError, KeyError, TypeError):
+        return None
+    return (locked, pinned) if locked != pinned else None
+
+
 def place_project_scripts(project: Path, res, dry, update: bool = False):
     """Copy project-local deterministic scripts into `.agents/scripts/`. Runs on
     fresh install (`update=False`). Places files using `place(tier='managed')`."""
@@ -812,6 +826,7 @@ def main():
             "stale_managed": [],
             "needs_review_constitution": [],
             "preserved_files": {},
+            "design_lockfile_stale": False,
             "refreshed_scripts": [],
             "created_scripts": [],
             "needs_review_scripts": [],
@@ -1220,6 +1235,16 @@ def main():
                 worklist["needs_review_scripts"].append(rel_proj_path)
                 # Defer staging incoming version until invariant verification passes
                 staged_scripts[new_p] = src_bytes
+
+        design_pkg = ".agents/scripts/design/package.json"
+        pkg_bytes = proposed_files.get(design_pkg)
+        if pkg_bytes is None and (project / design_pkg).is_file():
+            pkg_bytes = (project / design_pkg).read_bytes()
+        drift = design_lockfile_drift(project / ".agents" / "scripts" / "design", pkg_bytes) if pkg_bytes else None
+        if drift:
+            worklist["design_lockfile_stale"] = True
+            print(f"NOTE: design toolchain lockfile pins {drift[0]} but package.json pins {drift[1]}; "
+                  "run `npm install --prefix .agents/scripts/design` and commit package-lock.json (`npm ci` fails until then).")
 
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)

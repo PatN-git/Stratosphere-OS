@@ -2202,6 +2202,45 @@ def test_script_pristine_refresh():
     assert lock_after["artifacts"][".agents/scripts/validate_memory.py"]["sha256_at_install"] == _versioning.body_hash(new_content)
     print("Script pristine refresh test passed!")
 
+def _design_lock_env(name, lock_version):
+    """Project with a pristine design package.json pinning 0.3.0, a plugin bundling 0.4.0,
+    and (optionally) a committed package-lock.json resolving `lock_version`."""
+    tmp, scaffold_script = setup_orphan_test_env(name)
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    design = tmp / ".agents" / "scripts" / "design"
+    design.mkdir(parents=True, exist_ok=True)
+    pin = lambda v: json.dumps({"dependencies": {"@google/design.md": v}}, indent=2) + "\n"
+    (design / "package.json").write_text(pin("0.3.0"), encoding="utf-8")
+    (mock_plugin / "scripts" / "design" / "package.json").write_text(pin("0.4.0"), encoding="utf-8")
+    if lock_version:
+        lock = {"packages": {"node_modules/@google/design.md": {"version": lock_version}}}
+        (design / "package-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    lock_data = {"installed_plugin_version": "4.0.0", "artifacts": {
+        ".agents/scripts/design/package.json": {"version": "unknown", "sha256_at_install": _versioning.body_hash(pin("0.3.0"))}}}
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+    return tmp, scaffold_script
+
+
+def test_design_lockfile_stale_after_pin_refresh():
+    print("--- Test: Stale design package-lock.json is flagged after a pin refresh ---")
+    tmp, scaffold_script = _design_lock_env("test_design_lock_stale", "0.3.0")
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "NOTE: design toolchain lockfile pins 0.3.0 but package.json pins 0.4.0" in res.stdout
+    assert "npm install --prefix .agents/scripts/design" in res.stdout
+    worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+    assert worklist["design_lockfile_stale"] is True
+
+
+def test_design_lockfile_in_sync_or_absent_is_silent():
+    print("--- Test: In-sync or absent design lockfile stays silent ---")
+    for name, lock_version in (("test_design_lock_synced", "0.4.0"), ("test_design_lock_absent", None)):
+        tmp, scaffold_script = _design_lock_env(name, lock_version)
+        res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+        assert "design toolchain lockfile" not in res.stdout
+        worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+        assert worklist["design_lockfile_stale"] is False
+
+
 def test_script_locally_edited_preserved():
     print("--- Test: Script Locally Edited Preserved ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_edited_preserved")
