@@ -3,6 +3,7 @@
 Seam: the CLI (stdout + exit code) run inside a throwaway git repo. The script is a pure builder:
 it never calls `gh`; the prior PR body arrives as a file.
 """
+import itertools
 import json
 import os
 import re
@@ -21,8 +22,11 @@ def git(repo, *args):
     return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=True).stdout.strip()
 
 
+_commit_seq = itertools.count()
+
+
 def commit(repo, subject, files=None):
-    for rel in files or [f"f{len(subject)}_{abs(hash(subject))}.txt"]:
+    for rel in files or [f"f{next(_commit_seq)}.txt"]:
         p = repo / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(subject + os.urandom(4).hex(), encoding="utf-8")
@@ -178,6 +182,55 @@ def test_out_writes_the_body_to_a_file(repo):
     out = repo / ".tmp" / "body.md"
     body = build(repo, "BT-11", "--out", out)
     assert body == "" and out.read_text(encoding="utf-8").startswith("Closes #11.")
+
+
+def build_raw(repo, *extra, suite=None, **kw):
+    args = ["build", "--slice", "BT-11", "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
+            "--base", "main", "--risk-paths", kw.get("risk", RISK_PATHS), *extra]
+    if suite is not None:
+        args += ["--suite-json", suite]
+    return run(repo, *args)
+
+
+def assert_clean_error(r):
+    assert r.returncode == 2 and r.stderr.startswith("[PR-BODY-ERROR]") and "Traceback" not in r.stderr and not r.stdout, r.stderr
+
+
+def test_build_bad_suite_json_or_prior_file_is_a_clean_exit_2(repo):
+    commit(repo, "feat(BT-11): one")
+    assert_clean_error(build_raw(repo, suite=repo / ".tmp" / "missing.json"))
+    garbage = repo / ".tmp" / "garbage.json"
+    garbage.write_text("{not json", encoding="utf-8")
+    assert_clean_error(build_raw(repo, suite=garbage))
+    good = write_suite(repo, "good.json")
+    assert_clean_error(build_raw(repo, "--prior-body-file", repo / ".tmp" / "nope.md", suite=good))
+
+
+def test_build_suite_record_missing_a_field_is_a_clean_exit_2(repo):
+    commit(repo, "feat(BT-11): one")
+    sha = git(repo, "rev-parse", "HEAD")
+    for rec in ({"head_sha": sha, "observed": "ok"}, {"head_sha": sha, "cmd": "t"}, {"cmd": "t", "observed": "ok"}):
+        bad = repo / ".tmp" / "bad.json"
+        bad.write_text(json.dumps(rec), encoding="utf-8")
+        assert_clean_error(build_raw(repo, suite=bad))
+
+
+def test_unparsed_prior_slice_line_warns_instead_of_silently_going_pending(repo):
+    commit(repo, "feat(BT-11): first")
+    prior = repo / ".tmp" / "prior.md"
+    drifted = '  - {id: BT-11, summary: "drifted", audit_rounds: 2, verdict: PASS}'  # fields reordered
+    prior.write_text(f"```stratos-pr\nfeature: BT-10\nslices:\n{drifted}\n```\n", encoding="utf-8")
+    commit(repo, "feat(BT-12): second")
+    r = build_raw(repo, "--prior-body-file", prior, suite=write_suite(repo))
+    assert r.returncode == 0, r.stderr
+    assert "[PR-BODY-WARN] unparsed prior slice line:" in r.stderr and "BT-11" in r.stderr
+
+
+def test_missing_risk_paths_file_warns_that_risk_none_is_unverified(repo):
+    commit(repo, "feat(BT-11): one")
+    r = build_raw(repo, suite=write_suite(repo), risk=repo / "absent.md")
+    assert r.returncode == 0, r.stderr
+    assert "[PR-BODY-WARN] risk rules not found at" in r.stderr and "unverified" in r.stderr
 
 
 # --- suite reuse (D3) -------------------------------------------------------------------------

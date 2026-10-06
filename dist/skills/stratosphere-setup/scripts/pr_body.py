@@ -36,8 +36,14 @@ VERDICTS = ("PASS", "WAIVED", "SKIP")
 
 
 def git(*args):
+    """Stripped stdout, or None when git exits non-zero. Empty output on success is "" (not None)."""
     r = subprocess.run(["git", *args], capture_output=True, text=True, encoding="utf-8")
     return r.stdout.strip() if r.returncode == 0 else None
+
+
+def git_ok(*args):
+    """True when git exits 0 (for yes/no commands such as `merge-base --is-ancestor`)."""
+    return subprocess.run(["git", *args], capture_output=True).returncode == 0
 
 
 def resolve_base(given):
@@ -66,7 +72,9 @@ def glob_rx(glob):
 def risk_rules(risk_paths):
     rules = []
     p = Path(risk_paths)
-    if p.is_file():
+    if not p.is_file():
+        print(f"[PR-BODY-WARN] risk rules not found at {risk_paths}; risk: [none] is unverified", file=sys.stderr)
+    else:
         for cell, tag in TABLE_RULE_RE.findall(p.read_text(encoding="utf-8-sig")):
             rules += [(glob_rx(g), tag) for g in re.findall(r"`([^`]+)`", cell)]
     arch = Path(".memory/ARCHITECTURE.md")
@@ -85,6 +93,9 @@ def parse_prior(text):
     blk = m.group(1) if m else ""
     feature = re.search(r"^feature: (BT-\d+)", blk, re.M)
     prior = {int(s[0][3:]): s for s in SLICE_RE.findall(blk)}
+    for line in blk.splitlines():
+        if line.startswith("  - {id:") and not SLICE_RE.search(line):
+            print(f"[PR-BODY-WARN] unparsed prior slice line: {line.strip()}", file=sys.stderr)
     lists = {}
     for name in ("post_merge", "deviations"):
         f = re.search(rf"^{name}: (\[.*\])$", blk, re.M)
@@ -98,21 +109,30 @@ def parse_prior(text):
     return (feature.group(1) if feature else None), prior, lists, (notes.group(1).strip() if notes else "")
 
 
+def check_suite(rec):
+    """Return a suite record with str `cmd`/`observed` and a hex `head_sha`, else raise ValueError."""
+    if not isinstance(rec, dict):
+        raise ValueError("suite record must be a JSON object")
+    for key in ("cmd", "observed", "head_sha"):
+        if key not in rec:
+            raise ValueError(f"suite record lacks {key!r}")
+    if not isinstance(rec["head_sha"], str) or not SHA_RE.match(rec["head_sha"]):
+        raise ValueError("suite record head_sha is not a git sha")
+    return rec
+
+
 def reusable_suite(dirpath):
     """Newest reusable suite record from `<dirpath>/3d-suite-BT-*.json`, else None."""
     head = git("rev-parse", "HEAD")
     for f in sorted(Path(dirpath).glob("3d-suite-BT-*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
         try:
-            rec = json.loads(f.read_text(encoding="utf-8-sig"))
-            sha = rec["head_sha"]
-            rec["cmd"], rec["observed"]
-        except (OSError, ValueError, KeyError, TypeError):
+            rec = check_suite(json.loads(f.read_text(encoding="utf-8-sig")))
+        except (OSError, ValueError):
             continue
-        if not isinstance(sha, str) or not SHA_RE.match(sha):
-            continue
+        sha = rec["head_sha"]
         if sha == head:
             return rec
-        if git("merge-base", "--is-ancestor", sha, "HEAD") is None:  # unknown sha or not an ancestor
+        if not git_ok("merge-base", "--is-ancestor", sha, "HEAD"):  # unknown sha or not an ancestor
             continue
         subjects = git("log", "--format=%s", f"{sha}..HEAD")
         if subjects is not None and all(RELEASE_RE.match(s) for s in subjects.splitlines()):
@@ -129,11 +149,19 @@ def cmd_suite(args):
 
 
 def cmd_build(args):
-    prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
+    try:
+        prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
+    except (OSError, ValueError) as e:
+        print(f"[PR-BODY-ERROR] cannot read --prior-body-file: {e}", file=sys.stderr)
+        return 2
     prior_feature, prior, prior_lists, prior_notes = parse_prior(prior_text)
 
     if args.suite_json:
-        rec = json.loads(Path(args.suite_json).read_text(encoding="utf-8-sig"))
+        try:
+            rec = check_suite(json.loads(Path(args.suite_json).read_text(encoding="utf-8-sig")))
+        except (OSError, ValueError) as e:
+            print(f"[PR-BODY-ERROR] bad --suite-json {args.suite_json}: {e}", file=sys.stderr)
+            return 2
     else:
         rec = reusable_suite(".tmp")
     if not rec:

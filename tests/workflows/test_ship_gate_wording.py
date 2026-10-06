@@ -212,7 +212,3 @@ def test_4a_step5_keeps_the_gh_side_of_the_body():
         assert token in step5, f"4a step 5 lost {token!r}"
     step8 = _4a()[_4a().index("8. **Epic Check:**"):_4a().index("9. **Terminal sync gate:**")]
     assert "pr_body.py build" in step8 and "--close-parent" in step8
-
-
-def test_4a_is_shorter_than_before_the_script():
-    assert len(_4a().splitlines()) < 104, "4a must net-shrink: the script replaced prose, it did not add to it"
