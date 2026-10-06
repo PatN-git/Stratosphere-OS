@@ -337,12 +337,12 @@ def bundled_file(rel_path: str) -> Path:
     return PLUGIN_ROOT / rel_path
 
 # Host read paths for project-level skills. One canonical body, placed per host.
-#   .agents/skills/        - Cursor, Codex, Antigravity, Devin, OpenClaw
-#   .github/copilot/skills/ - VS Code Copilot (NOT .github/skills/, a Devin path)
+#   .agents/skills/ - Cursor, Codex, Antigravity, Devin, OpenClaw, Copilot
 # Claude Code is intentionally absent: it reads only .claude/skills/ (never .agents/skills/),
 # and its own install (marketplace, `npx skills add -a claude-code`, or a plain copy) already
-# put the bundle there.
-SKILL_TARGETS = [".agents/skills", ".github/copilot/skills"]
+# put the bundle there. Copilot also reads .github/skills/ and .claude/skills/, but a second
+# copy would double-list skills.
+SKILL_TARGETS = [".agents/skills"]
 
 # NOTE: `.agents/skills/` is NOT ignored. It holds the bundled lifecycle skills,
 # which must be tracked. On-demand third-party packs are ignored per-directory by
@@ -374,8 +374,6 @@ CONTAINER_ROOTS = {
     ".claude",
     ".claude/rules",
     ".github",
-    ".github/copilot",
-    ".github/copilot/skills",
     ".github/workflows",
     ".memory"
 }
@@ -461,9 +459,6 @@ def get_twin_paths(proj_path: str) -> list[str]:
     if proj_path.startswith(".agents/rules/"):
         sub = proj_path[len(".agents/rules/"):]
         twins.append(f".claude/rules/{sub}")
-    elif proj_path.startswith(".agents/skills/"):
-        sub = proj_path[len(".agents/skills/"):]
-        twins.append(f".github/copilot/skills/{sub}")
     return twins
 
 def prune_empty_parents(file_path: Path, project_root: Path, dry: bool = False, simulated_pruned: set[Path] | None = None) -> list[str]:
@@ -565,7 +560,6 @@ FOLDERS = [
     ".memory",
     ".agents/rules",
     ".agents/skills",
-    ".github/copilot/skills",
     ".agents/scripts",
     "docs/discovery",
     "docs/prds",
