@@ -227,3 +227,31 @@ def test_table_known_to_one_source_but_absent_from_another_is_kind_table(project
     assert r.returncode != 0
     assert "companies.name (table, jobs-only.sql)" in r.stdout
     assert "(column," not in r.stdout
+
+
+def test_quoted_json_keys_in_fenced_example_are_not_enum_values(project):
+    doc = 'API:\n```json\n{ "status": "live", "id": "x" }\n```\n'
+    r = check(project, doc)
+    assert r.returncode == 0, r.stdout
+    assert "CONTRACT-MISSING" not in r.stdout
+
+
+def test_quoted_key_after_inline_binding_is_not_a_value(project):
+    r = check(project, '`{"status": "live", "id": "x"}`\n')
+    assert r.returncode == 0, r.stdout
+
+
+def test_fenced_colon_binding_is_not_checked_but_equals_and_in_are(project):
+    doc = (
+        "```\n"
+        "status: 'bogus'\n"
+        "WHERE status = 'queued'\n"
+        "  AND status IN ('draft', 'nope')\n"
+        "```\n"
+    )
+    r = check(project, doc)
+    assert r.returncode != 0
+    assert "prd.md:2" not in r.stdout
+    assert "prd.md:3 status='queued' (enum-value, schema.md)" in r.stdout
+    assert "prd.md:4 status='nope' (enum-value, schema.md)" in r.stdout
+    assert "status='draft'" not in r.stdout

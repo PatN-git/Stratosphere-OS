@@ -49,6 +49,30 @@ def test_2z_phase_0_loads_memory_once_and_detects_resume():
     assert ".tmp/2z-BT-<padded>-decisions.md" in p0 and ".tmp/2z-<slug>-decisions.md" in p0
 
 
+def test_2z_phase_0_resume_reads_the_log_and_owns_the_rename():
+    p0 = _phase(_read("workflows/2z-write-spec.md"), "## Phase 0", "## Phase 1")
+    assert "last 5 lines" in p0
+    assert "BT-LOCAL-<slug>" in p0
+    assert "2z renames" in p0 and "right after 2a mints" in p0
+    assert "looks up both names" in p0
+
+
+def test_2z_phase_3_passes_a_2c_skip_through_to_hand_off():
+    p3 = _phase(_read("workflows/2z-write-spec.md"), "## Phase 3", "## Phase 4")
+    assert "[SKIP]" in p3 and "Phase 4" in p3
+
+
+def test_2z_phase_4_offers_an_optional_user_owned_commit_one_liner():
+    p4 = _read("workflows/2z-write-spec.md").split("## Phase 4")[1]
+    assert 'git add docs/prds docs/design docs/research && git commit -m "docs(BT-<n>): reconcile specs"' in p4
+    assert "optional" in p4 and "your choice" in p4
+
+
+def test_2z_load_memory_is_worded_as_the_units_cached_status():
+    p0 = _phase(_read("workflows/2z-write-spec.md"), "## Phase 0", "## Phase 1")
+    assert "`cached`" in p0 and "skip it" not in p0
+
+
 def test_2z_phase_2_honours_skip_path_and_path_a_pause():
     p2 = _phase(_read("workflows/2z-write-spec.md"), "## Phase 2", "## Phase 3")
     assert "skip" in p2.lower() and "Path A" in p2

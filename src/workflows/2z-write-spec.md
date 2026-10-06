@@ -19,12 +19,12 @@ timestamp: 2026-10-05
 ---
 
 ## Phase 0: Load & Resume
-1. **Hydrate once:** run the `load-memory` skill (read-only) once. The units' own Phase 0 `load-memory` is already satisfied under 2z; skip it.
+1. **Hydrate once:** run the `load-memory` skill (read-only) once. The units' own Phase 0 `load-memory` self-gates on its `cached` status, so it is a no-op under 2z.
 2. **Resume detection** (input: a feature `BT-<n>` or a new idea):
    - Design doc `docs/design/BT-<padded>-interface.md` is `status: stable`, or 2b's skip path already promoted the epic to `planned` → start at Phase 3.
    - PRD `docs/prds/BT-<padded>-*.md` exists → start at Phase 2.
    - Otherwise → Phase 1.
-3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID; rename it after minting). Append one line per HITL decision. Resume and the hand-off read it.
+3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID; resume looks up both names). 2z renames it right after 2a mints the ID (offline: `BT-LOCAL-<slug>`). Append one line per HITL decision. On resume, print its last 5 lines; the hand-off reads it too.
 
 ## Phase 1: PRD
 Run `/2a-write-prd`. Its HITL interview and cost gate stay in the main thread; append each decision to the log.
@@ -37,10 +37,10 @@ Run `/2b-interface-design`.
 
 ## Phase 3: Reconcile
 Run `/2c-reconcile-specs` in the main thread. Its own Context Isolation Rule sees that this session authored the artifacts and isolates the scan to its Spec-Reconciliation Auditor subagent. Do **not** wrap 2c itself in a subagent: a subagent cannot run its Phase 4 HALT for user Skips.
-- 2c's Phase 4 HITL (present, Skip, apply) stays in the main thread.
+- 2c's Phase 4 HITL (present, Skip, apply) stays in the main thread. If 2c emits `[SKIP]` (too few artifacts), pass it through to Phase 4.
 - 2c's spec edits stay uncommitted on the default branch (unchanged 2c behaviour; AGENTS.md §4 permits only 2a/2b/3a document commits). Say so in the hand-off.
 
 ## Phase 4: Hand-off
-Same routing as 2b: `/3a-version-planning` only when 3a would act on this feature, otherwise `/3b-create-issue` to slice. Name the documents committed this run, the uncommitted 2c edits, and the decision log path.
+Same routing as 2b: `/3a-version-planning` only when 3a would act on this feature, otherwise `/3b-create-issue` to slice. Name the documents committed this run, the uncommitted 2c edits, and the decision log path. To commit 2c's edits (optional, your choice): `git add docs/prds docs/design docs/research && git commit -m "docs(BT-<n>): reconcile specs"`.
 
 **Depth:** at most 2 levels below the 2z session (AGENTS.md §8). Each subagent step runs inline when the host has none.

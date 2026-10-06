@@ -116,7 +116,7 @@ def test_3d_phase3_requires_clean_tree():
 def test_4a_pr_body_is_a_stratos_pr_block():
     text = _4a()
     for token in ("```stratos-pr", "risk:one-way", "gh label create", "references/merge-risk-paths.md",
-                  "git log --no-merges", "PENDING", "[DRAFT-RULE]"):
+                  "PENDING", "[DRAFT-RULE]"):
         assert token in text, f"4a missing {token!r}"
     assert "noting the re-verification" not in text, "re-verification comment has no consumer"
     assert "AC↔test coverage table (if audited)" not in text, "AC table no longer belongs in the PR body"
@@ -157,13 +157,12 @@ def test_merge_risk_paths_tag_sql_and_ci():
     assert tags("src/workflows/4a-verify-and-ship.md") == set()
 
 
-def test_4a_slice_id_rebuild_regex_ignores_unscoped_commits():
-    text = _4a()
-    m = re.search(r"subject matches `([^`]+)`", text)
-    assert m, "4a must state the BT-scope regex used to rebuild slices from git log"
-    rx = re.compile(m.group(1))
+def test_pr_body_slice_id_regex_ignores_unscoped_commits():
+    pspec = importlib.util.spec_from_file_location("pr_body", ROOT / "src" / "scripts" / "pr_body.py")
+    pr_body = importlib.util.module_from_spec(pspec)
+    pspec.loader.exec_module(pr_body)
     subjects = ["feat(BT-12): a", "fix(BT-12): b", "feat(BT-13): c", "release: prepare v1.0.0", "fix(ci): x", "chore: y"]
-    assert sorted({rx.match(s).group(1) for s in subjects if rx.match(s)}) == ["12", "13"]
+    assert sorted({pr_body.SCOPE_RE.match(s).group(1) for s in subjects if pr_body.SCOPE_RE.match(s)}) == ["12", "13"]
 
 
 def test_build_ships_merge_risk_paths_into_4a():
@@ -171,3 +170,49 @@ def test_build_ships_merge_risk_paths_into_4a():
     build = importlib.util.module_from_spec(bspec)
     bspec.loader.exec_module(build)
     assert "merge-risk-paths.md" in build.closure_for(_4a(), ROOT / "src" / "references"),         "4a must cite references/merge-risk-paths.md so the build fans it into 4a's references/"
+
+
+# --- BT-144 follow-up: 4a builds the PR body with pr_body.py instead of prose rules -------------
+
+PR_BODY = ROOT / "src" / "scripts" / "pr_body.py"
+
+
+def _step5():
+    text = _4a()
+    return text[text.index("5. **PR (one per feature branch):**"):text.index("6. **PR-link comment")]
+
+
+def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
+    step5 = _step5()
+    call = re.search(r"python \.agents/scripts/pr_body\.py build ([^`]+)`", step5)
+    assert call, "4a step 5 must call `pr_body.py build`"
+    used = set(re.findall(r"--[a-z-]+", call.group(1)))
+    accepted = set(re.findall(r"--[a-z-]+", PR_BODY.read_text(encoding="utf-8")))
+    assert {"--slice", "--summary", "--verdict", "--audit-rounds", "--prior-body-file"} <= used
+    assert used <= accepted, f"{used - accepted} not accepted by pr_body.py"
+
+
+def test_4a_step5_suite_reuse_goes_through_pr_body_suite():
+    step5 = _step5()
+    assert "python .agents/scripts/pr_body.py suite" in step5
+    assert ".tmp/3d-suite-BT-<padded>.json" in step5 and "Never delete these files" in step5
+
+
+def test_4a_step5_drops_the_prose_rules_the_script_now_owns():
+    step5 = _step5()
+    for gone in ("**Slice rebuild:**", "**Closing lines:**", "**Test result:**", "git log --no-merges",
+                 "subject matches"):
+        assert gone not in step5, f"{gone!r}: rule lives in pr_body.py now, not in 4a prose"
+
+
+def test_4a_step5_keeps_the_gh_side_of_the_body():
+    step5 = _step5()
+    for token in ("--draft", "gh label create", "gh pr edit", "closingIssuesReferences", "[NO-AUTOCLOSE",
+                  "references/merge-risk-paths.md"):
+        assert token in step5, f"4a step 5 lost {token!r}"
+    step8 = _4a()[_4a().index("8. **Epic Check:**"):_4a().index("9. **Terminal sync gate:**")]
+    assert "pr_body.py build" in step8 and "--close-parent" in step8
+
+
+def test_4a_is_shorter_than_before_the_script():
+    assert len(_4a().splitlines()) < 104, "4a must net-shrink: the script replaced prose, it did not add to it"

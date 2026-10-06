@@ -60,3 +60,27 @@ def test_agents_files_define_subagent_nesting():
         para = _section(text, "Subagent nesting", "\n- **HITL enforcement")
         for needle in ("depth", "inline", "commit", "shared/inherit"):
             assert needle in para, f"{rel}: Subagent nesting paragraph omits {needle!r}"
+
+
+def test_3z_bootstrap_line_does_not_require_0a_for_subagents():
+    guard = _section(Z, "## Authority & Guardrails", "## Phase 1")
+    assert "bootstrapped by `/0a" not in guard
+    assert "self-hydrates" in guard
+
+
+def test_3z_ship_only_halts_leave_the_slice_local_and_continue():
+    step_3a = _section(Z, "### Step 3A", "### Step 3B")
+    for halt in ("[UNCOMMITTED]", "[DRAFT-RULE]", "[MIRROR-UNVERIFIED]", "Feature Acceptance Audit"):
+        assert halt in step_3a, halt
+    assert "[BLOCKED-ship] <the halt message>" in step_3a
+    assert "continue" in step_3a
+
+
+def test_3z_step_1b_approval_preauthorizes_the_ship_confirmation():
+    step_3a = _section(Z, "### Step 3A", "### Step 3B")
+    assert "Step 1B" in step_3a and "Phase 5 step 3" in step_3a
+
+
+def test_3z_report_tells_how_to_resume_a_skip_dep_feature():
+    phase_4 = _section(Z, "## Phase 4", "## Phase 5")
+    assert "re-run /3z after BT-<blocker> reaches in review" in phase_4

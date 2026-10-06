@@ -21,6 +21,8 @@ What is checked (backticked spans and fenced code lines only; prose is never rea
   - an enum literal, only when bound on the same span to a known enum type or to a column
     of that type (`employment_type = 'v'`, `jobs.status: 'v'`, `status IN ('a','b')`)
     -> the value must be a label of that enum                            (kind: enum-value)
+    A quoted token followed by `:` is a key, never a value; in fenced lines only `=`-style and IN bind
+    (a JSON/YAML `"status": "x"` example is not checked).
 Not checked: bare words, free-floating literals, `x.y` with unknown `x` (`api/submit.js`),
 `x.<ext>` file names, `x.y(` calls, views, and the reverse direction (schema columns no doc uses).
 Known limit: a table with a genuinely missing column named like a file extension (`jobs.json`) is not
@@ -67,8 +69,8 @@ SQL_NON_COLUMN = {"constraint", "primary", "unique", "foreign", "check", "exclud
 
 REF_RE = re.compile(r"(?<![\w./\\-])([A-Za-z_]\w*)\.([A-Za-z_]\w*)\b(?!\()")
 BIND_RE = re.compile(
-    r"""(?<![\w.])(?:(\w+)\.)?(\w+)["']?\s*(?:===?|!==?|<>|:|=|\bIN\b)\s*"""
-    r"""(\(?\s*(?:['"][^'"\s]+['"]\s*,?\s*)+\)?)""", re.I)
+    r"""(?<![\w.])(?:(\w+)\.)?(\w+)["']?\s*(===?|!==?|<>|:|=|\bIN\b)\s*"""
+    r"""(\(?\s*(?:['"][^'"\s]+['"](?!\s*:)\s*,?\s*)+\)?)""", re.I)  # a quoted token before `:` is a key, not a value
 
 
 class Source:
@@ -194,19 +196,26 @@ def parse_sql(path):
 
 
 def spans(doc):
-    """Yield (line_no, span_text) for inline backtick spans and every line inside a fenced block."""
+    """Yield (line_no, span_text, fenced) for inline backtick spans and every line inside a fenced block."""
     in_fence = False
     for no, line in enumerate(Path(doc).read_text(encoding="utf-8-sig").splitlines(), 1):
         if line.lstrip().startswith("```"):
             in_fence = not in_fence
         elif in_fence:
-            yield no, line
+            yield no, line, True
         else:
             for m in re.finditer(r"`([^`]+)`", line):
-                yield no, m.group(1)
+                yield no, m.group(1), False
 
 
-def check_span(span, sources, known_tables):
+def bindings(span, fenced):
+    """Yield (table, col, vals) enum bindings; fenced code lines accept only `=`-style and IN (`:` is JSON/YAML)."""
+    for m in BIND_RE.finditer(span):
+        if not (fenced and m.group(3) == ":"):
+            yield m.group(1), m.group(2), m.group(4)
+
+
+def check_span(span, sources, known_tables, fenced=False):
     """Yield (ref, kind, source_name) for every unresolved reference in one span."""
     for m in REF_RE.finditer(span):
         x, y = m.groups()
@@ -218,8 +227,7 @@ def check_span(span, sources, known_tables):
                 yield ref, "table", s.name
             elif y not in s.tables[x] and y.lower() not in FILE_EXTS:
                 yield ref, "column", s.name
-    for m in BIND_RE.finditer(span):
-        table, col, vals = m.groups()
+    for table, col, vals in bindings(span, fenced):
         values = QUOTED_RE.findall(vals)
         for s in sources:
             typ = s.enum_for(table, col)
@@ -231,8 +239,8 @@ def check_span(span, sources, known_tables):
                     yield f"{col}='{v}'", "enum-value", s.name
 
 
-def count_refs(span, known_tables):
-    return sum(1 for m in REF_RE.finditer(span) if m.group(1) in known_tables) + len(BIND_RE.findall(span))
+def count_refs(span, known_tables, fenced=False):
+    return sum(1 for m in REF_RE.finditer(span) if m.group(1) in known_tables) + sum(1 for _ in bindings(span, fenced))
 
 
 def main(argv=None):
@@ -261,9 +269,9 @@ def main(argv=None):
     findings, checked = [], 0
     for doc in args.docs:
         label = Path(doc).as_posix()
-        for no, span in spans(doc):
-            checked += count_refs(span, known_tables)
-            for ref, kind, source in check_span(span, sources, known_tables):
+        for no, span, fenced in spans(doc):
+            checked += count_refs(span, known_tables, fenced)
+            for ref, kind, source in check_span(span, sources, known_tables, fenced):
                 line = f"[CONTRACT-MISSING] {label}:{no} {ref} ({kind}, {source})"
                 if line not in findings:
                     findings.append(line)
