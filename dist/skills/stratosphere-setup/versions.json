@@ -56,7 +56,7 @@
       "version": "1.1.1"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "c7ef80f922616ada2d000d3d3d66567ad91ccf948104ebe7a52d721a27d7e35e",
+      "sha256": "1d4aa74193f14fd12bca08e82d09fb9b49e7adbf7a3233716d3d3fab11983597",
       "timestamp": "2026-10-05",
       "version": "2.1.0"
     },
@@ -426,7 +426,7 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "1ef7cb649a99609201db7601bfeda0d37189d9868b2a0985fef233436f5fd2d0",
+      "sha256": "9999683b3b0371fa79d42e0cfd69b3b1ca8e428a1b76a24e8476c19c0eac491e",
       "timestamp": "2026-09-29",
       "version": "1.2.1"
     },

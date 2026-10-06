@@ -24,7 +24,7 @@ For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-pro
 
 Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, and `DESIGN_RULES.md` carries exactly one trust tag.
 
-`DESIGN.md` is **exempt** — external spec, validated by `npx @google/design.md lint`.
+`DESIGN.md` is **exempt** — external spec, validated by `npx --yes -p "@google/design.md" designmd lint <file>`.
 
 | Tag | Meaning | Where it lives |
 |:---|:---|:---|

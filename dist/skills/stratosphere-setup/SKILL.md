@@ -172,7 +172,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   3. Map spacing scale to the `spacing:` YAML block.
   4. Map corner radii to the `rounded:` YAML block.
   5. Add brief markdown rationale in the `## Overview`, `## Colors`, `## Typography`, `## Layout`, `## Shapes`, and `## Do's and Don'ts` sections. Preserve all HTML comments (`<!-- shadcn... -->`, `<!-- optional dark overrides... -->`), prompt guidance comments (`<Rationale...>`), and empty sections (`## Shapes`, `## Components`, `## Do's and Don'ts`) if unpopulated.
-  6. Validate optionally with `npx -p "@google/design.md" designmd lint .memory/DESIGN.md`.
+  6. Validate optionally with `npx --yes -p "@google/design.md" designmd lint .memory/DESIGN.md`.
 
 `DESIGN.md` does NOT use trust tags or `[DR-xxx]` IDs — it follows the external spec format.
 
