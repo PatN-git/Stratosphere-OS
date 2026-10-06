@@ -17,7 +17,7 @@ timestamp: 2026-10-05
 **Orchestrator rule:** AGENTS.md §1 Orchestrators. Each unit still commits its own document (one document per run, AGENTS.md §4).
 
 **Context protection:** main thread keeps HITL, commits and the decision log. Read-heavy, non-HITL steps run in subagents: write only to `.tmp/`, never commit, return the path + ≤10-line summary. A subagent never asks the user; it returns every decision as a gate list. Inline when host has no subagents (AGENTS.md §8).
-- **PRD Drafter** (2a Phase 3). Input: decision log, discovery brief, `references/PRD-template.md`, memory paths. Guardrail: "Write the draft to `.tmp/2z-BT-<padded>-prd-draft.md` only; no other file, no commit. Return the path, a ≤10-line summary and every user gate: cost approval, `[unbacked]` scope tags, ADR flag, `> open:`." Main puts the gates to user, applies answers as surgical edits, then runs 2a Phases 4–5.
+- **PRD Drafter** (2a Phase 3). Input: decision log, discovery brief, memory paths; follows Phase 3 of `.agents/skills/2a-write-prd/SKILL.md`. Guardrail: "Write the draft to `.tmp/2z-BT-<padded>-prd-draft.md` only; no other file, no commit. Return the path, a ≤10-line summary and every user gate: cost approval, `[unbacked]` scope tags, ADR flag, `> open:`." Main puts the gates to user, applies answers as surgical edits, then runs 2a Phases 4–5.
 - **Direction Drafter** (2b Phase 2.5 steps 1–3). Input: PRD path, 2b gate result. Guardrail: "Write the 3 directions and 5-Lens notes to `.tmp/2z-BT-<padded>-directions.md` only; no other file, no commit." Main renders via `plan-html` and runs the HITL pick.
 - **Stress Tester** (2b) and **Spec-Reconciliation Auditor** (2c): dispatch as subagents per the unit, never inline.
 

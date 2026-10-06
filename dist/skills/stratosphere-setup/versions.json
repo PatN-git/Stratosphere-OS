@@ -201,14 +201,9 @@
       "version": "1.1.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "f268cb9798c74e8c77e9cd6ad1e2fdd4d1df3be98dd91100d45d49e1ab03cea7",
+      "sha256": "d66bdf81326394b36d3c1aa5bea5f08d45c526ea820251282222c94c048750ed",
       "timestamp": "2026-10-05",
       "version": "1.0.0"
-    },
-    "skills/2z-write-spec/references/PRD-template.md": {
-      "sha256": "8a6423c2c242015f8cfef12bcff919dbb829974fe868ba00ee780a2650fdde4d",
-      "timestamp": "2026-09-15",
-      "version": "2.0.0"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "613942903ad18f292d78d8588db0d7bd145a2c9424b948991b15b262bc96bdb1",
