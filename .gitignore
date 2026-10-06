@@ -17,3 +17,4 @@ __pycache__/
 *.work.md
 .env.*
 token.json
+docs/okf-view.html
