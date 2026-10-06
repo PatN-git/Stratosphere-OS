@@ -3,8 +3,8 @@ name: micro-tdd
 description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
 metadata:
   stratos.layer: execution
-version: "1.2.0"
-timestamp: 2026-07-15
+version: "1.3.0"
+timestamp: 2026-10-05
 ---
 
 # SKILL: Micro-TDD Execution
@@ -38,7 +38,7 @@ Apply strictly to all pure logic, state updates, API mutations, hooks, and backe
    - **Validate Green:** Confirm the new test passes.
 3. **Clean Diffs & Verify (REFACTOR):**
    - Clean up code formatting using your active code simplifier protocols.
-   - Run one full-suite sweep to confirm no regression across the remaining suite.
+   - Run the tests **related to the changed files** using the runner's related/changed mode (e.g. `vitest related <files> --run`, `jest --findRelatedTests <files>`, `pytest` with `testmon`). With no such mode, run the touched test files. When the caller owns the full suite, stop here; otherwise (standalone use) run the full suite **once** at the end of the task.
    - Output only the passing test suite results and a 1-line summary: `[DONE] [[ID]] verified.`
 
 ### Fast-Track B: Visual & Layout Bypass

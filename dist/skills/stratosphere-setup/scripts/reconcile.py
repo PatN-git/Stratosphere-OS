@@ -60,6 +60,30 @@ def _norm(token):
     return None if token in NONE_TOKENS else token
 
 
+def open_ids(rows):
+    """BT ids of every row whose status is not `done`, in map order. Pure."""
+    return [bt for bt, r in rows.items() if r['status'] != 'done']
+
+
+def stale_blockers(rows):
+    """`BT-x: stale blocker BT-y should be cleared` for each open row blocked by a row that is
+    already in review/done (4a/merge should have removed it). BACKLOG-only. Pure."""
+    out = []
+    for bt in open_ids(rows):
+        for blocker in sorted(rows[bt]['blocked_by']):
+            if blocker in rows and rows[blocker]['status'] in ('in review', 'done'):
+                out.append(f"{bt}: stale blocker {blocker} should be cleared")
+    return out
+
+
+def closed_on_github(row, gh):
+    """Drift text when the issue is CLOSED on GitHub while its row is not done, else None.
+    Per-field compare cannot see this (the labels still say `in review`). Pure."""
+    if gh.get('state') == 'CLOSED' and row['status'] != 'done':
+        return f"closed on GitHub, map={row['status']}"
+    return None
+
+
 def compare(row, gh, fields, check_pr):
     """Return a list of drift descriptions for one issue. Pure — unit-tested.
 
@@ -123,12 +147,14 @@ def _gh_json(num, fields):
         return None
 
 
-def fetch_issue(num, want_comments):
+def fetch_issue(num, want_comments, want_state=False):
     """Core fields first; optional (blockedBy/parent) fetched separately so an
     unsupported field degrades to 'not checked' instead of failing the whole read."""
     core = ['number', 'labels', 'milestone']
     if want_comments:
         core.append('comments')
+    if want_state:
+        core.append('state')
     data = _gh_json(num, core)
     if data is None:
         return None
@@ -148,7 +174,11 @@ def gh_available():
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Terminal Sync Invariant gate.")
-    ap.add_argument('--ids', required=True, help="comma-separated BT ids, e.g. BT-007,BT-006")
+    scope = ap.add_mutually_exclusive_group(required=True)
+    scope.add_argument('--ids', help="comma-separated BT ids, e.g. BT-007,BT-006")
+    scope.add_argument('--all-open', action='store_true',
+                       help="advisory sweep of every row whose status is not done, plus the "
+                            "stale-blocker and closed-on-GitHub checks (0d; ~3 gh calls per row)")
     ap.add_argument('--pr-id', help="the id that must carry a PR-link comment (e.g. the shipped slice)")
     ap.add_argument('--fields', default=','.join(ALL_FIELDS),
                     help="mirror fields to check (default: all). Pass only the fields this phase wrote.")
@@ -158,9 +188,10 @@ def main(argv=None):
                          "cannot be reached, instead of silently not verifying")
     args = ap.parse_args(argv)
 
-    ids = [i.strip() for i in args.ids.split(',') if i.strip()]
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
     rows = parse_backlog(args.backlog)
+    ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
+    stale = [f"[MIRROR-DRIFT {d}]" for d in stale_blockers(rows)] if args.all_open else []
 
     if not gh_available():
         # A terminal gate must not pass on an unverified mirror. Without
@@ -169,13 +200,17 @@ def main(argv=None):
             print("[MIRROR-UNVERIFIED: gh unavailable — terminal invariant NOT checked]")
             return 3
         print("[local-only — GitHub not checked]")
+        for line in stale:
+            print(line)
         missing = [i for i in ids if i not in rows]
         if missing:
             print(f"[MIRROR-DRIFT: ids absent from BACKLOG_MAP: {missing}]")
-            return 1
-        return 0
+        return 1 if missing or stale else 0
 
     exit_code = 0
+    for line in stale:
+        print(line)
+        exit_code = 1
     for bt in ids:
         if bt not in rows:
             print(f"[MIRROR-DRIFT {bt}: absent from BACKLOG_MAP]")
@@ -186,19 +221,26 @@ def main(argv=None):
             continue
         num = issue_number(bt)
         is_pr = (bt == args.pr_id)
-        gh = fetch_issue(num, want_comments=is_pr) if num else None
+        if not num:
+            gh = None
+        elif args.all_open:
+            gh = fetch_issue(num, want_comments=False, want_state=True)
+        else:
+            gh = fetch_issue(num, want_comments=is_pr)
         if gh is None:
             print(f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]")
             exit_code = 1
             continue
-        drift = compare(rows[bt], gh, fields, check_pr=is_pr)
+        closed = closed_on_github(rows[bt], gh) if args.all_open else None
+        # A closed issue's other fields are noise: the row itself is what needs healing.
+        drift = [closed] if closed else compare(rows[bt], gh, fields, check_pr=is_pr)
         for d in drift:
             print(f"[MIRROR-DRIFT {bt}: {d}]")
         if drift:
             exit_code = 1
 
     if exit_code == 0:
-        print(f"[MIRROR-OK {','.join(ids)}]")
+        print(f"[MIRROR-OK {len(ids)} open rows]" if args.all_open else f"[MIRROR-OK {','.join(ids)}]")
     return exit_code
 
 

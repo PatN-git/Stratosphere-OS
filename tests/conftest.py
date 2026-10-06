@@ -1,5 +1,8 @@
 """Shared pytest configuration for StratosphereOS test suite."""
+import itertools
+import os
 from pathlib import Path
+import subprocess
 import sys
 
 import pytest
@@ -16,3 +19,25 @@ for p in [str(REPO_ROOT), str(REPO_ROOT / "tests")]:
 @pytest.fixture(scope="session")
 def repo_root():
     return REPO_ROOT
+
+
+_GIT_ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
+            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com"}
+_commit_seq = itertools.count()
+
+
+def git(cwd, *args):
+    """Run git in `cwd` (raises on failure) and return stripped stdout. Author identity is pinned via env."""
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True,
+                          env=_GIT_ENV).stdout.strip()
+
+
+def commit(repo, subject, files=None):
+    """Write+commit `files` (default: one fresh file) with `subject`; return the new HEAD sha."""
+    for rel in files or [f"f{next(_commit_seq)}.txt"]:
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(subject + os.urandom(4).hex(), encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", subject)
+    return git(repo, "rev-parse", "HEAD")

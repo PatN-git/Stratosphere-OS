@@ -1,4 +1,4 @@
-"""BT-118: the canonical `dist/skills/` bundle — one host-agnostic tree, 26 self-contained
+"""BT-118: the canonical `dist/skills/` bundle — one host-agnostic tree, 27 self-contained
 skills, HITL sidecars intact — replacing the per-host dist/claude-code + dist/antigravity trees.
 Asserts on the committed bundle (drift-guarded by check.sh) and on build.py's fatal paths.
 """
@@ -17,8 +17,8 @@ from conftest import REPO_ROOT
 
 DIST_SKILLS = REPO_ROOT / "dist" / "skills"
 SETUP = DIST_SKILLS / "stratosphere-setup"
-EXPECTED_SKILLS = 26
-EXPECTED_LIFECYCLE = 22
+EXPECTED_SKILLS = 27
+EXPECTED_LIFECYCLE = 23
 
 
 def _skill_dirs():
@@ -37,7 +37,7 @@ def _load_build():
     return mod
 
 
-def test_single_bundle_emits_exactly_26_skills():
+def test_single_bundle_emits_exactly_27_skills():
     assert len(_skill_dirs()) == EXPECTED_SKILLS
 
 
@@ -129,7 +129,7 @@ def test_setup_skill_carries_its_own_scaffold_payload():
     assert "skills/0a-start-session/SKILL.md" in manifest["artifacts"]
 
 
-def test_marketplace_lists_all_26_skills_via_valid_plugins_schema():
+def test_marketplace_lists_all_27_skills_via_valid_plugins_schema():
     mk = json.loads((REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
     (plugin,) = mk["plugins"]
     assert plugin["source"] == "./"

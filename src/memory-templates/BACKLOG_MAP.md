@@ -5,7 +5,7 @@ description: Authoritative registry and status mapping of all project issues.
 generated:
   by: stratosphere-setup
   at: 2026-09-29
-version: "1.3.1"
+version: "1.3.2"
 ---
 # BACKLOG MAP
 
@@ -36,7 +36,7 @@ Authoritative, high-density reference for project issues and their status.
 
 ## Label Registry
 - **Area (`area:xxx`)**: `area:BE-ai`, `area:BE-api`, `area:BE-auth`, `area:BE-data`, `area:BE-infrastructure`, `area:FE-<page_name>` (where `<page_name>` is replaced with the page's slug during audit or page creation, e.g., `area:FE-login`, `area:FE-dashboard`)
-<!-- SOS:BLOCK id=label-canonical v=1.1.8 -->
+<!-- SOS:BLOCK id=label-canonical v=1.1.9 -->
 - **Primary Type (`type:<class>`)**: `type:bug`, `type:content`, `type:feature`, `type:improvement`, `type:maintenance`, `type:research`
 - **Execution Mode (`mode:<mode>`)**: `mode:HITL` (Human-in-Loop required), `mode:AFK` (Autonomous execution)
 - **Tier (`tier:<tier>`)**: `tier:epic` (PRD parent / epic), `tier:slice` (Leaf vertical slice)
@@ -45,6 +45,7 @@ Authoritative, high-density reference for project issues and their status.
 - **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)
 - **Status (`status:xxx`)**: `status:needs_spec`, `status:planned`, `status:in progress`, `status:in review`, `status:blocked`, `status:done` (lifecycle order: `needs_spec → planned → in progress → in review → done`; `blocked` from any point)
 - **Concept Discovery (`concept:xxx`)**: `concept:map`, `concept:research`, `concept:grilling`, `concept:prototype`, `concept:task`
+- **Risk (`risk:xxx`)**: `risk:one-way` (PR contains a hard-to-reverse change per `merge-risk-paths.md`; a human must read it before merge)
 - **Label Composition Rules**: Each leaf issue must carry exactly one `type:` + one `mode:` + `tier:slice` + one `size:`. Each epic must carry `tier:epic` + one `type:` (no `mode:`, no `size:`).
 - **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a-version-planning`; `SPRINT` (Z) owned by `/3c-sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version.
 <!-- SOS:/BLOCK id=label-canonical -->

@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-4.3.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-4.4.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -62,6 +62,7 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 | **0. Session Start** | `/0a-start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
 | **1. Discovery** | `/1a-research`<br/>`/1b-concept-framing`<br/>`/1c-concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
 | **2. Design** | `/2a-write-prd`<br/>`/2b-interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
+| **2z. Spec Orchestration** | `/2z-write-spec` | Chains `/2a-write-prd` → `/2b-interface-design` → `/2c-reconcile-specs` in one invocation with a single memory load and a decision log; resumes after a Path A pause. | Discovery brief, `.memory/*` | PRD doc, design doc, reconciled specs |
 | **3. Planning** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
 | **3d. Execution** | `/3d-implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
 | **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
@@ -74,7 +75,7 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 ## Getting Started (Installation)
 
 ### 1. Install the Skills
-StratosphereOS ships as one canonical bundle, `dist/skills/` (26 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
+StratosphereOS ships as one canonical bundle, `dist/skills/` (27 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
 
 | Your situation | Use |
 |:---|:---|
@@ -98,7 +99,7 @@ npx skills update
 
 - **Always pass `--copy`.** Without it the CLI symlinks, which fails on Windows without Developer Mode (`EPERM: operation not permitted, symlink`) and breaks hosts that do not follow symlinks into `references/`.
 - **Always include the `/dist/skills` subpath.** The bundle lives there; the repository root is not a skills root.
-- **Keep `-y`** so all 26 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
+- **Keep `-y`** so all 27 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
 - No network? Run it against a local clone: `npx skills add ./dist/skills -a <agent> --copy -y`.
 
 ### Track B — Direct copy (offline / no Node.js)

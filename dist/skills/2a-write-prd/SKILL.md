@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-09-22
+version: "1.5.0"
+timestamp: 2026-10-05
 ---
 
 # Write PRD
@@ -79,6 +79,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] Ethical: dark-pattern exclusions in §4; profit-alignment in §12
 - [ ] No slice lists anywhere in the doc
 - [ ] All memory refs resolve to existing entries
+- [ ] `python .agents/scripts/contract_check.py --docs <prd> --schema .memory/DATABASE_SCHEMA.md` passes (or prints `[CONTRACT-SKIP]`), or each `[CONTRACT-MISSING]` finding is written as `> open:`
 - [ ] `> open:` markers moved to §10
 - [ ] §7 ADR flag raised if applicable
 
@@ -93,7 +94,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
    ```
    Milestone is vMAJOR.MINOR.SPRINT (no leading zeros; `/3a-version-planning` owns MAJOR.MINOR and may reassign, `/3c-sprint-planning` owns the sprint digit). Default to highest vX.Y as vX.Y.0 (provisional), or v1.0.0. Ref is memory IDs only; doc paths go in GitHub body.
 6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/prds/BT-<padded>-<feature-name>.html` (never committed; re-render from the `.md` whenever presenting it).
-7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b-interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it)."*
+7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b-interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it), or `/2z-write-spec BT-<padded>` to chain 2b → 2c."*
 
 ---
 

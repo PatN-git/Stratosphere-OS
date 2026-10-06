@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-09-29
 ---
 
@@ -38,7 +38,7 @@ All templates ship **bundled inside this skill** under its `assets/templates/` d
 - `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-All 22 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`. One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`. All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert. Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
+All 23 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`. One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`. All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert. Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
 
 ## Existing Installation Detection
 
@@ -93,7 +93,7 @@ Find `<plugin>` by checking these locations in order and using the first that co
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 
-**Suite integrity check (before scaffolding):** assert the 22 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
+**Suite integrity check (before scaffolding):** assert the 23 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
 
 ```bash
 python <plugin>/scripts/check_suite.py suite
@@ -120,7 +120,7 @@ python <plugin>/scripts/scaffold.py --update
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
-- All 22 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
+- All 23 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
 - `.gitignore` (only if missing)
 
@@ -172,7 +172,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
   3. Map spacing scale to the `spacing:` YAML block.
   4. Map corner radii to the `rounded:` YAML block.
   5. Add brief markdown rationale in the `## Overview`, `## Colors`, `## Typography`, `## Layout`, `## Shapes`, and `## Do's and Don'ts` sections. Preserve all HTML comments (`<!-- shadcn... -->`, `<!-- optional dark overrides... -->`), prompt guidance comments (`<Rationale...>`), and empty sections (`## Shapes`, `## Components`, `## Do's and Don'ts`) if unpopulated.
-  6. Validate optionally with `npx -p "@google/design.md" designmd lint .memory/DESIGN.md`.
+  6. Validate optionally with `npx --yes -p "@google/design.md" designmd lint .memory/DESIGN.md`.
 
 `DESIGN.md` does NOT use trust tags or `[DR-xxx]` IDs — it follows the external spec format.
 
@@ -207,7 +207,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 ### Checkpoint 5.2: Secret hygiene
 
-- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 22 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, if missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
 
 ## Checkpoint 6: Label Reconciliation (both paths)
 

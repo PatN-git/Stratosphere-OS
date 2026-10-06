@@ -2,8 +2,8 @@
 trigger: always_on
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-09-15
-version: "2.0.0"
+timestamp: 2026-10-05
+version: "2.1.0"
 ---
 
 # Memory Protocol
@@ -24,7 +24,7 @@ For Open Knowledge Format (OKF) conformance rules, see [okf-protocol.md](okf-pro
 
 Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, and `DESIGN_RULES.md` carries exactly one trust tag.
 
-`DESIGN.md` is **exempt** — external spec, validated by `npx @google/design.md lint`.
+`DESIGN.md` is **exempt** — external spec, validated by `npx --yes -p "@google/design.md" designmd lint <file>`.
 
 | Tag | Meaning | Where it lives |
 |:---|:---|:---|
@@ -75,6 +75,8 @@ When a rule changes, move the old entry to `## Superseded` in the **same file**:
 - Date or version
 
 `## Superseded` is read only when explicitly triggered. No separate archive file.
+
+IDs are never reused. An entry removed without a successor stays as a one-line tombstone under `## Superseded`: `- **[[L-xxx]] [REMOVED] [YYYY-MM-DD]** Reason: <one line>.`
 
 ## 4. Lint (at /stop-session)
 

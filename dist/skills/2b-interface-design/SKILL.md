@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-09-22
+version: "1.5.0"
+timestamp: 2026-10-05
 ---
 
 # Interface Design
@@ -94,6 +94,9 @@ Run the `load-memory` skill to restore session context (read-only).
 - Path B input: prompt user for design references (URLs, screenshots, brand cues) and pause (resume to continue).
 - Token direction inverts (DR-009): extract tokens (Path A) or derive (Path B: OKLCH/fluid scales/fonts/layout) and propose seeding DESIGN.md. If brownfield, derive from codebase first.
 - Immortal Components: propose registering shell; on confirmation, register in .memory/DESIGN_RULES.md §3 immediately.
+
+### Contract Check
+Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc, or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
 
 ## Phase 5: Publish & Sync
 1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `gh issue edit <n> --remove-label "status:needs_spec" --add-label "status:planned"`; set BACKLOG Status = `planned`. (2b never touches the PRD's editorial status — 2a owns that.)

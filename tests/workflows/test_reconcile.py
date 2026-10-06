@@ -4,7 +4,9 @@
 Pure logic (parse_backlog, compare) with fixtures + mocked gh JSON, plus main()
 exit-code paths with gh monkeypatched — fully offline and deterministic.
 """
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 from pathlib import Path
@@ -59,6 +61,94 @@ def write_backlog(td):
     p = Path(td) / "BACKLOG_MAP.md"
     p.write_text(BACKLOG, encoding="utf-8")
     return str(p)
+
+
+ALLOPEN = """\
+| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
+|----|-------|--------|--------|-----------|--------|------------|-----|-----|
+| BT-001 | Shipped | done | type:feature | v1.0.0 | — | — | ICE | — |
+| BT-002 | In review | in review | type:feature | v1.0.0 | — | — | ICE | — |
+| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | BT-002 | ICE | — |
+| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | BT-001 | ICE | — |
+| BT-005 | Waits on 9 | planned | type:feature | v1.0.0 | — | BT-009 | ICE | — |
+| BT-009 | In progress | in progress | type:feature | v1.0.0 | — | — | ICE | — |
+"""
+
+
+def _run(argv):
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = rec.main(argv)
+    return code, buf.getvalue()
+
+
+def _arg_error(argv):
+    """True when argparse rejects argv (SystemExit 2)."""
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            rec.main(argv)
+    except SystemExit as e:
+        return e.code == 2
+    return False
+
+
+def all_open_checks():
+    """BT-142: --all-open advisory sweep. In-band --ids gates keep their exact semantics."""
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "BACKLOG_MAP.md"
+        p.write_text(ALLOPEN, encoding="utf-8")
+        path = str(p)
+        rows = rec.parse_backlog(path)
+
+        check("open_ids excludes done rows", rec.open_ids(rows) == ["BT-002", "BT-003", "BT-004", "BT-005", "BT-009"])
+        stale = rec.stale_blockers(rows)
+        check("stale blocker: blocker in review flagged", "BT-003: stale blocker BT-002 should be cleared" in stale)
+        check("stale blocker: blocker done flagged", "BT-004: stale blocker BT-001 should be cleared" in stale)
+        check("stale blocker: blocker in progress not flagged", not any(x.startswith("BT-005") for x in stale))
+        check("stale blocker: blocker absent from map not flagged",
+              rec.stale_blockers({"BT-5": {"status": "planned", "blocked_by": {"BT-404"}}}) == [])
+
+        check("closed_on_github: CLOSED + row not done -> drift",
+              rec.closed_on_github({"status": "in review"}, {"state": "CLOSED"}) == "closed on GitHub, map=in review")
+        check("closed_on_github: CLOSED + row done -> ok",
+              rec.closed_on_github({"status": "done"}, {"state": "CLOSED"}) is None)
+        check("closed_on_github: OPEN -> ok", rec.closed_on_github({"status": "in review"}, {"state": "OPEN"}) is None)
+        check("closed_on_github: state absent -> not checked", rec.closed_on_github({"status": "in review"}, {}) is None)
+
+        check("--ids and --all-open are mutually exclusive", _arg_error(["--ids", "BT-007", "--all-open"]))
+        check("one of --ids / --all-open is required", _arg_error([]))
+
+        orig_avail, orig_fetch = rec.gh_available, rec.fetch_issue
+        try:
+            rec.gh_available = lambda: False
+            code, out = _run(["--all-open", "--backlog", path])
+            check("--all-open offline: local-only tag + stale blocker, exit 1",
+                  code == 1 and "[local-only" in out
+                  and "[MIRROR-DRIFT BT-003: stale blocker BT-002 should be cleared]" in out)
+            check("--all-open offline + --require-gh -> exit 3",
+                  rec.main(["--all-open", "--backlog", path, "--require-gh"]) == 3)
+            check("--ids offline ignores the stale-blocker check",
+                  rec.main(["--ids", "BT-003", "--backlog", path]) == 0)
+
+            rec.gh_available = lambda: True
+            calls = []
+
+            def fetch(num, want_comments, want_state=False):
+                calls.append((num, want_state))
+                status = {"2": "in review", "3": "planned", "4": "planned", "5": "planned", "9": "in progress"}[num]
+                return {"number": int(num), "labels": [{"name": f"status:{status}"}, {"name": "type:feature"}],
+                        "milestone": {"title": "v1.0.0"}, "state": "CLOSED" if num == "2" else "OPEN"}
+            rec.fetch_issue = fetch
+            code, out = _run(["--all-open", "--backlog", path, "--fields", "status,milestone,labels"])
+            check("--all-open online: closed-on-GitHub flagged",
+                  "[MIRROR-DRIFT BT-002: closed on GitHub, map=in review]" in out)
+            check("--all-open online: stale blocker flagged",
+                  "[MIRROR-DRIFT BT-003: stale blocker BT-002 should be cleared]" in out)
+            check("--all-open online: drift -> exit 1", code == 1)
+            check("--all-open online: done row not fetched, open rows fetched with state",
+                  sorted(c[0] for c in calls) == ["2", "3", "4", "5", "9"] and all(c[1] for c in calls))
+        finally:
+            rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
 
 def main():
@@ -144,6 +234,8 @@ def main():
                   rec.main(["--ids", "BT-007", "--backlog", path]) == 1)
     finally:
         rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
+
+    all_open_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")

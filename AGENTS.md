@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.1.0"
-timestamp: 2026-09-15
+version: "3.2.0"
+timestamp: 2026-10-05
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -11,9 +11,10 @@ timestamp: 2026-09-15
 A weightless environment to build full-stack apps via Google Antigravity, where creators focus on the solution while agents ensure **token-efficient design** and deterministic execution. **Every action must contribute to this weightless reality.**
  
 ## 1. Architecture
-- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent (§8). A user-invoked **orchestrator** lifecycle skill may sequence others as part of its authorized run; this is the only sanctioned form of skill-invoking-skill.
+- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent (§8). Only an **orchestrator** (below) may invoke other skills.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
 - **Layer 3: Execution Skills** (`.agents/skills/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
+- **Orchestrators:** user-invoked lifecycle skills that sequence other skills by command name within their authorized run, the only sanctioned skill-invoking-skill. An orchestrator follows each unit's own body, never copies it; units stay standalone and keep their own commits and HITL halts. Mode `HITL` (units' halts reach the user) or `AFK` (autonomous within the run). Nesting budget: §8.
 
 ## 2. Strict Precedence
 - **Precedence:** 1. Core Rules (`.agents/rules/`) | 2. Direct User Request | 3. Active Lifecycle Skill (`metadata.stratos.layer: lifecycle`) | 4. Autonomous Execution Skill (`metadata.stratos.layer: execution`) | 5. Core Operating Principles.
@@ -69,6 +70,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
   - *Glob-scoped rules* are the only ones needing per-host placement: `.agents/rules/` (Antigravity `trigger`/`globs`), `.claude/rules/` (Claude Code `paths:`). Contract: `okf-protocol.md` §2.1.
   - *Skills:* per-host skill dirs — Claude Code `.claude/skills/` or `~/.claude/skills/` (Claude Code does **not** read `.agents/skills/`; its plugin also registers the bundled suite); `.agents/skills/` (Cursor, Codex, Antigravity, Devin, OpenClaw); `.github/copilot/skills/` (Copilot — **not** `.github/skills/`, a Devin path). External/system-pack skills (`code-simplifier`, `skill-creator`, …) are fetched into `.agents/skills/` by `/sync-skills` and must also be visible to the running host.
   - *Skill resolution:* if a named skill is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable. Workflows name skills only, never paths.
+- **Subagent nesting.** Use the depth the host allows, ≤ 2 below the invoking session (leaves one level for an outer orchestrator). Every subagent step must also run inline. Subagents never commit, except a `3d` implementer dispatched by `3z` (the §4 single writer for code); auditors, drafters and scanners are read-only (scratch writes to `.tmp/` excepted). Prefer workspace `shared/inherit` for sequential work: worktree isolation branches from the default branch on Claude Code and lacks untracked deps (e.g. `node_modules`).
 - **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only; the field carrying that varies:
 
   | Host | Manual-only field |
