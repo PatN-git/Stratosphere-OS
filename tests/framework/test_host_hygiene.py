@@ -17,6 +17,7 @@ CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + 
 HOST_MATRIX = "src/dev-skills/improve-workflows-skills/references/host-matrix.md"
 HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "Jules", "OpenClaw")
 HOST_SECTION_BUDGET = 1000  # chars, ~250 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
+OKF_PROTOCOL = "src/rules/okf-protocol.md"
 
 
 def read(rel: str) -> str:
@@ -38,12 +39,32 @@ def test_constitution_host_section_names_no_host_and_stays_small(rel):
     assert len(section) <= HOST_SECTION_BUDGET, f"host section is {len(section)} chars (budget {HOST_SECTION_BUDGET})"
 
 
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_section_8_names_no_host(rel):
+    # Whole section, not only the host bullets: the Subagent nesting bullet once said "Claude Code".
+    text = read(rel)
+    section = text[text.index("## 8."):]
+    named = [host for host in HOST_NAMES if host in section]
+    assert not named, f"{rel} section 8 is always loaded and must stay host-free; {named} belong in {HOST_MATRIX}"
+
+
+def test_okf_manual_only_pointer_does_not_send_readers_to_section_8():
+    # Section 8 no longer carries the manual-only field table; only section 1 describes the skill layers.
+    text = read(OKF_PROTOCOL)
+    para = next(p for p in text.split("\n\n") if p.startswith("**Skill invocation is not governed here.**"))
+    assert "AGENTS.md" in para and "§1" in para, "must still point at AGENTS.md section 1"
+    assert "§8" not in para, "AGENTS.md section 8 has no field table; do not send readers there for one"
+
+
 def test_host_matrix_is_accurate():
     assert (REPO_ROOT / HOST_MATRIX).is_file(), "per-host facts moved out of AGENTS.md live here (dev-only, never shipped)"
     text = read(HOST_MATRIX)
     natively_row = next(line for line in text.splitlines() if "| natively" in line)
     assert "Claude Code" not in natively_row and "Gemini CLI" not in natively_row, \
         "Claude Code and Gemini CLI do not read AGENTS.md natively by default"
+    assert "Antigravity" not in natively_row, "Antigravity has its own row: its pointer file is GEMINI.md, not none"
+    assert re.search(r"\|\s*Antigravity\s*\|\s*natively\s*\|[^|\n]*`GEMINI\.md`", text), \
+        "Antigravity row must say it loads AGENTS.md natively and keeps the GEMINI.md pointer file"
     assert "context.fileName" in text and "GEMINI.md" in text, "must say Gemini CLI loads GEMINI.md"
     for floor in ("2.1.277", "2.1.288", "0.150.0", "0.59.0"):
         assert floor in text, f"version floor {floor} missing from the host matrix"
