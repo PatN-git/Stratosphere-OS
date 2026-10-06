@@ -2,7 +2,7 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.1.0"
+version: "2.1.1"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15
@@ -46,7 +46,7 @@ Both install to the same place. The distinction is **frontmatter, never location
 | `metadata` | `stratos.layer: lifecycle`, `stratos.mode: HITL\|AFK`, `stratos.version` | `stratos.layer: execution`, `stratos.version` |
 
 - **This repo DOES use `disable-model-invocation`.** It was previously unnecessary because workflows compiled to slash commands, which the model could not auto-fire. Claude Code has since merged commands into skills, so the field is now **the only thing enforcing user-only invocation** on Claude Code, Cursor and OpenClaw. Devin needs `triggers: ["user"]`; Codex needs the `agents/openai.yaml` sidecar. Emit all three.
-- **Antigravity honours none of them.** It reads only `name` and `description`. Every lifecycle skill's `description` must restate its user-only status — a prompt-level signal, **not enforcement**. See `AGENTS.md` §8.
+- **Antigravity honours none of them.** It reads only `name` and `description`. Every lifecycle skill's `description` must restate its user-only status — a prompt-level signal, **not enforcement**. See `references/host-matrix.md`.
 - **No OKF `type:` on either kind.** `src/` is outside the OKF bundle scope (`okf-protocol.md` §1). Status/maturity lives in the `description`.
 - **`trigger:` is retired on skills.** It survives only on `.agents/rules/*` files.
 

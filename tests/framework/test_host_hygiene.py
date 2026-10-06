@@ -14,31 +14,47 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 JULES = "src/experimental/jules-dispatch"
 CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + this repo's installed copy
+HOST_MATRIX = "src/dev-skills/improve-workflows-skills/references/host-matrix.md"
+HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "Jules", "OpenClaw")
+HOST_SECTION_BUDGET = 1000  # chars, ~250 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
 
 
 def read(rel: str) -> str:
     return (REPO_ROOT / rel).read_text(encoding="utf-8")
 
 
+def host_section(text: str) -> str:
+    """The §8 bullets that used to carry per-host facts: Host activation and HITL enforcement."""
+    return text[text.index("- **Host activation.**"):text.index("- **Subagent nesting.**")] + text[text.index("- **HITL enforcement"):]
+
+
 @pytest.mark.parametrize("rel", CONSTITUTIONS)
-def test_constitution_host_activation_is_accurate(rel):
-    text = read(rel)
-    activation = text[text.index("- **Host activation.**"):text.index("- **Subagent nesting.**")]
-    table = text[text.index("- **HITL enforcement"):]
-    always_on = next(line for line in activation.splitlines() if "*Always-on rules:*" in line)
+def test_constitution_host_section_names_no_host_and_stays_small(rel):
+    section = host_section(read(rel))
+    named = [host for host in HOST_NAMES if host in section]
+    assert not named, f"AGENTS.md is always loaded; per-host facts ({named}) belong in {HOST_MATRIX}"
+    assert not re.search(r"\d+\.\d+\.\d+", section), "version floors belong in the host matrix"
+    assert "CLAUDE.md" in section and "GEMINI.md" in section, "the two pointer files stay named"
+    assert len(section) <= HOST_SECTION_BUDGET, f"host section is {len(section)} chars (budget {HOST_SECTION_BUDGET})"
 
-    native_clause = next(s for s in re.split(r"(?<=[.;])\s", always_on) if "natively" in s)
-    assert "Claude Code" not in native_clause and "Gemini CLI" not in native_clause, \
+
+def test_host_matrix_is_accurate():
+    assert (REPO_ROOT / HOST_MATRIX).is_file(), "per-host facts moved out of AGENTS.md live here (dev-only, never shipped)"
+    text = read(HOST_MATRIX)
+    natively_row = next(line for line in text.splitlines() if "| natively" in line)
+    assert "Claude Code" not in natively_row and "Gemini CLI" not in natively_row, \
         "Claude Code and Gemini CLI do not read AGENTS.md natively by default"
-    assert "the two that don't" not in activation, "stale claim: Claude Code and Antigravity skip AGENTS.md"
-    assert "context.fileName" in always_on and "GEMINI.md" in always_on, "must say Gemini CLI loads GEMINI.md"
+    assert "context.fileName" in text and "GEMINI.md" in text, "must say Gemini CLI loads GEMINI.md"
     for floor in ("2.1.277", "2.1.288", "0.150.0", "0.59.0"):
-        assert floor in activation, f"version floor {floor} missing from Host activation"
+        assert floor in text, f"version floor {floor} missing from the host matrix"
+    assert ".github/skills/" in text, "Copilot reads .github/skills/"
+    assert "Devin path" not in text and ".github/copilot/skills" not in text, "stale Copilot skill path claim"
+    assert re.search(r"\|\s*Copilot[^|]*\|[^\n]*`disable-model-invocation`", text), "Copilot row missing"
+    assert re.search(r"\|\s*Gemini CLI\s*\|[^\n]*none", text), "Gemini CLI row missing"
 
-    assert ".github/skills/" in activation, "Copilot reads .github/skills/"
-    assert "Devin path" not in activation and ".github/copilot/skills" not in activation, "stale Copilot skill path claim"
-    assert re.search(r"\|\s*Copilot[^|]*\|\s*`disable-model-invocation`", table), "Copilot row missing from manual-only table"
-    assert re.search(r"\|\s*Gemini CLI\s*\|\s*none", table), "Gemini CLI row missing from manual-only table"
+
+def test_dev_skill_points_at_the_host_matrix():
+    assert "references/host-matrix.md" in read("src/dev-skills/improve-workflows-skills/SKILL.md")
 
 
 @pytest.mark.parametrize("rel", ["README.md", "src/commands/stratosphere-setup/SKILL.md"])
