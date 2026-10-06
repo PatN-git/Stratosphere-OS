@@ -50,3 +50,10 @@ def test_every_workflow_call_uses_only_real_flags():
             used = set(re.findall(r"--[a-z]+", args))
             assert used <= flags, f"{name}: {used - flags} not accepted by contract_check.py"
     assert seen >= 3
+
+
+def test_2c_scan_matrix_item_1_runs_parity_when_sql_is_declared():
+    text = (WF / "2c-reconcile-specs.md").read_text(encoding="utf-8")
+    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*$", text, re.M).group(0)
+    assert "contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>" in item1
+    assert "[CONTRACT-DRIFT]" in item1
