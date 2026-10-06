@@ -1,6 +1,6 @@
 ---
 name: 2c-reconcile-specs
-description: "Pre-slicing spec audit. Reconciles Research/Discovery/PRD/Interface-Design (and any declared schema source) for cross-artifact contradictions; proposes resolutions, applies the spec edits the user does not skip. Invoke only on explicit user request — never autonomously."
+description: "Pre-slicing spec audit. Reconciles Concept map/Research/Discovery/PRD/Interface-Design (and any declared schema source) for cross-artifact contradictions; proposes resolutions, applies the spec edits the user does not skip. Invoke only on explicit user request — never autonomously."
 disable-model-invocation: true
 triggers: ["user"]
 metadata:
@@ -23,6 +23,8 @@ _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on re
 
 **Resolve target artifacts** (missing file = a finding, not an error):
 - Research `docs/research/*<slug>*.md`; Discovery `docs/discovery/BT-<padded>-*.md`; PRD `docs/prds/BT-<padded>-<feature>.md`; Interface design `docs/design/BT-<padded>-interface.md`.
+- Concept map: `concept:map` issue the Discovery brief cites; save `gh issue view <n>` to `.tmp/BT-<padded>-concept-map.md` (read-only).
+- Referenced artifacts (read-only): every `docs/` file or issue a resolved artifact cites by path or `#id`, one hop. Findings against read-only items (concept map, referenced artifacts) route to the PRD.
 - Schema source `.memory/DATABASE_SCHEMA.md` + any live introspection source the project declares (assume none unless declared).
 
 **Gate** (after resolution):
@@ -38,12 +40,12 @@ _CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo.
 Surface contradictions and blocking gaps only — not stylistic drift.
 
 ### Scan Matrix
-1. **Contract existence:** every contract the PRD/design references (table, field, enum, type, endpoint, key) exists in the schema source. Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared. When `--sql` is declared, also run `python .agents/scripts/contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>`: each `[CONTRACT-DRIFT]` (a table/column in one schema source but not the other) is a P1 finding. Reason only where the script can't answer (endpoint, key, type, anything it ignores).
-2. **Semantic contradiction:** behavioral claims agree across Research → PRD → Interface-Design (state transitions, timing/ordering, fallbacks, batching, rate/quota). Flag prose ↔ typed-contract ↔ stress-matrix disagreement.
+1. **Contract existence:** every contract any resolved artifact references (table, field, enum, type, endpoint, key) exists in the schema source. Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared. When `--sql` is declared, also run `python .agents/scripts/contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>`: each `[CONTRACT-DRIFT]` (a table/column in one schema source but not the other) is a P1 finding. Reason only where the script can't answer (endpoint, key, type, anything it ignores).
+2. **Semantic contradiction:** behavioral claims agree across Concept map → Research → Discovery → PRD → Interface-Design (state transitions, timing/ordering, fallbacks, batching, rate/quota). Flag prose ↔ typed-contract ↔ stress-matrix disagreement.
 3. **Attribute rules:** each attribute is extracted or inherited, with an explicit missing-value rule — required-missing (reject) vs optional-missing (degrade/default).
 4. **Boundary record:** auth/access and runner/quota constraints a slice must honor are recorded (e.g. service-role secret, timeout, quota).
 
-**Coverage:** examine every resolved artifact and referenced contract; tag any unexamined item `[UNCOVERED]`. Do not exit with an open `[UNCOVERED]`.
+**Coverage:** examine every resolved and referenced artifact and every referenced contract; tag any unexamined item `[UNCOVERED]`. Do not exit with an open `[UNCOVERED]`.
 
 ### Confidence & Severity
 Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:** cross-artifact spec inconsistency — a referenced contract absent, or two artifacts stating a claim incompatibly. Report only ≥ 80. Assign severity:

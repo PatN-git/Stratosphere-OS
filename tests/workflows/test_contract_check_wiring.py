@@ -41,6 +41,14 @@ def test_2c_scan_matrix_item_1_calls_the_script_and_keeps_the_auditor_guardrail(
     assert "Return findings + one proposed resolution each; do not modify, create, or delete any spec document" in text
 
 
+def test_2c_resolves_concept_map_and_referenced_artifacts_and_scans_all_resolved():
+    text = (WF / "2c-reconcile-specs.md").read_text(encoding="utf-8")
+    resolve = text.split("**Resolve target artifacts**")[1].split("**Gate**")[0]
+    assert "`concept:map`" in resolve and "Referenced artifacts" in resolve
+    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*$", text, re.M).group(0)
+    assert "any resolved artifact references" in item1
+
+
 def test_every_workflow_call_uses_only_real_flags():
     flags = script_flags()
     seen = 0
