@@ -6,21 +6,14 @@ did not exist (git output decoded as cp1252, files read as utf-8, so any non-ASC
 byte in a watched file differed from its own release-tag blob).
 """
 import json
-import os
 import subprocess
 import sys
 
 import pytest
 
-from conftest import REPO_ROOT
+from conftest import REPO_ROOT, git
 
 GUARD = REPO_ROOT / "build" / "bump_guard.py"
-ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
-       "GIT_COMMITTER_EMAIL": "t@t"}
-
-
-def git(cwd, *args):
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, env=ENV)
 
 
 def write(root, rel, text, encoding="utf-8"):

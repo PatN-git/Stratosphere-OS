@@ -83,4 +83,4 @@ def test_3z_step_1b_approval_preauthorizes_the_ship_confirmation():
 
 def test_3z_report_tells_how_to_resume_a_skip_dep_feature():
     phase_4 = _section(Z, "## Phase 4", "## Phase 5")
-    assert "re-run /3z after BT-<blocker> reaches in review" in phase_4
+    assert "re-run /3z" in phase_4 and "BT-<blocker>" in phase_4

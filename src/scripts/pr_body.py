@@ -148,6 +148,64 @@ def cmd_suite(args):
     return 0
 
 
+def dumps(value):
+    return json.dumps(value, ensure_ascii=False)
+
+
+def slice_rows(args, prior, parent):
+    """(id, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
+    Fresh values for the shipped slice, prior-block values for others, PENDING when new. None if --slice is malformed.
+    Commits scoped to the parent itself are not slices (the parent closes only via --close-parent)."""
+    base = resolve_base(args.base)
+    log = (git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or "") if base else ""
+    first_subject = {}  # int id -> (digits, summary of its oldest commit)
+    for subject in reversed(log.splitlines()):
+        m = SCOPE_RE.match(subject)
+        if m:
+            first_subject.setdefault(int(m.group(1)), (m.group(1), m.group(2)))
+    ship = re.fullmatch(r"BT-(\d+)", args.slice)
+    if not ship:
+        return None
+    ship_n = int(ship.group(1))
+    first_subject.setdefault(ship_n, (ship.group(1), args.summary))
+    parent_n = int(parent[3:])
+    if parent_n != ship_n:
+        first_subject.pop(parent_n, None)
+
+    rows = []
+    for n in sorted(first_subject):
+        digits, subject_summary = first_subject[n]
+        if n == ship_n:
+            row = (f"BT-{digits}", dumps(args.summary), args.verdict, str(args.audit_rounds))
+        elif n in prior:
+            row = prior[n]
+        else:
+            row = (f"BT-{digits}", dumps(subject_summary), "PENDING", "0")
+        rows.append(row)
+    return rows
+
+
+def changed_risk_tags(base, risk_paths):
+    files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines() if base else []
+    rules = risk_rules(risk_paths)
+    return sorted({tag for f in files for rx, tag in rules if rx.match(f.replace("\\", "/"))})
+
+
+def render_body(rows, parent, close_parent, rec, tags, lists, notes):
+    closes = [f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"]
+    if close_parent:
+        closes.append(f"Closes #{int(parent[3:])}.")
+    out = [*closes, "", "```stratos-pr", f"feature: {parent}", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
+    out += [f"  - {{id: {i}, summary: {s}, verdict: {v}, audit_rounds: {a}}}" for i, s, v, a in rows]
+    out += [f'test: {{cmd: {dumps(rec["cmd"])}, observed: {dumps(rec["observed"])}, at: {rec["head_sha"]}}}',
+            f"risk: [{', '.join(tags) if tags else 'none'}]",
+            f"post_merge: {dumps(lists['post_merge'])}", f"deviations: {dumps(lists['deviations'])}",
+            f"refs: [{', '.join(lists['refs'])}]", "```"]
+    if notes:
+        out += ["## Notes", notes]
+    return "\n".join(out) + "\n"
+
+
 def cmd_build(args):
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
@@ -169,55 +227,21 @@ def cmd_build(args):
               "to .tmp/3d-suite-BT-<padded>.json", file=sys.stderr)
         return 2
 
-    base = resolve_base(args.base)
-    log = (git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or "") if base else ""
-    first_subject = {}  # int id -> (digits, summary of its oldest commit)
-    for subject in reversed(log.splitlines()):
-        m = SCOPE_RE.match(subject)
-        if m:
-            first_subject.setdefault(int(m.group(1)), (m.group(1), m.group(2)))
-    ship = re.fullmatch(r"BT-(\d+)", args.slice)
-    if not ship:
+    parent = args.parent or prior_feature or args.slice
+    if args.parent and prior_feature and args.parent != prior_feature:
+        print(f"[PR-BODY-WARN] --parent {args.parent} overrides prior feature {prior_feature}", file=sys.stderr)
+    rows = slice_rows(args, prior, parent)
+    if rows is None:
         print(f"[PR-BODY-ERROR] --slice must look like BT-<n>, got {args.slice!r}", file=sys.stderr)
         return 2
-    ship_n = int(ship.group(1))
-    first_subject.setdefault(ship_n, (ship.group(1), args.summary))
-
-    rows = []
-    for n in sorted(first_subject):
-        digits, subject_summary = first_subject[n]
-        if n == ship_n:
-            row = (f"BT-{digits}", json.dumps(args.summary, ensure_ascii=False), args.verdict, str(args.audit_rounds))
-        elif n in prior:
-            row = prior[n]
-        else:
-            row = (f"BT-{digits}", json.dumps(subject_summary, ensure_ascii=False), "PENDING", "0")
-        rows.append(row)
-
-    files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines() if base else []
-    rules = risk_rules(args.risk_paths)
-    tags = sorted({tag for f in files for rx, tag in rules if rx.match(f.replace("\\", "/"))})
 
     qa = [f"manual-QA: {args.slice}"] if args.manual_qa else []
-    post_merge = union(prior_lists["post_merge"], args.post_merge, qa)
-    deviations = union(prior_lists["deviations"], args.deviation)
-    refs = union(prior_lists["refs"], args.ref)
-    parent = args.parent or prior_feature or args.slice
+    lists = {"post_merge": union(prior_lists["post_merge"], args.post_merge, qa),
+             "deviations": union(prior_lists["deviations"], args.deviation),
+             "refs": union(prior_lists["refs"], args.ref)}
     notes = args.notes if args.notes is not None else prior_notes
-
-    closes = [f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"]
-    if args.close_parent:
-        closes.append(f"Closes #{int(parent[3:])}.")
-    jd = lambda items: json.dumps(items, ensure_ascii=False)
-    out = [*closes, "", "```stratos-pr", f"feature: {parent}", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
-    out += [f"  - {{id: {i}, summary: {s}, verdict: {v}, audit_rounds: {a}}}" for i, s, v, a in rows]
-    out += [f'test: {{cmd: {json.dumps(rec["cmd"], ensure_ascii=False)}, '
-            f'observed: {json.dumps(rec["observed"], ensure_ascii=False)}, at: {rec["head_sha"]}}}',
-            f"risk: [{', '.join(tags) if tags else 'none'}]",
-            f"post_merge: {jd(post_merge)}", f"deviations: {jd(deviations)}", f"refs: [{', '.join(refs)}]", "```"]
-    if notes:
-        out += ["## Notes", notes]
-    body = "\n".join(out) + "\n"
+    tags = changed_risk_tags(resolve_base(args.base), args.risk_paths)
+    body = render_body(rows, parent, args.close_parent, rec, tags, lists, notes)
     if args.out:
         Path(args.out).write_text(body, encoding="utf-8", newline="\n")
     else:
@@ -225,7 +249,7 @@ def cmd_build(args):
     return 0
 
 
-def main(argv=None):
+def build_parser():
     ap = argparse.ArgumentParser(description="Feature-PR body builder + suite-reuse check (never calls gh).")
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
@@ -247,7 +271,11 @@ def main(argv=None):
     b.add_argument("--out")
     s = sub.add_parser("suite")
     s.add_argument("--dir", default=".tmp")
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     return cmd_suite(args) if args.cmd == "suite" else cmd_build(args)

@@ -96,7 +96,7 @@
       "version": "1.0.3"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "588bf5724318895b876e3bcbfa8e6920d871120fdf1942c26d1375938f970b35",
+      "sha256": "aefebe1e822e6ab0019e2e532de2505918ac82f41e20f3f2706218c071754403",
       "timestamp": "2026-10-05",
       "version": "1.2.0"
     },
@@ -201,7 +201,7 @@
       "version": "1.1.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "258502878d380c32cac634fa308772a131bdebc2c265c203528833dafef96c00",
+      "sha256": "88afa9b2e585147a447d0bef087673bdd5ba09084d8a24fd2ee1d9b45d010ea7",
       "timestamp": "2026-10-05",
       "version": "1.0.0"
     },
@@ -281,7 +281,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "be208eaf8b7ac7ac88d4c17bdb518455e6a7091de1d9f9de69e9f6366fca0a6e",
+      "sha256": "abba5adeb8578359b20912dd08444be9ed179c17ef0f771c5820f2cbb90b1725",
       "timestamp": "2026-10-05",
       "version": "1.3.0"
     },

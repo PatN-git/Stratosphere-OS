@@ -3,36 +3,19 @@
 Seam: the CLI (stdout + exit code) run inside a throwaway git repo. The script is a pure builder:
 it never calls `gh`; the prior PR body arrives as a file.
 """
-import itertools
+import importlib.util
 import json
-import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
-from conftest import REPO_ROOT
+from conftest import REPO_ROOT, commit, git
 
 SCRIPT = REPO_ROOT / "src" / "scripts" / "pr_body.py"
 RISK_PATHS = REPO_ROOT / "src" / "references" / "merge-risk-paths.md"
-
-
-def git(repo, *args):
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=True).stdout.strip()
-
-
-_commit_seq = itertools.count()
-
-
-def commit(repo, subject, files=None):
-    for rel in files or [f"f{next(_commit_seq)}.txt"]:
-        p = repo / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(subject + os.urandom(4).hex(), encoding="utf-8")
-    git(repo, "add", "-A")
-    git(repo, "commit", "-m", subject)
-    return git(repo, "rev-parse", "HEAD")
 
 
 @pytest.fixture
@@ -233,6 +216,29 @@ def test_missing_risk_paths_file_warns_that_risk_none_is_unverified(repo):
     assert "[PR-BODY-WARN] risk rules not found at" in r.stderr and "unverified" in r.stderr
 
 
+def test_commit_scoped_to_the_parent_is_not_a_slice_or_closes_line(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "fix(BT-10): touches the parent itself")
+    body = build(repo, "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"]
+    assert "Closes #10." not in body
+    assert "Closes #10." in build(repo, "BT-11", "--close-parent")
+
+
+def test_parent_conflicting_with_prior_feature_warns_and_overrides(repo):
+    commit(repo, "feat(BT-11): first")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text("```stratos-pr\nfeature: BT-77\nslices:\n```\n", encoding="utf-8")
+    r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-10", suite=write_suite(repo))
+    assert r.returncode == 0, r.stderr
+    assert "[PR-BODY-WARN] --parent BT-10 overrides prior feature BT-77" in r.stderr
+    assert field(r.stdout, "feature") == "BT-10"
+    same = repo / ".tmp" / "same.md"
+    same.write_text("```stratos-pr\nfeature: BT-10\nslices:\n```\n", encoding="utf-8")
+    assert "[PR-BODY-WARN]" not in build_raw(repo, "--prior-body-file", same, "--parent", "BT-10",
+                                              suite=write_suite(repo)).stderr
+
+
 # --- suite reuse (D3) -------------------------------------------------------------------------
 
 def suite_out(repo):
@@ -282,7 +288,10 @@ def test_suite_with_no_files_exits_1_silently(repo):
 
 
 def test_pr_body_is_registered_like_contract_check():
-    scaffold = (REPO_ROOT / "src" / "scripts" / "scaffold.py").read_text(encoding="utf-8")
+    spec = importlib.util.spec_from_file_location("scaffold", REPO_ROOT / "src" / "scripts" / "scaffold.py")
+    scaffold = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(scaffold)
+    placed = {rel for _, _, rel in scaffold.get_bundled_project_scripts(Path("proj"))}
+    assert ".agents/scripts/pr_body.py" in placed, "scaffold must ship pr_body.py to .agents/scripts/"
     verify = (REPO_ROOT / "tests" / "runners" / "verify_scripts.py").read_text(encoding="utf-8")
-    assert '"contract_check.py", "pr_body.py"' in scaffold, "scaffold place() must ship pr_body.py to .agents/scripts/"
     assert 'rel_str == "scripts/pr_body.py"' in verify and ".agents/scripts/pr_body.py" in verify

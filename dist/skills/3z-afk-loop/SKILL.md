@@ -14,7 +14,7 @@ timestamp: 2026-10-05
 
 ## Authority & Guardrails
 - **Orchestrator rule:** invokes other workflows by command name; never duplicate bodies (AGENTS.md §1). `3z` is sole AFK/autonomous orchestrator; `1c` is user-invoked discovery orchestrator; `2z` is the user-invoked spec orchestrator.
-- **Subagent isolation:** never run `/3d-implement-issue` and `/4a-verify-and-ship` in same context. Each is a fresh subagent that self-hydrates via `load-memory` (no `/0a` needed, see Step 2A).
+- **Subagent isolation:** never run `/3d-implement-issue` and `/4a-verify-and-ship` in same context. Each is a fresh subagent that self-hydrates via `load-memory` (no `/0a`, see Step 2A).
 - **Workspace:** dispatch 3d/4a subagents with workspace `shared/inherit`, never a worktree — 3d's commits and the `.tmp/` plan and suite files must be visible to the next step, and a worktree lacks untracked deps (e.g. `node_modules`) and branches from the default branch.
 - **Depth:** 3z → 3d/4a subagent → at most one further level (AGENTS.md §8 Subagent nesting). Where the host has no subagents, run each step inline.
 - **AFK-only:** never autonomously execute non-`mode:AFK` slices.

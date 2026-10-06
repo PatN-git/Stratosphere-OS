@@ -187,7 +187,11 @@ def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
     call = re.search(r"python \.agents/scripts/pr_body\.py build ([^`]+)`", step5)
     assert call, "4a step 5 must call `pr_body.py build`"
     used = set(re.findall(r"--[a-z-]+", call.group(1)))
-    accepted = set(re.findall(r"--[a-z-]+", PR_BODY.read_text(encoding="utf-8")))
+    pspec = importlib.util.spec_from_file_location("pr_body", PR_BODY)
+    pr_body = importlib.util.module_from_spec(pspec)
+    pspec.loader.exec_module(pr_body)
+    build = pr_body.build_parser()._subparsers._group_actions[0].choices["build"]
+    accepted = {flag for action in build._actions for flag in action.option_strings if flag.startswith("--")}
     assert {"--slice", "--summary", "--verdict", "--audit-rounds", "--prior-body-file"} <= used
     assert used <= accepted, f"{used - accepted} not accepted by pr_body.py"
 

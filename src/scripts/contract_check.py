@@ -215,7 +215,7 @@ def bindings(span, fenced):
             yield m.group(1), m.group(2), m.group(4)
 
 
-def check_span(span, sources, known_tables, fenced=False):
+def check_span(span, sources, known_tables, fenced):
     """Yield (ref, kind, source_name) for every unresolved reference in one span."""
     for m in REF_RE.finditer(span):
         x, y = m.groups()
@@ -239,7 +239,7 @@ def check_span(span, sources, known_tables, fenced=False):
                     yield f"{col}='{v}'", "enum-value", s.name
 
 
-def count_refs(span, known_tables, fenced=False):
+def count_refs(span, known_tables, fenced):
     return sum(1 for m in REF_RE.finditer(span) if m.group(1) in known_tables) + sum(1 for _ in bindings(span, fenced))
 
 
