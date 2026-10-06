@@ -198,7 +198,7 @@ For each constitution file that has changed:
    If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.
    If any validation fails, the scaffolder will abort and write nothing.
 
-3. **Design toolchain lockfile:** if the worklist has `design_lockfile_stale: true` (the scaffolder also prints a `NOTE:`), the project's committed `.agents/scripts/design/package-lock.json` still pins the old `@google/design.md` and `npm ci` will fail. After the apply succeeds, run `npm install --prefix .agents/scripts/design` (`cmd /c "npm install --prefix .agents/scripts/design"` on Windows) and include the updated `package-lock.json` in the project's update commit. Skip when Node is unavailable and say so.
+3. **Design toolchain lockfile:** worklist `design_lockfile_stale: true` (scaffolder also prints `NOTE:`) → committed `.agents/scripts/design/package-lock.json` pins old `@google/design.md`; `npm ci` fails. After apply succeeds, run `npm install --prefix .agents/scripts/design` (Windows: `cmd /c "npm install --prefix .agents/scripts/design"`); include updated `package-lock.json` in update commit. No Node → skip, say so.
 
 ---
 
