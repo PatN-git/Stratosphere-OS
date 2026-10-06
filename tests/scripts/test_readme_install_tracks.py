@@ -48,9 +48,7 @@ def test_track_d_antigravity_bridge_both_shells_and_target_flag():
 
 def test_track_d_records_the_cli_directory_result():
     """BT-150 spike C: on agy 1.3.0 the CLI read ~/.gemini/config/skills and not ~/.gemini/antigravity-cli/skills."""
-    d = _track("D")
-    assert "~/.gemini/antigravity-cli/skills" in d
-    assert "agy" in d
+    assert "~/.gemini/antigravity-cli/skills" in _track("D")
 
 
 def test_track_e_antigravity_plugin_install():

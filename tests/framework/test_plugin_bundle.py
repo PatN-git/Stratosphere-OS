@@ -19,7 +19,7 @@ def read(rel: str) -> str:
 
 
 def bullet(rel: str, marker: str) -> str:
-    line = next((l for l in read(rel).splitlines() if marker in l), None)
+    line = next((candidate for candidate in read(rel).splitlines() if marker in candidate), None)
     assert line, f"{rel} has no {marker!r} bullet"
     return line
 
