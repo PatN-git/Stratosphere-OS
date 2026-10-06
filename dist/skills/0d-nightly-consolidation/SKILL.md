@@ -13,7 +13,7 @@ timestamp: 2026-10-05
 # Nightly Consolidation
 
 ## Constraint
-Do not modify files without user approval.
+Do not modify files without user approval. Writes are limited to the report, `.last-run.json`, rebuilt indices, and approved heals or memory proposals.
 
 ## Phase 1: Review Sessions
 1. Determine the unanalyzed delta:
@@ -27,7 +27,7 @@ Do not modify files without user approval.
 4. Report findings only: no session roster and no positive observations.
 
 ## Phase 2: Distill Plan
-- Before proposing, read only the `## Decisions` sections of the retained `docs/nightly/` reports. An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
+- Before proposing, run `grep -h -A 30 '^## Decisions' $(ls docs/nightly/nightly-*.md | tail -7)` (the last 7 reports' `## Decisions` only). An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
 - Update `docs/nightly/.last-run.json` to `{"last_run": "<ISO 8601>"}` and nothing else.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
@@ -49,9 +49,9 @@ Do not modify files without user approval.
 Run `python .agents/scripts/okf_view.py --rebuild-indices` and report its `N indices rebuilt` line. Do not rebuild by hand.
 
 ## Phase 3.6: Backlog Drift Check
-Run `python .agents/scripts/reconcile.py --all-open` (no `--require-gh`: this phase is advisory, and without `gh` the script prints `[local-only — GitHub not checked]` itself). Print its findings verbatim. This phase invokes no lifecycle skill.
+Run `python .agents/scripts/reconcile.py --all-open` (no `--require-gh`: this phase is advisory, and without `gh` the script prints `[local-only — GitHub not checked]` itself). Print its findings verbatim, then append each to the report as a numbered proposal item (`D-1`, `D-2`, …). Heal route (on approval only): `references/terminal-sync-invariant.md`. This phase invokes no lifecycle skill.
 
 ## Phase 4: Await Direction
 Halt. Ask user: *"What aspects of the plan do you want to implement?"*
 
-After the user answers, append `## Decisions` to that night's report: one line per proposed item, `accepted` or `declined`. Phase 2 of later nights reads it.
+After the user answers, append `## Decisions` to that night's report: one line per proposed item (each `D-n` with its finding's BT id, since `D-n` restarts nightly and later nights match on the BT id), `accepted` or `declined`. Phase 2 of later nights reads it.

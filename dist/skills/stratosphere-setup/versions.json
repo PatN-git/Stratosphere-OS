@@ -76,7 +76,7 @@
       "version": "1.1.2"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "6139a61aa9251928ed5af705580dec9e420afb190e8fc51e5fe746180d704557",
+      "sha256": "c732abacb93804d6e77c94fa3461144fac7b89052b0925e96ebe7074ac1723b2",
       "timestamp": "2026-10-05",
       "version": "1.3.0"
     },
@@ -96,7 +96,7 @@
       "version": "1.0.3"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "4370b88a2bc636729d84d0982f8f63f56cbc9521e6eb5ddb334d9cfea3daa70c",
+      "sha256": "588bf5724318895b876e3bcbfa8e6920d871120fdf1942c26d1375938f970b35",
       "timestamp": "2026-10-05",
       "version": "1.2.0"
     },
@@ -104,6 +104,11 @@
       "sha256": "30ab1f0a9e88e26a472cf31205b867c8cd1eb749b816b09e8265d06bc9b69035",
       "timestamp": "2026-10-05",
       "version": "1.0.0"
+    },
+    "skills/0d-nightly-consolidation/references/terminal-sync-invariant.md": {
+      "sha256": "8bf36bfaa09dd74f9d7869e21f0f17c73bf2c1ec680ae62567fd1d4e2cc7cdd6",
+      "timestamp": "2026-09-30",
+      "version": "1.0.1"
     },
     "skills/1a-research/SKILL.md": {
       "sha256": "b3ac3be477978b9ea6e8edc583c567a689f5b7b5aaa430082238b98bc0bc162b",

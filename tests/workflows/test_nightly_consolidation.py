@@ -45,6 +45,7 @@ def test_watermark_is_last_run_only():
 def test_decisions_record_is_read_in_phase2_and_appended_in_phase4():
     phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
     assert "## Decisions" in phase2 and "declined" in phase2
+    assert "grep -h -A" in phase2 and "'^## Decisions'" in phase2  # bounded read, not whole reports
     phase4 = TEXT.split("## Phase 4")[1]
     assert "## Decisions" in phase4 and "accepted" in phase4 and "declined" in phase4
 
@@ -55,3 +56,24 @@ def test_assumed_entries_aged_by_inline_date_and_superseded_not_deleted():
     assert "5 sessions" not in phase3
     assert "Delete?" not in phase3
     assert "Supersede with" in phase3 and "[REMOVED]" in phase3
+
+
+def test_drift_lines_are_numbered_proposal_items_with_a_heal_route():
+    drift = _phase("Backlog Drift Check", "## Phase 4")
+    assert "python .agents/scripts/reconcile.py --all-open" in drift and "verbatim" in drift
+    assert "`D-1`" in drift and "`D-2`" in drift
+    assert "references/terminal-sync-invariant.md" in drift
+    assert "approval" in drift
+
+
+def test_decisions_cover_drift_items():
+    phase4 = TEXT.split("## Phase 4")[1]
+    assert "`D-n`" in phase4
+    assert "BT id" in phase4
+
+
+def test_constraint_is_scoped_to_the_workflows_own_writes():
+    constraint = _phase("## Constraint", "## Phase 1")
+    assert "Do not modify files without user approval" in constraint
+    for write in ("report", ".last-run.json", "indices", "approved heals"):
+        assert write in constraint, write
