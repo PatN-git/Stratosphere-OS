@@ -7,7 +7,7 @@ metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
 version: "1.6.0"
-timestamp: 2026-10-06
+timestamp: 2026-10-07
 ---
 
 # StratosphereOS Update Flow
@@ -203,6 +203,8 @@ For each constitution file that has changed:
    If any validation fails, the scaffolder will abort and write nothing.
 
 3. **Design toolchain lockfile:** worklist `design_lockfile_stale: true` (scaffolder also prints `NOTE:`) → committed `.agents/scripts/design/package-lock.json` pins old `@google/design.md`; `npm ci` fails. After apply succeeds, run `npm install --prefix .agents/scripts/design` (Windows: `cmd /c "npm install --prefix .agents/scripts/design"`); include updated `package-lock.json` in update commit. No Node → skip, say so.
+
+4. **Test gate advisory:** run `python .agents/scripts/test_gate.py status`. Exit 1 → print one line: `Optional: python .agents/scripts/test_gate.py install adds the pre-commit test gate (see stratosphere-setup Checkpoint 5.3).` Advisory only: do not install, do not ask.
 
 ---
 

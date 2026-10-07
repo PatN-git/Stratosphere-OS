@@ -266,7 +266,7 @@
       "version": "1.0.1"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "90c08c5a828095f70c3307b90cb8cd05723388a74a3f95121f4c146d45ddd3bc",
+      "sha256": "59dc0b7937ff72ffe6e035acd8162f3c87ba8b026be1a8ded87df402f019aa03",
       "timestamp": "2026-10-07",
       "version": "2.3.0"
     },
@@ -436,8 +436,8 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "d637a17d3918aea1d64b30d2085a4fcbdf6f5bded3ffab93804168016dc16dcd",
-      "timestamp": "2026-10-06",
+      "sha256": "9341dc15c10d7e99af4a3dee6130547e21ca89ba446e378aa07435fe065032bb",
+      "timestamp": "2026-10-07",
       "version": "1.3.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
@@ -446,8 +446,8 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "e9b287ee0e6a88675aff18eb7386c8e1a69d5f1febed9c2605bc5df5d2daa651",
-      "timestamp": "2026-10-06",
+      "sha256": "f58a5ee58353bb5cc2e502b37f2be17e5f4a4b13490cb7dc90a0c268bbc707bf",
+      "timestamp": "2026-10-07",
       "version": "1.6.0"
     },
     "skills/sync-skills/SKILL.md": {
