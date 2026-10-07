@@ -37,7 +37,7 @@ Logic and Risk routes. No production code until a failing test exists.
 0. **Declare Seam:**
    - Name the seam being asserted (function/module/contract under test). HITL: surface it for confirmation; AFK: log it in one line. Assert behavior at the seam, never below it (implementation detail).
 1. **Isolate & Specify (RED):**
-   - Name the break first: the production change this test would catch. Write exactly one minimal unit test asserting the change or new capability. Expected values come from an independent source (literal, spec, worked example), never recomputed the way the code computes them.
+   - Name the break first: the production change this test would catch. Write exactly one minimal unit test per cycle asserting the change or new capability; each boundary (e.g. both sides of a threshold) gets its own cycle. Expected values come from an independent source (literal, spec, worked example), never recomputed the way the code computes them.
    - Run the target test file; type-check during the loop.
    - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
      - **Characterization Carve-out:** a characterization test pinning already-correct legacy behavior before modification may start green.
@@ -77,4 +77,4 @@ Visual route, where automated logic assertions are fragile.
    - Run the cheapest observation that best separates survivors; drop falsified ones; repeat until one has direct evidence. Among survivors that fit, prefer fewest unsupported assumptions.
    - Tag temporary instrumentation `[DEBUG-<id>]`; grep-remove every tag before GREEN.
    - Then step 1 with the localized cause.
-3. **Regression proof:** after GREEN, revert the fix only, confirm the test fails, restore it, confirm green.
+3. **Regression proof:** after GREEN, revert the fix only with git (`git stash push -- <fix files>`), confirm the test fails, restore (`git stash pop`), confirm green. Never copy files outside the repo.

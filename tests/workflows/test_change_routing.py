@@ -47,6 +47,7 @@ def test_red_step_bans_tautological_expected_values():
     red = _section(text, "**Isolate & Specify (RED):**", "**Implement & Pass (GREEN):**")
     assert "independent source" in red
     assert "Name the break" in red
+    assert "one minimal unit test per cycle" in red and "each boundary" in red
 
 
 def test_bug_loop_localizes_an_unclear_cause_and_proves_the_regression():
@@ -54,6 +55,7 @@ def test_bug_loop_localizes_an_unclear_cause_and_proves_the_regression():
     for token in ("red-capable command", "falsifiable", "cheapest", "[DEBUG-", "repro passes"):
         assert token in loop, token
     assert "revert the fix" in loop
+    assert "git stash push" in loop and "Never copy files outside the repo" in loop
 
 
 def test_stuck_is_countable_and_returns_to_an_afk_caller():
