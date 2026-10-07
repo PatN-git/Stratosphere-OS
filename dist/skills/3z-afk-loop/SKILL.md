@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.3.0"
-timestamp: 2026-10-05
+version: "1.4.0"
+timestamp: 2026-10-07
 ---
 
 # AFK END-TO-END LOOP
@@ -52,8 +52,8 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
-   "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the feature branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\"}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5). Do NOT push; do NOT open PR."
-_Done when:_ subagent returns valid JSON and git status is clean.
+   "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the feature branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\", \"stuck\": null}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5; `stuck` = micro-tdd's `{reason, options}` when it froze, else null). Do NOT push; do NOT open PR."
+_Done when:_ subagent returns valid JSON and git status is clean. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
 1. **Dispatch:** "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Keep the auditor independent (fresh context), but for a clearly small slice pass the slice diff + ACs + named test files inline and skip broad re-reads. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
@@ -61,6 +61,7 @@ _Done when:_ auditor returns valid JSON verdict.
 
 ### Step 2C: Decision Gate (Orchestrator)
 Evaluate subagent response:
+- Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): mark slice `status:blocked` in BACKLOG_MAP, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), post the reason and both options (`gh issue comment <n> --body "[STUCK] <reason> — options: 1) <a> 2) <b>"`), log to `.tmp/3z-loop.work.md`, continue.
 - Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details; log to `.tmp/3z-loop.work.md` (if batch); next slice.
 - Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, `SKIP-DEP`, or `status:blocked`).

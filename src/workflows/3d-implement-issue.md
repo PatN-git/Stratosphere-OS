@@ -7,7 +7,7 @@ metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
 version: "2.3.0"
-timestamp: 2026-10-06
+timestamp: 2026-10-07
 ---
 
 # Implement issue
@@ -35,7 +35,9 @@ Plan every slice before coding; small slices get a short plan. **Skip only** a p
 - **Mechanical plan check (agent-run):** derive the repo's test-file naming pattern(s) from `git ls-files`; no test files yet (greenfield) → skip the pattern match and say so. Every AC needs a planned test path matching one, or an explicit `[UNCOVERED] <AC>: <reason>` plan row (one line: manual-only or design blocker; Phase 3 surfaces it), and every planned test path must match one. Any other miss → fix the plan before Phase 1.
 
 ## Phase 1: Execution via Micro-TDD Skill
-Run `micro-tdd` for RED→GREEN→REFACTOR (Fast-Track A/B, stuck protocol, anti-regression); its Declare Seam takes the seams from the plan. For HITL slices, show RED/GREEN test results (override silent mode; Fast-Track A may run silent). 3d owns the full-suite runs; micro-tdd runs related tests per cycle.
+Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, or the bug loop; its Declare Seam takes the seams from the plan. Mark paths matching `references/merge-risk-paths.md` (plus the project's `## One-way paths`) as risky so they take its Risk route. For HITL slices, show RED/GREEN test results (override silent mode; Fast-Track A may run silent). 3d owns the full-suite runs; micro-tdd runs related tests per cycle.
+- micro-tdd returns `stuck` → halt the slice; commit nothing half-done. Stash uncommitted edits so the tree stays clean: `git stash push -u -m "BT-<padded> stuck"`.
+- Then HITL presents its two options; AFK returns it as `stuck` in the 3z JSON.
 1. **CLI/Subprocess:** assert on stdout/stderr, not just exit code.
 2. **Requirements:** link test to requirement bare IDs from BACKLOG_MAP.md/issue (not STATUS.md) (e.g., `BT-101`).
 3. **Fallbacks:** prefer native libraries (e.g. sqlite3, argparse) over third-party in mock/simple utility environments.

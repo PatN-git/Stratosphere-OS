@@ -1,48 +1,57 @@
 ---
 name: micro-tdd
-description: Autonomous, token-optimized Test-Driven Development for minor fixes, isolated functions, and sub-tasks.
+description: Routes each code change to its cheapest safe path (direct edit, visual check, or test-first RED→GREEN→REFACTOR) and localizes unclear bugs before fixing. Use for any code change or bug fix; 3d delegates its loop here.
 metadata:
   stratos.layer: execution
-version: "1.3.0"
-timestamp: 2026-10-05
+version: "1.4.0"
+timestamp: 2026-10-07
 ---
 
 # SKILL: Micro-TDD Execution
 
 ## Purpose
-Execute autonomous, deterministic code modifications during hands-free (AFK) operation when macro-workflow is not explicitly active. This skill guarantees project hygiene, prevents principle drift, and strictly binds execution to automated verification while remaining extremely token-efficient.
+Code changes bound to observed verification at lowest token cost. Runs standalone or as a lifecycle workflow's loop; a caller owning plan, full suite, and coverage keeps them.
 
-## 1. Operating Context & Routing
-- **Trigger:** Routed autonomously by Layer 2 Orchestration whenever a code change is needed for backend logic, database tables, custom hooks, utilities, or state managers.
-- **Precedence:** Acts as a Layer 3 Autonomous Skill. It is strictly subordinate to Core Rules (`.agents/rules/`) and explicit User Requests, but enhances default high-level operational guidelines in `AGENTS.md`.
-- **Communication Protocol:** Enforces **Silent Execution Mode**. Natively suppress inner monologue, execution step narration, and line-by-line code explanations.
+## 1. Operating Context
+- **Precedence:** Layer 3 Autonomous Skill, subordinate to Core Rules (`.agents/rules/`) and User Requests.
+- **Silent Execution Mode:** no inner monologue, step narration, or line-by-line code explanations.
 
----
+## 2. Route
+Classify each change before editing; first matching row wins. Log the route in one line.
 
-## 2. Execution Paths
+| Route | Signal | Path |
+|---|---|---|
+| **Risk** | Touches security/RLS, auth, billing/entitlements, core math/algorithms, data migrations, or a path the caller marks risky | Fast-Track A, even for a one-line edit |
+| **Direct** | No runtime behavior change: docs, comments, copy/log text, formatting, tool-driven rename, dead-code removal, test-only edit, config value, dependency bump | Edit; run related tests + type-check/lint; output `[DONE] direct` |
+| **Visual** | Pure CSS, static assets, presentation markup | Fast-Track B |
+| **Bug** | Defect caught or reported | Anti-Regression Bug Loop (§4) |
+| **Logic** | Any other behavior change | Fast-Track A |
 
-### Fast-Track A: Silent Logic Cycle (Default)
-Apply strictly to all pure logic, state updates, API mutations, hooks, and backend functions. Do not write production code until a failing test exists.
+Direct guard: if the edit can change a branch taken, a return value, or a computation, it is not Direct. Unsure → Logic.
+
+## 3. Execution Paths
+
+### Fast-Track A: Silent Logic Cycle
+Logic and Risk routes. No production code until a failing test exists.
 
 0. **Declare Seam:**
-   - Name the interface boundary being asserted (the function/module/contract under test). For HITL slices, surface it for confirmation; for AFK, log it in one line. Do not test below the agreed seam (internal implementation detail) — assert behavior at the boundary.
+   - Name the seam being asserted (function/module/contract under test). HITL: surface it for confirmation; AFK: log it in one line. Assert behavior at the seam, never below it (implementation detail).
 1. **Isolate & Specify (RED):**
-   - Write exactly one minimal, target-focused unit test asserting the exact change or new capability.   
-   - Run the single target test file natively. Type-check regularly during the loop to catch compilation or type definition issues early.
+   - Name the break first: the production change this test would catch. Write exactly one minimal unit test asserting the change or new capability. Expected values come from an independent source (literal, spec, worked example), never recomputed the way the code computes them.
+   - Run the target test file; type-check during the loop.
    - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
-     - **Characterization Carve-out:** If wrapping existing/legacy code to preserve already-correct behavior before introducing modifications, a characterization/locking test may start green to pin the baseline.
-     - If the test passes immediately and this is not a characterization carve-out: The test is invalid. Rewrite it.
+     - **Characterization Carve-out:** a characterization test pinning already-correct legacy behavior before modification may start green.
+     - Otherwise a test passing immediately is invalid — rewrite it. On the Bug route it means the assumed cause is wrong — localize (Bug Loop step 2).
 2. **Implement & Pass (GREEN):**
-   - Write the absolute simplest, non-speculative production code required to satisfy the failing test.
-   - Re-run the target test file.
-   - **Validate Green:** Confirm the new test passes.
+   - Write the simplest non-speculative production code that passes the test.
+   - **Validate Green:** re-run the target test file; confirm it passes.
 3. **Clean Diffs & Verify (REFACTOR):**
-   - Clean up code formatting using your active code simplifier protocols.
+   - Simplify and format the diff.
    - Run the tests **related to the changed files** using the runner's related/changed mode (e.g. `vitest related <files> --run`, `jest --findRelatedTests <files>`, `pytest` with `testmon`). With no such mode, run the touched test files. When the caller owns the full suite, stop here; otherwise (standalone use) run the full suite **once** at the end of the task.
    - Output only the passing test suite results and a 1-line summary: `[DONE] [[ID]] verified.`
 
 ### Fast-Track B: Visual & Layout Bypass
-Apply strictly to pure CSS/Tailwind, static asset placements, or presentation markup adjustments where automated logic assertions are fragile.
+Visual route, where automated logic assertions are fragile.
 
 1. **Structural Shield Audit:** Verify the target component is not listed under `IMMORTAL_COMPONENTS` inside `DESIGN.md`. If shielded, halt execution immediately and notify Layer 2.
 2. **Environment Execution:** Boot the local development or preview server environment.
@@ -53,12 +62,19 @@ Apply strictly to pure CSS/Tailwind, static asset placements, or presentation ma
 
 ---
 
-## 3. Mandatory Safety Guardrails
+## 4. Mandatory Safety Guardrails
 
 ### The "Stuck" Protocol (Design Alert)
-- **Trigger:** If the unit test setup or mock requirement exceeds **50 lines of code**, demands mocking more than **3 system dependencies**, or generates circular failing loops.
-- **Action:** Freeze execution immediately. Exit Layer 3 execution. Elevate control back to the Layer 2 Orchestrator to execute the constitutional **ASK** protocol. Present exactly two architectural options to simplify the application design or API surface area to the user.
+- **Trigger:** test setup or mocks exceed **50 lines of code**, mocking more than **3 system dependencies**, **3 failed GREEN attempts** on the same test (attempt = production edit + red run), or no red-capable command reachable on the Bug route.
+- **Action:** Freeze; no further edits. Prepare exactly two architectural options to simplify the design or API surface. User present: elevate to Layer 2 for the constitutional **ASK** protocol with them. AFK: return `stuck: {reason, options}` to the caller and stop.
 
 ### The Anti-Regression Bug Loop
-- **Trigger:** A defect, bug, or incorrect execution behavior is caught or reported.
-- **Action:** Before editing any production or application files, write a targeted regression test that explicitly reproduces the reported failure state. Verify the test is **RED** on the current codebase, then route back through **Fast-Track A** to eliminate the bug.
+- **Trigger:** Bug route.
+1. **Cause evident** (stack trace, failing test, or recent diff names it): before editing production files, write a regression test reproducing the failure, confirm **RED** on the current code, then fix via **Fast-Track A**.
+2. **Cause unclear, or the repro passes:** localize before fixing.
+   - Get one red-capable command showing the failure; no hypothesis before it has run.
+   - List 2–5 falsifiable hypotheses naming a file, function, config, or input, each with the observation that rules it out.
+   - Run the cheapest observation that best separates survivors; drop falsified ones; repeat until one has direct evidence. Among survivors that fit, prefer fewest unsupported assumptions.
+   - Tag temporary instrumentation `[DEBUG-<id>]`; grep-remove every tag before GREEN.
+   - Then step 1 with the localized cause.
+3. **Regression proof:** after GREEN, revert the fix only, confirm the test fails, restore it, confirm green.
