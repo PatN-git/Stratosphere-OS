@@ -6,7 +6,9 @@ must find it there, the retired v4 plugin branch must stay gone (unreachable: th
 an installed bundle, and check_suite legacy cleans leftovers), and the release checklist must name both
 plugin validators.
 """
+import glob
 import re
+from pathlib import Path
 
 import pytest
 
@@ -39,9 +41,51 @@ def test_setup_update_and_sync_find_the_antigravity_plugin_install(rel):
     assert PLUGIN_SETUP_DIR in read(rel), f"{rel} must list the agy plugin install location"
 
 
-def test_sync_skills_lists_the_plugin_install_before_the_marketplace_cache():
-    text = read(SYNC_SKILL)
-    assert text.index(PLUGIN_SETUP_DIR) < text.index("marketplace cache")
+LOCATE_SKILLS = [SETUP_SKILL, UPDATE_SKILL, SYNC_SKILL]
+HOST_GROUPS = {"claude": "- **Claude Code:**", "agents": "- **Antigravity and other hosts:**"}
+MARKETPLACE_GLOB = "~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/"
+
+
+def group(rel: str, host: str) -> list:
+    """BT-154 F1: the ordered `<plugin>` paths of one host group bullet."""
+    line = next((l.strip() for l in read(rel).splitlines() if l.strip().startswith(HOST_GROUPS[host])), None)
+    assert line, f"{rel} has no {HOST_GROUPS[host]!r} lookup group"
+    return re.findall(r"`((?:~|\.)/[^`]*)`", line)
+
+
+@pytest.mark.parametrize("rel", LOCATE_SKILLS)
+def test_plugin_lookup_is_grouped_by_running_host(rel):
+    claude, agents = group(rel, "claude"), group(rel, "agents")
+    assert claude and all(".claude" in p for p in claude) and MARKETPLACE_GLOB in claude
+    assert PLUGIN_SETUP_DIR in agents and "~/.gemini/config/skills/stratosphere-setup/" in agents
+    assert not any(".claude" in p for p in agents)
+    assert "running host's own group first" in read(rel)
+
+
+def test_plugin_lookup_groups_identical_across_skills():
+    for host in HOST_GROUPS:
+        assert len({tuple(group(rel, host)) for rel in LOCATE_SKILLS}) == 1, f"{host} lookup group drifted"
+
+
+@pytest.mark.parametrize("rel", LOCATE_SKILLS)
+def test_both_copies_present_each_host_resolves_its_own(rel, tmp_path):
+    home, project = tmp_path / "home", tmp_path / "proj"
+    for d in (".claude/skills", ".gemini/config/skills"):
+        f = home / d / "stratosphere-setup" / "scripts" / "scaffold.py"
+        f.parent.mkdir(parents=True)
+        f.touch()
+
+    def resolve(host):
+        other = "agents" if host == "claude" else "claude"
+        for p in group(rel, host) + group(rel, other):
+            base = home if p.startswith("~/") else project
+            hits = sorted(glob.glob(str(base / p[2:])), reverse=True)
+            hit = next((Path(h) for h in hits if (Path(h) / "scripts" / "scaffold.py").is_file()), None)
+            if hit:
+                return hit
+
+    assert resolve("agents") == home / ".gemini" / "config" / "skills" / "stratosphere-setup"
+    assert resolve("claude") == home / ".claude" / "skills" / "stratosphere-setup"
 
 
 def test_releasing_lists_both_plugin_validators():

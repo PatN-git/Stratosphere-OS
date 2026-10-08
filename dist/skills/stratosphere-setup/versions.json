@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "e6e813ca3fc51167f10aa376da2e20f0e38aecd1e95eb79547c3041529fa570e",
-      "timestamp": "2026-10-06",
-      "version": "3.3.0"
+      "sha256": "ea5cac3efed80c123951881d6aaf49839857094fc5cd98c792219e24322719fc",
+      "timestamp": "2026-10-08",
+      "version": "3.3.1"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
@@ -436,9 +436,9 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "9341dc15c10d7e99af4a3dee6130547e21ca89ba446e378aa07435fe065032bb",
-      "timestamp": "2026-10-07",
-      "version": "1.3.0"
+      "sha256": "0c6ec1c9d5049fc7f485307659cad55872e50b268ac018f3f363715d169ecece",
+      "timestamp": "2026-10-08",
+      "version": "1.4.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
@@ -446,9 +446,9 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "7a6a3b20a0845041455ab07d1c207f9cffa76ce504512d0b95050ed5c89dd1be",
-      "timestamp": "2026-10-07",
-      "version": "1.6.0"
+      "sha256": "7bea218e735b8fd8759eb22237bd81e3476284bc0794c4089d38b296e752ad9d",
+      "timestamp": "2026-10-08",
+      "version": "1.7.0"
     },
     "skills/stratosphere-update/references/update-antigravity-plugin.md": {
       "sha256": "a7c2a0cfbf8ddf1be6298267ed6608b12e97fa6c68e75530b640018a84f58991",
@@ -466,9 +466,9 @@
       "version": "1.0.0"
     },
     "skills/sync-skills/SKILL.md": {
-      "sha256": "6fedb05e213a82d92553aaaf047cec0ff88b67999b2e03ce9b70b14f4513f8eb",
-      "timestamp": "2026-10-06",
-      "version": "1.0.3"
+      "sha256": "a29f9f2426c7bb34c60b9644b5e971a5c297c740072a7fc152c7d9c47cd81c16",
+      "timestamp": "2026-10-08",
+      "version": "1.1.0"
     }
   },
   "plugin_version": "4.5.0"

@@ -73,6 +73,14 @@ def test_constitution_section_8_identical_across_copies():
     assert section8(CONSTITUTIONS[0]) == section8(CONSTITUTIONS[1])
 
 
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_has_no_stray_backtick_line(rel):
+    # BT-154 F5: a backtick-only last line shipped to consumers.
+    text = read(rel)
+    assert not re.search(r"^\s*`+\s*$", text, re.M), f"{rel} has a backtick-only line"
+    assert text.endswith("\n"), f"{rel} must end with a newline"
+
+
 def test_okf_manual_only_pointer_does_not_send_readers_to_section_8():
     # Section 8 no longer carries the manual-only field table; only section 1 describes the skill layers.
     text = read(OKF_PROTOCOL)
