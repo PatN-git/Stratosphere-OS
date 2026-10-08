@@ -27,7 +27,7 @@ Classify each change before editing; first matching row wins. Log the route in o
 | **Bug** | Defect caught or reported | Anti-Regression Bug Loop (§4) |
 | **Logic** | Any other behavior change | Fast-Track A |
 
-Direct guard: if the edit can change a branch taken, a return value, or a computation, it is not Direct. Unsure → Logic.
+Direct guard: if the edit changes code that decides a branch taken, a return value, or a computation, it is not Direct. Changing only a constant's or config value is Direct unless the Risk row applies. Unsure → Logic.
 
 ## 3. Execution Paths
 
@@ -37,7 +37,7 @@ Logic and Risk routes. No production code until a failing test exists.
 0. **Declare Seam:**
    - Name the seam being asserted (function/module/contract under test). HITL: surface it for confirmation; AFK: log it in one line. Assert behavior at the seam, never below it (implementation detail).
 1. **Isolate & Specify (RED):**
-   - Name the break first: the production change this test would catch. Write exactly one minimal unit test per cycle asserting the change or new capability; each boundary (e.g. both sides of a threshold) gets its own cycle. Expected values come from an independent source (literal, spec, worked example), never recomputed the way the code computes them.
+   - Name the break first: the production change this test would catch. Write exactly one minimal unit test per cycle asserting the change or new capability; each boundary (e.g. both sides of a threshold) gets its own cycle. Expected values come from an independent source (literal, spec, worked example), never recomputed the way the code computes them. Never write a test that only asserts a constant equals its new value: test the behavior that reads it; if no code reads it, there is nothing to test, so finish on the Direct path.
    - Run the target test file; type-check during the loop.
    - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
      - **Characterization Carve-out:** a characterization test pinning already-correct legacy behavior before modification may start green.

@@ -29,6 +29,7 @@ def test_direct_route_has_a_guard_and_falls_back_to_logic():
     _, route = _route_rows()
     assert "it is not Direct" in route
     assert "Unsure → Logic" in route
+    assert "Changing only a constant's or config value is Direct unless the Risk row applies" in route
 
 
 def test_risk_route_covers_every_4a_audit_category():
@@ -48,6 +49,7 @@ def test_red_step_bans_tautological_expected_values():
     assert "independent source" in red
     assert "Name the break" in red
     assert "one minimal unit test per cycle" in red and "each boundary" in red
+    assert "Never write a test that only asserts a constant equals its new value" in red
 
 
 def test_bug_loop_localizes_an_unclear_cause_and_proves_the_regression():
