@@ -19,3 +19,14 @@ def test_fresh_scaffold_is_lint_clean(tmp_path):
                         "--path", ".memory"], cwd=tmp_path, capture_output=True)
     out = v.stdout.decode("utf-8", "replace")
     assert v.returncode == 0, out[-800:]
+
+
+def test_rescaffold_treats_a_crlf_checkout_as_unchanged(tmp_path):
+    """BT-154 F4: a CRLF checkout (core.autocrlf=true) of a placed managed file is not STALE."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    scaffold = [sys.executable, str(PLUGIN / "scripts" / "scaffold.py")]
+    assert subprocess.run(scaffold, cwd=tmp_path, capture_output=True).returncode == 0
+    rule = tmp_path / ".agents" / "rules" / "output-mode.md"
+    rule.write_bytes(rule.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+    out = subprocess.run(scaffold, cwd=tmp_path, capture_output=True).stdout.decode("utf-8", "replace")
+    assert "STALE" not in out, out[-800:]
