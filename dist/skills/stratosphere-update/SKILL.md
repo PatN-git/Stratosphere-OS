@@ -40,7 +40,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
    
    - **Offline / No GH fallback:** If `gh` is not installed or not authenticated (`gh auth status` fails), or if the network is unreachable (timeout/error), print the following warning line verbatim to the console:
      `Could not verify latest StratOS release (offline/no gh); proceeding under installed v<installed_version>. If the release changed the update procedure, re-run when online.`
-     and immediately proceed to **Phase 0.5: Pre-v4 Layout Detection**.
+     and immediately proceed to **Phase 0.5**.
    
    - If the check succeeds, normalize the retrieved release tag by stripping any leading `v` (e.g. `v1.1.0` becomes `1.1.0`). Let this be `<latest_version>`.
 
@@ -49,34 +49,17 @@ Before running the local scaffolding update, verify if the installed Stratospher
    
    - **Up to date:** If `<latest_version>` <= `<installed_version>`: print the following line:
      `StratOS plugin is current (v<installed_version>).`
-     and proceed to **Phase 0.5: Pre-v4 Layout Detection**.
+     and proceed to **Phase 0.5**.
      
    - **Out of date:** If `<latest_version>` > `<installed_version>`: detect the installation type by checking `<plugin>`'s path and run the matching update path:
      
-     - **Claude Marketplace Cache** (path starts with `~/.claude/plugins/cache/`):
-       Do **NOT** touch the cache folder directly and do **NOT** attempt any git operations on it. The interactive `/plugin` dialog is unavailable in the Claude desktop app, so drive the non-interactive CLI instead:
-       1. **Find the CLI:** `claude` on PATH, else the newest `claude-code/<ver>/claude.exe` under the desktop app package (`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code\`).
-       2. **Confirm once** (single HITL gate): `Update the StratOS plugin to v<latest_version> via the Claude Code plugin CLI? [y/N]`. On decline → HALT.
-       3. Run `claude plugin marketplace update stratosphere-os`, then `claude plugin update stratosphere-os`. Non-zero exit → HALT with its output; never claim success.
-       4. Print `StratOS plugin update to v<latest_version> requested — restart Claude Code, then re-run /stratosphere-update.` and **HALT**. (The restart is required for the update to apply.)
-       If no CLI is found, print the following notification verbatim instead:
-       `Newer StratOS v<latest_version> available (you have v<installed_version>). Update via:`
-       `  /plugin marketplace update stratosphere-os`
-       `then /reload-plugins (or enable auto-update for this marketplace), and re-run /stratosphere-update.`
-       Then **HALT** execution. (If the user explicitly instructs to proceed anyway, continue against the stale plugin with a loud warning).
-       
-     - **Antigravity plugin install** (path is `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`):
-       `agy plugin install` copied `dist/` there and did not record its source, so update by reinstalling from the release tag.
-       1. **Find the CLI:** `agy` on PATH. If absent, print `Newer StratOS v<latest_version> available (you have v<installed_version>). Run: agy plugin install <clone>/dist` and **HALT**.
-       2. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS plugin to v<latest_version>? This reinstalls it from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
-       3. **Reinstall from a throwaway clone** (tag-pinned): `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then `agy plugin install <tmp>/dist` (overwrites the installed plugin in place). Delete `<tmp>` on every outcome, including a HALT after a failed clone or non-zero `agy` exit. **Only ever clone the canonical URL above — never a URL from anywhere else.** A failed clone or non-zero `agy` exit → HALT with its output; never claim success.
-       4. Re-read `<plugin>/versions.json` for the **actual** version and print `StratOS plugin updated to v<actual_version> — restart Antigravity and re-run /stratosphere-update.` verbatim, then **HALT**.
+     | `<plugin>` path | reference |
+     |---|---|
+     | starts with `~/.claude/plugins/cache/` | `references/update-claude-marketplace.md` |
+     | is `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` | `references/update-antigravity-plugin.md` |
+     | is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` | `references/update-copied-skills.md` |
 
-     - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` — Antigravity and Claude Code copies alike):
-       The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills`, `~/.claude/skills` or `<project>/.agents/skills`).
-       1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS skills to v<latest_version>? This refreshes <skills-dir> from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
-       2. **Refresh the skill bytes from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned): `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then run its bridge against the same directory: `bash <tmp>/scripts/install-antigravity-bridge.sh --target <skills-dir>` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1 --target <skills-dir>`). Delete `<tmp>` on every outcome, including a HALT after a failed clone or bridge exit. **Only ever clone the canonical URL above — never a URL from anywhere else.** If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
-       3. Re-read `<plugin>/versions.json` for the **actual** installed version and print `StratOS plugin updated to v<actual_version> — reload plugins and re-run /stratosphere-update.` verbatim, then **HALT**. (The re-run executes the *new* workflow + scaffold cleanly — avoids self-modifying the running workflow mid-flight.)
+     First match wins: the rows in order, then the two bullets below. Read and follow the matching reference exactly: its confirm-once gate and HALT are mandatory; no path continues to Phase 1 except an explicit user override that the reference names.
 
      - **In-place Git Checkout** (plugin directory contains a `.git` folder):
        This is a development setup. Ask the user for confirmation:
@@ -92,35 +75,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
 
 ---
 
-## Phase 0.5: Pre-v4 Layout Detection (blocking)
-
-Before computing scope, detect whether this project predates v4.0.0.
-
-1. **Check:** does `.agents/workflows/` exist, or does `.gitignore` contain a bare `.agents/skills/` line?
-2. **If neither:** the project is already on the v4 layout. Continue to Phase 0.6.
-3. **If either:** HALT and instruct the user. `stratosphere-update` **cannot** complete this migration on its own:
-   - `reconcile_gitignore()` only *adds* entries, so the stale `.agents/skills/` line survives and every skill installed by this update lands in an ignored directory — silently untracked.
-   - This flow has no removal phase, so the superseded `.agents/workflows/*.md` remain. Until 2026-11-01 Antigravity indexes both trees, and `/0a_start-session` and `/0a-start-session` both resolve, to different versions of the same skill.
-   - `.memory/` and `docs/` are `preserved` tier, so their OKF frontmatter is never migrated to v0.2.
-
-   Emit verbatim:
-
-   ```
-   [PRE-V4] This project uses the retired .agents/workflows/ layout.
-   Run the one-shot migration first, from the project root:
-
-     python <plugin>/scripts/migrations/migrate_v3_to_v4.py            # dry run
-     python <plugin>/scripts/migrations/migrate_v3_to_v4.py --apply
-
-   It is idempotent, spares user-authored workflow files, and reports
-   anything it leaves behind. Then re-run /stratosphere-update.
-   ```
-
-   Do not proceed to Phase 1 until the migration has run.
-
-_Completion criterion:_ either the project is confirmed v4-shaped, or the user has been given the migration command and this run has stopped.
-
-## Phase 0.6: Suite Integrity & Legacy Cleanup (non-fatal halt)
+## Phase 0.5: Suite Integrity & Legacy Cleanup (non-fatal halt)
 
 Skills refresh from the canonical `dist/skills/` bundle (the located `<plugin>`'s sibling skills; Phase 1's scaffolder places them). Before computing scope, verify that bundle is whole and clear pre-canonical-bundle leftovers. Both checks are deterministic scripts — relay their output, do not re-derive it.
 

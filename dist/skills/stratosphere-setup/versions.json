@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "a089f643482879795e88adb4dc3456e8f986372b867e270f36e02ccf5f2f8320",
+      "sha256": "e6e813ca3fc51167f10aa376da2e20f0e38aecd1e95eb79547c3041529fa570e",
       "timestamp": "2026-10-06",
       "version": "3.3.0"
     },
@@ -446,9 +446,24 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "f58a5ee58353bb5cc2e502b37f2be17e5f4a4b13490cb7dc90a0c268bbc707bf",
+      "sha256": "7a6a3b20a0845041455ab07d1c207f9cffa76ce504512d0b95050ed5c89dd1be",
       "timestamp": "2026-10-07",
       "version": "1.6.0"
+    },
+    "skills/stratosphere-update/references/update-antigravity-plugin.md": {
+      "sha256": "a7c2a0cfbf8ddf1be6298267ed6608b12e97fa6c68e75530b640018a84f58991",
+      "timestamp": "2026-10-07",
+      "version": "1.0.0"
+    },
+    "skills/stratosphere-update/references/update-claude-marketplace.md": {
+      "sha256": "e96cd36861137508d1536c38ada9fdd70534b90e350d24ef67b65df8e294f734",
+      "timestamp": "2026-10-07",
+      "version": "1.0.0"
+    },
+    "skills/stratosphere-update/references/update-copied-skills.md": {
+      "sha256": "c713daf039de5a7b6864fdf93f7344d85dff3c152078e3d8acf073b4e69254eb",
+      "timestamp": "2026-10-07",
+      "version": "1.0.0"
     },
     "skills/sync-skills/SKILL.md": {
       "sha256": "6fedb05e213a82d92553aaaf047cec0ff88b67999b2e03ce9b70b14f4513f8eb",
