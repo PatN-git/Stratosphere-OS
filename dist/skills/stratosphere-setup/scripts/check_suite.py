@@ -4,7 +4,8 @@
   check_suite.py suite       [--skills-dir DIR]   all 23 lifecycle skills present + uncorrupted
   check_suite.py visibility  [--project P] [--host claude|agents|auto]   system pack visible to the host
   check_suite.py legacy      [--project P] [--apply]   stale pre-canonical-bundle paths (incl. skills.sh globals
-                                                       in ~/.gemini/antigravity/skills)
+                                                       in ~/.gemini/antigravity/skills and old-layout plugin roots,
+                                                       whose external packs move to the live skills dir first)
 
 Exit 0 = clean, 1 = problems found (a non-fatal halt: the caller prints the report and stops).
 Never invoked by 0a-start-session (zero-session-overhead invariant).
@@ -161,10 +162,56 @@ def stale_command_files(commands: Path):
             if f.is_file() and f.suffix == ".md" and f.stem.replace("_", "-") in LIFECYCLE_SKILLS]
 
 
+def external_packs(root: Path):
+    """{name: old lock entry or None}: every non-bundled dir in an old-layout root's skills/ (v4.2.0 synced
+    packs there; users may have added their own), with its lock entry where the old .lock.json has one."""
+    skills = root / "skills"
+    if not skills.is_dir():
+        return {}
+    try:
+        entries = json.loads((skills / ".lock.json").read_text(encoding="utf-8"))["skills"]
+        entries = {n: e for n, e in entries.items() if (skills / n).is_dir()}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        entries = {}
+    return {**{d.name: None for d in sorted(skills.iterdir()) if d.is_dir() and d.name not in BUNDLED_SKILLS}, **entries}
+
+
+def old_layout_roots(project: Path, home: Path):
+    """{root: external packs} for old (v4.2.0) plugin installs with the payload at the plugin root.
+    Never index 0 (the project itself) and never a git clone (a dev checkout)."""
+    return {r: external_packs(r) for r in legacy_roots(project, home)[1:]
+            if (r / "plugin.json").is_file() and not (r / ".git").exists()
+            and ((r / "scripts" / "scaffold.py").is_file() or (r / "versions.json").is_file())}
+
+
+def preserve_packs(root: Path, packs):
+    """Copy packs into the live skills dir beside plugins/ (never over an existing dir) with their lock entries."""
+    target = root.parent.parent / "skills"
+    lock_path = target / ".lock.json"
+    try:
+        lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.is_file() else {"skills": {}}
+        copied = [n for n in packs if not (target / n).exists()]
+        for name in copied:
+            shutil.copytree(root / "skills" / name, target / name)
+            if packs[name] is None:
+                print(f"  {name}: untracked; /sync-skills will refuse to overwrite it until run with --force")
+            else:
+                lock.setdefault("skills", {}).setdefault(name, packs[name])
+        if any(packs[n] is not None for n in copied):
+            lock_path.write_text(json.dumps(lock, indent=2), encoding="utf-8")
+    except (OSError, ValueError, AttributeError) as exc:
+        print(f"  could not preserve the external packs of {root}: {exc}")
+        return False
+    return True
+
+
 def find_legacy(project: Path, home: Path):
     """[(path, files_or_None)]: None = remove the whole directory, else remove only those files."""
-    found = []
+    old = old_layout_roots(project, home)
+    found = [(root, None) for root in old]
     for root in legacy_roots(project, home):
+        if root in old:
+            continue  # removed whole; its sub-checks would name children of a deleted dir
         if (root / "dist" / "claude-code").is_dir():
             found.append((root / "dist" / "claude-code", None))
         antigravity_dir = root / "dist" / "antigravity"  # releases before BT-150 emitted only plugin.json here (harmless); a payload means the old duplicate tree
@@ -191,18 +238,37 @@ def remove_tree(path: Path):
         shutil.rmtree(path)
 
 
+def old_layout_note(root: Path, packs):
+    try:
+        version = json.loads((root / "plugin.json").read_text(encoding="utf-8")).get("version")
+    except (OSError, ValueError, AttributeError):
+        version = None
+    note = "old-layout plugin" + (f" v{version}" if version else "")
+    if packs:
+        note += f"; preserves external packs: {', '.join(packs)} -> {root.parent.parent / 'skills'}"
+    return note
+
+
 def cmd_legacy(args):
-    found = find_legacy(Path(args.project).resolve(), Path(args.home).expanduser())
+    project, home = Path(args.project).resolve(), Path(args.home).expanduser()
+    old = old_layout_roots(project, home)
+    found = find_legacy(project, home)
     if not found:
         print("[LEGACY OK] no pre-canonical-bundle paths found")
         return 0
     print(f"[LEGACY PATHS FOUND] {len(found)}")
     for path, files in found:
-        print(f"  {path}" + (f"  (files: {', '.join(f.name for f in files)})" if files else ""))
+        note = old_layout_note(path, old[path]) if path in old else files and f"files: {', '.join(f.name for f in files)}"
+        print(f"  {path}" + (f"  ({note})" if note else ""))
     if not args.apply:
         print("Nothing deleted. After the user confirms, re-run with --apply.")
         return 1
+    kept = False
     for path, files in found:
+        if path in old and not preserve_packs(path, old[path]):
+            print(f"Kept: {path}")
+            kept = True
+            continue
         if files is None:
             remove_tree(path)
         else:
@@ -211,7 +277,7 @@ def cmd_legacy(args):
             if not any(path.iterdir()):
                 path.rmdir()
         print(f"Removed: {path}")
-    return 0
+    return 1 if kept else 0
 
 
 def main(argv=None):
