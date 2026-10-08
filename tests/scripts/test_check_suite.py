@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import REPO_ROOT
+from conftest import REPO_ROOT, update_skill_text
 
 SCRIPT = REPO_ROOT / "src" / "scripts" / "check_suite.py"
 DIST_SKILLS = REPO_ROOT / "dist" / "skills"
@@ -347,12 +347,13 @@ def test_start_session_without_memory_gives_one_line_setup_guidance():
     assert text.index(".memory/` is absent") < text.index("## Phase A")
 
 
-def test_update_flow_cannot_route_past_phase_0_6():
-    """Every path out of Phase 0/0.5 must land on Phase 0.6, never jump straight to Phase 1."""
+def test_update_flow_cannot_route_past_phase_0_5():
+    """Every path out of Phase 0 must land on Phase 0.5, never jump straight to Phase 1."""
     text = _read("commands/stratosphere-update/SKILL.md")
-    before = text[:text.index("## Phase 0.6")]
-    assert not re.search(r"(?<!not )(?<!not\s)(proceed|continue) to \*{0,2}Phase 1\b", before, re.I)
-    assert "Phase 0.6" in before  # the earlier phases name it as their next step
+    before = text[:text.index("## Phase 0.5")]
+    # whole update flow: the moved update-path references must not continue to Phase 1 either
+    assert not re.search(r"(?<!not )(?<!not\s)(proceed|continue) to \*{0,2}Phase 1\b", update_skill_text(), re.I)
+    assert "Phase 0.5" in before  # Phase 0 names it as its next step
 
 
 def test_bash_remediation_creates_the_destination_dir(proj):

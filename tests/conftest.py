@@ -2,6 +2,7 @@
 import itertools
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -41,3 +42,14 @@ def commit(repo, subject, files=None):
     git(repo, "add", "-A")
     git(repo, "commit", "-m", subject)
     return git(repo, "rev-parse", "HEAD")
+
+
+def update_skill_text():
+    """stratosphere-update SKILL.md + the `references/update-*.md` it routes to, in citation order.
+
+    The host-specific update paths live in those references, not in SKILL.md; tests that pin their
+    text (or that must see the whole update flow) read it through here.
+    """
+    skill = (REPO_ROOT / "src/commands/stratosphere-update/SKILL.md").read_text(encoding="utf-8")
+    cited = dict.fromkeys(re.findall(r"(?<![\w/.])references/(update-[A-Za-z0-9_.-]+\.md)", skill))
+    return skill + "".join("\n" + (REPO_ROOT / "src/references" / name).read_text(encoding="utf-8") for name in cited)

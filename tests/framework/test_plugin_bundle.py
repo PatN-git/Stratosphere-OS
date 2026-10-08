@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from conftest import REPO_ROOT
+from conftest import REPO_ROOT, update_skill_text
 
 PLUGIN_SETUP_DIR = "~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/"
 SETUP_SKILL = "src/commands/stratosphere-setup/SKILL.md"
@@ -23,8 +23,13 @@ def read(rel: str) -> str:
     return (REPO_ROOT / rel).read_text(encoding="utf-8")
 
 
+def flow(rel: str) -> str:
+    """The skill's text; for the update skill, SKILL.md plus the references its update paths moved to."""
+    return update_skill_text() if rel == UPDATE_SKILL else read(rel)
+
+
 def bullet(rel: str, marker: str) -> str:
-    line = next((candidate for candidate in read(rel).splitlines() if marker in candidate), None)
+    line = next((candidate for candidate in flow(rel).splitlines() if marker in candidate), None)
     assert line, f"{rel} has no {marker!r} bullet"
     return line
 
@@ -57,20 +62,20 @@ def test_releasing_does_not_pin_the_skill_count_or_a_stale_tree():
 
 @pytest.mark.parametrize("rel", [SETUP_SKILL, UPDATE_SKILL])
 def test_retired_v4_plugin_install_branch_is_gone(rel):
-    text = read(rel).lower()
+    text = flow(rel).lower()
     assert "retired v4" not in text and "legacy v4 plugin installs" not in text, \
         f"{rel}: the retired v4 plugin branch is unreachable prose; check_suite.py legacy handles leftovers"
 
 
 def test_update_refreshes_an_antigravity_plugin_install_by_reinstalling_dist():
     assert PLUGIN_SETUP_DIR in bullet(UPDATE_SKILL, "**Antigravity plugin install** (path")
-    text = read(UPDATE_SKILL)
+    text = flow(UPDATE_SKILL)
     assert "agy plugin install" in text and "<tmp>/dist" in text, "update must reinstall from the tag clone's dist"
 
 
 def test_update_deletes_the_throwaway_clone_on_every_outcome():
     """A HALT after a failed clone or agy exit must not leave <tmp> behind (both clone paths)."""
-    lines = [line for line in read(UPDATE_SKILL).splitlines() if "Delete `<tmp>`" in line]
+    lines = [line for line in flow(UPDATE_SKILL).splitlines() if "Delete `<tmp>`" in line]
     assert len(lines) == 2, "expected the plugin-install and the copied-skills clone steps"
     for line in lines:
         assert "on every outcome" in line and "HALT" in line.split("on every outcome", 1)[1], line
