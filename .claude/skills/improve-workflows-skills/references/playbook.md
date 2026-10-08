@@ -2,7 +2,7 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.1.0"
+version: "2.1.1"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15
@@ -46,7 +46,7 @@ Both install to the same place. The distinction is **frontmatter, never location
 | `metadata` | `stratos.layer: lifecycle`, `stratos.mode: HITL\|AFK`, `stratos.version` | `stratos.layer: execution`, `stratos.version` |
 
 - **This repo DOES use `disable-model-invocation`.** It was previously unnecessary because workflows compiled to slash commands, which the model could not auto-fire. Claude Code has since merged commands into skills, so the field is now **the only thing enforcing user-only invocation** on Claude Code, Cursor and OpenClaw. Devin needs `triggers: ["user"]`; Codex needs the `agents/openai.yaml` sidecar. Emit all three.
-- **Antigravity honours none of them.** It reads only `name` and `description`. Every lifecycle skill's `description` must restate its user-only status — a prompt-level signal, **not enforcement**. See `AGENTS.md` §8.
+- **Antigravity honours none of them.** It reads only `name` and `description`. Every lifecycle skill's `description` must restate its user-only status — a prompt-level signal, **not enforcement**. See `references/host-matrix.md`.
 - **No OKF `type:` on either kind.** `src/` is outside the OKF bundle scope (`okf-protocol.md` §1). Status/maturity lives in the `description`.
 - **`trigger:` is retired on skills.** It survives only on `.agents/rules/*` files.
 
@@ -91,6 +91,7 @@ Each is one move; reach for the **leading-word palette** in [`glossary.md`](glos
 - **Completion criterion** — end every step on a bound that is *checkable* and, where it matters, *exhaustive* ("every AC maps to a passing test", not "looks complete"). This is the defence against **premature completion**. Live example: `3d`'s Slice Completion Gate.
 - **Progressive disclosure** — inline what every branch needs; push branch-specific **reference** behind a **context pointer** whose *wording* is reliable. Respect the skill self-containment limit (§1).
 - **Single source of truth** — one meaning, one place → §2.
+- **Cite skills by name, never by path** — a workflow names the skill (`code-simplifier`), not its `.agents/skills/…` path; the constitution's disk rule (read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable) resolves the name on any host.
 - **Three nesting levels** — design every skill to work at level 0 (inline), 1 (one subagent) and 2 (subagent inside subagent), using whatever depth the host offers (AGENTS.md §8). Give each subagent step an inline fallback; never name host depth limits in skill text.
 - **One write, one step, one command** — every side-effecting action gets its own numbered step *and* its own command literal. A write left as prose next to a copy-pasteable command for a **different** action is the one that gets dropped: the agent anchors on the literal and the clause evaporates. Live example: `4a` Phase 5 — the PR-link comment was the opening clause of the status-write step and the only Phase 5 action without a command form; it was also the only one that reliably failed its own terminal gate (`[MIRROR-DRIFT: pr-link absent from issue comments]`). Splitting it out with `gh issue comment` ended the failure class. A deterministic gate (`terminal-sync-invariant.md`) catches the drop *after* it happens; this is the emission-side fix that stops it.
 

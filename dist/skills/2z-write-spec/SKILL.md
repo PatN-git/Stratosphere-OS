@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.0"
-timestamp: 2026-10-05
+version: "1.0.1"
+timestamp: 2026-10-06
 ---
 
 # Write Spec (orchestrator)
@@ -46,6 +46,6 @@ Run `/2c-reconcile-specs` in main thread. Its Context Isolation Rule detects ses
 - 2c's spec edits stay uncommitted on the default branch (unchanged 2c behaviour; AGENTS.md §4 permits only 2a/2b/3a document commits). Say so in the hand-off.
 
 ## Phase 4: Hand-off
-Same routing as 2b: `/3a-version-planning` only when 3a would act on this feature, otherwise `/3b-create-issue` to slice. Name the documents committed this run, the uncommitted 2c edits, and the decision log path. Optionally commit 2c's edits: `git add docs/prds docs/design docs/research && git commit -m "docs(BT-<n>): reconcile specs"`.
+Same routing as 2b: `/3a-version-planning` only when 3a would act on this feature, otherwise `/3b-create-issue` to slice. Name the documents committed this run, the uncommitted 2c edits, and the decision log path. Optionally commit 2c's edits, adding each document this run wrote or edited by path, never a directory (AGENTS.md §4: no swept drift): `git add docs/prds/BT-<padded>-<name>.md docs/design/BT-<padded>-interface.md docs/research/<doc>.md && git commit -m "docs(BT-<n>): reconcile specs"` (drop the paths this run did not touch).
 
 **Depth:** at most 2 levels below the 2z session (AGENTS.md §8).

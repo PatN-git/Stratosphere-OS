@@ -80,14 +80,14 @@ def test_find_pr_url_running_is_none():
     print("PASS"); return True
 
 
-def test_list_activities_forwards_since():
-    print("--- test_list_activities_forwards_since ---")
-    rc = ReplayCaller({("GET", "/sessions/sess_abc123/activities"): _fx("activities.json")})
-    c = JulesClient(caller=rc)
-    acts = c.list_activities("sess_abc123", since="2026-07-15T09:02:00Z")
-    assert len(acts) == 2
-    assert rc.calls[-1]["query"]["createTime"] == "2026-07-15T09:02:00Z", rc.calls[-1]["query"]
-    print("PASS"); return True
+def test_list_activities_has_no_since():
+    print("--- test_list_activities_has_no_since ---")
+    c = JulesClient(caller=ReplayCaller({("GET", "/sessions/sess_abc123/activities"): {"activities": []}}))
+    try:
+        c.list_activities("sess_abc123", since="2026-07-15T09:02:00Z")
+    except TypeError:
+        print("PASS"); return True
+    raise AssertionError("list_activities must not accept `since`: v1alpha activities.list takes no time-marker query parameter")
 
 
 def test_error_401():
@@ -123,7 +123,7 @@ def test_client_requires_key_or_caller():
 
 TESTS = [
     test_list_sources, test_create_session_payload, test_find_pr_url_ready,
-    test_find_pr_url_running_is_none, test_list_activities_forwards_since,
+    test_find_pr_url_running_is_none, test_list_activities_has_no_since,
     test_error_401, test_error_429_carries_retry_after, test_client_requires_key_or_caller,
 ]
 

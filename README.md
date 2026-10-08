@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-4.4.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-4.5.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -77,12 +77,15 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 ### 1. Install the Skills
 StratosphereOS ships as one canonical bundle, `dist/skills/` (27 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
 
+> **Trust the project first (Codex, Gemini CLI).** Codex >= 0.150.0 skips project `AGENTS.md` until the project is trusted, and Gemini CLI >= 0.59.0 fails closed on untrusted workspaces. Nothing errors: on Codex the skills can still appear (reported, not verified) while the constitution's precedence, security and git rules are absent. Trust the folder in the host before `/stratosphere-setup`; a skill cannot check this for you.
+
 | Your situation | Use |
 |:---|:---|
 | Claude Code, want auto-updating skills | [Track C](#track-c--claude-code-marketplace) |
 | Any other host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track A](#track-a--skillssh-npx) |
 | Offline, air-gapped, or no Node.js | [Track B](#track-b--direct-copy-offline--no-nodejs) |
 | Global Google Antigravity install | [Track D](#track-d--antigravity-bridge) |
+| Antigravity, native plugin install (`agy plugin install`) | [Track E](#track-e--antigravity-plugin-install) |
 
 ### Track A — skills.sh (`npx`)
 ```bash
@@ -135,6 +138,17 @@ bash scripts/install-antigravity-bridge.sh
 # Windows: powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-bridge.ps1
 ```
 Pass `--target <skills-dir>` to install elsewhere (for example a project's `.agents/skills`). Restart Antigravity afterwards. For per-project Antigravity installs, Track A or B into `.agents/skills` works without the bridge.
+
+Checked on `agy` 1.3.0 (one run each): the Antigravity CLI listed a throwaway skill placed in `~/.gemini/config/skills/` and did not list one placed in `~/.gemini/antigravity-cli/skills/`, so this target works for the CLI too, whatever its docs say. Re-check after a major `agy` upgrade.
+
+### Track E — Antigravity plugin install
+`dist/` is also a plugin root for Antigravity: `dist/plugin.json` sits beside the 27 bundled skills in `dist/skills/`. From a clone of this repository:
+```bash
+agy plugin install dist
+```
+`agy` copies it to `~/.gemini/config/plugins/stratosphere-os/`; `agy plugin list` shows it (the source reads `antigravity`, not the clone path). `/stratosphere-setup` and `/stratosphere-update` find the installed copy there. To update, pull the clone and run `agy plugin install dist` again, which overwrites the plugin in place (`/stratosphere-update` does the same from a release-tag clone). Plugins do not auto-update, and the plugin carries only the bundled skills: external skills still arrive through `/sync-skills`. Track D stays available. Verified on `agy` 1.3.0 only.
+
+Use Track D or Track E, not both: they register the same skills, and `/stratosphere-update` follows the first copy it finds (the Track D one), so the plugin copy is never refreshed. Untested.
 
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**

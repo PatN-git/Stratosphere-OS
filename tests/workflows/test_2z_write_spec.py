@@ -63,8 +63,21 @@ def test_2z_phase_3_passes_a_2c_skip_through_to_hand_off():
 
 def test_2z_phase_4_offers_an_optional_user_owned_commit_one_liner():
     p4 = _read("workflows/2z-write-spec.md").split("## Phase 4")[1]
-    assert "git add docs/prds docs/design docs/research" in p4 and "reconcile specs" in p4
+    assert "git add " in p4 and "reconcile specs" in p4
     assert "ptional" in p4
+
+
+def test_2z_commit_one_liner_adds_explicit_document_paths_never_a_directory_sweep():
+    """AGENTS.md section 4: one document per run, never swept drift. A directory `git add` commits unrelated docs drift."""
+    p4 = _read("workflows/2z-write-spec.md").split("## Phase 4")[1]
+    assert "git add docs/prds docs/design docs/research" not in p4
+    for bad in re.findall(r"git add\s+([^&`]+)", p4):
+        for arg in bad.split():
+            assert not re.fullmatch(r"(\.|-A|--all|docs/?|docs/\w+/?)", arg), f"directory-wide git add argument {arg!r}"
+    one_liner = re.search(r"git add ([^&`]+)&&", p4).group(1)
+    assert "docs/prds/BT-<padded>" in one_liner and "docs/design/BT-<padded>-interface.md" in one_liner
+    assert "docs/research/" in one_liner and "<" in one_liner.split("docs/research/")[1].split()[0], "research doc is named by path"
+    assert "by path" in p4 and "directory" in p4
 
 
 def test_2z_load_memory_is_worded_as_the_units_cached_status():

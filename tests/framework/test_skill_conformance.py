@@ -10,6 +10,7 @@ Coverage the v4.0.0 migration needs and nothing previously had:
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -114,7 +115,7 @@ def test_no_second_host_tree_exists():
     """C3: one canonical skill set, no content fork. Byte-identity used to be diffed between
     dist/claude-code and dist/antigravity; BT-118 made the fork structurally impossible."""
     assert not (REPO_ROOT / "dist" / "claude-code").exists()
-    assert not (REPO_ROOT / "dist" / "antigravity" / "skills").exists()
+    assert not (REPO_ROOT / "dist" / "antigravity").exists()
 
 
 def test_skills_dir_is_not_gitignored():
@@ -141,9 +142,19 @@ def test_placement_map_covers_every_host():
     m = re.search(r'SKILL_TARGETS = \[(.*?)\]', src, flags=re.S)
     assert m, "SKILL_TARGETS not found in scaffold.py"
     targets = re.findall(r'"([^"]+)"', m.group(1))
-    assert ".agents/skills" in targets, "must serve Cursor, Codex, Antigravity, Devin, OpenClaw"
-    assert ".github/copilot/skills" in targets, "must serve VS Code Copilot"
-    assert ".github/skills" not in targets, ".github/skills is a Devin read path, not Copilot's"
+    assert targets == [".agents/skills"], \
+        "every host reads .agents/skills (Copilot included); a second copy would double-list skills"
+
+
+def test_fresh_scaffold_places_skills_under_agents_only(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    scaffold = REPO_ROOT / "dist" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py"
+    r = subprocess.run([sys.executable, str(scaffold)], cwd=tmp_path, capture_output=True)
+    assert r.returncode == 0, r.stdout.decode("utf-8", "replace")[-500:]
+    assert (tmp_path / ".agents" / "skills" / "micro-tdd" / "SKILL.md").is_file()
+    assert not (tmp_path / ".agents" / "skills" / "stratosphere-setup" / "scripts").exists(), \
+        "scaffolder payload stays in the bundle; it is not a project skill file"
+    assert not (tmp_path / ".github" / "copilot").exists(), "no host reads .github/copilot/skills; scaffold must not create it"
 
 
 if __name__ == "__main__":

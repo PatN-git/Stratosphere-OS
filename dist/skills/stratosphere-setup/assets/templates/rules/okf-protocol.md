@@ -6,8 +6,8 @@ paths:
   - "docs/**/*"
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
-version: "2.0.1"
-timestamp: 2026-09-25
+version: "2.0.2"
+timestamp: 2026-10-06
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -79,7 +79,7 @@ Files in `.agents/rules/` are **out of OKF scope** (§1) but still declare when 
 
 **Antigravity** reads `trigger`/`globs` from `.agents/rules/`. **Claude Code** has no `trigger` concept; `glob` rules activate via `paths` from `.claude/rules/`, while `always_on`/`model_decision` rules surface through the `AGENTS.md` §8 pointer directory. Cursor, Codex, Devin and Copilot reach rules through `AGENTS.md`, which they all read.
 
-**Skill invocation is not governed here.** A skill's manual-only status is declared in its own frontmatter — `disable-model-invocation`, `triggers`, and the Codex `agents/openai.yaml` sidecar. See `AGENTS.md` §1 and §8.
+**Skill invocation is not governed here.** A skill's manual-only status is declared in its own frontmatter — `disable-model-invocation`, `triggers`, and the Codex `agents/openai.yaml` sidecar. See `AGENTS.md` §1.
 
 ## 3. Type Registry
 

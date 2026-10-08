@@ -8,7 +8,8 @@ Outputs:
   dist/skills/stratosphere-setup/  - also carries the scaffolder payload (scripts/, assets/,
                                      versions.json, external-skills.json), so every install
                                      track (skills.sh, copy-paste, marketplace) is self-contained
-  dist/antigravity/plugin.json     - Antigravity packaging manifest
+  dist/plugin.json                 - plugin manifest: dist/ itself is the plugin root
+                                     (Antigravity: `agy plugin install dist`)
   .claude-plugin/marketplace.json  - repo-root marketplace so `/plugin marketplace add` works
 
 There is one skill tree, not one per host. Project-instance content (constitution, memory
@@ -35,7 +36,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 
 # --- Version Signal Propagation ---------------------------------------------
 # Bumping this VERSION propagates to the following files upon running build:
-# 1. dist/antigravity/plugin.json (version)
+# 1. dist/plugin.json (version)
 # 2. dist/skills/stratosphere-setup/versions.json (plugin_version)
 # 3. .claude-plugin/marketplace.json (version + DESCRIPTION)
 #
@@ -43,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "4.4.0"
+VERSION = "4.5.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
@@ -274,12 +275,11 @@ def write_versions_manifest():
     write_lf(SETUP_SKILL / "versions.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
 
-def write_antigravity_manifest():
-    out = DIST / "antigravity"
-    force_rmtree(out)
-    out.mkdir(parents=True)
+def write_plugin_manifest():
+    """dist/ is the plugin root: the manifest sits beside dist/skills, so a host that installs a
+    plugin directory picks up the one canonical skill tree (no per-host copy)."""
     manifest = {"name": "stratosphere-os", "version": VERSION, "description": DESCRIPTION, "author": AUTHOR}
-    write_lf(out / "plugin.json", json.dumps(manifest, indent=2) + "\n")
+    write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
 
 def write_marketplace():
@@ -308,11 +308,12 @@ def write_marketplace():
 
 def main():
     DIST.mkdir(exist_ok=True)
-    force_rmtree(DIST / "claude-code")  # retired per-host tree
+    force_rmtree(DIST / "claude-code")  # retired per-host trees
+    force_rmtree(DIST / "antigravity")
     build_bundle()
     print(f"[built] {BUNDLE.relative_to(ROOT)}")
-    write_antigravity_manifest()
-    print("[built] dist/antigravity/plugin.json")
+    write_plugin_manifest()
+    print("[built] dist/plugin.json")
     write_marketplace()
     print("[built] .claude-plugin/marketplace.json")
 

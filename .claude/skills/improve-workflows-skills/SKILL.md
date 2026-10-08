@@ -3,7 +3,7 @@ name: improve-workflows-skills
 description: Dev-time discipline for authoring, editing, or pruning StratOS's OWN lifecycle skills (src/workflows/) and execution skills (src/skills/). Fires when creating/editing a StratOS skill, running a pruning/refactor pass, or reviewing framework artifacts. Repo-local and dev-only — NOT a product skill; never advise consumer projects with it.
 metadata:
   stratos.layer: execution
-version: "2.2.0"
+version: "2.3.0"
 timestamp: 2026-10-06
 ---
 
@@ -21,6 +21,7 @@ Authoring a new skill, editing one, or running a pruning/refactor pass over
 This skill carries its own playbook + lexicon — read them, don't restate them:
 - **`references/playbook.md`** — the complete playbook (artifact kinds, shared-component extraction, authoring levers, the pruning pass, word-level economy, mechanics).
 - **`references/glossary.md`** — every term + the leading-word palette (use those tokens, not synonyms).
+- **`references/host-matrix.md`** — per-host facts (`AGENTS.md` loading, skill dirs, manual-only fields, trust, version floors). They live here, not in the always-loaded `AGENTS.md`; read it before touching placement, pointer files or invocation fields.
 
 ## Non-negotiables (quick reference — the full rules are in the playbook)
 1. **Know the artifact kind — by frontmatter, never by path.** Both kinds install to `.agents/skills/<name>/SKILL.md`. A **lifecycle skill** (`metadata.stratos.layer: lifecycle`, authored in `src/workflows/`) orchestrates a phase, is user-invoked, and ships its own `references/`. An **execution skill** (`layer: execution`, authored in `src/skills/`) is self-contained discipline that may fire in an unscaffolded project, so it must carry no project-local refs.

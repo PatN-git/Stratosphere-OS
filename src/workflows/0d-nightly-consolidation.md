@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
-timestamp: 2026-10-05
+version: "1.2.1"
+timestamp: 2026-10-06
 ---
 
 # Nightly Consolidation
@@ -27,7 +27,7 @@ Do not modify files without user approval, except the report, `.last-run.json`, 
 4. Report findings only: no session roster and no positive observations.
 
 ## Phase 2: Distill Plan
-- Before proposing, run `grep -h -A 30 '^## Decisions' $(ls docs/nightly/nightly-*.md | tail -7)` (last 7 reports). An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
+- Before proposing, read the `## Decisions` section (max 30 lines) of each of the last 7 `docs/nightly/nightly-*.md` reports by filename date; none yet → skip. An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
 - Update `docs/nightly/.last-run.json` to `{"last_run": "<ISO 8601>"}` and nothing else.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.

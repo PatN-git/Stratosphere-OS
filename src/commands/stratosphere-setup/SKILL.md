@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
-timestamp: 2026-09-29
+version: "1.3.0"
+timestamp: 2026-10-07
 ---
 
 # Instantiate StratosphereOS
@@ -88,8 +88,8 @@ Find `<plugin>` by checking these locations in order and using the first that co
 
 - **Project-level:** `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`
 - **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
+- **Antigravity plugin install** (`agy plugin install dist`): `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`
 - **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
-- **Legacy v4 plugin installs** (pre-canonical-bundle): `~/.claude/plugins/stratosphere-os/`, `./.claude/plugins/stratosphere-os/`, `~/.gemini/config/plugins/stratosphere-os/`, `./.agents/plugins/stratosphere-os/`
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 
@@ -138,6 +138,8 @@ Checkpoint 0 has placed the rule/protocol files; they govern everything that fol
 - `.memory/DESIGN.md` (brand tokens — external spec, not trust-tagged) and `.memory/DESIGN_RULES.md` (structural rules — `[[DR-xxx]]`)
 
 Confirm they exist. If Checkpoint 0 reported any as `STALE`, `NEEDS-REVIEW`, or `LEFT AS-IS`, ensure you have reviewed the differences before relying on them.
+
+Tell the user to trust the project in the host: Codex (>= 0.150.0) skips project `AGENTS.md` until the project is trusted and Gemini CLI (>= 0.59.0) fails closed on untrusted workspaces, so the constitution is silently absent. Host trust state is unreadable from a skill; state it, do not try to check it.
 
 ## Checkpoint 2: Database audit
 
@@ -208,6 +210,12 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 ### Checkpoint 5.2: Secret hygiene
 
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit). Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+
+### Checkpoint 5.3: Test gate (opt-in)
+
+Ask once (native question tool) whether to install the pre-commit test gate: it refuses a commit whose staged code was not in a passing test run recorded with `python .agents/scripts/test_gate.py record -- <test command>`. Docs, `.memory/`, `.agents/`, `.claude/` and `.github/` changes always pass; humans can bypass with `git commit --no-verify`. Never install without a yes.
+- Yes → run `python .agents/scripts/test_gate.py install`. Exit 1 (another `pre-commit` hook or `core.hooksPath` exists) → show the user the line it printed for their own hook manager; change nothing else.
+- No → skip; `/stratosphere-update` only reminds.
 
 ## Checkpoint 6: Label Reconciliation (both paths)
 

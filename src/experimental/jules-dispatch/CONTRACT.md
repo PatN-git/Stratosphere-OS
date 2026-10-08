@@ -12,16 +12,29 @@ Confirm the exact shapes on the first live run (guarded by `JulesError`).
 | List connected sources | GET | `/sources` |
 | Create session | POST | `/sessions` |
 | Get session | GET | `/sessions/{id}` |
-| List activities (poll) | GET | `/sessions/{id}/activities?pageSize=&createTime=` |
+| List activities (poll) | GET | `/sessions/{id}/activities?pageSize=` |
+
+`activities.list` takes `pageSize`, `pageToken` and `filter` (no `createTime`); the pack sends `pageSize` only.
 
 ## Session resource (relevant fields)
 ```
 name, id, prompt,
-sourceContext: { source, githubRepoContext: { startingBranch } },
+sourceContext: { source, githubRepoContext: { startingBranch }, workingBranch },
 title, requirePlanApproval (bool), automationMode (enum),
-createTime, updateTime, state (enum), url,
-outputs: [ { pullRequest: { url, title, description } } ]
+createTime, updateTime, state (enum), url, archived (bool, output only),
+outputs: [ { pullRequest: { url, title, description, headRef, baseRef } } ]
 ```
+
+## In the v1alpha discovery doc, not used by the pack
+Pinned from discovery doc revision 20261004; **not live-tested**. Do not adopt for teardown or branch matching until a live E2E run confirms them.
+
+| Method | HTTP | Path |
+|---|---|---|
+| `sessions.archive` | POST | `/sessions/{id}:archive` |
+| `sessions.unarchive` | POST | `/sessions/{id}:unarchive` |
+| `sessions.delete` | DELETE | `/sessions/{id}` |
+
+`PullRequest.headRef`/`baseRef` and `SourceContext.workingBranch` could later replace the branch-prefix caveat below.
 
 - **`automationMode`** enum: `AUTOMATION_MODE_UNSPECIFIED`, `AUTO_CREATE_PR`.
 - **`state`** enum: `STATE_UNSPECIFIED`, `QUEUED`, `PLANNING`, `AWAITING_PLAN_APPROVAL`,

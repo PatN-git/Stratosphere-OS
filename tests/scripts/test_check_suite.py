@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import REPO_ROOT
+from conftest import REPO_ROOT, update_skill_text
 
 SCRIPT = REPO_ROOT / "src" / "scripts" / "check_suite.py"
 DIST_SKILLS = REPO_ROOT / "dist" / "skills"
@@ -229,10 +229,28 @@ def test_legacy_clean_project_passes(proj):
     assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
 
 
-def test_legacy_spares_current_antigravity_manifest_dir(proj):
+def test_legacy_spares_a_manifest_only_antigravity_dir(proj):
+    """Releases before BT-150 emitted only a manifest here; it is harmless, so only a skills payload is flagged."""
     project, home = proj
     touch(project / "dist" / "antigravity" / "plugin.json")
     assert legacy(project, home).returncode == 0
+
+
+def test_legacy_spares_the_antigravity_plugin_install_layout(proj):
+    """`agy plugin install dist` lands in ~/.gemini/config/plugins/stratosphere-os/ (manifest + skills/)."""
+    project, home = proj
+    plugin = home / ".gemini" / "config" / "plugins" / "stratosphere-os"
+    touch(plugin / "plugin.json")
+    touch(plugin / "skills" / "0a-start-session" / "SKILL.md")
+    assert legacy(project, home).returncode == 0
+
+
+def test_suite_check_runs_from_an_installed_antigravity_plugin(tmp_path):
+    skills = tmp_path / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills"
+    shutil.copytree(DIST_SKILLS, skills)
+    installed = skills / "stratosphere-setup" / "scripts" / "check_suite.py"
+    r = subprocess.run([sys.executable, str(installed), "suite"], capture_output=True, text=True)
+    assert r.returncode == 0 and "23/23" in r.stdout, r.stdout + r.stderr
 
 
 def test_legacy_flags_antigravity_dir_carrying_a_skills_payload(proj):
@@ -316,9 +334,10 @@ def test_start_session_has_zero_suite_validation():
 
 def test_constitution_states_skill_locations_and_disk_resolution_rule():
     text = _read("constitution/AGENTS.md")
-    assert ".claude/skills" in text and "does **not** read `.agents/skills/`" in text
+    # Which host reads which dir is a host fact (host-matrix.md); the constitution keeps only the rule.
+    assert ".claude/skills" in text and ".agents/skills" in text
     assert "code-simplifier" in text
-    assert "read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable" in text
+    assert "read `<skills-dir>/<name>/SKILL.md` on disk" in text and "before calling it unavailable" in text
 
 
 def test_start_session_without_memory_gives_one_line_setup_guidance():
@@ -328,12 +347,13 @@ def test_start_session_without_memory_gives_one_line_setup_guidance():
     assert text.index(".memory/` is absent") < text.index("## Phase A")
 
 
-def test_update_flow_cannot_route_past_phase_0_6():
-    """Every path out of Phase 0/0.5 must land on Phase 0.6, never jump straight to Phase 1."""
+def test_update_flow_cannot_route_past_phase_0_5():
+    """Every path out of Phase 0 must land on Phase 0.5, never jump straight to Phase 1."""
     text = _read("commands/stratosphere-update/SKILL.md")
-    before = text[:text.index("## Phase 0.6")]
-    assert not re.search(r"(?<!not )(?<!not\s)(proceed|continue) to \*{0,2}Phase 1\b", before, re.I)
-    assert "Phase 0.6" in before  # the earlier phases name it as their next step
+    before = text[:text.index("## Phase 0.5")]
+    # whole update flow: the moved update-path references must not continue to Phase 1 either
+    assert not re.search(r"(?<!not )(?<!not\s)(proceed|continue) to \*{0,2}Phase 1\b", update_skill_text(), re.I)
+    assert "Phase 0.5" in before  # Phase 0 names it as its next step
 
 
 def test_bash_remediation_creates_the_destination_dir(proj):

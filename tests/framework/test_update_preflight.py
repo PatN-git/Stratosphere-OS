@@ -2,20 +2,17 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # tests/ (conftest) when run as a script
+from conftest import REPO_ROOT, update_skill_text
+
 # NOTE: Since stratosphere-update's SKILL.md is an agentic markdown file, its runtime 
 # execution behavior cannot be directly validated by automated unit tests. Real validation 
 # of the preflight check is performed manually or via interactive dry-run testing.
 # This test performs a static substring check to ensure required instructions are not deleted or modified.
 
 def test_preflight_instructions():
-    # Resolve file path relative to this script's location
-    test_dir = Path(__file__).resolve().parent
-    repo_root = test_dir.parents[1]
-    filepath = repo_root / "src" / "commands" / "stratosphere-update" / "SKILL.md"
-    
-    assert filepath.exists(), f"{filepath} does not exist."
-
-    content = filepath.read_text(encoding='utf-8')
+    # SKILL.md plus the references/update-*.md its host-specific update paths moved to.
+    content = update_skill_text()
 
     # Core required patterns in the remote preflight phase
     required_checks = {
@@ -44,10 +41,6 @@ def test_preflight_instructions():
             "reload plugins and re-run",
             "HALT"
         ],
-        "Retired v4 plugin install halt": [
-            "retired v4 plugin install",
-            "HALT"
-        ],
         "In-place git pull pathway": [
             ".git",
             "git -C <plugin> pull --ff-only",
@@ -66,14 +59,16 @@ def test_preflight_instructions():
     }
 
     # BT-133: Claude Code copied-skills installs self-update; marketplace branch drives the CLI.
-    def branch(start, end):
+    # Each branch is its own reference file now; the combined text lists them in router order, so the
+    # last one (copied skills) runs to the end of the text.
+    def branch(start, end=None):
         i = content.index(start)
-        return content[i:content.index(end, i)]
+        return content[i:content.index(end, i)] if end else content[i:]
 
-    copied = branch("**Antigravity / copied-skills Install**", "**In-place Git Checkout**")
+    copied = (REPO_ROOT / "src" / "references" / "update-copied-skills.md").read_text(encoding="utf-8")
     for path in ("`~/.claude/skills/`", "`./.claude/skills/`"):
         assert path in copied, f"copied-skills branch does not cover {path}"
-    market = branch("**Claude Marketplace Cache**", "**Retired v4 plugin install**")
+    market = branch("**Claude Marketplace Cache**", "**Antigravity plugin install**")
     for needle in ("claude plugin marketplace update stratosphere-os", "claude plugin update stratosphere-os", "claude-code"):
         assert needle in market, f"marketplace branch missing {needle!r}"
 

@@ -240,3 +240,24 @@ def test_4a_step5_keeps_the_gh_side_of_the_body():
         assert token in step5, f"4a step 5 lost {token!r}"
     step8 = _4a()[_4a().index("8. **Epic Check:**"):_4a().index("9. **Terminal sync gate:**")]
     assert "pr_body.py build" in step8 and "--close-parent" in step8
+
+
+def test_4a_step8_resaves_the_prior_body_before_the_rebuild():
+    """Step 5 deletes `.tmp/4a-prior-body.md`; the `--close-parent` rebuild needs it back or earlier slices go PENDING."""
+    text = _4a()
+    step8 = text[text.index("8. **Epic Check:**"):text.index("9. **Terminal sync gate:**")]
+    assert "gh pr view" in step8 and ".tmp/4a-prior-body.md" in step8, "step 8 must re-save the PR's current body"
+    assert "--prior-body-file" in step8, "step 8 must pass the re-saved body to pr_body.py build"
+    assert "PENDING" in step8 and "Closes" in step8, "step 8 must say what is lost without the prior body"
+    assert step8.index(".tmp/4a-prior-body.md") < step8.index("--close-parent"), "re-save comes before the rebuild"
+
+
+def test_pr_body_reference_documents_base_resolution_and_suite_reuse():
+    ref = _ref()
+    build = ref.split("## Build")[1].split("## Suite")[0]
+    assert "--base" in build and "origin/HEAD" in build and "main" in build and "master" in build
+    assert "[PR-BODY-ERROR]" in build and "status 2" in build, "no base resolved must be a fail-closed error"
+    suite = ref.split("## Suite")[1].split("## Risk label")[0]
+    assert "HEAD" in suite and "clean" in suite
+    for ignored in (".memory/", "docs/", ".tmp/"):
+        assert ignored in suite, f"suite reuse must name {ignored} as ignored for the clean-tree check"

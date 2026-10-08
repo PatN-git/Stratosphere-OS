@@ -48,8 +48,7 @@ function Assert-ScaffoldTree([string]$proj) {
     AssertFileCount "scaffold: .agents/rules/*.md == 3" (Join-Path $proj ".agents\rules") "*.md" 3
     Assert "scaffold: .agents/skills 27 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 27)
     Assert "scaffold: no legacy .agents/workflows" (-not (Test-Path (Join-Path $proj ".agents\workflows")))
-    Assert "scaffold: copilot skills 27" ((Get-ChildItem -Path (Join-Path $proj ".github\copilot\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 27)
-    Assert "scaffold: setup payload not copied into copilot skill" (-not (Test-Path (Join-Path $proj ".github\copilot\skills\stratosphere-setup\scripts")))
+    Assert "scaffold: no .github/copilot/skills twin" (-not (Test-Path (Join-Path $proj ".github\copilot\skills")))
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
     AssertPathExists "scaffold: okf_view.py" (Join-Path $proj ".agents\scripts\okf_view.py")
     AssertPathExists "scaffold: okf_viewer/generator.py" (Join-Path $proj ".agents\scripts\okf_viewer\generator.py")

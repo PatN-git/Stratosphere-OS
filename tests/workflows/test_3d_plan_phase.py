@@ -74,3 +74,20 @@ def test_3z_dispatch_json_has_plan_path_and_report_lists_it():
     assert "plan_path" in step_2a
     phase4 = text.split("## Phase 4:")[1]
     assert "plan_path" in phase4
+
+
+def test_plan_check_allows_an_explicit_uncovered_row_with_a_reason():
+    """Phase 3 already allows `[UNCOVERED]`; the plan check must not force a test path for an AC that cannot have one."""
+    plan = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 0.5: Plan", "## Phase 1:")
+    check = plan.split("**Mechanical plan check")[1]
+    assert "[UNCOVERED]" in check, "plan check must accept an explicit [UNCOVERED] plan row"
+    assert "reason" in check and "manual-only" in check and "design blocker" in check
+    phase3 = _read("workflows/3d-implement-issue.md").split("## Phase 3:")[1]
+    assert "[UNCOVERED]" in phase3 and "design blocker" in phase3
+
+
+def test_plan_check_skips_the_filename_pattern_match_for_a_greenfield_repo():
+    plan = _phase(_read("workflows/3d-implement-issue.md"), "## Phase 0.5: Plan", "## Phase 1:")
+    check = plan.split("**Mechanical plan check")[1]
+    assert "greenfield" in check and "no test files" in check
+    assert "skip" in check and "say so" in check
