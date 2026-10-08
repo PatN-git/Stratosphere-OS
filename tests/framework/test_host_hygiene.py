@@ -16,7 +16,7 @@ JULES = "src/experimental/jules-dispatch"
 CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + this repo's installed copy
 HOST_MATRIX = "src/dev-skills/improve-workflows-skills/references/host-matrix.md"
 HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "Jules", "OpenClaw")
-HOST_SECTION_BUDGET = 1000  # chars, ~250 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
+HOST_SECTION_BUDGET = 700  # chars, ~175 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
 OKF_PROTOCOL = "src/rules/okf-protocol.md"
 
 
@@ -46,6 +46,31 @@ def test_constitution_section_8_names_no_host(rel):
     section = text[text.index("## 8."):]
     named = [host for host in HOST_NAMES if host in section]
     assert not named, f"{rel} section 8 is always loaded and must stay host-free; {named} belong in {HOST_MATRIX}"
+
+
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_section_8_keeps_install_and_authoring_rules_out(rel):
+    # /sync-skills install wiring is enforced by check_suite.py visibility; "workflows cite skills by name,
+    # never by path" is an authoring rule (improve-workflows-skills playbook). Neither guides a running agent.
+    text = read(rel)
+    section = text[text.index("## 8."):]
+    for needle in ("never paths", "/sync-skills"):
+        assert needle not in section, f"{rel} section 8 is always loaded; {needle!r} is not a runtime rule"
+
+
+def test_playbook_carries_the_moved_cite_skills_by_name_rule():
+    text = read("src/dev-skills/improve-workflows-skills/references/playbook.md")
+    assert "never by path" in text and "SKILL.md` on disk" in text, \
+        "authoring rule moved out of AGENTS.md section 8: skills are cited by name, the constitution's disk rule resolves them"
+
+
+def test_constitution_section_8_identical_across_copies():
+    # Only the pre-existing trailing backtick line may differ between the product source and this repo's copy.
+    def section8(rel: str) -> str:
+        text = read(rel)
+        return text[text.index("## 8."):].rstrip("\n`")
+
+    assert section8(CONSTITUTIONS[0]) == section8(CONSTITUTIONS[1])
 
 
 def test_okf_manual_only_pointer_does_not_send_readers_to_section_8():
