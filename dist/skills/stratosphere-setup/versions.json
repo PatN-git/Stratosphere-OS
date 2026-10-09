@@ -221,7 +221,7 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "cdf4b11cf6000f9f55a5372c200aa49d15e1b84677bbdc3533c650de1fbd3346",
+      "sha256": "de7f62f66ace7c7f3a31d21c05c8eb3f623475df05a3fcc12d00767ca5c20031",
       "timestamp": "2026-09-30",
       "version": "2.5.0"
     },
@@ -251,7 +251,7 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "accbb3ddcac0c9ca19f2237c5f8986a586578b92fc007972a6e9e90311d85e91",
+      "sha256": "a83a393070e4dff166ca4c3e2920fc3cdb27cba00767a6e4c22ae5db70773930",
       "timestamp": "2026-09-29",
       "version": "2.4.0"
     },
@@ -286,9 +286,9 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "d50b26b0b009962794c76797c46a0ab0b9d86d6e17980c028d996fb4e7c8d575",
+      "sha256": "570a0f46e7eb210fdaa9eac4e7a4dbf0077e4ec996efa3f8d6ad3f561d095bfc",
       "timestamp": "2026-10-07",
-      "version": "1.4.0"
+      "version": "1.5.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
       "sha256": "2f5d436b98c4faa6c060f90eb55dd8b920791f23a4c5d403a09c7cec38343558",

@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.4.0"
+version: "1.5.0"
 timestamp: 2026-10-07
 ---
 
@@ -33,9 +33,10 @@ _Done when:_ orchestrator context synced.
 2. **Preflight checks:**
    - **Unknown/closed check:** For each slice ID, verify it exists in `BACKLOG_MAP.md` and status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
    - **Mode-based pre-flight:** AFK/HITL mode governs execution; primary type is orthogonal:
+     - `status:needs_spec` (Template A), any mode → `[SKIP] BT-<padded> Template A (needs_spec) — excluded` and drop (if named single issue → HALT with guidance: "re-spec first, then run /3d-implement-issue").
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d-implement-issue + /4a-verify-and-ship manually").
-     - Neither `mode:AFK` nor `mode:HITL` (missing mode, or `status:needs_spec`) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
+     - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.
