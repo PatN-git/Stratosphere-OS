@@ -21,7 +21,7 @@ Run the `load-memory` skill to restore session context (read-only).
 1. Read `.memory/BACKLOG_MAP.md`.
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
-   - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. A `needs_spec` slice is a Spike (`references/issue-templates.md`): closed on its Exit Criteria, follow-up minted via `/3b-create-issue`. **Never flip `needs_spec → planned`.**
+   - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. `needs_spec` slices are Spikes (definition: `references/issue-templates.md`). **Never flip `needs_spec → planned`.**
    - Verify Build slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>` (set milestone `vX.Y.0` to schedule); do not sequence it.
    - Exclude and print `[MISSING-LABELS] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or a required label: `type:`, `mode:`, `tier:slice`, `size:`.
 
