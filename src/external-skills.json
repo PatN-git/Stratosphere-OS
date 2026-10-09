@@ -97,10 +97,10 @@
       "category": "experimental",
       "default": false,
       "repoZipUrl": "https://github.com/PatN-git/Stratosphere-OS/archive/refs/heads/main.zip",
-      "ref": "v4.6.0",
+      "ref": "v4.6.1",
       "subPath": "Stratosphere-OS-main/src/experimental/jules-dispatch/",
       "targetPath": ".agents/skills/jules-dispatch",
-      "description": "EXPERIMENTAL, opt-in: offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatches + reports; never merges, never orchestrates. Pinned to the v4.6.0 release tag."
+      "description": "EXPERIMENTAL, opt-in: offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatches + reports; never merges, never orchestrates. Pinned to the v4.6.1 release tag."
     }
   ]
 }
