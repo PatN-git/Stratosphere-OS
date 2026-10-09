@@ -129,6 +129,7 @@ def test_select_eligible_dep_exclusion():
         {"slice_id": "BT-4", "labels": ["tier:slice"]},                                        # no AFK
         {"slice_id": "BT-9", "labels": ["mode:AFK", "tier:slice"], "state": "done"},
         {"slice_id": "BT-5", "labels": ["mode:AFK", "tier:slice"], "blocked_by": ["BT-9"]},   # dep met
+        {"slice_id": "BT-6", "labels": ["mode:AFK", "tier:slice", "status:needs_spec"]},  # Spike
     ]
     got = {s["slice_id"] for s in dispatch.select_eligible(slices)}
     assert got == {"BT-1", "BT-5"}, got
