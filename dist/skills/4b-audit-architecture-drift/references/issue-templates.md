@@ -7,7 +7,7 @@ timestamp: 2026-10-09
 # Issue Templates
 
 ## TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`). `/3c-sprint-planning` can sprint it at a 5h placeholder, but it is not runnable until re-specced into Template B.*
+*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`). `/3c-sprint-planning` can sprint it at a 5h placeholder. It is not buildable: close it on its Exit Criteria, and mint a Template B slice with `/3b-create-issue` for any follow-up work.*
 
 ### Overview
 - One sentence: what and why.
