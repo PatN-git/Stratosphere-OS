@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-07
+version: "1.4.0"
+timestamp: 2026-10-08
 ---
 
 # Instantiate StratosphereOS
@@ -84,12 +84,10 @@ Before any file operations:
 
 The skills are **already installed** (skills.sh, marketplace, direct copy, or the Antigravity bridge) — do not re-stage or re-choose a scope here. Instead, **locate this skill's own directory** (`<plugin>` — the installed `stratosphere-setup` folder that carries the scaffolder payload), then run its bundled scaffolder from the **project root** (cwd = your project). `scaffold.py` resolves its templates and the sibling skills relative to its own location, so any valid install path works.
 
-Find `<plugin>` by checking these locations in order and using the first that contains `scripts/scaffold.py`:
+Find `<plugin>` by checking these locations in order and using the first that contains `scripts/scaffold.py`. Check the running host's own group first; only if none matches, try the other group:
 
-- **Project-level:** `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`
-- **Global:** `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`
-- **Antigravity plugin install** (`agy plugin install dist`): `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/`
-- **Claude Code marketplace:** `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — pick the newest version directory)
+- **Claude Code:** `./.claude/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — newest version directory)
+- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 

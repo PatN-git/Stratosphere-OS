@@ -3,6 +3,7 @@
 Seam: the `check_suite.py` CLI (stdout + exit code). Fixtures copy the committed
 `dist/skills` bundle into tmp_path so every case starts from a known-good suite.
 """
+import json
 import os
 import re
 import shutil
@@ -300,6 +301,92 @@ def test_legacy_scans_old_plugin_install_roots(proj):
     assert not any(f.exists() for f in stale)
     # the plugin roots themselves are never removed
     assert (home / ".claude" / "plugins" / "stratosphere-os").is_dir()
+
+
+def old_layout_plugin(home):
+    """BT-154 F2: a v4.2.0 `agy` install with the scaffolder payload at the plugin root."""
+    root = home / ".gemini" / "config" / "plugins" / "stratosphere-os"
+    touch(root / "plugin.json", '{"name": "stratosphere-os", "version": "4.2.0"}')
+    touch(root / "scripts" / "scaffold.py")
+    touch(root / "versions.json", "{}")
+    touch(root / "skills" / "0a-start-session" / "SKILL.md")
+    touch(root / "skills" / "impeccable" / "SKILL.md", "old impeccable")
+    touch(root / "skills" / ".lock.json", '{"skills": {"impeccable": {"ref": "main", "files": {}}}}')
+    return root
+
+
+def test_legacy_flags_an_old_layout_plugin_root_and_its_external_packs(proj):
+    project, home = proj
+    root = old_layout_plugin(home)
+    r = legacy(project, home)
+    assert r.returncode == 1
+    assert str(root) in r.stdout and "4.2.0" in r.stdout and "impeccable" in r.stdout
+    assert root.is_dir()
+
+
+def test_legacy_apply_removes_old_layout_root_and_preserves_external_packs(proj):
+    project, home = proj
+    root = old_layout_plugin(home)
+    r = legacy(project, home, "--apply")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not root.exists()
+    live = home / ".gemini" / "config" / "skills"
+    assert (live / "impeccable" / "SKILL.md").read_text(encoding="utf-8") == "old impeccable"
+    assert "impeccable" in json.loads((live / ".lock.json").read_text(encoding="utf-8"))["skills"]
+    assert not (live / "0a-start-session").exists()
+
+
+def test_legacy_apply_never_overwrites_a_live_external_pack(proj):
+    project, home = proj
+    old_layout_plugin(home)
+    live = home / ".gemini" / "config" / "skills"
+    touch(live / "impeccable" / "SKILL.md", "sentinel")
+    assert legacy(project, home, "--apply").returncode == 0
+    assert (live / "impeccable" / "SKILL.md").read_text(encoding="utf-8") == "sentinel"
+
+
+def test_legacy_apply_preserves_a_user_skill_missing_from_the_old_lock(proj):
+    project, home = proj
+    old_layout_plugin(home)
+    touch(home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills" / "my-own-skill" / "SKILL.md", "mine")
+    assert legacy(project, home, "--apply").returncode == 0
+    assert (home / ".gemini" / "config" / "skills" / "my-own-skill" / "SKILL.md").read_text(encoding="utf-8") == "mine"
+
+
+def test_legacy_survives_a_malformed_old_lock(proj):
+    project, home = proj
+    root = old_layout_plugin(home)
+    touch(root / "skills" / ".lock.json", '{"skills": ["impeccable"]}')
+    r = legacy(project, home)
+    assert r.returncode == 1 and "impeccable" in r.stdout, r.stdout + r.stderr
+
+
+def test_legacy_spares_a_new_layout_plugin_root(proj):
+    project, home = proj
+    root = home / ".gemini" / "config" / "plugins" / "stratosphere-os"
+    touch(root / "plugin.json")
+    touch(root / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py")
+    r = legacy(project, home)
+    assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
+
+
+def test_legacy_spares_a_clone_style_plugin_root(proj):
+    project, home = proj
+    root = home / ".claude" / "plugins" / "stratosphere-os"
+    touch(root / "plugin.json")
+    touch(root / "scripts" / "scaffold.py")
+    (root / ".git").mkdir()
+    r = legacy(project, home)
+    assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
+
+
+def test_legacy_never_treats_the_project_as_an_old_layout_root(proj):
+    project, home = proj
+    for rel in ("plugin.json", "versions.json", "scripts/scaffold.py"):
+        touch(project / rel)
+    r = legacy(project, home, "--apply")
+    assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
+    assert all((project / rel).exists() for rel in ("plugin.json", "versions.json", "scripts/scaffold.py"))
 
 
 # --- wiring: who calls the checks (and who must not) ----------------------

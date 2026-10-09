@@ -308,7 +308,18 @@ def fetch(entry, skills_base, dry, lockfile_path):
                 
                 if count == 0:
                     return "warn", f"{name}: 0 files matched subPath {sub!r} (resolved as {real_sub!r}) — check the path"
-                
+
+                skill_md = temp_target / "SKILL.md"
+                agent_md = temp_target / entry["skillFile"] if entry.get("skillFile") else None
+                if not skill_md.exists() and agent_md and agent_md.is_file():
+                    # An agent-plugin upstream: its agent file is the skill, minus the agent-only `model:` key.
+                    lines = agent_md.read_bytes().decode("utf-8").split("\n")
+                    end = lines.index("---", 1) if lines[0] == "---" and "---" in lines[1:] else 0
+                    skill_md.write_bytes("\n".join(
+                        l for i, l in enumerate(lines) if not (i < end and l.startswith("model:"))).encode("utf-8"))
+                if not skill_md.exists():
+                    return "warn", f"{name}: no SKILL.md in {sub!r} — kept the existing {target_dir.as_posix()}"
+
                 target_dir.parent.mkdir(parents=True, exist_ok=True)
                 if target_dir.exists():
                     force_rmtree(target_dir)
@@ -325,6 +336,24 @@ def fetch(entry, skills_base, dry, lockfile_path):
         return "ok", f"{name}: {count} files -> {target_dir.as_posix()}"
     except Exception as exc:
         return "fail", f"{name}: {exc}"
+
+
+def same_text(a, b):
+    try:
+        return a.decode("utf-8").replace("\r\n", "\n") == b.decode("utf-8").replace("\r\n", "\n")
+    except UnicodeDecodeError:
+        return a == b
+
+
+def duplicate_notice(other_dir: Path, synced_dir: Path):
+    """Flag the other host's copy of a just-synced pack when it differs (line endings ignored); never deletes."""
+    if not other_dir.is_dir():
+        return None
+    a, b = ({p.relative_to(d).as_posix(): p for p in d.rglob("*") if p.is_file()} for d in (other_dir, synced_dir))
+    if a.keys() == b.keys() and all(same_text(a[k].read_bytes(), b[k].read_bytes()) for k in a):
+        return None
+    return (f"[DUPLICATE] {other_dir.as_posix()} differs from the copy just synced; the other host still reads it"
+            " — re-run /sync-skills from that host or delete it")
 
 
 def main():
@@ -366,16 +395,11 @@ def main():
     is_claude = any(a == ".claude" and b in ("skills", "plugins") for a, b in zip(here.parts, here.parts[1:]))
     
     if args.global_scope:
-        if is_claude:
-            skills_base = Path.home() / ".claude" / "skills"
-        else:
-            skills_base = Path.home() / ".gemini" / "config" / "skills"
+        claude_base, agents_base = Path.home() / ".claude" / "skills", Path.home() / ".gemini" / "config" / "skills"
     else:
-        if is_claude:
-            skills_base = project_root / ".claude" / "skills"
-        else:
-            skills_base = project_root / ".agents" / "skills"
-    
+        claude_base, agents_base = project_root / ".claude" / "skills", project_root / ".agents" / "skills"
+    skills_base, other_base = (claude_base, agents_base) if is_claude else (agents_base, claude_base)
+
     print(f"Project root: {project_root}")
     print(f"Skills destination directory: {skills_base} ({'global' if args.global_scope else 'local'} scope)")
     
@@ -403,6 +427,8 @@ def main():
             status, msg = fetch(entry, skills_base, args.dry_run, lockfile_path)
             results.setdefault(status, []).append(msg)
             print(f"[{status.upper()}] {msg}")
+            if status == "ok" and (notice := duplicate_notice(other_base / entry["name"], skills_base / entry["name"])):
+                print(notice)
     finally:
         # Clean up temp files
         for path in zip_cache.values():

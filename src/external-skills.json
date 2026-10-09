@@ -1,5 +1,5 @@
 {
-  "_note": "Single source of truth for third-party skills, fetched on demand by sync-skills (NOT bundled). 'default: true' = system skills installed by default; others are opt-in by category.",
+  "_note": "Single source of truth for third-party skills, fetched on demand by sync-skills (NOT bundled). 'default: true' = system skills installed by default; others are opt-in by category. Optional 'skillFile' names the file a SKILL.md is generated from when the upstream pack has none (agent plugins).",
   "skills": [
     {
       "name": "skill-creator",
@@ -18,6 +18,7 @@
       "repoZipUrl": "https://github.com/anthropics/claude-plugins-official/archive/refs/heads/main.zip",
       "ref": "ed3ff7abb352a781c91fb8b99d1ce15ec951c60c",
       "subPath": "claude-plugins-official-main/plugins/code-simplifier/",
+      "skillFile": "agents/code-simplifier.md",
       "targetPath": ".agents/skills/code-simplifier",
       "description": "Simplify and refine recently modified code without changing behavior."
     },
@@ -96,10 +97,10 @@
       "category": "experimental",
       "default": false,
       "repoZipUrl": "https://github.com/PatN-git/Stratosphere-OS/archive/refs/heads/main.zip",
-      "ref": "v4.5.0",
+      "ref": "v4.6.0",
       "subPath": "Stratosphere-OS-main/src/experimental/jules-dispatch/",
       "targetPath": ".agents/skills/jules-dispatch",
-      "description": "EXPERIMENTAL, opt-in: offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatches + reports; never merges, never orchestrates. Pinned to the v4.5.0 release tag."
+      "description": "EXPERIMENTAL, opt-in: offload bounded mode:AFK slices to Google Jules (async cloud agent). Dispatches + reports; never merges, never orchestrates. Pinned to the v4.6.0 release tag."
     }
   ]
 }

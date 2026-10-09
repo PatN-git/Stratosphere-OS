@@ -1725,6 +1725,94 @@ def test_constitution_needs_review():
         raise AssertionError("Expected constitution to be committed")
     print("Constitution review and merge test passed!")
 
+def _bundle_env(name, bundle):
+    """BT-154: a project plus a mock plugin whose manifest lists exactly `bundle` ({rel_path: bytes})."""
+    tmp = REPO_ROOT / ".tmp" / name
+    if tmp.exists():
+        shutil.rmtree(tmp, ignore_errors=True)
+    (tmp / ".agents").mkdir(parents=True, exist_ok=True)
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(
+        json.dumps({"installed_plugin_version": "1.0.0", "artifacts": {}}), encoding="utf-8")
+    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
+    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
+    artifacts = {}
+    for rel, data in bundle.items():
+        dst = mock_plugin.parent / rel[len("skills/"):] if rel.startswith("skills/") else mock_plugin / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(data)
+        artifacts[rel] = {"version": "1.0.1", "timestamp": "2026-10-08", "sha256": "dummy"}
+    (mock_plugin / "versions.json").write_text(json.dumps({"artifacts": artifacts}), encoding="utf-8")
+    return tmp, mock_plugin / "scripts" / "scaffold.py"
+
+def _crlf(b):
+    return b.replace(b"\n", b"\r\n")
+
+SKILL_REL = "skills/3b-create-issue/SKILL.md"
+SKILL_PROJ = ".agents/skills/3b-create-issue/SKILL.md"
+CONST_REL = "assets/templates/constitution/AGENTS.md"
+SKILL_BYTES = b"---\nname: 3b-create-issue\nversion: \"1.0.1\"\n---\n# Create issue\n\nStep one.\n"
+PLACEHOLDER_VISION = "<project vision — set during stratosphere-setup>"
+CONST_TEMPLATE = ("---\nname: c\nversion: \"1.0.1\"\n---\n# ARCH\n\n## Vision\n" + PLACEHOLDER_VISION
+                  + "\n\n## 1. Architecture\nRules v2.\n").encode("utf-8")
+CONST_PROJECT = ("---\nname: c\nversion: \"1.0.0\"\n---\n# ARCH\n\n## Vision\nShip clean-tech jobs.\n"
+                 "\n## 1. Architecture\nRules v1.\n").encode("utf-8")
+
+def _worklist(tmp):
+    return json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+
+def test_crlf_managed_file_not_stale():
+    tmp, scaffold_script = _bundle_env("test_crlf_managed_not_stale", {SKILL_REL: SKILL_BYTES})
+    (tmp / SKILL_PROJ).parent.mkdir(parents=True, exist_ok=True)
+    (tmp / SKILL_PROJ).write_bytes(_crlf(SKILL_BYTES))
+    run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert SKILL_PROJ not in _worklist(tmp)["stale_managed"]
+    assert not (tmp / (SKILL_PROJ + ".stratosphere-new")).exists()
+
+def test_crlf_constitution_not_needs_review():
+    tmp, scaffold_script = _bundle_env("test_crlf_constitution", {CONST_REL: CONST_TEMPLATE})
+    (tmp / "AGENTS.md").write_bytes(_crlf(CONST_TEMPLATE))
+    run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "AGENTS.md" not in _worklist(tmp)["needs_review_constitution"]
+
+def test_crlf_managed_file_with_real_change_still_stale():
+    tmp, scaffold_script = _bundle_env("test_crlf_managed_real_change", {SKILL_REL: SKILL_BYTES})
+    (tmp / SKILL_PROJ).parent.mkdir(parents=True, exist_ok=True)
+    (tmp / SKILL_PROJ).write_bytes(_crlf(SKILL_BYTES.replace(b"Step one.", b"Step zero.")))
+    run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert SKILL_PROJ in _worklist(tmp)["stale_managed"]
+
+def _vision_env(name, project, proposed, eol=lambda b: b):
+    tmp, scaffold_script = _bundle_env(name, {CONST_REL: CONST_TEMPLATE})
+    (tmp / "AGENTS.md").write_bytes(eol(project))
+    (tmp / "AGENTS.md.stratosphere-new").write_bytes(eol(proposed))
+    return tmp, scaffold_script
+
+def test_constitution_vision_replaced_by_placeholder_aborts():
+    tmp, scaffold_script = _vision_env("test_vision_lost", CONST_PROJECT, CONST_TEMPLATE)
+    before = (tmp / "AGENTS.md").read_bytes()
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp, expect_code=1)
+    assert "Vision" in res.stdout + res.stderr
+    assert (tmp / "AGENTS.md").read_bytes() == before
+
+def test_constitution_vision_replaced_by_placeholder_aborts_crlf():
+    tmp, scaffold_script = _vision_env("test_vision_lost_crlf", CONST_PROJECT, CONST_TEMPLATE, eol=_crlf)
+    before = (tmp / "AGENTS.md").read_bytes()
+    res = run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp, expect_code=1)
+    assert "Vision" in res.stdout + res.stderr
+    assert (tmp / "AGENTS.md").read_bytes() == before
+
+def test_constitution_vision_kept_applies():
+    merged = CONST_TEMPLATE.replace(PLACEHOLDER_VISION.encode("utf-8"), b"Ship clean-tech jobs.")
+    tmp, scaffold_script = _vision_env("test_vision_kept", CONST_PROJECT, merged)
+    run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert (tmp / "AGENTS.md").read_bytes() == merged
+
+def test_constitution_placeholder_project_vision_not_flagged():
+    project = CONST_TEMPLATE.replace(b"Rules v2.", b"Rules v1.")
+    tmp, scaffold_script = _vision_env("test_vision_placeholder_project", project, CONST_TEMPLATE)
+    run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
+    assert (tmp / "AGENTS.md").read_bytes() == CONST_TEMPLATE
+
 def test_malformed_template_skip():
     print("--- Test: Malformed Template Skipped Gracefully ---")
     tmp = REPO_ROOT / ".tmp" / "test_malformed_skip"
@@ -2742,6 +2830,13 @@ if __name__ == "__main__":
     test_version_downgrade()
     test_managed_file_refresh()
     test_constitution_needs_review()
+    test_crlf_managed_file_not_stale()
+    test_crlf_constitution_not_needs_review()
+    test_crlf_managed_file_with_real_change_still_stale()
+    test_constitution_vision_replaced_by_placeholder_aborts()
+    test_constitution_vision_replaced_by_placeholder_aborts_crlf()
+    test_constitution_vision_kept_applies()
+    test_constitution_placeholder_project_vision_not_flagged()
     test_malformed_template_skip()
     test_template_adds_block()
     test_orphan_prune_on_skill_rename_or_drop()

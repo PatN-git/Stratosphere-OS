@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.2.0"
-timestamp: 2026-10-05
+version: "3.3.1"
+timestamp: 2026-10-08
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -69,4 +69,3 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
   - *Skills:* if a named skill (e.g. `code-simplifier`) is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk (`.agents/skills/` or `.claude/skills/`, project or `~`) before calling it unavailable.
 - **Subagent nesting.** Use the depth the host allows, ≤ 2 below the invoking session (leaves one level for an outer orchestrator). Every subagent step must also run inline. Subagents never commit, except a `3d` implementer dispatched by `3z` (the §4 single writer for code); auditors, drafters and scanners are read-only (scratch writes to `.tmp/` excepted). Prefer workspace `shared/inherit` for sequential work: worktree isolation may branch from the default branch and lack untracked deps (e.g. `node_modules`).
 - **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only: the host's own marker field enforces it where supported, otherwise the skill's `description` says so.
-`

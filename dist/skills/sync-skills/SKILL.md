@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.3"
-timestamp: 2026-10-06
+version: "1.1.0"
+timestamp: 2026-10-08
 ---
 
 # Sync Skills
@@ -16,7 +16,10 @@ Third-party skills are **not bundled** with the skill suite. They are fetched on
 
 ## Usage
 
-Run from the **project root**. `sync_skills.py` lives in the installed `stratosphere-setup` skill (not the project) and reads that skill's `external-skills.json` automatically; invoke it with that skill's path — `<plugin>` is the first of `./.claude/skills/stratosphere-setup/`, `./.agents/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`, `~/.gemini/config/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (Antigravity plugin install, `agy plugin install dist`) or the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` that contains `scripts/sync_skills.py`.
+Run from the **project root**. `sync_skills.py` lives in the installed `stratosphere-setup` skill (not the project) and reads that skill's `external-skills.json` automatically; invoke it with that skill's path — `<plugin>` is the first of these that contains `scripts/sync_skills.py`. Check the running host's own group first; only if none matches, try the other group:
+
+- **Claude Code:** `./.claude/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — newest version directory)
+- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
 
 ```bash
 # See what's available (asterisk = installed by default)
@@ -42,6 +45,7 @@ Each skill lands at its registry `targetPath` (e.g. `.agents/skills/supabase`).
 - **Read-only registry.** The script never edits `external-skills.json`; update sources there by hand.
 - **Surgical extract.** Only the `subPath` inside each upstream repo zip is extracted.
 - **Safe skips.** Entries whose `repoZipUrl` is empty/`TODO`/`PENDING`/`N/A` are reported and skipped. A `0 files matched` warning means the `subPath` is wrong.
+- **No `SKILL.md`, no overwrite.** A pack without `SKILL.md` is skipped with a warning (the existing copy is kept) unless its registry entry names a `skillFile` to generate it from.
 - **Exit code.** Non-zero only on a hard download/extract failure, so the installer can detect problems.
 
 ## When the installer calls this

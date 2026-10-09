@@ -301,6 +301,20 @@ def normalize_proposed_bytes(prop_bytes, existing_path):
     except Exception:
         return prop_bytes
 
+def same_text(a: bytes, b: bytes) -> bool:
+    """Equal up to BOM and line endings, so CRLF checkouts are not flagged stale; raw compare for binary."""
+    if a == b or not _versioning:
+        return a == b
+    try:
+        return _versioning.normalize(a.decode("utf-8")) == _versioning.normalize(b.decode("utf-8"))
+    except UnicodeDecodeError:
+        return False
+
+def vision(text: str) -> str:
+    """Body of the constitution's `## Vision` section (to the next `## ` heading or EOF); "" if absent."""
+    m = re.search(r"^## Vision[ \t]*\n(.*?)(?=^## |\Z)", _versioning.normalize(text), re.M | re.S)
+    return m.group(1).strip() if m else ""
+
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
@@ -582,7 +596,7 @@ def place(src: Path, dst: Path, res, dry, update: bool = False, tier: str = "pre
 
         src_bytes = src.read_bytes()
         dst_bytes = dst.read_bytes()
-        if src_bytes == dst_bytes:
+        if same_text(src_bytes, dst_bytes):
             res["unchanged"].append(rel)
             return
 
@@ -863,7 +877,7 @@ def main():
                 if not p.exists():
                     is_stale = True
                 else:
-                    is_stale = (p.read_bytes() != bundled_bytes)
+                    is_stale = not same_text(p.read_bytes(), bundled_bytes)
                     
                 if is_stale:
                     worklist["stale_managed"].append(proj_path)
@@ -877,7 +891,7 @@ def main():
                 if not p.exists():
                     is_stale = True
                 else:
-                    is_stale = (p.read_bytes() != bundled_bytes)
+                    is_stale = not same_text(p.read_bytes(), bundled_bytes)
                     
                 if is_stale:
                     worklist["needs_review_constitution"].append(proj_path)
@@ -1264,7 +1278,14 @@ def main():
                 except Exception as e:
                     failures.append(f"Validation failed for '{proj_path}': {e}")
                     verification_failed = True
-                    
+            elif proj_path == "AGENTS.md":
+                tpl = ASSETS / "constitution" / "AGENTS.md"
+                placeholder = vision(tpl.read_text(encoding="utf-8")) if tpl.is_file() else ""
+                orig_v, prop_v = vision(orig_text), vision(prop_text)
+                if orig_v and orig_v != placeholder and prop_v in ("", placeholder):
+                    failures.append(f"Validation failed for '{proj_path}': project Vision would be replaced by the template placeholder")
+                    verification_failed = True
+
         if verification_failed:
             print("=== Invariant Verification Failed ===")
             for f in failures:
