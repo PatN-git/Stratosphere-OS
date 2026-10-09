@@ -21,7 +21,7 @@ Run the `load-memory` skill to restore session context (read-only).
 1. Read `.memory/BACKLOG_MAP.md`.
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
-   - Candidates: `tier:slice AND status:planned` plus **Template A** = `tier:slice AND status:needs_spec` (parked or high-uncertainty; `references/issue-templates.md`). Exclude epics (`tier:epic`), `concept:*` issues, and `scope:deferred`. Template A keeps `status:needs_spec` and is never promoted: it is closed (`status:done`) when its Exit Criteria are met, and any follow-up work is minted as new Template B slices via `/3b-create-issue`. **Never auto-flip `needs_spec → planned`.**
+   - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. A `needs_spec` leaf is Template A (`references/issue-templates.md`): never promoted, closed on its Exit Criteria, follow-up minted via `/3b-create-issue`. **Never auto-flip `needs_spec → planned`.**
    - Verify planned slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Template A outside `vX.Y`: skip silently, do not prompt.
    - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or any of `type:`, `mode:`, `tier:slice`, and `size:` labels.
 
@@ -40,7 +40,7 @@ Run the `load-memory` skill to restore session context (read-only).
 3. **Context Grouping:** Cluster by `area:xxx` to minimize context overhead.
 
 ## Phase 3: Capacity Calculation & Safeguards
-*Max Sprint Budget = 10 engineering days (80 hours), shared by planned slices and Template A. Exclude parent issues and `[BLOCKED]` items.*
+*Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues and `[BLOCKED]` items.*
 - **Weights:** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min (planned slices).
 - **Template A:** flat 5h placeholder, regardless of `size:` (unknown spec and build effort).
 - **AFK Check:** Flag planned leaf issues containing `size:large` and `mode:AFK`. Template A is not flagged.

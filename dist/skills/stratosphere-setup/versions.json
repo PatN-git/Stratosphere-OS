@@ -241,7 +241,7 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/references/issue-templates.md": {
-      "sha256": "0cd1f928138986937bb97f30e4c5895d0330d244bd76171175a8c7a5fb0de42e",
+      "sha256": "51d4da532908e754e7318f51e7423bc60d7388d8385f1c81fad06d486f7e2f26",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -251,7 +251,7 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "4c0aee9315699e8a954bd51d3da3a5208c92e062a273e4c17f17742bd143fdbf",
+      "sha256": "b048b6d8118170499e147723efb6166d60836d2b99384a4f5269206e193ee61a",
       "timestamp": "2026-09-29",
       "version": "2.4.0"
     },
@@ -261,7 +261,7 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/references/issue-templates.md": {
-      "sha256": "0cd1f928138986937bb97f30e4c5895d0330d244bd76171175a8c7a5fb0de42e",
+      "sha256": "51d4da532908e754e7318f51e7423bc60d7388d8385f1c81fad06d486f7e2f26",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -326,7 +326,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
-      "sha256": "0cd1f928138986937bb97f30e4c5895d0330d244bd76171175a8c7a5fb0de42e",
+      "sha256": "51d4da532908e754e7318f51e7423bc60d7388d8385f1c81fad06d486f7e2f26",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -366,7 +366,7 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/issue-templates.md": {
-      "sha256": "0cd1f928138986937bb97f30e4c5895d0330d244bd76171175a8c7a5fb0de42e",
+      "sha256": "51d4da532908e754e7318f51e7423bc60d7388d8385f1c81fad06d486f7e2f26",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -396,7 +396,7 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/references/issue-templates.md": {
-      "sha256": "0cd1f928138986937bb97f30e4c5895d0330d244bd76171175a8c7a5fb0de42e",
+      "sha256": "51d4da532908e754e7318f51e7423bc60d7388d8385f1c81fad06d486f7e2f26",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
