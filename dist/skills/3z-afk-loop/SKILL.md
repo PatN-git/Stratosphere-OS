@@ -49,7 +49,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 ### Step 2A: Implement
 0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md` (if batch), and continue to the next slice.
 1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
-   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
+   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):

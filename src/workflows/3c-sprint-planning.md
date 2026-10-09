@@ -34,7 +34,7 @@ Run the `load-memory` skill to restore session context (read-only).
 2. **ICE Prioritization:** Read pre-calculated ICE from `BACKLOG_MAP.md`. Recalculate ICE ONLY if empty or effort weight disagrees with label (ICE = (Impact * Confidence) / Effort weight; small=1, medium=2, large=3). **Spikes skip ICE** (per 3b).
    - Sort, in order:
      1. `scope:baseline` before `scope:differentiator`; unlabelled scope last.
-     2. Within each scope, Build slices before Spikes (so spec work cannot displace build work).
+     2. Within each scope, Build slices before Spikes (so Spikes cannot displace build work).
      3. Build slices: ICE descending.
      4. Spikes: BT number ascending (3b assigns no priority to Spikes).
 3. **Context Grouping:** Cluster by `area:xxx` to minimize context overhead.

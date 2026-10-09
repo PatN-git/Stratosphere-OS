@@ -21,7 +21,7 @@ timestamp: 2026-10-09
 
 ### Exit Criteria & Deliverables
 - *Specify the exact proof, prototype code, or memory artifact required to answer the question and unblock downstream Build slices.*
-- [ ] Close this issue when the criteria above are met; mint follow-up work with `/3b-create-issue`.
+- [ ] Close this issue when the criteria above are met; set `status:done` on GitHub and in BACKLOG_MAP; mint follow-up work with `/3b-create-issue`.
 
 ### Blockers
 - What must be resolved before the follow-up Build slice can be minted?

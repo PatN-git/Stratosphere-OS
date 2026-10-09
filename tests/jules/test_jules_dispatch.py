@@ -65,6 +65,8 @@ def test_preflight_eligible_and_ineligible():
     assert not preflight.preflight("BT-2", fetcher=lambda s: no_afk).ok
     no_ac = dict(GOOD_ISSUE, body="just do it")
     assert not preflight.preflight("BT-3", fetcher=lambda s: no_ac).ok
+    spike = dict(GOOD_ISSUE, labels=GOOD_ISSUE["labels"] + [{"name": "status:needs_spec"}])
+    assert not preflight.preflight("BT-4", fetcher=lambda s: spike).ok
     print("PASS"); return True
 
 
