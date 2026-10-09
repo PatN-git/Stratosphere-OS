@@ -23,7 +23,7 @@ Run the `load-memory` skill to restore session context (read-only).
 3. **Audit Strategy:**
    - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. A `needs_spec` slice is a Spike (`references/issue-templates.md`): closed on its Exit Criteria, follow-up minted via `/3b-create-issue`. **Never flip `needs_spec → planned`.**
    - Verify planned slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>`; do not sequence or prompt.
-   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or a required label: `type:`, `mode:`, `tier:slice` (all leaves), plus `size:` (Build slices only).
+   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or a required label: `type:`, `mode:`, `tier:slice`, `size:`.
 
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`; read `blockedBy.nodes`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
@@ -42,8 +42,8 @@ Run the `load-memory` skill to restore session context (read-only).
 ## Phase 3: Capacity Calculation & Safeguards
 *Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues and `[BLOCKED]` items (listed, not budgeted). Fill in sort order until the next item exceeds 80h; list the rest as `[NEXT]`.*
 - **Weights:** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min (Build slices).
-- **Spike:** flat 5h timebox, regardless of `size:`.
-- **AFK Check:** Flag Build slices containing `size:large` and `mode:AFK`. Spike is not flagged.
+- **Spikes:** `size:medium` (3h), like any leaf.
+- **AFK Check:** Flag leaves containing `size:large` and `mode:AFK`.
 - **Label Check:** Verify labels exist in registry.
 
 ## Phase 4: Sequence Proposal
@@ -54,7 +54,7 @@ Output compressed readout matching capacity thresholds:
 
 - [AFK] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 - [HITL] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [SPIKE] BT-<padded> | <title> | 5h | close on Exit Criteria; follow-up via /3b
+- [SPIKE] BT-<padded> | <title> | 3h | close on Exit Criteria; follow-up via /3b
 - [NEXT] BT-<padded> | <title> (<size>) | over budget; next sprint
 
 [BUDGET] Build <b>h | Spike <s>h | total <t>/80h

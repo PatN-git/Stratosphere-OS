@@ -7,7 +7,7 @@ timestamp: 2026-10-09
 # Issue Templates
 
 ## SPIKE (Template A)
-*Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice` (no `size:`). Sprintable at a 5h placeholder, not buildable. Close on Exit Criteria; mint follow-up Build slice via `/3b-create-issue`.*
+*Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice`, `size:medium`. Sprintable at the medium weight (3h), not buildable. Close on Exit Criteria; mint follow-up Build slice via `/3b-create-issue`.*
 
 ### Overview
 - One sentence: what and why.

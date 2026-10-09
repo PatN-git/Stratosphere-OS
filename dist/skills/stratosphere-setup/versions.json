@@ -221,7 +221,7 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "d518aaf9831b90c6a20deb9be7feb4e1adb95d383ef416f027021252a77bbcd9",
+      "sha256": "f8d2945ad7dabbe5f4f7775a6419747640757d527b72a27a8a312ee9e4adf990",
       "timestamp": "2026-09-30",
       "version": "2.5.0"
     },
@@ -241,7 +241,7 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/references/issue-templates.md": {
-      "sha256": "8eca2df07e3552ab440466a6e0023ca53cb6a291a18251e90d4c8c992bcd5b41",
+      "sha256": "de882ef102e36f42b698cffc90f80f8b7fafbe21915469586fefd38390ae1ab2",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -251,7 +251,7 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "dbc9ad6df3a858039aaed5f07e1c861bb0590376d3bbac9a12ff04198bce839f",
+      "sha256": "6ee67394bad01d094b63fc1684e4a2fe010fb6325988170088b15df80f3d3f08",
       "timestamp": "2026-09-29",
       "version": "2.4.0"
     },
@@ -261,7 +261,7 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/references/issue-templates.md": {
-      "sha256": "8eca2df07e3552ab440466a6e0023ca53cb6a291a18251e90d4c8c992bcd5b41",
+      "sha256": "de882ef102e36f42b698cffc90f80f8b7fafbe21915469586fefd38390ae1ab2",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -326,7 +326,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
-      "sha256": "8eca2df07e3552ab440466a6e0023ca53cb6a291a18251e90d4c8c992bcd5b41",
+      "sha256": "de882ef102e36f42b698cffc90f80f8b7fafbe21915469586fefd38390ae1ab2",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -366,7 +366,7 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/issue-templates.md": {
-      "sha256": "8eca2df07e3552ab440466a6e0023ca53cb6a291a18251e90d4c8c992bcd5b41",
+      "sha256": "de882ef102e36f42b698cffc90f80f8b7fafbe21915469586fefd38390ae1ab2",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
@@ -396,7 +396,7 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/references/issue-templates.md": {
-      "sha256": "8eca2df07e3552ab440466a6e0023ca53cb6a291a18251e90d4c8c992bcd5b41",
+      "sha256": "de882ef102e36f42b698cffc90f80f8b7fafbe21915469586fefd38390ae1ab2",
       "timestamp": "2026-10-09",
       "version": "1.0.3"
     },
