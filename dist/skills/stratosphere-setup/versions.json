@@ -241,9 +241,9 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/references/issue-templates.md": {
-      "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
-      "timestamp": "2026-07-17",
-      "version": "1.0.2"
+      "sha256": "6f61ad301febfb32ecb4e1ad2c4ba143948a38ce218b728b58b700e79b07392b",
+      "timestamp": "2026-10-09",
+      "version": "1.0.3"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
       "sha256": "8bf36bfaa09dd74f9d7869e21f0f17c73bf2c1ec680ae62567fd1d4e2cc7cdd6",
@@ -321,9 +321,9 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
-      "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
-      "timestamp": "2026-07-17",
-      "version": "1.0.2"
+      "sha256": "6f61ad301febfb32ecb4e1ad2c4ba143948a38ce218b728b58b700e79b07392b",
+      "timestamp": "2026-10-09",
+      "version": "1.0.3"
     },
     "skills/4a-verify-and-ship/references/merge-risk-paths.md": {
       "sha256": "d9806b7302c9048399acf3a5e327b604ecd7f0e48b6e5c3c7de1cb9f265c55e6",
@@ -361,9 +361,9 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/issue-templates.md": {
-      "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
-      "timestamp": "2026-07-17",
-      "version": "1.0.2"
+      "sha256": "6f61ad301febfb32ecb4e1ad2c4ba143948a38ce218b728b58b700e79b07392b",
+      "timestamp": "2026-10-09",
+      "version": "1.0.3"
     },
     "skills/4c-codebase-health-audit/SKILL.md": {
       "sha256": "7cb617994cbbd3ab4e95699075ff932cb48d9dcccef24b5a462db79a648a8bf2",
@@ -391,9 +391,9 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/references/issue-templates.md": {
-      "sha256": "5678a3bdd4da874c35fe7123e2bccd84d0abee477064902f66d186b10d4d32bc",
-      "timestamp": "2026-07-17",
-      "version": "1.0.2"
+      "sha256": "6f61ad301febfb32ecb4e1ad2c4ba143948a38ce218b728b58b700e79b07392b",
+      "timestamp": "2026-10-09",
+      "version": "1.0.3"
     },
     "skills/concept-brainstorm/SKILL.md": {
       "sha256": "624e09595f2d8dbb94854f4318a558ff373cd8223a662aad0f63002c30f7e66c",

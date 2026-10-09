@@ -1,13 +1,13 @@
 ---
-description: Canonical templates for StratOS backlog issues (Template A for spikes/discovery, Template B for normal vertical slices).
-version: "1.0.2"
-timestamp: 2026-07-17
+description: Canonical templates for StratOS backlog issues (Template A for parked, high-uncertainty, or discovery items, Template B for normal vertical slices).
+version: "1.0.3"
+timestamp: 2026-10-09
 ---
 
 # Issue Templates
 
 ## TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`)*
+*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`). `/3c-sprint-planning` can sprint it at a 5h placeholder, but it is not runnable until re-specced into Template B.*
 
 ### Overview
 - One sentence: what and why.
