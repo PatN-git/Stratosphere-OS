@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-09-22
 ---
 
@@ -100,7 +100,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Propose 2–3 distinct problem framings (not solutions). Example: *"UX gap (can't find X) vs. data-integrity issue (X is wrong) vs. process gap."*
 2. User picks one. Record rejected framings.
-3. If not PRD-worthy, recommend exit: bug → `/3b-create-issue` Template B; spike → Template A; drop.
+3. If not PRD-worthy, recommend exit: bug → `/3b-create-issue` Build slice; spike → Spike; drop.
 
 ## Phase 4.5: Riskiest Assumption Test (RAT)
 Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT decline as residual risk rather than skipping.
@@ -140,7 +140,7 @@ Present brief for approval.
 3. If framing decision is reusable, propose `[[L-xxx]]` for `.memory/LEARNINGS.md`.
 4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/discovery/<slug>.html` (never committed; re-render from the `.md` whenever presenting it).
 5. Delete `.tmp/1b-discovery-<slug>.work.md`.
-6. Guide user to next step: `/2a-write-prd`, `/3b-create-issue` (Template A/B), or dropped.
+6. Guide user to next step: `/2a-write-prd`, `/3b-create-issue` (Spike/Build slice), or dropped.
 
 ---
 

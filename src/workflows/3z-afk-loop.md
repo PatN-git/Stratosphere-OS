@@ -33,7 +33,7 @@ _Done when:_ orchestrator context synced.
 2. **Preflight checks:**
    - **Unknown/closed check:** For each slice ID, verify it exists in `BACKLOG_MAP.md` and status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
    - **Mode-based pre-flight:** AFK/HITL mode governs execution; primary type is orthogonal:
-     - `status:needs_spec` (Template A), any mode → `[SKIP] BT-<padded> Template A (needs_spec) — excluded` and drop (if named single issue → HALT with guidance: "Template A is not buildable: close it on its Exit Criteria, or mint a Template B slice with /3b-create-issue").
+     - `status:needs_spec` (Spike), any mode → `[SKIP] BT-<padded> Spike (needs_spec) — excluded` and drop (if named single issue → HALT with guidance: "Spike is not buildable: close it on its Exit Criteria, or mint a Build slice with /3b-create-issue").
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d-implement-issue + /4a-verify-and-ship manually").
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
