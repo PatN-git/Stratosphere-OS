@@ -44,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "4.6.0"
+VERSION = "4.6.1"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."

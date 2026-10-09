@@ -1,13 +1,13 @@
 ---
-description: Canonical templates for StratOS backlog issues (Template A for spikes/discovery, Template B for normal vertical slices).
-version: "1.0.2"
-timestamp: 2026-07-17
+description: Canonical templates for StratOS backlog issues (Spike for parked, high-uncertainty, or discovery items, Build slice for normal vertical slices).
+version: "1.0.3"
+timestamp: 2026-10-09
 ---
 
 # Issue Templates
 
-## TEMPLATE A: Discovery & Spikes
-*Use for: Rapid capture, "parking" vibes, or high-uncertainty research. Always label as `status:needs_spec` (note that leaves get `type:` + `mode:` + `tier:slice` + `size:`)*
+## SPIKE (Template A)
+*Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice`, `size:medium`. Sprintable at the medium weight (3h), not buildable. Close on Exit Criteria; mint follow-up Build slices via `/3b-create-issue`.*
 
 ### Overview
 - One sentence: what and why.
@@ -20,14 +20,15 @@ timestamp: 2026-07-17
 - *List 3-4 concrete, stepwise checks, codebase symbols to inspect, or quick experiments/commands to run.*
 
 ### Exit Criteria & Deliverables
-- *Specify the exact proof, prototype code, or memory artifact required to answer the question and unblock downstream Template B slices.*
+- *Specify the exact proof, throwaway prototype (not merged), or memory artifact required to answer the question and unblock downstream Build slices.*
+- [ ] Close this issue when the criteria above are met; set `status:done` on GitHub and in BACKLOG_MAP; mint follow-up work with `/3b-create-issue`.
 
 ### Blockers
-- What must be resolved before this can move to a Vertical Slice (Template B)?
+- What must be resolved before the follow-up Build slice can be minted?
 
 ---
 
-## TEMPLATE B: Normal Issue (Vertical Slice)
+## BUILD SLICE (Template B)
 *Use for: Active builds. Must be deterministic.*
 
 ### Overview

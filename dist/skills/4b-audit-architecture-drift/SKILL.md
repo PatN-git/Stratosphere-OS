@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-09-24
 ---
 
@@ -68,7 +68,7 @@ Score findings 0–100 per the **Audit scope** above and `references/confidence-
 If issues ≥ 80 confidence exist:
 1. **Tier and ID:** assign each finding an impact tier per `references/audit-to-slices.md` §2, then `F-01…F-NN` per §1.
 2. **Write report:** `docs/audits/arch-<target-slug>-<YYYY-MM-DD>.md` per `references/arch-drift-report-template.md`.
-3. **Write proposal:** `.tmp/refactor-proposal-<report-stem>.md` per `references/audit-to-slices.md` §4–§8, each slice formatted strictly as "Template B" from `references/issue-templates.md` (all tiers in scope; ⚪ may be `[OPPORTUNISTIC]`). **Completion criterion:** every F-xx in the report appears in `## Coverage`; zero `[UNCOVERED]`.
+3. **Write proposal:** `.tmp/refactor-proposal-<report-stem>.md` per `references/audit-to-slices.md` §4–§8, each slice formatted strictly as "Build slice" from `references/issue-templates.md` (all tiers in scope; ⚪ may be `[OPPORTUNISTIC]`). **Completion criterion:** every F-xx in the report appears in `## Coverage`; zero `[UNCOVERED]`.
    - CONSTRAINT:
      - Generate only after confidence filtering and backlog collision checks complete.
      - Use double-bracket syntax to link back to the exact system laws violated:

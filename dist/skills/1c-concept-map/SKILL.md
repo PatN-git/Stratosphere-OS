@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
+version: "1.1.2"
 timestamp: 2026-07-28
 ---
 
@@ -57,7 +57,7 @@ timestamp: 2026-07-28
 5. **Resolve Ticket by Type:**
    - **`research`:** Run `/1a-research` Phase 1 inline, spawn research subagent to run research loop, and save the result as `docs/research/<map-slug>-<question-slug>.md`.
    - **`grilling`:** Grill to resolve the decision.
-   - **`prototype`:** Run `plan-html` (UI) or Template A spike (logic).
+   - **`prototype`:** Run `plan-html` (UI) or a logic prototype scoped per the Spike template's Research Steps + Exit Criteria.
    - **`task`:** Execute action (e.g. provision access) to unblock a decision.
 6. **Ticket Resolution Commit:**
    - Comment the resolution on the ticket and close the ticket.

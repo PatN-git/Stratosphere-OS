@@ -89,14 +89,14 @@ def dispatch_many(client, source, items, ledger_path, *, max_sessions=3, startin
 
 def select_eligible(slices):
     """Filter a candidate slice list (e.g. a sprint) to dispatchable ones:
-    require mode:AFK + tier:slice, drop tier:epic, drop any with an unmet blocked_by."""
+    require mode:AFK + tier:slice, drop tier:epic and Spikes (status:needs_spec), drop any with an unmet blocked_by."""
     done = {s["slice_id"] for s in slices if s.get("state") == "done"}
     out = []
     for s in slices:
         if s.get("state") == "done":
             continue  # already complete — don't re-dispatch
         labels = set(s.get("labels", []))
-        if "mode:AFK" not in labels or "tier:slice" not in labels or "tier:epic" in labels:
+        if "mode:AFK" not in labels or "tier:slice" not in labels or "tier:epic" in labels or "status:needs_spec" in labels:
             continue
         if any(b not in done for b in s.get("blocked_by", [])):
             continue

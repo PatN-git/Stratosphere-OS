@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.4.0"
+version: "1.5.0"
 timestamp: 2026-10-07
 ---
 
@@ -33,9 +33,10 @@ _Done when:_ orchestrator context synced.
 2. **Preflight checks:**
    - **Unknown/closed check:** For each slice ID, verify it exists in `BACKLOG_MAP.md` and status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
    - **Mode-based pre-flight:** AFK/HITL mode governs execution; primary type is orthogonal:
+     - `status:needs_spec` (Spike), any mode → `[SKIP] BT-<padded> Spike (needs_spec) — excluded` and drop (if named single issue → HALT with guidance: "Spike is not buildable: close it on its Exit Criteria, or mint a Build slice with /3b-create-issue").
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d-implement-issue + /4a-verify-and-ship manually").
-     - Neither `mode:AFK` nor `mode:HITL` (missing mode, or `status:needs_spec`) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
+     - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.
@@ -48,7 +49,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 ### Step 2A: Implement
 0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md` (if batch), and continue to the next slice.
 1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
-   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
+   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):

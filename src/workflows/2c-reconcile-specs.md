@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
+version: "1.2.1"
 timestamp: 2026-10-05
 ---
 
@@ -59,7 +59,7 @@ Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:*
 
 ## Phase 4: Resolve & Apply
 1. **Present** the report; HALT. All findings apply by default; the user **Skips** exceptions (a skipped finding dies with the ephemeral report).
-2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** (durable; `3b` slices it as a Template A spike). A missing-contract P0 → record as a required pre-Slice-1 migration in the PRD, never silently write the schema.
+2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a required pre-Slice-1 migration in the PRD, never silently write the schema.
 3. **Version:** once per run (not per finding), re-stamp each edited doc's OKF `version` to the installed plugin version and refresh `generated.at` (and `generated.by` to `2c-reconcile-specs`) — per `.agents/rules/okf-protocol.md` §5 (Edited Docs).
 4. **Exit criteria:** zero P0 unaddressed; every finding applied, written as an Open Question, or skipped; no open `[UNCOVERED]`. Never mark complete on a "looks consistent" judgment.
 

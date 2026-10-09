@@ -1,6 +1,6 @@
 ---
 description: Template for a discovery brief - locked vocabulary, problem statement and framing.
-version: "2.0.0"
+version: "2.0.1"
 timestamp: 2026-09-15
 ---
 
@@ -81,6 +81,6 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
 
 ## Recommended Next Step
 - [ ] `write-prd` — problem is sharp, PRD-worthy
-- [ ] `create-issue` Template B — this is a bug
-- [ ] `create-issue` Template A — spike needed first
+- [ ] `create-issue` Build slice — this is a bug
+- [ ] `create-issue` Spike — research needed first
 - [ ] Dropped — do not build

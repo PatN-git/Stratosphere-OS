@@ -1,6 +1,6 @@
 ---
 description: Shared audit-to-slices contract for 4b-audit-architecture-drift and 4c-codebase-health-audit (finding IDs, impact tiers, findings rows, refactor proposal, coverage gate, ICE mapping, retention pin) and its consumers 3b-create-issue and the 4a Feature Acceptance Audit.
-version: "1.0.0"
+version: "1.0.1"
 timestamp: 2026-09-24
 ---
 
@@ -39,7 +39,7 @@ Every impact section of either report uses one table shape (`4c` adds a `Pass` c
 - **Then, in order:**
   1. `## Epic` — `Title:` (`Maintenance: <scope> — <date>`), `Area:` (one registry `area:` label), `Milestone (proposed):` (§8), `Overview:` one paragraph. Omit the section when the §7 threshold fails.
   2. `## Coverage` — table `| Finding | Impact | Resolution |`, **one row per F-xx in the report**. Resolution is `Slice <N>` (epic child), `Slice <N> (standalone)` (§7), or a §5 exclusion token.
-  3. `## Slice <N> — <title>` per slice — a complete Template B body per `references/issue-templates.md`, plus:
+  3. `## Slice <N> — <title>` per slice — a complete Build slice body per `references/issue-templates.md`, plus:
      - **Current state / Problem** opens with `Resolves: docs/audits/<report-stem>.md#F-03, docs/audits/<report-stem>.md#F-07`, then each resolved finding's File / Line(s) / Evidence / Law **copied inline**. The issue body is self-sufficient; the report may not exist where the slice is implemented.
      - **ICE Priorities** per §6.
      - **The Path:** mark untouched layers `N/A`.

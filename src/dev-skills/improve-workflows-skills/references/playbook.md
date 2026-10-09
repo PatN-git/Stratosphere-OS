@@ -2,7 +2,7 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.1.1"
+version: "2.1.2"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15
@@ -79,7 +79,7 @@ Keep each meaning in **one place** (**single source of truth**). Duplication cos
 
 ### Worked examples in this repo
 - ✅ `confidence-scale.md` — one rubric shared by `4a` + `4b` (each adds a one-line audit-scope; the bands live once).
-- ✅ `issue-templates.md` — Template A/B shared by `3b` + `4b`; `4b` now **points at the reference** instead of reading `3b`'s body.
+- ✅ `issue-templates.md` — Spike/Build slice shared by `3b` + `4b`; `4b` now **points at the reference** instead of reading `3b`'s body.
 - ✅ `micro-tdd` stays **self-contained**; `3d` **delegates** the RED→GREEN→REFACTOR loop to it — *not* extracted to a project-local reference, because it's a global skill (§1).
 - ⛔ Avoid: deleting a sub-agent guardrail in `2b`/`3b`/`4b` because it "looks redundant" — it's the sub-agent's only contract.
 
