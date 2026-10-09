@@ -221,9 +221,9 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "cfbf82743aa8e61c4e048fc4b11f304d9d713bbd0ef6eef77934561da689d0f2",
+      "sha256": "cdf4b11cf6000f9f55a5372c200aa49d15e1b84677bbdc3533c650de1fbd3346",
       "timestamp": "2026-09-30",
-      "version": "2.4.1"
+      "version": "2.5.0"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "eec5d537555f056c92fd2f07e97bc7a1db5f83b2282999105d0eb31516ab3ac0",
@@ -251,9 +251,9 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "fc03959249d6c9b2f1c7f86adeb311ac9d962ec2c05338f88c7d35be8bb46085",
+      "sha256": "accbb3ddcac0c9ca19f2237c5f8986a586578b92fc007972a6e9e90311d85e91",
       "timestamp": "2026-09-29",
-      "version": "2.3.1"
+      "version": "2.4.0"
     },
     "skills/3c-sprint-planning/references/github-issue-relations.md": {
       "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
