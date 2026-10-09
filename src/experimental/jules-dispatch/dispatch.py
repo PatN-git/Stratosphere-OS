@@ -96,7 +96,7 @@ def select_eligible(slices):
         if s.get("state") == "done":
             continue  # already complete — don't re-dispatch
         labels = set(s.get("labels", []))
-        if "mode:AFK" not in labels or "tier:slice" not in labels or "tier:epic" in labels:
+        if "mode:AFK" not in labels or "tier:slice" not in labels or "tier:epic" in labels or "status:needs_spec" in labels:
             continue
         if any(b not in done for b in s.get("blocked_by", [])):
             continue

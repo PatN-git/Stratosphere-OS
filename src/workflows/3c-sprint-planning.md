@@ -21,29 +21,29 @@ Run the `load-memory` skill to restore session context (read-only).
 1. Read `.memory/BACKLOG_MAP.md`.
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
-   - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. A `needs_spec` leaf is a Spike (`references/issue-templates.md`): never promoted, closed on its Exit Criteria, follow-up minted via `/3b-create-issue`. **Never auto-flip `needs_spec → planned`.**
-   - Verify planned slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Spike outside `vX.Y`: skip silently, do not prompt.
-   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or any of `type:`, `mode:`, `tier:slice`, and `size:` labels.
+   - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. A `needs_spec` slice is a Spike (`references/issue-templates.md`): closed on its Exit Criteria, follow-up minted via `/3b-create-issue`. **Never flip `needs_spec → planned`.**
+   - Verify planned slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>`; do not sequence or prompt.
+   - Exclude and print `[NEEDS_SPEC] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or a required label: `type:`, `mode:`, `tier:slice` (all leaves), plus `size:` (Build slices only).
 
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`; read `blockedBy.nodes`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
    - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
-   - Set `[BLOCKED]` if prereqs not `done` and not in current sprint. `[BLOCKED]` items are listed but do not consume budget.
+   - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.
    - **Late-discovered dependency:** if sequencing reveals a genuine prerequisite not yet recorded in a slice's `Blocked by` (a real ordering constraint missed at creation), flag it `[NEW-DEP] BT-<padded> ← BT-<prereq>`. Do **not** write it yet — it is proposed for HITL confirmation in Phase 5.
-2. **ICE Prioritization:** Read pre-calculated ICE from `BACKLOG_MAP.md`. Recalculate ICE ONLY if empty or effort weight disagrees with label (ICE = (Impact * Confidence) / Effort weight; small=1, medium=2, large=3). **Spike skips ICE** (per 3b).
+2. **ICE Prioritization:** Read pre-calculated ICE from `BACKLOG_MAP.md`. Recalculate ICE ONLY if empty or effort weight disagrees with label (ICE = (Impact * Confidence) / Effort weight; small=1, medium=2, large=3). **Spikes skip ICE** (per 3b).
    - Sort, in order:
      1. `scope:baseline` before `scope:differentiator`; unlabelled scope last.
-     2. Within each scope, planned slices before Spike (so spec work cannot displace build work).
-     3. Planned slices: ICE descending.
-     4. Spike: `priority:` high → medium → low → unlabelled, then BT number ascending (the fallback is the issue number).
+     2. Within each scope, Build slices before Spikes (so spec work cannot displace build work).
+     3. Build slices: ICE descending.
+     4. Spikes: BT number ascending (3b assigns no priority to Spikes).
 3. **Context Grouping:** Cluster by `area:xxx` to minimize context overhead.
 
 ## Phase 3: Capacity Calculation & Safeguards
-*Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues and `[BLOCKED]` items.*
-- **Weights:** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min (planned slices).
-- **Spike:** flat 5h placeholder, regardless of `size:` (unknown spec and build effort).
-- **AFK Check:** Flag planned leaf issues containing `size:large` and `mode:AFK`. Spike is not flagged.
+*Max Sprint Budget = 10 engineering days (80 hours). Exclude parent issues and `[BLOCKED]` items (listed, not budgeted). Fill in sort order until the next item exceeds 80h; list the rest as `[NEXT]`.*
+- **Weights:** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min (Build slices).
+- **Spike:** flat 5h timebox, regardless of `size:`.
+- **AFK Check:** Flag Build slices containing `size:large` and `mode:AFK`. Spike is not flagged.
 - **Label Check:** Verify labels exist in registry.
 
 ## Phase 4: Sequence Proposal
@@ -54,25 +54,26 @@ Output compressed readout matching capacity thresholds:
 
 - [AFK] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 - [HITL] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [SPIKE] BT-<padded> | <title> | 5h placeholder | Priority: <priority> | close on Exit Criteria; follow-up via /3b
+- [SPIKE] BT-<padded> | <title> | 5h | close on Exit Criteria; follow-up via /3b
+- [NEXT] BT-<padded> | <title> (<size>) | over budget; next sprint
 
-[BUDGET] Build <X>h | Spike <Y>h | total <Z>/80h
+[BUDGET] Build <b>h | Spike <s>h | total <t>/80h
 
 [CRITICAL ALERTS]
 ⚠️ WARNING: BT-<padded> is size:large but labeled mode:AFK. Confirm auto-execution!
 🗒️ Note: BT-<padded> labeled as `[NEEDS_SPEC]` lacks required labels or a BACKLOG_MAP entry; fix before it can be sequenced.
 🔗 New dependency: BT-<padded> should be `Blocked by` BT-<prereq> (late-discovered; confirm to record).
 ```
-*Optional Fully-AFK Sprint Advisory:* If all sequenced planned slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
+*Optional Fully-AFK Sprint Advisory:* If all sequenced Build slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 Verify labels in registry.
 
 ## Phase 5: Commit & Sync
 
 Halt for confirmation. When confirmed:
-1. Update issue priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low) and milestone for planned slices. Spike: skip ICE and priority. Status handling is in step 2. If ICE recalculation shifted the priority band, mirror the new `priority:*` into the `BACKLOG_MAP.md` Labels column — it is gate-checked in step 5.
-2. Create sprint milestone `vX.Y.Z` in GitHub if absent. Assign all sequenced items (planned slices and Spike), moving them from `vX.Y.0`. A Spike item already in an earlier sprint milestone and still `needs_spec` is moved to the new Z. Update Milestone column in `BACKLOG_MAP.md`. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. Set status to `status:planned` for planned slices only; **Spike keeps `status:needs_spec`** (never set `planned`). For Spike, the Labels cell must hold no `status:*` token; remove one if present before the gate.
+1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, mirror the new `priority:*` into the `BACKLOG_MAP.md` Labels column — it is gate-checked in step 5.
+2. Assign all sequenced items (Build slices and Spikes), moving them from `vX.Y.0` or an earlier sprint milestone. Create sprint milestone `vX.Y.Z` in GitHub if absent. Update Milestone column in `BACKLOG_MAP.md`. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. Set status to `status:planned` for Build slices only; **Spikes keep `status:needs_spec`** (never set `planned`).
 3. **Record confirmed dependencies (amend-only, user-confirmed):** for each `[NEW-DEP]` the user confirmed at the halt, add the edge on GitHub (`addBlockedBy` mutation per `references/github-issue-relations.md`) and append the bare `BT-<prereq>` to that slice's `Blocked by` column in `BACKLOG_MAP.md`. 3c may only **add** a blocker edge here, and only with explicit confirmation — `3b` remains the birth writer for `Blocked by`, and blocker **clearing** stays with 4a (at `in review`) / 0b / merge. Never remove a `Blocked by` entry in 3c. Skip any proposed edge the user declined.
 4. Comment on each updated issue: 'Sprint vX.Y.Z sync: ICE <score> → priority:<priority>; milestone vX.Y.Z; status:planned.' Spike: 'Sprint vX.Y.Z sync: Spike; milestone vX.Y.Z; status:needs_spec; close on Exit Criteria.'
-5. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of all sequenced BT-<padded>, Spike included> --fields status,milestone,labels,blocked_by` per `references/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
-6. Output: 'Sprint vX.Y.Z locked.' If the sprint holds Spikes, add: 'Spikes in vX.Y.Z stay `needs_spec` and are not runnable by `/3d` or `/3z`. Close each on its Exit Criteria; mint follow-up slices with `/3b-create-issue`. Unfinished Spikes are re-sequenced by the next 3c run.'
+5. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of all sequenced BT-<padded>, Spikes included> --fields status,milestone,labels,blocked_by` per `references/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
+6. Output: 'Sprint vX.Y.Z locked. Build slices: `/3d-implement-issue` or `/3z-afk-loop`.' If the sprint holds Spikes, add: 'Spikes in vX.Y.Z stay `needs_spec` and are not runnable by `/3d`, `/3z`, or `/3x`. Close each on its Exit Criteria; mint follow-up slices with `/3b-create-issue`. Unfinished Spikes are re-sequenced by the next 3c run.'

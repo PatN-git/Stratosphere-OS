@@ -100,7 +100,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Propose 2–3 distinct problem framings (not solutions). Example: *"UX gap (can't find X) vs. data-integrity issue (X is wrong) vs. process gap."*
 2. User picks one. Record rejected framings.
-3. If not PRD-worthy, recommend exit: bug → `/3b-create-issue` Build slice; spike → Spike; drop.
+3. If not PRD-worthy, recommend exit: bug → `/3b-create-issue` Build slice; open question → `/3b-create-issue` Spike; else drop.
 
 ## Phase 4.5: Riskiest Assumption Test (RAT)
 Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT decline as residual risk rather than skipping.

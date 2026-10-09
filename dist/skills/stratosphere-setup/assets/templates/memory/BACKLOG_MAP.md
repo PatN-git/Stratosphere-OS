@@ -5,7 +5,7 @@ description: Authoritative registry and status mapping of all project issues.
 generated:
   by: stratosphere-setup
   at: 2026-09-29
-version: "1.3.2"
+version: "1.3.3"
 ---
 # BACKLOG MAP
 
@@ -43,7 +43,7 @@ Authoritative, high-density reference for project issues and their status.
 - **Priority (`priority:xxx`)**: `priority:high` (Must have), `priority:medium` (Important), `priority:low` (Nice to have)
 - **Size (`size:xxx`)**: `size:large` (Biggest effort vertical slice), `size:medium` (Medium effort vertical slice), `size:small` (Surgical effort / local fix)
 - **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)
-- **Status (`status:xxx`)**: `status:needs_spec`, `status:planned`, `status:in progress`, `status:in review`, `status:blocked`, `status:done` (lifecycle order: `needs_spec → planned → in progress → in review → done`; `blocked` from any point)
+- **Status (`status:xxx`)**: `status:needs_spec`, `status:planned`, `status:in progress`, `status:in review`, `status:blocked`, `status:done` (lifecycle order: `needs_spec → planned → in progress → in review → done`; Spikes: `needs_spec → done`; `blocked` from any point)
 - **Concept Discovery (`concept:xxx`)**: `concept:map`, `concept:research`, `concept:grilling`, `concept:prototype`, `concept:task`
 - **Risk (`risk:xxx`)**: `risk:one-way` (PR contains a hard-to-reverse change per `merge-risk-paths.md`; a human must read it before merge)
 - **Label Composition Rules**: Each leaf issue must carry exactly one `type:` + one `mode:` + `tier:slice` + one `size:`. Each epic must carry `tier:epic` + one `type:` (no `mode:`, no `size:`).
