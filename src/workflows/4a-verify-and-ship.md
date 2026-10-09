@@ -12,7 +12,7 @@ timestamp: 2026-10-06
 
 # Verify and Ship
 
-**Hand-off contract:** Final gate before pushing the feature branch and opening/updating the PR. The feature PR is opened as a **draft** and marked ready for review only when all sibling slices are `status:in review`, or Spikes closed as `done` (a standalone issue with no parent opens non-draft) — this keeps a partly-built feature un-mergeable until all its slices land. On ship, moves the slice to `status:in review` in `.memory/BACKLOG_MAP.md` and GitHub (code complete + verified + pushed to the feature PR, awaiting merge); the PR merge later closes the slice issue and marks it `done`.
+**Hand-off:** Final gate before pushing and opening or updating the PR. The PR stays draft until every sibling slice is `status:in review|done` (Spikes closed as `done` count). A standalone issue opens non-draft. On ship, set the slice to `status:in review` in BACKLOG_MAP and GitHub; merge closes it and sets `status:done`.
 
 ---
 
