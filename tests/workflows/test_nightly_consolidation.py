@@ -72,6 +72,19 @@ def test_decisions_cover_drift_items():
     assert "BT id" in phase4
 
 
+def test_chat_is_a_ranked_brief_not_a_report_copy():
+    drift = _phase("Backlog Drift Check", "## Phase 4")
+    assert "never to chat" in drift and "Print its findings" not in drift
+    assert "## Recommendations" in _phase("## Phase 2", "## Phase 3: Crystallize")
+    phase4 = TEXT.split("## Phase 4")[1]
+    assert "Never restate report sections" in phase4
+    assert "≤5 recommendations" in phase4 and "`R-n`" in phase4
+    assert "Never list D-items in chat" in phase4
+    assert "**Quick fix**" in phase4 and "**New issue**" in phase4  # route split: this session vs backlog
+    assert "`/3b-create-issue`" in phase4 and "0d never creates it" in phase4
+    assert "fails to reach agents" in phase4  # existing-law findings escalate only on recurrence
+
+
 def test_constraint_is_scoped_to_the_workflows_own_writes():
     constraint = _phase("## Constraint", "## Phase 1")
     assert "Do not modify files without user approval" in constraint

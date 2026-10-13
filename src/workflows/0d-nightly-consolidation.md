@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
-timestamp: 2026-10-06
+version: "1.3.0"
+timestamp: 2026-10-13
 ---
 
 # Nightly Consolidation
@@ -29,6 +29,7 @@ Do not modify files without user approval, except the report, `.last-run.json`, 
 ## Phase 2: Distill Plan
 - Before proposing, read the `## Decisions` section (max 30 lines) of each of the last 7 `docs/nightly/nightly-*.md` reports by filename date; none yet → skip. An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
+- The report opens with `## Recommendations` — the same `R-n` list Phase 4 shows in chat; evidence and verbatim output go below it.
 - Update `docs/nightly/.last-run.json` to `{"last_run": "<ISO 8601>"}` and nothing else.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
@@ -49,9 +50,18 @@ Do not modify files without user approval, except the report, `.last-run.json`, 
 Run `python .agents/scripts/okf_view.py --rebuild-indices` and report its `N indices rebuilt` line. Do not rebuild by hand.
 
 ## Phase 3.6: Backlog Drift Check
-Run `python .agents/scripts/reconcile.py --all-open` (no `--require-gh`: this phase is advisory, and without `gh` the script prints `[local-only — GitHub not checked]` itself). Print its findings verbatim, then append each to the report as a numbered item (`D-1`, `D-2`, …); on approval, heal per `references/terminal-sync-invariant.md`. This phase invokes no lifecycle skill.
+Run `python .agents/scripts/reconcile.py --all-open` (no `--require-gh`: this phase is advisory, and without `gh` the script prints `[local-only — GitHub not checked]` itself). Write its findings verbatim to the report as numbered items (`D-1`, `D-2`, …), never to chat; on approval, heal per `references/terminal-sync-invariant.md`. This phase invokes no lifecycle skill.
 
-## Phase 4: Await Direction
-Halt. Ask user: *"What aspects of the plan do you want to implement?"*
+## Phase 4: Recommend & Await Direction
+The report is the record; chat is a decision brief. Never restate report sections, evidence, or no-op audits in chat.
+1. Link the report. One status line for mechanical phases (e.g. `indices: 7 rebuilt · retention: ok · memory: nothing qualifies`).
+2. ≤5 recommendations, ranked by payoff (recurrence × cost of the failure), under two headings by route:
+   - **Quick fix** — memory, docs, config or drift heal; no code. Applied in this session on approval.
+   - **New issue** — code, tests, or a StratOS framework change. Recommend `/3b-create-issue`; 0d never creates it.
 
-After the user answers, append `## Decisions` to that night's report: one line per proposed item (a `D-n` item with its BT id, as `D-n` restarts nightly), `accepted` or `declined`. Phase 2 of later nights reads it.
+   Each: `R-n` · action (one line) · why (one clause + report anchor) · lands in (StratOS framework | this project) · size.
+   - A finding routed to an existing law is not a recommendation unless it recurs across nights — then recommend why the law fails to reach agents.
+   - Drift: one recommendation per heal batch, grouped by kind (labels | parent | blocked_by) with count and `D-n` range. Never list D-items in chat.
+3. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
+
+After the user answers, append `## Decisions` to that night's report: one line per `R-n` (with its `D-n` range and each BT id, as `D-n` restarts nightly), `accepted` or `declined`. Phase 2 of later nights reads it.
