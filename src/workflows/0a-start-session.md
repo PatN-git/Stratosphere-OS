@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.2"
-timestamp: 2026-09-17
+version: "1.2.0"
+timestamp: 2026-10-13
 ---
 
 # START SESSION
@@ -28,7 +28,7 @@ Restore session context (read-only), then activate: restore the branch and trans
 2. **Branch restore:** read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. **NEVER create a branch** — `3d` owns branch creation; `0a` only restores an existing one.
 3. **State transition (first-slice rule):** set the target slice (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub:
    `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`.
-   If it is a sub-issue, promote the parent epic (`BT-<parent>`) `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). Update `.memory/STATUS.md` as this session's resume hint (not the authoritative active set).
+   If it is a sub-issue, promote the parent epic (`BT-<parent>`) `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic); never a standing epic (`references/terminal-sync-invariant.md` §Standing epic). Update `.memory/STATUS.md` as this session's resume hint (not the authoritative active set).
 
 ## Output Pattern
 Context synced.

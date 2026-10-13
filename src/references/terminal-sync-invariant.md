@@ -1,7 +1,7 @@
 ---
-description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
-version: "1.0.1"
-timestamp: 2026-09-30
+description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`. Also defines the standing-epic rule (3d, 4a, 3b, 3z, 0a).
+version: "1.1.0"
+timestamp: 2026-10-13
 ---
 
 # Terminal Sync Invariant
@@ -28,3 +28,10 @@ For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<
 - **Offline / no `gh`** → the script checks BACKLOG internal consistency and exits 0 with `[local-only]`. There is no GitHub to cross-check, so this case is inherently self-attested — eyeball the row you wrote.
 - **Detection only.** `reconcile.py` never writes; healing is the workflow's job (upsert, above).
 - `/0d` runs the same audit nightly across all rows as a human-facing backstop — it is advisory, not an in-band substitute for this gate.
+
+## Standing epic
+A parent epic is **standing** when it has no `BT-<parentPadded>` row in `.memory/BACKLOG_MAP.md` and, with `gh` connected, no `status:*` label (offline: BACKLOG only). Feature, audit and concept-map parents always carry both, so no PRD or audit-epic test is needed. A standing epic is a catch-all that stays open across PRs, so it has no feature to finish and no mirror to sync. For a standing epic:
+- It is only the `feature:` key. Never promote it, never give it a status label or BACKLOG row (that would end its standing), never pass it to `reconcile.py --ids`.
+- Its slices branch as `<type>/BT-<slicePadded>-<slug>`, or on an existing branch the user names; never `main`/`master`.
+- Its slices' PR opens non-draft; the draft rule does not apply.
+- No Epic Check, no Feature Acceptance Audit, no `--close-parent`. After merge, mark the child slices `done` and leave the epic alone.

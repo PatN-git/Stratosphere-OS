@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.3.1"
-timestamp: 2026-10-08
+version: "3.3.2"
+timestamp: 2026-10-13
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -29,7 +29,7 @@ timestamp: 2026-10-08
 - **Intermediates:** Store all temporary files, scratch logs, and scraped data in `.tmp/`. This folder must be treated as ephemeral (always regeneratable).
 
 ## 4. Version Control
-- **Granularity:** one branch + one PR per FEATURE (the parent BT / PRD). Each implementable slice (child BT issue) is committed onto that feature branch; the single feature PR accumulates them. A standalone issue with no parent feature degenerates to its own branch+PR.
+- **Granularity:** one branch + one PR per FEATURE (the parent BT / PRD). Each implementable slice (child BT issue) is committed onto that feature branch; the single feature PR accumulates them. A standalone issue with no parent feature, or a slice under a standing epic, degenerates to its own branch+PR.
 - **Isolation:** plain git branches (single working dir). Worktrees are allowed but not required; the workflows assume branches.
 - **Branch name:** `<type>/BT-<parentPadded>-<slug>`, `<type>` from the PARENT feature's `type:` label (normally `feat`).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label. (Branch is keyed to the feature; each commit is traceable to its slice.)
