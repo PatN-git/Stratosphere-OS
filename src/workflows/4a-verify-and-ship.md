@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.2"
-timestamp: 2026-10-06
+version: "1.3.3"
+timestamp: 2026-10-13
 ---
 
 # Verify and Ship
@@ -33,7 +33,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d-implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
-    1. **Strict Business-Logic Auditor:** invoke an independent Strict Business-Logic Auditor subagent (using the host's subagent mechanism). Input (full files, not a diff — it maps AC↔tests): Issue/PRD (`docs/prds/BT-<padded>-<name>.md`), design doc (`docs/design/BT-<padded>-interface.md`), resolved test + implementation files, `.memory/LEARNINGS.md`, `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
+    1. **Strict Business-Logic Auditor:** invoke an independent Strict Business-Logic Auditor subagent (using the host's subagent mechanism). Input (full files, not a diff — it maps AC↔tests): Issue, parent PRD (`docs/prds/BT-<parentPadded>-<name>.md`), design doc (`docs/design/BT-<parentPadded>-interface.md`) (`BT-<parentPadded>` = the slice's Parent (BACKLOG `Parent`, else `gh issue view <n> --json parent`); a standalone slice has no PRD or design doc, so pass the issue only), resolved test + implementation files, `.memory/LEARNINGS.md`, `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4." Output: AC↔test table of gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
     2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
 
 ### Clean Exit Rule

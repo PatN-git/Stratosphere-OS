@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.5.0"
-timestamp: 2026-09-30
+version: "2.5.1"
+timestamp: 2026-10-13
 ---
 
 # Create issue
@@ -50,7 +50,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - Prompt for **Size** (Effort):
      - **Size:** ∈ {size:small (weight 1), size:medium (weight 2), size:large (weight 3)}
 3. **Draft full specs to scratch (Spikes: skip):** expand each slice into a complete, self-contained Build slice in `.tmp/BT-<padded>-issue-drafts.md`, every field inline: contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint; governing `[[A-xxx]]`/`[[DR-xxx]]` citations (only IDs that exist in `.memory/`; a not-yet-written ADR is cited as plain text `ADR pending: <title>`, never a placeholder ID); verifiable AC incl. time-to-value + stress cases from the design doc; Parent/Blocked-by (a not-yet-minted sibling is written `BT-<slice:N>`, N = its position in the slice list; the only placeholder a draft may carry). This draft is the issue body minted verbatim in Phase 3.
-4. **Slice Draft Audit (Spikes: skip):** invoke an independent Slice Draft Auditor subagent (using the host's subagent mechanism). Reads (fresh from disk, all if present): `.tmp/BT-<padded>-issue-drafts.md`; the **full** PRD `docs/prds/BT-<padded>-<name>.md`, interface design `docs/design/BT-<padded>-interface.md`, and research `docs/research/*<slug>*.md`. **Precedence:** PRD + interface design are authoritative; research is supplementary — on conflict, PRD/interface win. Guardrail: *"Report findings + one proposed fix each; do not create issues or edit any file."* Score 0–100 per `references/confidence-scale.md` (audit scope: slice-draft coverage + fidelity to specs); report ≥ 80 across two dimensions:
+4. **Slice Draft Audit (Spikes: skip):** invoke an independent Slice Draft Auditor subagent (using the host's subagent mechanism). Reads (fresh from disk, all if present): `.tmp/BT-<padded>-issue-drafts.md`; the **full** PRD `docs/prds/BT-<padded>-<name>.md`, interface design `docs/design/BT-<padded>-interface.md`, and research (the PRD frontmatter `research:` path; fallback `docs/research/*<slug>*.md` for PRDs without it). **Precedence:** PRD + interface design are authoritative; research is supplementary — on conflict, PRD/interface win. Guardrail: *"Report findings + one proposed fix each; do not create issues or edit any file."* Score 0–100 per `references/confidence-scale.md` (audit scope: slice-draft coverage + fidelity to specs); report ≥ 80 across two dimensions:
    - **Breadth:** map **every `[BASELINE]` and `[DIFFERENTIATOR]` §6 story, §8 DoD item, and design blueprint element** to its covering slice or `[UNCOVERED]`, walking the **journey-grouped** §6 stories. `[DEFERRED]` stories / §9 Out-of-Scope are covered/excluded (**not** `[UNCOVERED]`).
    - **Depth:** each draft is a complete Build slice, faithfully captures the named contracts/invariants + edge cases, cites the governing `[[A-xxx]]`/`[[DR-xxx]]`, and carries verifiable AC (incl. time-to-value + stress cases).
    - **Loop optimization:** re-spawn *only* on material change (slices added / removed / re-scoped, or bodies materially edited) — not cosmetic edits (renames, ICE tweaks).

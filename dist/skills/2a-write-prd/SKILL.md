@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-05
+version: "1.6.0"
+timestamp: 2026-10-13
 ---
 
 # Write PRD
@@ -25,6 +25,7 @@ Run the `load-memory` skill to restore session context (read-only).
 3. If feature warrants 2+ PRDs, suggest splitting first.
 4. One clarifying question only if blocking. Else → `> open:` into §10.
 5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
+   **Locate research:** same slug, fuzzy-match `docs/research/*.md` (ignore *.work.md) by 1b's External Research matching (multiple matches → list filenames, user selects; none → no research; match only, no staleness prompt). Record both paths for the PRD frontmatter `discovery:` / `research:` (Phase 5 step 1).
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
 Execute `gh issue create` to create parent GitHub issue — capture exact returned issue number `#N` and zero-pad to 3 digits (e.g. `BT-059`).
@@ -84,7 +85,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>` and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>`, `discovery:` / `research:` to the paths located in Phase 1 step 5 (`—` when none), and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
 2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b-interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a-version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. Update parent issue body: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).

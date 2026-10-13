@@ -1,7 +1,7 @@
 ---
 description: Template for a Product Requirements Document under docs/prds/.
-version: "2.0.0"
-timestamp: 2026-09-15
+version: "2.1.0"
+timestamp: 2026-10-13
 ---
 
 # Prd Template
@@ -23,6 +23,8 @@ generated:
   by: 2a-write-prd
   at: <ISO 8601>
 resource: <GitHub Issue URL>
+discovery: <path> | —   # brief located by 2a Phase 1; readers use this before any locator
+research: <path> | —
 status: draft | stable   # draft while unvalidated; stable once Phase 4 passes
 version: <plugin version>   # stamped at generation (okf-protocol §5)
 ```

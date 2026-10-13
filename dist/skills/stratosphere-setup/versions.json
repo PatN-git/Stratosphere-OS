@@ -166,14 +166,14 @@
       "version": "1.0.1"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "f6a1881ecb5494e2e7f3996165ad18356b0935c286f1b8dfaf05cea348e3db64",
-      "timestamp": "2026-10-05",
-      "version": "1.5.0"
+      "sha256": "bdb25ff96db14a34f297febcb27c9b3461ab931fbb313e46639c9a8b4c4d3337",
+      "timestamp": "2026-10-13",
+      "version": "1.6.0"
     },
     "skills/2a-write-prd/references/PRD-template.md": {
-      "sha256": "8a6423c2c242015f8cfef12bcff919dbb829974fe868ba00ee780a2650fdde4d",
-      "timestamp": "2026-09-15",
-      "version": "2.0.0"
+      "sha256": "6f61cad8871a36b0962d186c4cce0e49d9670a86f7d3b314c01560264d313bea",
+      "timestamp": "2026-10-13",
+      "version": "2.1.0"
     },
     "skills/2b-interface-design/SKILL.md": {
       "sha256": "7c5235d8a6bb7dc73a8aaef9ff25e6daedca8ad6210a339abc643c38ba94c49f",
@@ -191,9 +191,9 @@
       "version": "2.0.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "4a8bc41f81cbbea5ca6daa25697af78ef2b7c1e0464b3c5b39050972ed5c20e2",
-      "timestamp": "2026-10-05",
-      "version": "1.2.1"
+      "sha256": "6985eb52f7a463e9d814b831a7b5c4b31b4f021a0cc299aa8a51d58fc7d954f9",
+      "timestamp": "2026-10-13",
+      "version": "1.2.2"
     },
     "skills/2c-reconcile-specs/references/confidence-scale.md": {
       "sha256": "756bf8c4234ac41ca9a410c43454b18682819135289dc3b0de68908db7a1d323",
@@ -201,9 +201,9 @@
       "version": "1.1.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "fa61faa6edf5a5895a5a0371efd977776ccb1c9b340a63193b86144c435defa5",
-      "timestamp": "2026-10-06",
-      "version": "1.0.1"
+      "sha256": "75a164f9846dd58b6214d11e49221e729eea901fc63aea17af484189b9c29565",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "613942903ad18f292d78d8588db0d7bd145a2c9424b948991b15b262bc96bdb1",
@@ -221,9 +221,9 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "f064587c03530c9f67b73d0e7c78709bf7426ce15de9a98d2c33c0be98cfd4ed",
-      "timestamp": "2026-09-30",
-      "version": "2.5.0"
+      "sha256": "0f25b8feca93f0f2c0f31d2c70f82edbe537c2dc605e8f4f466434a5a21ba476",
+      "timestamp": "2026-10-13",
+      "version": "2.5.1"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
@@ -271,9 +271,9 @@
       "version": "1.0.1"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "6deb3757a93dfb7bfcec082db5aa98a95397bbd15363db3163ffe920125787d3",
-      "timestamp": "2026-10-07",
-      "version": "2.4.0"
+      "sha256": "fbec52779989ccdf0cf63521c9f08493fb7a25ba7043804ff32020b815902b8f",
+      "timestamp": "2026-10-13",
+      "version": "2.4.1"
     },
     "skills/3d-implement-issue/references/merge-risk-paths.md": {
       "sha256": "d9806b7302c9048399acf3a5e327b604ecd7f0e48b6e5c3c7de1cb9f265c55e6",
@@ -291,14 +291,14 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "a7af425eda0d789ba0137e7b8b1c22b047bb667c7df17f5cebd4df01194bf231",
-      "timestamp": "2026-10-07",
-      "version": "1.5.0"
+      "sha256": "c963a813df88037995052cb769df4a4eb15b6f0915c67b26aff3efd2df2bd7bc",
+      "timestamp": "2026-10-13",
+      "version": "1.5.1"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "093f99c209e0f919f11c2362fec72e4726124af845408095739c1dfa8fbebec8",
-      "timestamp": "2026-10-06",
-      "version": "1.3.2"
+      "sha256": "87bc5498a11a80426f0d23b0a6ff5389a76d439ddec1bf291bf9df90e99cb10e",
+      "timestamp": "2026-10-13",
+      "version": "1.3.3"
     },
     "skills/4a-verify-and-ship/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",

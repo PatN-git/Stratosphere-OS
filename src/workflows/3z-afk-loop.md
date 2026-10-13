@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.5.0"
-timestamp: 2026-10-07
+version: "1.5.1"
+timestamp: 2026-10-13
 ---
 
 # AFK END-TO-END LOOP
@@ -57,7 +57,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 _Done when:_ subagent returns valid JSON and git status is clean. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch:** "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<padded>-interface.md`. Keep the auditor independent (fresh context), but for a clearly small slice pass the slice diff + ACs + named test files inline and skip broad re-reads. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
+1. **Dispatch:** "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<parentPadded>-interface.md` (`BT-<parentPadded>` = the slice's Parent (BACKLOG `Parent`, else `gh issue view <n> --json parent`); a standalone slice has no design doc, so omit the path). Keep the auditor independent (fresh context), but for a clearly small slice pass the slice diff + ACs + named test files inline and skip broad re-reads. Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate. Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
 _Done when:_ auditor returns valid JSON verdict.
 
 ### Step 2C: Decision Gate (Orchestrator)

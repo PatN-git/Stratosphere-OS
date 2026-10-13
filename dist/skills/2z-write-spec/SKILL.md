@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.1"
-timestamp: 2026-10-06
+version: "1.1.0"
+timestamp: 2026-10-13
 ---
 
 # Write Spec (orchestrator)
@@ -17,7 +17,7 @@ timestamp: 2026-10-06
 **Orchestrator rule:** AGENTS.md §1 Orchestrators. Each unit still commits its own document (one document per run, AGENTS.md §4).
 
 **Context protection:** main thread keeps HITL, commits, decision log. Read-heavy, non-HITL steps run in subagents: write only to `.tmp/`, never commit, return the path + ≤10-line summary. A subagent never asks the user; it returns every decision as a gate list. Inline when host has no subagents (AGENTS.md §8).
-- **PRD Drafter** (2a Phase 3). Input: decision log, discovery brief, memory paths; follows Phase 3 of `.agents/skills/2a-write-prd/SKILL.md`. Guardrail: "Write the draft to `.tmp/2z-BT-<padded>-prd-draft.md` only; no other file, no commit. Return the path, a ≤10-line summary and every user gate: cost approval, `[unbacked]` scope tags, ADR flag, `> open:`." Main puts the gates to user, applies answers as surgical edits, then runs 2a Phases 4–5.
+- **PRD Drafter** (2a Phase 3). Input: decision log, discovery brief path (from the decision log), memory paths; follows Phase 3 of `.agents/skills/2a-write-prd/SKILL.md`. Guardrail: "Write the draft to `.tmp/2z-BT-<padded>-prd-draft.md` only; no other file, no commit. Return the path, a ≤10-line summary and every user gate: cost approval, `[unbacked]` scope tags, ADR flag, `> open:`." Main puts the gates to user, applies answers as surgical edits, then runs 2a Phases 4–5.
 - **Direction Drafter** (2b Phase 2.5 steps 1–3). Input: PRD path, 2b gate result. Guardrail: "Write the 3 directions and 5-Lens notes to `.tmp/2z-BT-<padded>-directions.md` only; no other file, no commit." Main renders via `plan-html` and runs the HITL pick.
 - **Stress Tester** (2b) and **Spec-Reconciliation Auditor** (2c): dispatch as subagents per the unit, never inline.
 
@@ -30,6 +30,7 @@ timestamp: 2026-10-06
    - PRD `docs/prds/BT-<padded>-*.md` exists → start at Phase 2.
    - Otherwise → Phase 1.
 3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID, then 2z renames it; offline ID `BT-LOCAL-<slug>`; resume checks both names). Append one line per HITL decision; on resume print its last 5 lines. The hand-off reads it too.
+4. **Resolve the brief once:** after hydrating, if the PRD exists use its `discovery:` path (`—` = none). Otherwise locate the brief: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5). Before 2a mints the ID `linked-prd:` is not set yet, so the slug fuzzy-match is the path that applies. Record its path (or `none`) in the decision log; a resumed run reuses it.
 
 ## Phase 1: PRD
 Run `/2a-write-prd`. Its HITL interview and cost gate stay in main thread; draft via PRD Drafter; append each decision to the log.
