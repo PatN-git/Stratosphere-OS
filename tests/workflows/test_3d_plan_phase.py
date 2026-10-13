@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BT-139 guards: 3d Phase 0.5 plan (persisted, mechanically checked), seams from the plan, deviations, 3z plan_path."""
+"""BT-139 guards: 3d Phase 0.5 plan (persisted, mechanically checked), seams from the plan, deviations, 3z deviations report."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -68,12 +68,15 @@ def test_phase_3_compares_coverage_map_with_plan_and_writes_deviations():
     assert PLAN_FILE in phase3
 
 
-def test_3z_dispatch_json_has_plan_path_and_report_lists_it():
+def test_3z_dispatch_json_has_plan_path_and_report_lists_deviations_not_the_path():
+    """The orchestrator reads `## Deviations` via plan_path at Step 2C (4a deletes the plan at ship); the final report lists them inline."""
     text = _read("workflows/3z-afk-loop.md")
     step_2a = text.split("### Step 2A")[1].split("### Step 2B")[0]
     assert "plan_path" in step_2a
-    phase4 = text.split("## Phase 4:")[1]
-    assert "plan_path" in phase4
+    step_2c = text.split("### Step 2C")[1].split("## Phase 3")[0]
+    assert "## Deviations" in step_2c and "plan_path" in step_2c
+    phase4 = text.split("## Phase 4:")[1].split("## Phase 5")[0]
+    assert "plan_path" not in phase4 and "deviations" in phase4
 
 
 def test_plan_check_allows_an_explicit_uncovered_row_with_a_reason():
