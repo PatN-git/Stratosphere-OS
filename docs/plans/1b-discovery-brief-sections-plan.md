@@ -126,7 +126,7 @@ Replace the Phase 3 "Discovery-brief ingestion" paragraph with:
 
 This also covers the 2z PRD Drafter, which follows 2a Phase 3 (2z:20).
 
-### C5 — `tests/workflows/test_discovery_brief_contract.py` (new)
+### C5 — `tests/workflows/test_discovery_brief_contract.py` (extend; BT-165's C8 creates it)
 Follow the existing style: `ROOT = Path(__file__).resolve().parents[2]`.
 
 **Contract test:**
@@ -188,7 +188,7 @@ In Phase 1 "Resolve target artifacts", replace `Discovery docs/discovery/BT-<pad
 - **PRD Drafter input:** "discovery brief path (from the decision log)".
 - Before 2a mints the ID, `linked-prd:` is not set yet, so the slug fuzzy-match is the path that applies. Say so in one clause.
 
-### C8 — tests (extend `tests/workflows/test_discovery_brief_contract.py`)
+### C8 — tests (create `tests/workflows/test_discovery_brief_contract.py`; BT-165 runs first, and BT-164/166 extend it)
 - No file in `src/workflows/` contains `docs/discovery/BT-`.
 - `2c-reconcile-specs.md` and `2z-write-spec.md` both contain `linked-prd`.
 
@@ -269,6 +269,26 @@ This replaces the host-side memory note (Claude-only, invisible to Antigravity).
 - the standing-epic predicate (PRD absent and not an audit epic);
 - 4a's draft rule cites the exemption;
 - step 4 says rerun.
+
+## Implementation loop (agreed 2026-10-13)
+Run the slices one at a time, in the order 165 → 164 → 166a (A1–A6) → 166b (A7–A9) → 167. They share files (2a, 3b, 4a, 1c), so they cannot run in parallel. For each slice:
+1. **Start:** set the slice to `status:in progress` in GitHub and BACKLOG_MAP.
+2. **Implement:** a fresh Sonnet implementer subagent gets its plan section and the audit doc, and uses `improve-workflows-skills`.
+   - It edits `src/` and `tests/` only, re-anchoring each edit by content.
+   - No git writes, no GitHub, no `dist/` (the lead rebuilds it).
+   - If the plan is ambiguous, it returns a question rather than guessing.
+3. **One bump per file per PR:** before bumping a file, check `git diff main -- <file>`. Bump only if `version:` is unchanged against main. If a later slice adds behaviour to a file an earlier slice bumped as a patch, raise the level (e.g. 1.2.2 → 1.3.0), but never add a second increment. Refresh `timestamp:` regardless.
+4. **Review:** a fresh read-only reviewer scores the slice against its plan items and the issue's Acceptance. The lead verifies the findings and fixes the confirmed ones. At most 2 fix rounds, then HITL.
+5. **Gate and commit:**
+   - Run `python build/build.py`, `python build/validate.py`, `python -m pytest -q`.
+   - The lead commits per slice with explicit paths (`src/`, `tests/`, `dist/`; `.agents/` is untracked), then checks `git show --stat HEAD`.
+   - Push only at the end, unless the user asks earlier.
+6. **Manual steps** are not handed to the subagent. The C-series dry fit is for the lead or the user. A6 is an investigation; report it as confirmed or dropped.
+7. **After the loop:**
+   - full test suite;
+   - rerun `release.py` once;
+   - `/4a` (HITL) and update the PR body;
+   - retire the host-side standing-epic memory note once BT-167 has landed.
 
 ## Ship
 - **One PR, one release.** All four slices land on `fix/0d-recommendation-brief` (PR #161), as the user decided, so the whole PR ships as a single release. No new branch: this overrides the 3d step 1 branch derivation, a recorded deviation.
