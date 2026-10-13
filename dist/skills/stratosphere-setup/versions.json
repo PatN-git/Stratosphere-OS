@@ -166,7 +166,7 @@
       "version": "1.0.1"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "46ebb391681394a7964b77b3b2bd273808e1b367da95e67773313ef33e8b16cc",
+      "sha256": "97d12a0c7fb08df9fb0c4c30e6489b0094c45b48f873dbb7e468befca98947b2",
       "timestamp": "2026-10-13",
       "version": "1.6.0"
     },
@@ -191,7 +191,7 @@
       "version": "2.0.1"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "da69f16135335b2e629fb535719a029f3a30f4816293f2581b4ba8653feb7e76",
+      "sha256": "c4df4aaf2db495a552ec2abb6ea022a07b1a76bc2fc56d5096a91ac4df09c668",
       "timestamp": "2026-10-13",
       "version": "1.3.0"
     },
@@ -221,7 +221,7 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "303afeb83110a82392d9c16127d64b3c457fa28831e4cc48d03326796bee5da6",
+      "sha256": "ca2a35ce7203dddc88807d3767fc4459b53d72ae042ed0b364f1c474b8cdaebb",
       "timestamp": "2026-10-13",
       "version": "2.6.0"
     },
@@ -241,9 +241,9 @@
       "version": "1.0.1"
     },
     "skills/3b-create-issue/references/issue-templates.md": {
-      "sha256": "811e29a265222f5e95cd3ea4e00b1506148ce3d07907f9efb648a0e092e8ecf7",
-      "timestamp": "2026-10-09",
-      "version": "1.0.3"
+      "sha256": "d231e2f807514758e0f1b6b216eea9f35591be9804880fe1b40dd6c91599cca0",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
       "sha256": "8bf36bfaa09dd74f9d7869e21f0f17c73bf2c1ec680ae62567fd1d4e2cc7cdd6",
@@ -261,9 +261,9 @@
       "version": "1.0.1"
     },
     "skills/3c-sprint-planning/references/issue-templates.md": {
-      "sha256": "811e29a265222f5e95cd3ea4e00b1506148ce3d07907f9efb648a0e092e8ecf7",
-      "timestamp": "2026-10-09",
-      "version": "1.0.3"
+      "sha256": "d231e2f807514758e0f1b6b216eea9f35591be9804880fe1b40dd6c91599cca0",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
       "sha256": "8bf36bfaa09dd74f9d7869e21f0f17c73bf2c1ec680ae62567fd1d4e2cc7cdd6",
@@ -271,9 +271,9 @@
       "version": "1.0.1"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "fbec52779989ccdf0cf63521c9f08493fb7a25ba7043804ff32020b815902b8f",
+      "sha256": "a502841d88094af1728dbf2baa97b86c749b06175b66625aa29f29775a1a3e8c",
       "timestamp": "2026-10-13",
-      "version": "2.4.1"
+      "version": "2.5.0"
     },
     "skills/3d-implement-issue/references/merge-risk-paths.md": {
       "sha256": "d9806b7302c9048399acf3a5e327b604ecd7f0e48b6e5c3c7de1cb9f265c55e6",
@@ -326,9 +326,9 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
-      "sha256": "811e29a265222f5e95cd3ea4e00b1506148ce3d07907f9efb648a0e092e8ecf7",
-      "timestamp": "2026-10-09",
-      "version": "1.0.3"
+      "sha256": "d231e2f807514758e0f1b6b216eea9f35591be9804880fe1b40dd6c91599cca0",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/merge-risk-paths.md": {
       "sha256": "d9806b7302c9048399acf3a5e327b604ecd7f0e48b6e5c3c7de1cb9f265c55e6",
@@ -366,9 +366,9 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/issue-templates.md": {
-      "sha256": "811e29a265222f5e95cd3ea4e00b1506148ce3d07907f9efb648a0e092e8ecf7",
-      "timestamp": "2026-10-09",
-      "version": "1.0.3"
+      "sha256": "d231e2f807514758e0f1b6b216eea9f35591be9804880fe1b40dd6c91599cca0",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/SKILL.md": {
       "sha256": "7cb617994cbbd3ab4e95699075ff932cb48d9dcccef24b5a462db79a648a8bf2",
@@ -396,9 +396,9 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/references/issue-templates.md": {
-      "sha256": "811e29a265222f5e95cd3ea4e00b1506148ce3d07907f9efb648a0e092e8ecf7",
-      "timestamp": "2026-10-09",
-      "version": "1.0.3"
+      "sha256": "d231e2f807514758e0f1b6b216eea9f35591be9804880fe1b40dd6c91599cca0",
+      "timestamp": "2026-10-13",
+      "version": "1.1.0"
     },
     "skills/concept-brainstorm/SKILL.md": {
       "sha256": "624e09595f2d8dbb94854f4318a558ff373cd8223a662aad0f63002c30f7e66c",

@@ -31,7 +31,7 @@ _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on re
 - < 2 spec artifacts beyond the PRD → SKIP: `[SKIP] BT-<padded>: too few artifacts; proceed to /3b-create-issue.`
 - Epic not pre-slicing (`status:needs_spec`/`status:planned`) → HALT; reconciliation runs before slices exist.
 
-_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it as a pre-Slice-1 migration for `3b`.
+_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it in the PRD §10 as a `migration:` item (`N. migration: <required change, phrased as a requirement> — owner: <who>, blocking: Y`; `3b` mints it as Slice 1).
 
 ## Phase 2: Consistency Scan
 **Context Isolation Rule:** Execute natively ONLY IF this session has not authored or modified any target artifact. Otherwise, or if unsure, isolate to an independent Spec-Reconciliation Auditor subagent; resolve targets in the parent and pass the explicit file list (subagent reads only named files, never sweeps).
@@ -59,7 +59,7 @@ Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:*
 
 ## Phase 4: Resolve & Apply
 1. **Present** the report; HALT. All findings apply by default; the user **Skips** exceptions (a skipped finding dies with the ephemeral report).
-2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a required pre-Slice-1 migration in the PRD, never silently write the schema.
+2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** with `blocking: Y` (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a PRD §10 `migration:` item (same form), never silently write the schema.
 3. **Version:** once per run (not per finding), re-stamp each edited doc's OKF `version` to the installed plugin version and refresh `generated.at` (and `generated.by` to `2c-reconcile-specs`) — per `.agents/rules/okf-protocol.md` §5 (Edited Docs).
 4. **Exit criteria:** zero P0 unaddressed; every finding applied, written as an Open Question, or skipped; no open `[UNCOVERED]`. Never mark complete on a "looks consistent" judgment.
 

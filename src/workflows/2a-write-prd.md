@@ -12,7 +12,7 @@ timestamp: 2026-10-13
 
 # Write PRD
 
-**Hand-off contract:** `/2b-interface-design` is next (designs interface). `/3b-create-issue` reads §1, §6, §7, §8.
+**Hand-off contract:** `/2b-interface-design` is next (designs interface). `/3b-create-issue` reads §1, §6, §7, §8, §10.
 
 ## Phase 0: Load Memory
 Run the `load-memory` skill to restore session context (read-only).
