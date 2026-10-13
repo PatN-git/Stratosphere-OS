@@ -9,7 +9,7 @@ version: "1.0.0"
 
 # Plan: give the discovery brief a home for what 1b already captures
 
-**Status:** not started. Four slices under parent BT-010, the standing umbrella epic "Lifecycle - 1 Analysis":
+**Status:** implemented on `fix/0d-recommendation-brief` (2026-10-13). Commits: BT-165 `27ebc5c`/`65ddc19`, BT-164 `4d8f358`/`27b84ff`, BT-166 `0733068`/`c09134b`/`62a39ea`/`ba169e3`, BT-167 `60dd85e`/`2ca53bb`. Pending: `release.py` rerun and `/4a`. Four slices under parent BT-010, the standing umbrella epic "Lifecycle - 1 Analysis":
 - **BT-164**: C1–C5, C9–C11, C14–C16.
 - **BT-165**: C6–C8, C12–C13. Blocks BT-164 and BT-166.
 - **BT-166**: A1–A9.
@@ -293,7 +293,7 @@ Run the slices one at a time, in the order 165 → 164 → 166a (A1–A6) → 16
 ## Ship
 - **One PR, one release.** All four slices land on `fix/0d-recommendation-brief` (PR #161), as the user decided, so the whole PR ships as a single release. No new branch: this overrides the 3d step 1 branch derivation, a recorded deviation.
 - **Order:** BT-165 → BT-164 → BT-166 (both blocked by 165) → BT-167 → release. BT-167 must be in before `/4a` ships PR #161, so the standing-epic handling is the framework's rule rather than a manual deviation.
-- **Standing epic.** Until BT-167 lands, apply its rule by hand: BT-010 is a standing epic with no BACKLOG row, so don't promote it, use no `--close-parent`, and skip the Feature Acceptance Audit.
+- **Standing epic.** BT-167 now encodes this (`terminal-sync-invariant.md` §Standing epic). Until it is merged and installed, apply it by hand: BT-010 is a standing epic with no BACKLOG row, so don't promote it, use no `--close-parent`, and skip the Feature Acceptance Audit.
 - **Commits** (follows the BT-152 precedent):
   - `docs(plans)` for the plan and audit files.
   - `feat(BT-164)` for C1–C4, C9–C11 and C14–C16; `test(BT-164)` for C5.
