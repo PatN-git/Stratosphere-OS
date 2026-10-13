@@ -9,7 +9,13 @@ version: "1.0.0"
 
 # Plan: give the discovery brief a home for what 1b already captures
 
-**Status:** Slices **BT-164** (C1–C5) and **BT-165** (C6–C8), both under parent BT-010, the standing umbrella epic "Lifecycle - 1 Analysis". Not started. Both ship in PR #161 (`fix/0d-recommendation-brief`), with one release for the whole PR. This revises an Antigravity draft (session `0460c303`, `1b_framing_template_enhancement_plan.md`) after review; an independent subagent then reviewed this plan, and its fixes are folded in. Decisions D1–D3 below were settled with the user.
+**Status:** not started. Four slices under parent BT-010, the standing umbrella epic "Lifecycle - 1 Analysis":
+- **BT-164**: C1–C5, C9–C11.
+- **BT-165**: C6–C8, C12–C13. Blocks BT-164 and BT-166.
+- **BT-166**: A1–A9.
+- **BT-167**: B1–B3.
+
+All four ship in PR #161 (`fix/0d-recommendation-brief`) as one release. Gap IDs (L/S/V/H) and evidence come from [`lifecycle-artifact-flow-audit.md`](lifecycle-artifact-flow-audit.md). Its H1–H4 items are deferred to BT-168 (under BT-116). This revises an Antigravity draft (session `0460c303`, `1b_framing_template_enhancement_plan.md`) after review; an independent subagent then reviewed this plan, and its fixes are folded in. Decisions D1–D3 below were settled with the user.
 
 ## Evidence (CleanTechHub briefs and sessions)
 | Problem | Data |
@@ -139,7 +145,21 @@ Follow the existing style: `ROOT = Path(__file__).resolve().parents[2]`.
 
 `tests/lifecycle-harness/spike_1b.py` `REQUIRED_SECTIONS` (Actor, Problem, Chosen Framing, Non-Goals, Riskiest Assumption) still passes: all those headings remain as substrings. No edit needed.
 
-## Slice BT-165 — locate slug-named briefs in 2c and 2z
+### C9 — 3b reads the brief (audit L4)
+D1 deliberately keeps file paths out of the PRD, so file-level facts have to reach the slices straight from the brief.
+- **3b Phase 1:** PRD-sourced runs also load the brief linked in the PRD frontmatter (`discovery:`, from C12).
+- **Phase 2 step 3:** seed each Build slice's "Current state / Problem" from the brief's Established Facts (file paths are allowed in issue bodies) and Constraints & Settled Decisions.
+- **Slice Draft Auditor:** also reads the brief. Precedence: PRD > design > brief > research. A fact in the brief that the PRD and design leave out is flagged `[BRIEF-GAP]` for HITL, in the same way as `[RESEARCH-GAP]`.
+
+### C10 — RAT status values (audit L5)
+2a "RAT Carry-Over": `untested | running | failed` → §10, blocking; `survived` → §11. Drop the non-value "validated". Both are edits to 2a, which C4 already touches.
+
+### C11 — concept-map link (audit L6)
+- **Template frontmatter:** add `concept-map: <#n | path> | —`.
+- **1c Phase 3 step 2:** sets it when 1c writes the brief.
+- **2c:** reads it, which supplies the "map the brief cites" that 2c:26 expects.
+
+## Slice BT-165 — deterministic artifact links (locator, PRD links, parent-keyed paths)
 **Problem:**
 - `2c-reconcile-specs` Phase 1 looks for the brief as `docs/discovery/BT-<padded>-*.md`. Briefs are slug-only (1b strict late binding), so 2c never finds one, and the brief silently drops out of reconciliation.
 - `2z-write-spec` gives its PRD Drafter "discovery brief" as input, but never says how main locates it, and its 2c step inherits the broken locator.
@@ -160,19 +180,100 @@ In Phase 1 "Resolve target artifacts", replace `Discovery docs/discovery/BT-<pad
 - No file in `src/workflows/` contains `docs/discovery/BT-`.
 - `2c-reconcile-specs.md` and `2z-write-spec.md` both contain `linked-prd`.
 
+### C12 — PRD frontmatter links (audit L2)
+- **PRD template frontmatter:** add `discovery: <path> | —` and `research: <path> | —`.
+- **2a:** fills both when it locates the files: Phase 1 step 5 finds the brief; add a research locator next to it using 1b's research-matching rule. Together with the brief's `linked-prd:`, this makes the link bidirectional.
+- **Readers:** 2c, 2z, 3b and 4a read these fields first. The C6/C7 locator rule is only the fallback, for PRDs written before this change.
+
+### C13 — parent-keyed spec paths (audit L3)
+3d step 3, the 4a Phase 2 auditor input and the 3z dispatch currently build `docs/prds|design/BT-<padded>-…` from the **slice** ID. They should:
+- resolve `BT-<parentPadded>` from the slice's Parent (BACKLOG `Parent`, or `gh issue view --json parent`);
+- then follow the PRD frontmatter.
+A standalone slice has no PRD and states that.
+
+C8 tests also assert:
+- no `docs/prds/BT-<padded>` or `docs/design/BT-<padded>` remains in 3d, 4a or 3z;
+- the PRD template carries `discovery:` and `research:`.
+
+## Slice BT-166 — 3b/4a input contract (audit S1–S6, V1–V3, H4)
+### A1 — 3b siblings (S1)
+- **Phase 1:** read `gh issue view <parent> --json subIssues` and the BACKLOG rows with `Parent = BT-<parent>`.
+- **Phase 2:** draft only for §6/§8 and design items that no existing slice covers.
+- **Auditor breadth map:** counts an existing slice as covering, citing its `BT-<n>`.
+
+### A2 — explicit PRD scope (S2)
+- **Phase 1 scope:** §1, §6, §7, §8 plus §10. An open blocking §10 question becomes a Spike before drafting, not after the audit.
+- **Hand-off lines:** align 2a's and 3b's with the body.
+
+### A3 — design link (S3)
+- **Build template `### Dependencies`:** add `- **Design:** docs/design/BT-<p>-interface.md | —`.
+- **3d step 2:** keys its conditional read on that line. Replace "design reference in issue/BACKLOG Ref" (the Ref column holds memory IDs only).
+
+### A4 — `[MED]` (S4)
+3b's Confidence map becomes `[HIGH]` 100% / `[MED]` 80% / `[LOW]` 50%, and accepts `[MEDIUM]` as legacy.
+
+### A5 — migration items (S5)
+- **2c:** records a pre-Slice-1 migration as a PRD §10 item tagged `migration:`.
+- **3b:** mints each one as Slice 1 (a blocker of every slice it touches).
+
+### A6 — slice milestone (S6, unconfirmed)
+- Check whether a 3b run's terminal gate flags `milestone` drift for Build slices minted without `--milestone`.
+- If confirmed, pass `--milestone <vX.Y.0>` on `gh issue create`. If not, drop A6 and say so.
+
+### A7 — slice AC source (V1)
+- **4a business-logic auditor input:** the slice issue body's `### Acceptance Criteria` (primary, via `gh issue view <n>`) plus the parent PRD §6/§7/§8 and design (C13 paths).
+- Rename the Phase 3 table to "Slice AC / Requirement".
+- Phase 1 step 2 "explicit PRD AC" becomes "explicit slice AC".
+
+### A8 — deviations and manual-QA (V2, H4)
+- **4a step 5 `pr_body.py build` literal:** gains `--deviation "<each line of the 3d plan's ## Deviations>"` and `--manual-qa` when 3d or 3z flagged it.
+- **Phase 2 business-logic auditor:** receives the plan's `## Deviations`, so a recorded, intentional deviation is judged rather than re-flagged.
+- **Step 10:** deletes the plan only after the body build has succeeded.
+- **3z final report:** lists the deviations inline instead of `plan_path`. Update `tests/workflows/test_3d_plan_phase.py` if it pins `plan_path`.
+
+### A9 — Feature Acceptance Audit scope (V3)
+In `src/references/feature-acceptance-audit.md`, "the parent PRD full AC set" becomes: §8 Definition of Done, §5 Success Signals, and the `[BASELINE]`/`[DIFFERENTIATOR]` §6 stories. This closes the loop from brief Success State (C1) → PRD §5/§8 (C4) → feature acceptance.
+
+Tests:
+- 3b names `subIssues`, §7, §10 and `[MED]`;
+- the Build template has a `Design:` line;
+- 4a step 5 carries `--deviation`;
+- the FAA names §8 and §5.
+
+## Slice BT-167 — standing epics and one-release PRs (audit V4, V5)
+### B1 — standing-epic rule
+A parent epic is **standing** when no `docs/prds/BT-<p>-*.md` exists and its body is not an audit epic (no line-1 `Source:`). Write the rule once, in `src/references/terminal-sync-invariant.md` or a new short reference, and cite it from each step. For a standing epic:
+- **3d step 1:** the branch is keyed to the slice (`<type>/BT-<slice>-<slug>`), unless the user names an existing branch.
+- **3d step 2:** never promote the epic.
+- **4a step 8:** no Epic Check, no Feature Acceptance Audit, no `--close-parent`. The PR may open non-draft.
+- **4a step 9 draft rule:** skip it.
+
+This replaces the host-side memory note (Claude-only, invisible to Antigravity).
+
+### B2 — release rerun
+4a step 4 changes from "once per PR" to: rerun `python scripts/release.py -y` at every ship, and commit as `release: prepare v<x>` only if its output changed. It derives from the last tag, so a rerun is idempotent.
+
+### B3 — tests
+- the standing-epic predicate (PRD absent and not an audit epic);
+- 4a's draft rule cites the exemption;
+- step 4 says rerun.
+
 ## Ship
-- **One PR, one release.** Both slices land on `fix/0d-recommendation-brief` (PR #161), as the user decided, so the whole PR ships as a single release. No new branch: this overrides the 3d step 1 branch derivation, a recorded deviation.
-- **Standing epic.** BT-010 is a standing umbrella epic with no BACKLOG row. Do not promote it (3d step 2). In 4a, build the PR body without `--close-parent`, and skip the Feature Acceptance Audit (4a epic check).
+- **One PR, one release.** All four slices land on `fix/0d-recommendation-brief` (PR #161), as the user decided, so the whole PR ships as a single release. No new branch: this overrides the 3d step 1 branch derivation, a recorded deviation.
+- **Order:** BT-165 → BT-164 → BT-166 (both blocked by 165) → BT-167 → release. BT-167 must be in before `/4a` ships PR #161, so the standing-epic handling is the framework's rule rather than a manual deviation.
+- **Standing epic.** Until BT-167 lands, apply its rule by hand: BT-010 is a standing epic with no BACKLOG row, so don't promote it, use no `--close-parent`, and skip the Feature Acceptance Audit.
 - **Commits** (follows the BT-152 precedent):
-  - `docs(plans)` for this plan file.
-  - `feat(BT-164)` for C1–C4 and `test(BT-164)` for C5.
-  - `fix(BT-165)` for C6–C7 and `test(BT-165)` for C8.
+  - `docs(plans)` for the plan and audit files.
+  - `feat(BT-164)` for C1–C4 and C9–C11; `test(BT-164)` for C5.
+  - `fix(BT-165)` for C6, C7, C12 and C13; `test(BT-165)` for C8.
+  - `feat(BT-166)` / `fix(BT-166)` for A1–A9, plus `test(BT-166)`.
+  - `feat(BT-167)` for B1–B2; `test(BT-167)` for B3.
 - **Verify:** `python build/build.py`, `python build/validate.py`, `python -m pytest -q` (including `test_dist_bundle`). Commit `dist/` together with `src/`.
 - **Release (once, last commit in the PR):**
   - Commit `1d4d1e2` already prepared v4.7.0, which is not tagged yet; the last tag is v4.6.1.
   - After all slices (and anything else the user adds) are in, rerun `python scripts/release.py` so the version reflects every artifact bump. Commit its output as `release: prepare vX.Y.0`. Its output is build.py VERSION, README, marketplace.json, dist/plugin.json and the external-skills.json pins.
   - `bump_guard` (CI) requires VERSION to be above the last tag.
-- **4a body:** the `stratos-pr` block lists BT-164 and BT-165 as slices, and drops the "No BT issue" deviation for them (the 0d change itself stays issue-less).
+- **4a body:** the `stratos-pr` block lists BT-164 to BT-167 as slices, and drops the "No BT issue" deviation for them (the 0d change itself stays issue-less).
 - **Dry fit:** hand-map the BT-234 and BT-215 session content into the new template. Every item from the Evidence table must land in a named section, with no invented headings.
 - Do not run the paid lifecycle harness (`spike_1b.py`) unless the user asks.
 - Ship via `/4a` (HITL); a human merges the PR.
