@@ -246,6 +246,8 @@ def test_4a_step8_resaves_the_prior_body_before_the_rebuild():
     """Step 5 deletes `.tmp/4a-prior-body.md`; the `--close-parent` rebuild needs it back or earlier slices go PENDING."""
     text = _4a()
     step8 = text[text.index("8. **Epic Check:**"):text.index("9. **Terminal sync gate:**")]
+    assert "Otherwise" in step8
+    step8 = step8.split("Otherwise", 1)[1]  # the leading standing-epic skip names `--close-parent` first
     assert "gh pr view" in step8 and ".tmp/4a-prior-body.md" in step8, "step 8 must re-save the PR's current body"
     assert "--prior-body-file" in step8, "step 8 must pass the re-saved body to pr_body.py build"
     assert "PENDING" in step8 and "Closes" in step8, "step 8 must say what is lost without the prior body"
