@@ -113,10 +113,10 @@ Every artifact from 2a onwards is keyed by the **parent** ID `BT-<p>`. Research 
 
 | Slice | Gaps | Plan items |
 |---|---|---|
-| BT-164 (extended) | L4, L5, L6 | C9–C11 |
+| BT-164 (extended) | L4, L5, L6; H3 (1c `Avoid:`, brief provenance, design handoff heading) | C9–C11, C14–C16 |
 | BT-165 (extended: deterministic artifact links) | L1, L2, L3 | C6–C8, C12–C13 |
 | BT-166 (3b/4a input contract) | S1–S6, V1–V3, H4 | A1–A9 |
 | BT-167 (standing epics + release rerun) | V4, V5 | B1–B3 |
-| BT-168 (backlog, under BT-116, `status:needs_spec`) | H1, H2 (rest), H3 | — |
+| BT-168 (backlog, under BT-116, `status:needs_spec`) | H1, H2 (rest), H3 (`directions.html`, blank `description:`) | — |
 
 Implementation detail lives in [`1b-discovery-brief-sections-plan.md`](1b-discovery-brief-sections-plan.md). All four slices ship in PR #161 as one release.

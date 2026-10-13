@@ -10,7 +10,7 @@ version: "1.0.0"
 # Plan: give the discovery brief a home for what 1b already captures
 
 **Status:** not started. Four slices under parent BT-010, the standing umbrella epic "Lifecycle - 1 Analysis":
-- **BT-164**: C1–C5, C9–C11.
+- **BT-164**: C1–C5, C9–C11, C14–C16.
 - **BT-165**: C6–C8, C12–C13. Blocks BT-164 and BT-166.
 - **BT-166**: A1–A9.
 - **BT-167**: B1–B3.
@@ -159,6 +159,18 @@ D1 deliberately keeps file paths out of the PRD, so file-level facts have to rea
 - **1c Phase 3 step 2:** sets it when 1c writes the brief.
 - **2c:** reads it, which supplies the "map the brief cites" that 2c:26 expects.
 
+### C14 — 1c glossary `Avoid:` lists (audit H3)
+1c Phase 3 step 5 writes `[[G-xxx]] [ASSUMED]` entries without the `Avoid:` list that 1b writes (1b Phase 7 step 2), but 3d's avoid-drift check (3d Phase 2.5) depends on that list. Add "each with its `Avoid:` list (rejected synonyms from the map's resolutions)". This rides on C3's 1c bump, so no extra version bump.
+
+### C15 — brief provenance (audit H3)
+The brief template's `generated.by: 1b-concept-framing` becomes `generated.by: 1b-concept-framing | 1c-concept-map`, and the writer picks one. 1c Phase 3 step 2 stamps `1c-concept-map`. This rides on C1's template bump.
+
+### C16 — design template handoff heading (audit H3)
+- **File:** `src/references/design-doc-template.md` (2.0.0 → 2.0.1).
+- **Heading:** `## Handoff Notes for 3c/4a` becomes `## Handoff Notes for 3d/4a`.
+- **Placeholder:** "...that 3c must implement" becomes "...that 3d must implement".
+- **Why:** 3c (sprint planning) never reads the design doc. 3d implements from it, and 4a's auditors receive the full design doc.
+
 ## Slice BT-165 — deterministic artifact links (locator, PRD links, parent-keyed paths)
 **Problem:**
 - `2c-reconcile-specs` Phase 1 looks for the brief as `docs/discovery/BT-<padded>-*.md`. Briefs are slug-only (1b strict late binding), so 2c never finds one, and the brief silently drops out of reconciliation.
@@ -264,7 +276,7 @@ This replaces the host-side memory note (Claude-only, invisible to Antigravity).
 - **Standing epic.** Until BT-167 lands, apply its rule by hand: BT-010 is a standing epic with no BACKLOG row, so don't promote it, use no `--close-parent`, and skip the Feature Acceptance Audit.
 - **Commits** (follows the BT-152 precedent):
   - `docs(plans)` for the plan and audit files.
-  - `feat(BT-164)` for C1–C4 and C9–C11; `test(BT-164)` for C5.
+  - `feat(BT-164)` for C1–C4, C9–C11 and C14–C16; `test(BT-164)` for C5.
   - `fix(BT-165)` for C6, C7, C12 and C13; `test(BT-165)` for C8.
   - `feat(BT-166)` / `fix(BT-166)` for A1–A9, plus `test(BT-166)`.
   - `feat(BT-167)` for B1–B2; `test(BT-167)` for B3.
