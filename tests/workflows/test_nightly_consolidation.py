@@ -82,6 +82,9 @@ def test_chat_is_a_ranked_brief_not_a_report_copy():
     assert "Never list D-items in chat" in phase4
     assert "**Quick fix**" in phase4 and "**New issue**" in phase4  # route split: this session vs backlog
     assert "`/3b-create-issue`" in phase4 and "0d never creates it" in phase4
+    # StratOS skill defects are a forwardable notice, never a project issue or an outward action
+    assert "StratOS framework change" not in phase4
+    assert "## Framework feedback" in phase4 and "Never file it, name a repo" in phase4
     assert "fails to reach agents" in phase4  # existing-law findings escalate only on recurrence
 
 

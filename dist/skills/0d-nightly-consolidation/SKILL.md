@@ -57,9 +57,10 @@ The report is the record; chat is a decision brief. Never restate report section
 1. Link the report. One status line for mechanical phases (e.g. `indices: 7 rebuilt · retention: ok · memory: nothing qualifies`).
 2. ≤5 recommendations, ranked by payoff (recurrence × cost of the failure), under two headings by route:
    - **Quick fix** — memory, docs, config or drift heal; no code. Applied in this session on approval.
-   - **New issue** — code, tests, or a StratOS framework change. Recommend `/3b-create-issue`; 0d never creates it.
+   - **New issue** — this project's code, tests or tooling. Recommend `/3b-create-issue`; 0d never creates it.
 
-   Each: `R-n` · action (one line) · why (one clause + report anchor) · lands in (StratOS framework | this project) · size.
+   Each: `R-n` · action (one line) · why (one clause + report anchor) · size.
+   - A defect in an installed StratOS skill is not an `R-n`: write it under `## Framework feedback` in the report (skill · installed version · defect · evidence · suggested fix) for the project owner to forward to the StratOS maintainer, and add a one-line notice in chat. Never file it, name a repo, or edit the installed skill.
    - A finding routed to an existing law is not a recommendation unless it recurs across nights — then recommend why the law fails to reach agents.
    - Drift: one recommendation per heal batch, grouped by kind (labels | parent | blocked_by) with count and `D-n` range. Never list D-items in chat.
 3. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
