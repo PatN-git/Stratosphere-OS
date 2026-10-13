@@ -235,7 +235,7 @@ C8 tests also assert:
 ### A7 — slice AC source (V1)
 - **4a business-logic auditor input:** the slice issue body's `### Acceptance Criteria` (primary, via `gh issue view <n>`) plus the parent PRD §6/§7/§8 and design (C13 paths).
 - Rename the Phase 3 table to "Slice AC / Requirement".
-- Phase 1 step 2 "explicit PRD AC" becomes "explicit slice AC".
+- Phase 1 step 2 "explicit PRD AC" becomes "covers a PRD §8 Definition-of-Done item" (user decision, 2026-10-13). "Explicit slice AC" would route nearly every slice to the full audit.
 
 ### A8 — deviations and manual-QA (V2, H4)
 - **4a step 5 `pr_body.py build` literal:** gains `--deviation "<each line of the 3d plan's ## Deviations>"` and `--manual-qa` when 3d or 3z flagged it.
