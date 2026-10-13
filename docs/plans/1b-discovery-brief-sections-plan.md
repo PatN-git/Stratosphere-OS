@@ -122,7 +122,7 @@ Phase 3 step 4 copies the 1b Phase 6 checklist inline. Bring it in line with C2.
 ### C4 — `src/workflows/2a-write-prd.md` (1.5.0 → 1.6.0)
 Replace the Phase 3 "Discovery-brief ingestion" paragraph with:
 
-> **Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout; seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10. Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
+> **Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout; seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10. Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 
 This also covers the 2z PRD Drafter, which follows 2a Phase 3 (2z:20).
 
