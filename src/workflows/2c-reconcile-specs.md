@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.2"
+version: "1.3.0"
 timestamp: 2026-10-13
 ---
 
@@ -23,7 +23,7 @@ _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on re
 
 **Resolve target artifacts** (missing file = a finding, not an error):
 - PRD `docs/prds/BT-<padded>-<feature>.md`; Interface design `docs/design/BT-<padded>-interface.md`; Discovery and Research: the PRD frontmatter `discovery:` / `research:` paths first (`—` = none linked, no fallback). Field absent (PRD predates the field) → fallback: Discovery = the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5); Research `docs/research/*<slug>*.md`.
-- Concept map: `concept:map` issue the Discovery brief cites; save `gh issue view <n>` to `.tmp/BT-<padded>-concept-map.md` (read-only).
+- Concept map: the Discovery brief's `concept-map:` frontmatter field (a `concept:map` issue `#<n>` or `.map.md` path; `—` = none; absent (brief predates the field) → the `concept:map` issue the brief cites, if any); `#<n>` → save `gh issue view <n>` to `.tmp/BT-<padded>-concept-map.md`, a `.map.md` path → read it in place (read-only).
 - Referenced artifacts (read-only): every `docs/` file or issue a resolved artifact cites by path or `#id`, one hop. Findings against read-only items (concept map, referenced artifacts) route to the PRD.
 - Schema source `.memory/DATABASE_SCHEMA.md` + any live introspection source the project declares (assume none unless declared).
 

@@ -24,7 +24,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Expand** — read file, fill thin sections and `> open:` markers.
 3. If feature warrants 2+ PRDs, suggest splitting first.
 4. One clarifying question only if blocking. Else → `> open:` into §10.
-5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
+5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md and *.map.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
    **Locate research:** same slug, fuzzy-match `docs/research/*.md` (ignore *.work.md) by 1b's External Research matching (multiple matches → list filenames, user selects; none → no research; match only, no staleness prompt). Record both paths for the PRD frontmatter `discovery:` / `research:` (Phase 5 step 1).
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
@@ -44,7 +44,7 @@ Record issue URL and minted ID for PRD front matter.
 ## Phase 3: Draft
 Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
 
-**Discovery-brief ingestion (if a brief was located):** seed §1/§2/§4/§6/§7 from its Problem, Vocabulary, Actor, Chosen Framing, and Non-Goals, and absorb its Open Questions into §10 — do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
+**Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout; seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10. Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.
@@ -63,7 +63,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - **Ethical & Dark Patterns:** Document anti-dark-pattern exclusions in §4 Non-Goals. Put profit-alignment in §12. Do not mix them: §4 is for principled exclusions; vendor lock-in is a §7 constraint / §12 viability concern.
 
 **RAT Carry-Over:**
-- Read `## Riskiest Assumption` from discovery brief (`1b`). If untested, carry to §10 as blocking; if validated, place in §11.
+- Read `## Riskiest Assumption` from discovery brief (`1b`). Status `untested | running | failed` → §10, blocking; `survived` → §11.
 
 **§7 ADR flag:** if §7 contains structural decisions with alternatives, ask to flag: propose [[A-xxx]] for `[LAW]` structural decisions; [[L-xxx]] for `[PATTERN]` or `[ASSUMED]`.
 
