@@ -37,12 +37,86 @@ def test_phase1_ladder_sampling_and_lean_report():
     assert "roster" in phase1 and "positive observations" in phase1  # named so they stay out of the report
 
 
-def test_watermark_is_last_run_only():
+def test_watermark_state_schema_is_owned_by_nightly_state_script():
     assert "sessions_reviewed" not in TEXT
-    assert '{"last_run": ' in _phase("## Phase 2", "## Phase 3: Crystallize")
+    phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
+    assert "python .agents/scripts/nightly_state.py stamp" in phase2
+    assert "only writer of `.last-run.json`" in phase2 and "never hand-write it" in phase2
+    assert '{"last_run": ' not in TEXT  # no hand-written JSON
 
 
-def test_decisions_record_is_read_in_phase2_and_appended_in_phase4():
+def test_phase1_reads_slug_names_only_and_escalates_recurrence():
+    phase1 = _phase("## Phase 1", "## Phase 2")
+    assert "python .agents/scripts/nightly_state.py slugs" in phase1
+    assert "Names only" in phase1 and "do not read prior nightly reports" in phase1
+    record = next(l for l in phase1.splitlines() if "nightly_state.py findings --slugs" in l)
+    route = next(l for l in phase1.splitlines() if "references/environment-fix-ladder.md" in l)
+    assert "reusing a listed slug" in record and "Name each" in record
+    assert phase1.index(record) < phase1.index(route)  # slug + nights come before routing
+    assert "`nights ≥ 2`" in route and "rung 1 or 4" in route and "rung 3" not in route
+
+
+def test_recurring_law_finding_uses_nights_and_ladder_rungs():
+    rule = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if "existing law" in l)
+    assert "`nights ≥ 2`" in rule and "rung 1 or 4 per ladder Escalation" in rule
+    assert "law not reaching agents" in rule
+
+
+def test_retention_prunes_reports_only_by_filename_date():
+    retention = next(l for l in _phase("## Phase 2", "## Phase 3: Crystallize").splitlines() if "**Retention:**" in l)
+    assert "`docs/nightly/nightly-*.md`" in retention and "filename date" in retention
+    assert "Keep `.last-run.json` and `index.md`" in retention
+    assert "docs/nightly/*" not in TEXT
+
+
+def test_phase3_promotes_assumed_cited_twice_before_the_supersede_row():
+    phase3 = _phase("## Phase 3: Crystallize", "## Phase 3.5")
+    promote = "| `[ASSUMED]` cited by ≥2 distinct tasks | Promote to `[PATTERN]`? |"
+    assert promote in phase3
+    assert phase3.index(promote) < phase3.index("Supersede with")
+    assert "collapse into one status line in the report" in phase3
+
+
+def test_phase4_stubs_pending_decisions_before_the_halt_and_rewrites_them():
+    phase4 = TEXT.split("## Phase 4")[1]
+    stub = next(l for l in phase4.splitlines() if l.startswith("3. "))
+    assert "## Decisions" in stub and "`R-n · <action> · pending`" in stub and "D-a..D-b BT-x" in stub
+    assert phase4.index(stub) < phase4.index("4. Halt.")
+    final = phase4.split("After the user answers")[1]
+    for status in ("accepted · applied <sha>", "accepted · deferred", "declined"):
+        assert status in final, status
+    assert "never append a second one" in final
+    # a carried pending line is closed at stub time in its original report, so it cannot multiply
+    assert "`carried → nightly-<date> R-m`" in stub and "original report" in stub
+    assert "also gets that status" not in final
+
+
+def test_phase4_orders_forced_items_when_they_exceed_the_cap():
+    step2 = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if l.startswith("2. "))
+    assert "exceed 5" in step2
+    assert step2.index("carried `pending`") < step2.index("`[CHRONIC]`") < step2.index("one per drift kind")
+    assert "overflow as a one-line count" in step2
+
+
+def test_phase2_carries_pending_decisions_as_forced_binaries():
+    phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
+    assert "`pending`" in phase2 and "carried forward" in phase2 and "≤5" in phase2 and "forced binary" in phase2
+    assert "pending" in TEXT.split("## Phase 4")[1].split("3. Write")[0] and "binary" in TEXT.split("## Phase 4")[1]
+
+
+def test_drift_runs_summary_mode_records_keys_and_forces_chronic_recommendations():
+    drift = _phase("Backlog Drift Check", "## Phase 4")
+    assert "reconcile.py --all-open --summary --out .tmp/nightly-drift.txt --keys-out .tmp/nightly-drift-keys.txt" in drift
+    assert "(raw list: `.tmp/nightly-drift.txt`)" in drift and "new items verbatim" in drift
+    assert "BT ids and ages" in drift and "Never paste the raw list" in drift
+    assert "nightly_state.py drift --keys-file .tmp/nightly-drift-keys.txt" in drift and "`[local-only`" in drift
+    assert "[CHRONIC n]" in drift and "heal it, or decline it" in drift
+    assert "a `declined` Decisions line for that BT·kind in the last 7 reports satisfies the force" in drift
+    group = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if l.strip().startswith("- Drift:"))
+    assert "every kind in the summary" in group and "stale_blocker" in group and "`D-n` range" in group
+
+
+def test_decisions_record_is_read_in_phase2_stubbed_and_rewritten_in_phase4():
     phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
     assert "## Decisions" in phase2 and "declined" in phase2
     assert "`## Decisions`" in phase2 and "30 lines" in phase2 and "last 7" in phase2  # bounded read, not whole reports
@@ -92,6 +166,7 @@ def test_constraint_is_scoped_to_the_workflows_own_writes():
     assert "Do not modify files without user approval" in constraint
     for write in ("report", ".last-run.json", "indices", "approved heals"):
         assert write in constraint, write
+    assert "`## Decisions` line of an earlier report (that line only)" in constraint
 
 
 def test_decisions_read_is_host_neutral_and_cannot_hang_without_reports():

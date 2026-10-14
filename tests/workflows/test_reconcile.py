@@ -151,6 +151,135 @@ def all_open_checks():
             rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
 
+def summary_checks():
+    """BT-163 R1: --all-open --summary groups by kind, keeps new items verbatim, ages carried ones."""
+    import json
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "BACKLOG_MAP.md"
+        p.write_text(ALLOPEN, encoding="utf-8")
+        path, out, keys, state = str(p), Path(td) / "raw.txt", Path(td) / "keys.txt", Path(td) / "state.json"
+
+        check("drift_kind maps every compare/closed/stale text",
+              [rec.drift_kind(t) for t in ("status map=a gh=b", "milestone map=a gh=b", "labels map_only=[]",
+                                           "blocked_by map=[] gh=[]", "parent map=a gh=b", "closed on GitHub, map=x",
+                                           "pr-link absent", "huh")]
+              == ["status", "milestone", "labels", "blocked_by", "parent", "closed", "pr_link", "other"])
+
+        orig_avail, orig_fetch = rec.gh_available, rec.fetch_issue
+        try:
+            rec.gh_available = lambda: True
+
+            def fetch(num, want_comments, want_state=False):
+                status = {"2": "in review", "3": "planned", "4": "in progress", "5": "planned", "9": "in progress"}[num]
+                labels = [{"name": f"status:{status}"}, {"name": "type:feature"}]
+                if num == "3":
+                    labels.append({"name": "area:extra"})
+                return {"number": int(num), "labels": labels, "milestone": {"title": "v1.0.0"},
+                        "state": "CLOSED" if num == "2" else "OPEN"}
+            rec.fetch_issue = fetch
+            base = ["--all-open", "--backlog", path, "--fields", "status,milestone,labels", "--state", str(state)]
+
+            code, raw = _run(base)
+            check("non-summary output unchanged: every raw line, exit 1",
+                  code == 1 and raw.splitlines()[0] == "[MIRROR-DRIFT BT-003: stale blocker BT-002 should be cleared]"
+                  and "[MIRROR-DRIFT BT-004: status map=planned gh=in progress]" in raw and "DRIFT-SUMMARY" not in raw)
+
+            code, first = _run(base + ["--summary", "--out", str(out), "--keys-out", str(keys), "--date", "2026-10-13"])
+            check("summary: exit code unchanged (1)", code == 1)
+            check("summary: header counts and per-kind counts",
+                  "[DRIFT-SUMMARY 5 items: 5 new, 0 carried]" in first
+                  and "kinds: closed 1 · labels 1 · stale_blocker 2 · status 1" in first)
+            check("summary: no state -> all new, listed verbatim, none carried",
+                  "new:" in first and "[MIRROR-DRIFT BT-003: stale blocker BT-002 should be cleared]" in first
+                  and "carried" not in first.replace("0 carried", ""))
+            check("--out holds every raw line, one per line",
+                  out.read_text(encoding="utf-8").splitlines() == [l for l in raw.splitlines()])
+            check("--keys-out holds deduped BT-x|kind keys",
+                  keys.read_text(encoding="utf-8").splitlines()
+                  == ["BT-002|closed", "BT-003|labels", "BT-003|stale_blocker", "BT-004|stale_blocker", "BT-004|status"])
+
+            state.write_text(json.dumps({"last_run": "x", "drift": {
+                "BT-003|labels": {"first": "2026-10-05", "last": "2026-10-09", "nights": 2},
+                "BT-004|status": {"first": "2026-10-09", "last": "2026-10-09", "nights": 1},
+                "BT-003|stale_blocker": {"first": "2026-10-13", "last": "2026-10-13", "nights": 1}}}), encoding="utf-8")
+            code, aged = _run(base + ["--summary", "--date", "2026-10-13"])
+            check("summary: carried totals", "[DRIFT-SUMMARY 5 items: 3 new, 2 carried]" in aged)
+            check("summary: chronic carried item flagged with its night", "carried labels 1: night 3: BT-003 [CHRONIC 3]" in aged)
+            check("summary: young carried item aged by group", "carried status 1: night 2: BT-004" in aged)
+            check("summary: carried items are not repeated verbatim",
+                  "BT-004: status map" not in aged and "BT-003: labels" not in aged)
+            check("summary: a key first recorded tonight (nightly_state already ran) is still new",
+                  "[MIRROR-DRIFT BT-003: stale blocker BT-002 should be cleared]" in aged)
+            state.write_text(json.dumps({"drift": {
+                "BT-003|labels": {"first": "2026-10-05", "last": "2026-10-13", "nights": 3}}}), encoding="utf-8")
+            check("summary: re-run after nightly_state recorded tonight keeps the same age",
+                  "carried labels 1: night 3: BT-003 [CHRONIC 3]" in _run(base + ["--summary", "--date", "2026-10-13"])[1])
+            check("summary: the next night ages it again",
+                  "night 4: BT-003 [CHRONIC 4]" in _run(base + ["--summary", "--date", "2026-10-14"])[1])
+
+            state.write_text(json.dumps({"drift": {"BT-003|labels": {"first": "2026-10-05", "nights": 2}}}), encoding="utf-8")
+            check("summary: a history entry without `last` still ages (not dropped)",
+                  "night 3: BT-003 [CHRONIC 3]" in _run(base + ["--summary", "--date", "2026-10-13"])[1])
+            state.write_text(json.dumps({"drift": {"BT-003|labels": {"first": "2026-10-05", "last": "2026-10-09",
+                                                                      "nights": 2}, "BT-099|labels": {"first": "2026-10-05",
+                                                                      "last": "2026-10-09", "nights": 4}}}), encoding="utf-8")
+            multi = _run(base + ["--summary", "--date", "2026-10-13"])[1]
+            check("summary: carried line lists ids grouped by age", "carried labels 1: night 3: BT-003 [CHRONIC 3]" in multi)
+            state.write_text("not json", encoding="utf-8")
+            check("summary: malformed state reads as no history",
+                  "[DRIFT-SUMMARY 5 items: 5 new, 0 carried]" in _run(base + ["--summary"])[1])
+            state.unlink()
+            check("summary: missing state reads as no history",
+                  "[DRIFT-SUMMARY 5 items: 5 new, 0 carried]" in _run(base + ["--summary"])[1])
+
+            rec.fetch_issue = lambda num, want_comments, want_state=False: {
+                "number": int(num), "labels": [{"name": "status:planned"}, {"name": "type:feature"}],
+                "milestone": {"title": "v1.0.0"}, "state": "OPEN"}
+            clean = ALLOPEN.replace("| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | BT-002 |",
+                                    "| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | — |").replace(
+                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | BT-001 |",
+                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | — |")
+            clean = clean.replace("| in review |", "| planned |").replace("| in progress |", "| planned |")
+            p.write_text(clean, encoding="utf-8")
+            code, ok = _run(["--all-open", "--backlog", path, "--summary", "--state", str(state),
+                             "--out", str(out), "--keys-out", str(keys)])
+            check("summary: no drift -> MIRROR-OK, exit 0, empty out/keys",
+                  code == 0 and "[MIRROR-OK 5 open rows]" in ok and out.read_text(encoding="utf-8") == ""
+                  and keys.read_text(encoding="utf-8") == "")
+
+            p.write_text(ALLOPEN, encoding="utf-8")
+            rec.fetch_issue = lambda num, want_comments, want_state=False: None  # transient gh failure
+            keys.write_text("BT-9|labels\n", encoding="utf-8")
+            code, flaky = _run(["--all-open", "--backlog", path, "--summary", "--state", str(state),
+                                "--keys-out", str(keys)])
+            check("summary: every row not_found -> treated as gh unavailable, no false drift",
+                  "[local-only" in flaky and "not found" not in flaky and "stale_blocker 2" in flaky and code == 1
+                  and not keys.exists())
+            _, flaky_plain = _run(["--all-open", "--backlog", path])
+            check("non-summary keeps not-found drift lines", "gh issue #2 not found" in flaky_plain)
+            rec.fetch_issue = lambda num, want_comments, want_state=False: None if num == "2" else {
+                "number": int(num), "labels": [{"name": "status:planned"}, {"name": "type:feature"}],
+                "milestone": {"title": "v1.0.0"}, "state": "OPEN"}
+            _, partial = _run(["--all-open", "--backlog", path, "--summary", "--state", str(state)])
+            check("summary: a single not_found among fetched rows is real drift",
+                  "[MIRROR-DRIFT BT-002: gh issue #2 not found]" in partial and "[local-only" not in partial)
+
+            rec.gh_available = lambda: False
+            keys.write_text("BT-9|labels\n", encoding="utf-8")
+            code, off = _run(["--all-open", "--backlog", path, "--summary", "--state", str(state),
+                              "--keys-out", str(keys)])
+            check("summary offline: local-only tag, stale items only, exit 1",
+                  code == 1 and "[local-only" in off and "stale_blocker 2" in off)
+            check("summary offline: partial keys never left for nightly_state", not keys.exists())
+        finally:
+            rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
+
+        check("--date must be YYYY-MM-DD", _arg_error(["--all-open", "--summary", "--date", "13-10-2026"]))
+        check("--summary needs --all-open", _arg_error(["--ids", "BT-007", "--summary"]))
+        check("--out needs --summary", _arg_error(["--all-open", "--out", "x.txt"]))
+        check("--keys-out needs --summary", _arg_error(["--all-open", "--keys-out", "x.txt"]))
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         path = write_backlog(td)
@@ -245,6 +374,7 @@ def main():
         rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
     all_open_checks()
+    summary_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
