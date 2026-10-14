@@ -19,7 +19,7 @@ slices:
   - {id: BT-<padded>, summary: "<one line>", verdict: PASS|WAIVED|SKIP|PENDING, audit_rounds: <n>}
 test: {cmd: "<cmd>", observed: "<observed summary line>", at: <sha>}
 risk: [<tags>]              # from references/merge-risk-paths.md; [none] if no rule fires
-post_merge: ["<manual step>"]   # [] if none; manual-QA items and `noticed: <line>` items go here
+post_merge: ["<manual step>"]   # [] if none; manual-QA items go here
 deviations: ["<decision not in issue/design>"]   # from the 3d plan's ## Deviations; [] if no plan file
 refs: [<only IDs that constrained the change>]
 ```

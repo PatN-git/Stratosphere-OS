@@ -311,7 +311,7 @@
       "version": "1.7.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "3f7fc1b663682765327ac747aea5a6fe68ba80bf6ada5db0385b58b8e5df5777",
+      "sha256": "aadc3d935577277049b9a5be6f5b8c522437615bd48f251eedad82fa8c24b628",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -351,7 +351,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "e492f73a52a7591eee8093ecbf96f95b771f08ce6fa7ca5d346946cb4e2241a8",
+      "sha256": "c9045247f31d207408cc1f278f6d166f8bc009ddda81820ded5e1f3e8cd9d5dc",
       "timestamp": "2026-10-14",
       "version": "1.0.3"
     },

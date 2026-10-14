@@ -52,7 +52,7 @@ def test_3d_plan_required_sections_include_noticed_not_touched():
 def test_4a_build_line_and_reference_agree_on_noticed_post_merge():
     text = _read("workflows/4a-verify-and-ship.md")
     build = _line(_between(text, "5. **PR (one per feature branch):**", "6. **PR-link comment"), "- **Build:**")
-    assert '--post-merge "noticed: <line>"' in build and "Noticed, not touched" in build
+    assert '--post-merge "noticed: <line>"' in build and "references/pr-body-and-ship.md" in build
     flags = _line(_read("references/pr-body-and-ship.md"), "- **Optional flags:**")
     assert "--post-merge" in flags and "Noticed, not touched" in flags
 
