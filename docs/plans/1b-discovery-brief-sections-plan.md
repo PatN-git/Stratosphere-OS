@@ -195,7 +195,7 @@ In Phase 1 "Resolve target artifacts", replace `Discovery docs/discovery/BT-<pad
 ### C12 — PRD frontmatter links (audit L2)
 - **PRD template frontmatter:** add `discovery: <path> | —` and `research: <path> | —`.
 - **2a:** fills both when it locates the files: Phase 1 step 5 finds the brief; add a research locator next to it using 1b's research-matching rule. Together with the brief's `linked-prd:`, this makes the link bidirectional.
-- **Readers:** 2c, 2z, 3b and 4a read these fields first. The C6/C7 locator rule is only the fallback, for PRDs written before this change.
+- **Readers:** 2c, 2z and 3b read these fields first. *Deviation (4a audit, 2026-10-13):* 4a reads neither link. Under D1, brief facts reach slices through 3b's Current-state seeding, and 4a audits slice AC plus PRD/design. The C6/C7 locator rule is only the fallback, for PRDs written before this change.
 
 ### C13 — parent-keyed spec paths (audit L3)
 3d step 3, the 4a Phase 2 auditor input and the 3z dispatch currently build `docs/prds|design/BT-<padded>-…` from the **slice** ID. They should:
