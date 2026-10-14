@@ -1,7 +1,7 @@
 ---
 description: Canonical gh commands for GitHub issue relations (sub-issue parent/child, blocked-by dependencies). Native `gh api graphql`; no `gh-sub-issue` extension.
-version: "1.0.1"
-timestamp: 2026-09-29
+version: "1.0.2"
+timestamp: 2026-10-13
 ---
 
 # GitHub Issue Relations
@@ -10,6 +10,8 @@ No native `gh sub-issue` subcommand or `--blocked-by` flag exists; no extension.
 
 **Add sub-issue** (`<child>` under `<parent>`):
 `gh api graphql -f query='mutation($p:ID!,$c:ID!){addSubIssue(input:{issueId:$p,subIssueId:$c}){issue{number}}}' -f p="$(gh issue view <parent> --json id -q .id)" -f c="$(gh issue view <child> --json id -q .id)"`
+
+**Remove sub-issue** (unlink `<child>` from `<parent>`): as Add sub-issue with `removeSubIssue` (input: `issueId` = parent, `subIssueId` = child).
 
 **Add blocked-by** (`<issue>` blocked by `<blocker>`):
 `gh api graphql -f query='mutation($i:ID!,$b:ID!){addBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{number}}}' -f i="$(gh issue view <issue> --json id -q .id)" -f b="$(gh issue view <blocker> --json id -q .id)"`

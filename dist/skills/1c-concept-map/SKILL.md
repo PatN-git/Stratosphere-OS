@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.2"
-timestamp: 2026-07-28
+version: "1.2.0"
+timestamp: 2026-10-13
 ---
 
 # Concept Map Workflow
@@ -70,10 +70,20 @@ timestamp: 2026-07-28
 ## Phase 3: Converge
 
 1. **Convergence Condition:** Run Phase 3: Converge only when frontier and fog are empty.
-2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`).
+2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`). Stamp `generated.by: 1c-concept-map` and set `concept-map:` to the map (`#<n>` of the `concept:map` issue, or the `.map.md` path under BT-LOCAL).
 3. **RAT Audit:** Invoke a subagent to challenge brief:
    - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
-4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist — terms used appear in Vocabulary; actor is specific (not "users"); problem contains no solution language; chosen framing notes rejected alternatives; RAT + cheapest test documented with status; no unfiled Open Questions — then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.
-5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`.
+4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist, then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.
+   - Terms used appear in Vocabulary.
+   - Actor is specific (not "users").
+   - Problem contains no solution language; compound scope uses Scope facets.
+   - Chosen framing notes rejected alternatives.
+   - Established Facts each name a source and the section is dated (or omitted for greenfield).
+   - Settled Decisions were confirmed by the user and carry a reason.
+   - Success State is observable and measurable.
+   - Decoupled Follow-ups are each marked existing BT-<n> or candidate.
+   - RAT + cheapest test documented with status.
+   - No unfiled Open Questions.
+5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`, each with its `Avoid:` list (rejected synonyms from the map's resolutions).
 6. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `BACKLOG_MAP.md` to `status:done`.
 7. **Hand-off:** Expose brief. Trigger `/2a-write-prd` or exit ramps.

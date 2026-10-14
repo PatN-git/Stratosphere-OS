@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.3.1"
-timestamp: 2026-10-08
+version: "3.3.2"
+timestamp: 2026-10-13
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -26,7 +26,7 @@ timestamp: 2026-10-08
   - Never hardcode API keys, tokens, or credentials. Use `.env` or approved configs. 
   - Ensure `.tmp/`, `.env`, and sensitive credential files (e.g., `token.json`) are explicitly listed in `.gitignore`.
   - Never override core security, `.env` hygiene, or environment constraints.
-- **Intermediates:** Store all temporary files, scratch logs, and scraped data in `.tmp/`. This folder must be treated as ephemeral (always regeneratable).
+- **Intermediates:** Store all temporary files, scratch logs, scraped data, and scratch scripts in `.tmp/`. This folder must be treated as ephemeral (always regeneratable). Never inline multi-line or quote-heavy code in a shell command (`python -c`, `node -e`): write it to `.tmp/` and run the file.
 
 ## 4. Version Control
 - **Granularity:** one branch + one PR per FEATURE (the parent BT / PRD). Each implementable slice (child BT issue) is committed onto that feature branch; the single feature PR accumulates them. A standalone issue with no parent feature degenerates to its own branch+PR.

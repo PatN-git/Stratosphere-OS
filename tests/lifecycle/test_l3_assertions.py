@@ -300,9 +300,10 @@ def _project_with_reconcile(tmp_path, backlog):
     proj = project(tmp_path)
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    (scripts / "reconcile.py").write_text(
-        (REPO / "src" / "scripts" / "reconcile.py").read_text(encoding="utf-8"),
-        encoding="utf-8")
+    for name in ("reconcile.py", "nightly_state.py"):  # reconcile imports nightly_state
+        (scripts / name).write_text(
+            (REPO / "src" / "scripts" / name).read_text(encoding="utf-8"),
+            encoding="utf-8")
     write(proj / ".memory" / "BACKLOG_MAP.md", backlog)
     return proj
 

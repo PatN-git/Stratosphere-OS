@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
-timestamp: 2026-10-05
+version: "1.3.0"
+timestamp: 2026-10-13
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -22,8 +22,8 @@ _INPUT:_ trigger naming the feature (`BT-<padded>`). Absent → HALT, ASK: `Spec
 _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on request).
 
 **Resolve target artifacts** (missing file = a finding, not an error):
-- Research `docs/research/*<slug>*.md`; Discovery `docs/discovery/BT-<padded>-*.md`; PRD `docs/prds/BT-<padded>-<feature>.md`; Interface design `docs/design/BT-<padded>-interface.md`.
-- Concept map: `concept:map` issue the Discovery brief cites; save `gh issue view <n>` to `.tmp/BT-<padded>-concept-map.md` (read-only).
+- PRD `docs/prds/BT-<padded>-<feature>.md`; Interface design `docs/design/BT-<padded>-interface.md`; Discovery and Research: the PRD frontmatter `discovery:` / `research:` paths first (`—` = none linked, no fallback). Field absent (PRD predates the field) → fallback: Discovery = the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5); Research `docs/research/*<slug>*.md`.
+- Concept map: the Discovery brief's `concept-map:` frontmatter field (a `concept:map` issue `#<n>` or `.map.md` path; `—` = none; absent (brief predates the field) → the `concept:map` issue the brief cites, if any); `#<n>` → save `gh issue view <n>` to `.tmp/BT-<padded>-concept-map.md`, a `.map.md` path → read it in place (read-only).
 - Referenced artifacts (read-only): every `docs/` file or issue a resolved artifact cites by path or `#id`, one hop. Findings against read-only items (concept map, referenced artifacts) route to the PRD.
 - Schema source `.memory/DATABASE_SCHEMA.md` + any live introspection source the project declares (assume none unless declared).
 
@@ -31,7 +31,7 @@ _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on re
 - < 2 spec artifacts beyond the PRD → SKIP: `[SKIP] BT-<padded>: too few artifacts; proceed to /3b-create-issue.`
 - Epic not pre-slicing (`status:needs_spec`/`status:planned`) → HALT; reconciliation runs before slices exist.
 
-_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it as a pre-Slice-1 migration for `3b`.
+_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it in the PRD §10 as a `migration:` item (`N. migration: <required change, phrased as a requirement> — owner: <who>, blocking: Y`; `3b` mints it as a leading slice).
 
 ## Phase 2: Consistency Scan
 **Context Isolation Rule:** Execute natively ONLY IF this session has not authored or modified any target artifact. Otherwise, or if unsure, isolate to an independent Spec-Reconciliation Auditor subagent; resolve targets in the parent and pass the explicit file list (subagent reads only named files, never sweeps).
@@ -40,7 +40,10 @@ _CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo.
 Surface contradictions and blocking gaps only — not stylistic drift.
 
 ### Scan Matrix
-1. **Contract existence:** every contract any resolved artifact references (table, field, enum, type, endpoint, key) exists in the schema source. Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared. When `--sql` is declared, also run `python .agents/scripts/contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>`: each `[CONTRACT-DRIFT]` (a table/column in one schema source but not the other) is a P1 finding. Reason only where the script can't answer (endpoint, key, type, anything it ignores).
+1. **Contract existence:** every contract any resolved artifact references (table, field, enum, type, endpoint, key) exists in the schema source.
+   - Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared.
+   - When `--sql` is declared, also run `python .agents/scripts/contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>`: each `[CONTRACT-DRIFT]` (a table/column in one schema source but not the other) is a P1 finding.
+   - Reason only where the script can't answer (endpoint, key, type, anything it ignores).
 2. **Semantic contradiction:** behavioral claims agree across Concept map → Research → Discovery → PRD → Interface-Design (state transitions, timing/ordering, fallbacks, batching, rate/quota). Flag prose ↔ typed-contract ↔ stress-matrix disagreement.
 3. **Attribute rules:** each attribute is extracted or inherited, with an explicit missing-value rule — required-missing (reject) vs optional-missing (degrade/default).
 4. **Boundary record:** auth/access and runner/quota constraints a slice must honor are recorded (e.g. service-role secret, timeout, quota).
@@ -59,7 +62,7 @@ Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:*
 
 ## Phase 4: Resolve & Apply
 1. **Present** the report; HALT. All findings apply by default; the user **Skips** exceptions (a skipped finding dies with the ephemeral report).
-2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a required pre-Slice-1 migration in the PRD, never silently write the schema.
+2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** with `blocking: Y` (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a PRD §10 `migration:` item (same form), never silently write the schema.
 3. **Version:** once per run (not per finding), re-stamp each edited doc's OKF `version` to the installed plugin version and refresh `generated.at` (and `generated.by` to `2c-reconcile-specs`) — per `.agents/rules/okf-protocol.md` §5 (Edited Docs).
 4. **Exit criteria:** zero P0 unaddressed; every finding applied, written as an Open Question, or skipped; no open `[UNCOVERED]`. Never mark complete on a "looks consistent" judgment.
 

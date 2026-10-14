@@ -9,6 +9,7 @@ import sys
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+SRC = REPO_ROOT / "src"
 
 # Prime sys.path so tests can import src modules without per-file boilerplate
 # when run under pytest. Standalone scripts still keep their own sys.path setup.
@@ -42,6 +43,16 @@ def commit(repo, subject, files=None):
     git(repo, "add", "-A")
     git(repo, "commit", "-m", subject)
     return git(repo, "rev-parse", "HEAD")
+
+
+def read_src(rel):
+    """Text of `src/<rel>` (workflow/reference contract tests)."""
+    return (SRC / rel).read_text(encoding="utf-8")
+
+
+def read_repo(rel):
+    """Text of `<rel>` relative to the repo root."""
+    return (REPO_ROOT / rel).read_text(encoding="utf-8")
 
 
 def update_skill_text():

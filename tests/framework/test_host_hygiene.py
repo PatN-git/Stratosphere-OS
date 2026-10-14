@@ -64,6 +64,26 @@ def test_playbook_carries_the_moved_cite_skills_by_name_rule():
         "authoring rule moved out of AGENTS.md section 8: skills are cited by name, the constitution's disk rule resolves them"
 
 
+CONSTITUTION_BUDGET = 9200  # chars: AGENTS.md is always loaded; the cap keeps additions deliberate
+
+
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_stays_within_its_char_budget(rel):
+    n = len(read(rel))
+    assert n <= CONSTITUTION_BUDGET, \
+        f"{rel} is {n} chars (budget {CONSTITUTION_BUDGET}); move per-case rules to a reference"
+
+
+def test_constitution_intermediates_names_scratch_scripts_and_no_inline_code_identically():
+    def bullet(rel: str) -> str:
+        return next(l for l in read(rel).splitlines() if l.startswith("- **Intermediates:**"))
+
+    assert bullet(CONSTITUTIONS[0]) == bullet(CONSTITUTIONS[1])
+    text = bullet(CONSTITUTIONS[0])
+    assert "scratch scripts" in text and "`.tmp/`" in text
+    assert "`python -c`" in text and "`node -e`" in text and "write it to `.tmp/` and run the file" in text
+
+
 def test_constitution_section_8_identical_across_copies():
     # Only the pre-existing trailing backtick line may differ between the product source and this repo's copy.
     def section8(rel: str) -> str:

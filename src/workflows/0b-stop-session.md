@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-05
+version: "1.4.0"
+timestamp: 2026-10-14
 ---
 
 # STOP SESSION
@@ -23,7 +23,11 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 
 1. Compare completed vs. planned:
     - Comment plan, completed, and open steps on active GitHub issues, and note which issues were updated/closed.
-    - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed. For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (`removeBlockedBy` mutation per `references/github-issue-relations.md`; safety net for the 4a in-review clearing). Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge. If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`.
+    - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed.
+      - For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (`removeBlockedBy` mutation per `references/github-issue-relations.md`; safety net for the 4a in-review clearing).
+      - If any dependent was cleared, run `python .agents/scripts/reconcile.py --require-gh --ids <cleared dependents> --fields blocked_by`; non-zero → heal per `references/terminal-sync-invariant.md` and re-run, **at most 3 attempts**, then surface the drift; `[MIRROR-UNVERIFIED]` → surface it, no heal.
+      - Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge.
+      - If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`. When every epic in a `vX.Y.0` release is then `done`, suggest `/3a-version-planning` (it closes the release's milestones).
     - **Post-merge follow-ups:** for each issue detected done this step, take the PR from its `Shipped in PR #<pr>` comment (4a step 6); dedupe PRs. Read each PR's `stratos-pr` block (`gh pr view <pr> --json body`; no block → skip). For each `post_merge` item, propose a follow-up issue (title + one-line body). On confirmation only, create it per BACKLOG Label Composition Rules and 3b atomic minting, label set pinned (no label dropped): `type:maintenance`, `mode:HITL`, `tier:slice`, `size:small`, `status:planned`; add its BACKLOG row in the same step.
 2. Update `.memory/STATUS.md` (last sync, current branch, active issue, current focus, completed, blockers, next step).
 3. **Friction gate:** run steps 3–4 only if this session hit friction: a failed approach, a costly wrong assumption, a defect fixed, or a reviewer/audit catch. Else skip silently. For each defect fixed, ask "what would have prevented it?". Route every candidate per `references/environment-fix-ladder.md`.
@@ -50,6 +54,7 @@ Session complete.
 - Verification & Lint results:
 - New learnings (ID, tag, one-line text):
 - New glossary terms (with IDs and tags):
+- Framework feedback (skill · installed version · defect · evidence · suggested fix):
 - Follow-ups proposed:
 - Blockers:
 - Next immediate step:

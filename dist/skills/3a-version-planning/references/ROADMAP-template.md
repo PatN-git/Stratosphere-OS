@@ -1,7 +1,7 @@
 ---
 description: Template for docs/ROADMAP.md - releases mapped to parent features with MVP cut-line rationale.
-version: "2.0.0"
-timestamp: 2026-09-15
+version: "2.0.1"
+timestamp: 2026-10-14
 ---
 
 # Roadmap Template
@@ -30,7 +30,7 @@ generated:
 
 > Maintained by `/3a-version-planning`. Milestone format `vX.Y.Z` (MAJOR.MINOR.sprint). This file owns the release rows (`vX.Y`); sprint numbers (`Z`) are assigned by `/3c-sprint-planning`. Active/planned releases first; shipped releases collapse into `## Shipped` at the bottom.
 >
-> **Status** per release: `[PLANNED]` (no milestone yet / empty) · `[ACTIVE]` (current build target — its `vX.Y.0` milestone is open with all predecessors shipped) · `[SHIPPED <date>]` (its `vX.Y.*` milestones are all closed). Derive status from GitHub milestone open/closed state on each re-run; if GitHub is absent, set it manually.
+> **Status** per release: `[PLANNED]` (no milestone yet / empty) · `[ACTIVE]` (current build target — its `vX.Y.0` milestone is open with all predecessors shipped) · `[SHIPPED <date>]` (its `vX.Y.*` milestones are all closed; `/3a-version-planning` closes them once every epic is `done`, then writes this tag). Derive status from GitHub milestone open/closed state on each re-run; if GitHub is absent, set it manually.
 
 **Live product:** `vX.Y` &nbsp;<!-- highest [SHIPPED] release, or [ACTIVE] if none shipped yet -->
 

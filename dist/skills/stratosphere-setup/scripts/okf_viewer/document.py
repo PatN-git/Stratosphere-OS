@@ -42,6 +42,13 @@ def _parse_yaml(fm_text: str) -> dict[str, Any]:
             continue
             
         if ':' in line:
+            # Only top-level keys (indent == 0) count; nested keys must not overwrite parent fields
+            if line != line.lstrip():
+                current_key = None
+                list_items = []
+                i += 1
+                continue
+
             # Transition to a new key, commit the previous list if we were in one
             current_key = None
             list_items = []

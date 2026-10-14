@@ -6,13 +6,13 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-05
+version: "1.6.0"
+timestamp: 2026-10-13
 ---
 
 # Write PRD
 
-**Hand-off contract:** `/2b-interface-design` is next (designs interface). `/3b-create-issue` reads §1, §6, §7, §8.
+**Hand-off contract:** `/2b-interface-design` is next (designs interface). `/3b-create-issue` reads §1, §6, §7, §8, §10.
 
 ## Phase 0: Load Memory
 Run the `load-memory` skill to restore session context (read-only).
@@ -24,7 +24,8 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Expand** — read file, fill thin sections and `> open:` markers.
 3. If feature warrants 2+ PRDs, suggest splitting first.
 4. One clarifying question only if blocking. Else → `> open:` into §10.
-5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
+5. **Locate discovery brief:** derive slug (kebab-case core problem, 2–5 word noun phrase); fuzzy-match `docs/discovery/*.md` (ignore *.work.md and *.map.md); if matched, read it before drafting (the locator pattern `1b` uses for research files). It seeds Phase 3 and its link is closed in Phase 2 / Phase 5.
+   **Locate research:** same slug, fuzzy-match `docs/research/*.md` (ignore *.work.md) by 1b's External Research matching (multiple matches → list filenames, user selects; none → no research; match only, no staleness prompt). Record both paths for the PRD frontmatter `discovery:` / `research:` (Phase 5 step 1).
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
 Execute `gh issue create` to create parent GitHub issue — capture exact returned issue number `#N` and zero-pad to 3 digits (e.g. `BT-059`).
@@ -43,7 +44,9 @@ Record issue URL and minted ID for PRD front matter.
 ## Phase 3: Draft
 Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
 
-**Discovery-brief ingestion (if a brief was located):** seed §1/§2/§4/§6/§7 from its Problem, Vocabulary, Actor, Chosen Framing, and Non-Goals, and absorb its Open Questions into §10 — do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
+**Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout.
+- Seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10.
+- Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.
@@ -62,7 +65,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - **Ethical & Dark Patterns:** Document anti-dark-pattern exclusions in §4 Non-Goals. Put profit-alignment in §12. Do not mix them: §4 is for principled exclusions; vendor lock-in is a §7 constraint / §12 viability concern.
 
 **RAT Carry-Over:**
-- Read `## Riskiest Assumption` from discovery brief (`1b`). If untested, carry to §10 as blocking; if validated, place in §11.
+- Read `## Riskiest Assumption` from discovery brief (`1b`). Status `untested | running | failed` → §10, blocking; `survived` → §11.
 
 **§7 ADR flag:** if §7 contains structural decisions with alternatives, ask to flag: propose [[A-xxx]] for `[LAW]` structural decisions; [[L-xxx]] for `[PATTERN]` or `[ASSUMED]`.
 
@@ -84,7 +87,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] §7 ADR flag raised if applicable
 
 ## Phase 5: Publish & Sync
-1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>` and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
+1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>`, `discovery:` / `research:` to the paths located in Phase 1 step 5 (`—` when none), and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
 2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b-interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a-version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. Update parent issue body: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).

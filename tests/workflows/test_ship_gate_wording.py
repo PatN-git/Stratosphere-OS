@@ -76,6 +76,15 @@ def test_4a_runs_release_bump_before_push_when_repo_has_one():
     assert text.index("scripts/release.py") < text.index("Push the branch"), "release bump must precede the push"
 
 
+def test_4a_step4_reruns_release_at_every_ship_and_commits_only_if_changed():
+    text = _4a()
+    step4 = text[text.index("4. **Release bump + push:**"):text.index("5. **PR (one per feature branch):**")]
+    assert "once per PR" not in step4
+    assert "at every ship" in step4
+    assert "only if its output changed" in step4 and "`release: prepare v<x>`" in step4
+    assert step4.index("scripts/release.py") < step4.index("Push the branch")
+
+
 def test_4a_closing_lines_are_bare_and_read_back():
     text = _ship()
     assert "Closes #<n>." in text, "closing lines must be the bare `Closes #<n>.` form that GitHub links"

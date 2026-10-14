@@ -101,13 +101,47 @@ INDEXED_DIRS = (".memory", "docs/prds", "docs/discovery", "docs/research", "docs
                 "docs/knowledge", "docs/nightly")
 
 
+DESCRIPTION_MAX = 160
+_COMMENT_RE = re.compile(r"<!--.*?(?:-->|\Z)", re.DOTALL)  # an unterminated comment runs to EOF
+_RULE_RE = re.compile(r"([-*_])(?:\s*\1){2,}")
+
+
+def _first_paragraph(body: str) -> str:
+    """First body paragraph, skipping headings, blockquotes, HTML comments and raw HTML lines, tables,
+    code fences and thematic breaks; whitespace collapsed and cut to about DESCRIPTION_MAX chars at a
+    word boundary."""
+    para = []
+    in_fence = False
+    for line in _COMMENT_RE.sub("", body).splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            if para:
+                break
+        elif in_fence:
+            continue
+        elif s and not (s.startswith(("#", ">", "|", "<")) or _RULE_RE.fullmatch(s)):
+            para.append(s)
+        elif para:
+            break
+    text = " ".join(" ".join(para).split())
+    if len(text) > DESCRIPTION_MAX:
+        text = text[:DESCRIPTION_MAX].rsplit(" ", 1)[0] + "…"
+    return text
+
+
 def _title_description(path: Path) -> tuple[str, str]:
-    """Frontmatter title/description of a concept file; title falls back to the file stem."""
+    """Frontmatter title/description of a concept file; title falls back to the file stem and a blank
+    description (in a file that has frontmatter) to the first body paragraph."""
     try:
-        fm = OKFDocument.parse(path.read_text(encoding="utf-8")).frontmatter
+        doc = OKFDocument.parse(path.read_text(encoding="utf-8"))
     except Exception:
-        fm = {}
-    return str(fm.get("title") or path.stem), " ".join(str(fm.get("description") or "").split())
+        doc = OKFDocument()
+    fm = doc.frontmatter
+    description = " ".join(str(fm.get("description") or "").split())
+    if not description and fm:
+        description = _first_paragraph(doc.body)
+    return str(fm.get("title") or path.stem), description
 
 
 def rebuild_indices(project_root: Path) -> int:

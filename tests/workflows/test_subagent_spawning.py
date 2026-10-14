@@ -40,8 +40,8 @@ WORKFLOWS = {
     ],
     "src/workflows/4a-verify-and-ship.md": [
         "Context Isolation Rule",
-        "invoke an independent Strict Business-Logic Auditor subagent",
-        "Audit + format the AC↔test table only; do not edit code/tests, do not commit or push; return to main for Phase 4.",
+        "**Strict Business-Logic Auditor** (independent subagent)",
+        "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit.",
         # Lock in the two-separate-subagents requirement (the Standards Auditor must be a
         # distinct dispatch, never folded into the Business-Logic Auditor).
         "two separate, independent subagents in two isolated contexts",

@@ -6,13 +6,13 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-05
+version: "1.5.1"
+timestamp: 2026-10-14
 ---
 
 # Interface Design
 
-**Hand-off contract:** Writes path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `references/design-doc-template.md`. Appends design path to parent GitHub issue body. Downstream workflows (`3b`, `3d` Phase 0, `4a`) read this document.
+**Hand-off contract:** Writes `docs/design/BT-<padded>-interface.md` from `references/design-doc-template.md`, the design link on the parent issue, and the parent epic's `needs_spec → planned` (Phase 1 or 5). Read by: `/2c-reconcile-specs`, `/3b-create-issue`, `/3d-implement-issue`, `/4a-verify-and-ship`.
 
 ---
 
@@ -45,7 +45,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Feature-on-existing** (Path A A2; Path B feature) → Skip unless ≥2 distinct layouts found.
    - **Path C (non-UI)** → Generate 3 architecture/API alternatives. Use PRD §12 cost warning.
 2. Generate 3 Directions (wireframes, layout/structure only; for Path A/B, no tokens/visual style exploration):
-   - Invoke plan-html: use wireframe-compare template or 3-column CSS grid (labeled regions + 1-line rationale, trade-off matrix row) to render docs/design/BT-<padded>-directions.html.
+   - Invoke plan-html: use wireframe-compare template or 3-column CSS grid (labeled regions + 1-line rationale, trade-off matrix row) to render the ephemeral `.tmp/render/docs/design/BT-<padded>-directions.html` (never committed).
 3. **5-Lens Check:** Evaluate against desirable, usable, feasible, viable, ethical.
 4. **HITL Pick:** Show comparison. Record winner and rejected in docs under "## Direction Alternatives (Considered)".
 
@@ -103,7 +103,10 @@ Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <desi
 2. **Commit & Push Doc:** `git add docs/design/BT-<padded>-interface.md && git commit -m "docs(BT-<padded>): interface design"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). Never sweep unrelated drift into this commit.
 3. Append design doc link to parent GitHub Issue body.
 4. Append memory IDs to Ref column in `BACKLOG_MAP.md` (never put design doc path in Ref column).
-5. Handoff — route to `/3a-version-planning` only when 3a would act on this feature: (its `MAJOR.MINOR` is undecided — parent has no GitHub milestone (`gh issue view <n> --json milestone` → `null`; offline: `BT-<padded>` absent from `docs/ROADMAP.md`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first." Otherwise → "Interface design complete. Run `/3b-create-issue` to slice." (A lone unassigned feature takes the default `v1.0.0` without a roadmap pass; 3a is the only writer of an epic's GitHub milestone, and the BACKLOG milestone 2a writes is provisional. A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.)
+5. Handoff — route to `/3a-version-planning` only when 3a would act on this feature:
+   - (its `MAJOR.MINOR` is undecided — parent has no GitHub milestone (`gh issue view <n> --json milestone` → `null`; offline: `BT-<padded>` absent from `docs/ROADMAP.md`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first."
+   - Otherwise → "Interface design complete. Run `/3b-create-issue` to slice."
+   - A lone unassigned feature takes the default `v1.0.0` without a roadmap pass; 3a is the only writer of an epic's GitHub milestone, and the BACKLOG milestone 2a writes is provisional. A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.
 
 ---
 

@@ -35,7 +35,7 @@ def test_2b_runs_the_check_over_prd_and_design_before_phase_5():
 
 def test_2c_scan_matrix_item_1_calls_the_script_and_keeps_the_auditor_guardrail():
     text = (WF / "2c-reconcile-specs.md").read_text(encoding="utf-8")
-    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*$", text, re.M).group(0)
+    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*?(?=^2\. )", text, re.M | re.S).group(0)
     assert "contract_check.py --docs <all resolved artifacts>" in item1
     assert "[CONTRACT-MISSING]" in item1 and "P0/P1" in item1
     assert "Return findings + one proposed resolution each; do not modify, create, or delete any spec document" in text
@@ -45,7 +45,7 @@ def test_2c_resolves_concept_map_and_referenced_artifacts_and_scans_all_resolved
     text = (WF / "2c-reconcile-specs.md").read_text(encoding="utf-8")
     resolve = text.split("**Resolve target artifacts**")[1].split("**Gate**")[0]
     assert "`concept:map`" in resolve and "Referenced artifacts" in resolve
-    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*$", text, re.M).group(0)
+    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*?(?=^2\. )", text, re.M | re.S).group(0)
     assert "any resolved artifact references" in item1
 
 
@@ -62,6 +62,6 @@ def test_every_workflow_call_uses_only_real_flags():
 
 def test_2c_scan_matrix_item_1_runs_parity_when_sql_is_declared():
     text = (WF / "2c-reconcile-specs.md").read_text(encoding="utf-8")
-    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*$", text, re.M).group(0)
+    item1 = re.search(r"^1\. \*\*Contract existence:\*\*.*?(?=^2\. )", text, re.M | re.S).group(0)
     assert "contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>" in item1
     assert "[CONTRACT-DRIFT]" in item1
