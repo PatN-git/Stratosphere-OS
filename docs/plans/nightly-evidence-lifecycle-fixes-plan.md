@@ -47,3 +47,24 @@ Five framework changes are justified. Each has evidence from at least two nights
 - F2/F3: on the next nightly where shell quoting recurs, the run produces a local rung-1 recommendation, not "existing law covers it". A skill defect produces a Framework feedback notice and no outward action. No `src/` file names a StratOS repo or filing target.
 - F4: the constitution char-budget test passes; within two weeks the nightlies show no new inline-quoting failures.
 - F5: after an epic ships, `reconcile.py --ids <dependents> --fields blocked_by` is clean.
+
+## Implementation spec (re-planned 2026-10-13, after BT-164..167)
+A read-only planning pass re-verified every item against the current branch. The 0d commit `3561941` already added 0d's `## Framework feedback` section, and BT-167 changed 4a steps 7–9. **Scope:** F1, F2+F3, F4, F5, F6. **F7 is dropped** (user decision): CleanTechHub fixed the symptom in BT-235, and its intentional `.agents/workflows/` stubs would trip the lint.
+
+**Corrections to the draft above:**
+- **Acceptance "no `src/` file names a StratOS repo":** narrow it to "…as a filing target for consumer findings". Legitimate update paths name the repo.
+- **F2 evidence:** shell quoting was rung 3 only on 10-13. The pattern (cite a `[PATTERN]`, write nothing) holds.
+- **F3:** the 0d side is done, and 0b needs no change. Name the skill's own `version:` frontmatter, not `versions.json`.
+- **F4:** no test capped §3 before this. Edit the root `AGENTS.md` too.
+- **F5:** the 07-25 BT-055 evidence is slice-level, so drop it.
+- **F6:** `scaffold.py` flags modified scripts as NEEDS-REVIEW and does not overwrite them.
+
+| # | Change | Files (bump) | Tests |
+|---|---|---|---|
+| F1 | `reconcile.py` `compare()`: drop `status:*` from the **map** label set before comparing (status is compared separately). Leave `parse_backlog` unchanged. | `src/scripts/reconcile.py` | `tests/workflows/test_reconcile.py`: a row with `status:planned` in Labels vs a matching GitHub issue gives `[]` |
+| F2+F3 | `environment-fix-ladder.md`. **Rung 1** absorbs host/tooling behaviour (local hook, setup check or project rule). **Rung 3** = a `[LAW]` entry or core rule, on its first miss; a `[PATTERN]`/`[ASSUMED]` LEARNINGS id is not law. A finding that matches any LEARNINGS id, or a law cited on an earlier night, is a recurrence and goes to rung 1 or 4, never 3. **Rung 4 renamed "Framework feedback":** a defect in an installed StratOS skill, recorded as skill · installed `version:` · defect · evidence · suggested fix wherever the citing workflow records findings (0d report, 0b handoff). Never file it, name a repo, or edit the installed skill. | ladder 1.0.0 → 1.1.0 | `tests/workflows/test_environment_fix_ladder.py`: `[LAW]`, recurrence, "against StratOS" absent, rung-4 fields mirror 0d's |
+| F4 | Constitution §3 **Intermediates**: add scratch scripts to `.tmp/`; "never inline multi-line or quote-heavy code in a shell command (`python -c`, `node -e`): write it to `.tmp/` and run the file". Same text in root `AGENTS.md`. | constitution already bumped on the branch (3.3.2); root unversioned | `tests/framework/test_host_hygiene.py`: clause present in both, plus a **whole-file cap of ~9,200 chars per constitution** (user decision A + (ii)) |
+| F5 | **4a step 8:** after the epic flips to `in review`, clear `BT-<parent>` from every dependent's `Blocked by` (map + `removeBlockedBy`), as in step 7. **Step 9 `--ids`** includes the dependents cleared in step 7 or 8. **terminal-sync-invariant:** heals clear a stale blocker on both sides (map cell and GitHub edge). **0b step 1:** after its post-merge clearing, run `reconcile.py --require-gh --ids <cleared dependents> --fields blocked_by` and heal at most 3 times (user decision: 4a + 0b gate). The standing-epic skip in step 8 stays. | 4a (1.4.0) and terminal-sync (1.1.0) already bumped; 0b first bump (patch or minor, implementer's call) | step 8 epic-clear, step 9 dependents, 0b gate |
+| F6 | Port CleanTechHub `2143aca` (only top-level `indent == 0` keys count as frontmatter fields) into `src/scripts/okf_viewer/document.py`, **plus** reset `current_key=None; list_items=[]` in the indented branch (user decision). | script (unversioned) | `tests/scripts/test_okf_rebuild_indices.py`: nested `title:`/`description:` under a parent key keeps the top-level title; no stray top-level `by`/`at` |
+
+**Order:** F1 → F2+F3 → F4 → F5 → F6 (one slice, one implementer, one review).

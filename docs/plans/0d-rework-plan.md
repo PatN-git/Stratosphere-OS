@@ -87,3 +87,35 @@ Ship 1–3 as one feature PR (one release bump; per memory, prefer combined over
 - Carried drift trends to 0 within two weeks of R2; no D-item survives more than 3 nights unhealed or unsuppressed.
 - A recurring finding (`nights ≥ 2`) never routes to rung 3.
 - Every StratOS skill defect a nightly finds appears as a Framework feedback notice (skill + installed version + evidence), and no nightly takes an outward action.
+
+## Implementation spec (re-planned 2026-10-13, after BT-162 and BT-164..167)
+A read-only planning pass re-verified R1–R7 against the working tree. 0d is already bumped on this branch (1.2.1 → 1.3.0), so it gets no further bump. BT-162 F1 removes the 11 status-only D-items; the 10-13 drift section is still 6.4 KB of a 14.6 KB report.
+
+**User decisions:**
+- **C1:** a new `nightly_state.py` is the only writer of `docs/nightly/.last-run.json`. It needs scaffold `place()` and orphan-guard wiring.
+- **C2:** `reconcile.py --heal` writes BACKLOG_MAP only. GitHub-direction fixes are *printed* as commands, which the agent runs after the user approves the R-n. The contract becomes "never writes GitHub".
+- **C3:** R7 is spiked within this slice.
+
+**Corrections to the draft above:**
+- The 10-13 report already has a hand-written `## Decisions` that uses `deferred`.
+- The BT-215 edges were healed on 10-13, and BT-162 F5 prevents a recurrence.
+- R5 is done (`3561941`, `67e2212`). Only `applied <sha>` remains, and it folds into R4.
+- R4's stub belongs in Phase 4 step 3, not Phase 2.
+- R1 must follow R3 (it needs the prior-night keys), and it must cover every drift kind (`status`, `milestone`, closed, stale blocker, absent, not found).
+- R2 has to amend the "detection only" contract (`reconcile.py:2`, terminal-sync-invariant).
+- R6's "≥2 nights undecided" rule is subsumed by R4 carry-over. L-017 is resolved.
+- One bump per file per PR.
+- Missing from the draft: 0d retention globs `docs/nightly/*`, which includes `.last-run.json` and `index.md`. Restrict it to `nightly-*.md` by filename date, as 4c does.
+
+| # | Change | Files | Tests |
+|---|---|---|---|
+| R3 | `nightly_state.py` (new, `src/scripts/`) owns `.last-run.json`: `{"last_run": ISO, "findings": {"<slug>": {"first","last","nights"}}, "drift": {"BT-x\|kind": {"first","nights"}}}`. A missing key or the old `{"last_run"}`-only format reads as empty history. Drift keys not seen tonight are dropped; findings are pruned 90 days after `last`. UTF-8 with no BOM. Commands: record findings (slugs), record drift keys, stamp. 0d Phase 1 reads slug names only (no prose) and reuses a slug when the finding matches; `nights ≥ 2` escalates per the ladder (rung 1/4). | new script + scaffold `place()` + orphan guard; 0d | script tests (old format, increment, prune, no BOM); rename `test_watermark_is_last_run_only` → `…_schema`, keep the `sessions_reviewed` ban |
+| R1 | `reconcile.py --all-open --summary [--out .tmp/nightly-drift.txt]`. Raw lines go to `--out`. Prints a count per kind, **new** items verbatim, and carried items as one line per kind with their ages (ages come from `nightly_state.py`'s drift map). `[CHRONIC n]` at ≥3 nights becomes a forced recommendation (heal, or accept and suppress). Drift key = `BT-x\|kind`. 0d Phase 3.6 keeps the summary plus new items as `D-n`; the Phase 4 grouping covers every kind. | `reconcile.py`; 0d | new/carried/chronic/out-file tests; adjust the "verbatim" pins |
+| R4 | Phase 4 step 3 also writes `## Decisions`: `R-n · <action> · pending [· D-a..D-b BT-x,…]`. After the user's answer, each line is rewritten to `accepted · applied <sha>`, `accepted · deferred` or `declined`. Phase 2 carries forward earlier `pending` lines; each takes a slot in the ≤5 and is shown as a forced binary. | 0d | stub before Halt; carry-over; vocabulary |
+| R5 | Align `0d:63` to "recurs (`nights ≥ 2`) → rung 1 or 4 per ladder Escalation". | 0d | keep or update the existing assert |
+| R6 | Add a Phase 3 row, "`[ASSUMED]` cited by ≥2 distinct tasks → Promote to `[PATTERN]`?", **before** the 7-day supersede row. No-op audits collapse to one status line in the report too. | 0d | row order |
+| R2 | `reconcile.py --heal --kind <k> --source gh [--ids]` upserts BACKLOG_MAP cells from GitHub, keyed by BT, with no appends. The map→GitHub direction prints the `gh`/GraphQL commands. It refuses to run without `--kind` and `--ids`/`--all-open`. Amend the contract wording in `reconcile.py:2` and terminal-sync-invariant to "never writes GitHub". | `reconcile.py`, terminal-sync (already bumped) | upsert, dry-run output, refusal |
+| R7 | **Spike:** map the on-disk session-transcript schemas of both hosts: Claude Code `~/.claude/projects/<slug>/*.jsonl`, and Antigravity `~/.gemini/antigravity/brain/<id>/.system_generated/logs/transcript.jsonl` plus `conversations/<id>.db`. Record the findings in this plan. If both are stable, add `nightly_scan.py`, which emits per-session tool-error counts and failing commands for 0d Phase 1. Otherwise document the gap and file a follow-up. Transcript *content* stays local; read schemas and keys only. | spike notes; maybe a new script | per findings |
+| Retention | 0d's retention keeps `.last-run.json` and `index.md` and prunes only `nightly-*.md` by filename date. | 0d | pin |
+
+**Order:** R3 → R1 → R4 + R5 + R6 + retention → R2 → R7 spike. That is two implementer passes: (a) R3 + R1 + wording, (b) R2 + R7.
