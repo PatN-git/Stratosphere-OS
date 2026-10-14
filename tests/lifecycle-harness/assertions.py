@@ -279,7 +279,7 @@ def check_2b(ctx: Context):
     used = [n for n in tool_names(ctx) if any(g in n for g in GENERATOR_MCP)]
     if used:
         problems.append(f"a generator MCP was reached on the non-UI path: {used}")
-    if not sorted(ctx.project.glob("docs/design/BT-*-directions.html")):
+    if not sorted(ctx.project.glob(".tmp/render/docs/design/BT-*-directions.html")):
         notes.append("no directions HTML was produced; on Path C the 3 lo-fi layouts "
                      "are a UI step, so this is expected rather than a defect")
     if ctx.bare is not None:

@@ -77,5 +77,5 @@ def test_a_slice_without_a_github_milestone_drifts_from_its_backlog_row():
 def test_3b_passes_the_milestone_on_slice_mint_and_step_5_mirrors_it():
     text = _3b()
     assert re.search(r"pass `--milestone \"<vX\.Y\.0>\"` on every slice mint", text)
-    assert "milestones?state=all' --jq" in text and "Only for those defaults" in text  # existence check, defaults only
+    assert "milestones?state=open' --jq" in text and "Only for those defaults" in text  # open-milestone check, defaults only
     assert "step-4 Milestone value" in text
