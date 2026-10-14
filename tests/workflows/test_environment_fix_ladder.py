@@ -50,8 +50,7 @@ def test_ladder_rung_4_is_framework_feedback_never_filed_and_mirrors_0d_fields()
     assert "against StratOS" not in text
     assert "Never file it, name a repo, or edit the installed skill" in rung4
     d0 = _read("workflows/0d-nightly-consolidation.md")
-    fields = "skill · installed version · defect · evidence · suggested fix"
-    assert fields in d0
+    assert "`## Framework feedback`" in d0 and "per the ladder" in d0  # the fields live once, in rung 4
     assert "skill (`.agents/skills/<name>`) · installed `version:` · defect · evidence · suggested fix" in rung4
 
 

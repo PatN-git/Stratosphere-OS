@@ -12,14 +12,14 @@ timestamp: 2026-10-14
 
 # Version Planning
 
-**Hand-off contract:** Writes `docs/ROADMAP.md` (plus the `vX.Y.0` milestones, Phase 4). Read by: `/2b-interface-design`, `/3b-create-issue`.
+**Hand-off contract:** Writes `docs/ROADMAP.md`, the `vX.Y.0` milestones, `vX.Y.*` milestone closes and confirmed `Blocked by` edges (Phase 4). Read by: `/2b-interface-design`, `/3b-create-issue`.
 
 **Scale-gate:** Run only when:
 1. `count(parent features where tier:epic AND status != done AND not yet assigned to current release) ≥ 2`, OR
 2. ≥ 2 parent features contend for same current-release scope, OR
 3. a release is closable: it has ≥ 1 parent epic, all `done`, and every open `vX.Y.*` milestone reports `open_issues == 0` (nothing else closes milestones).
 
-Condition 3 alone → close-out only: skip Phase 2 and the auditor; the Phase 2.5 step 3 halt presents the close-out; Phase 4 runs only steps 1, 2, 7, 8 and 9, then hands off: *"Release vX.Y closed."*
+Condition 3 alone → close-out only: skip Phases 2–3 and the auditor; the Phase 2.5 step 3 halt presents the close-out; Phase 4 runs only steps 1, 2, 7, 8 and 9, then hands off: *"Release vX.Y closed."*
 
 Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 
@@ -40,7 +40,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
    - **Live product:** highest `vX.Y` closed in GitHub (or tagged `[SHIPPED]` in `docs/ROADMAP.md`).
    - **Numbering baseline:** highest assigned `vX.Y` (scan authority: ROADMAP.md -> GitHub matching ^v\d+\.\d+\.\d+$ -> BACKLOG_MAP Milestone column, ignoring Z). Default `v1.0`.
 2. **Roadmap candidates:** parent features with status not `done`. Read their PRD §3, §6, §12 (Complexity Estimate), and `Blocked by`.
-3. **Closable releases:** each release not yet `[SHIPPED]` with ≥ 1 parent epic, all `done`: list its open `vX.Y.*` milestones (`gh api repos/{owner}/{repo}/milestones --paginate`; match `title`, read `number` and `open_issues`). Any `open_issues > 0` → the release is not closable; surface it instead. None open → nothing to close. GitHub disconnected → skip.
+3. **Closable releases:** each release not yet `[SHIPPED]` with ≥ 1 parent epic, all `done`: list its open `vX.Y.*` milestones (`gh api repos/{owner}/{repo}/milestones --paginate`; match `title`, read `number` and `open_issues`). Any `open_issues > 0` → the release is not closable; surface it instead. None open → nothing to close; a release whose milestones exist and are all closed (closed by hand) is still tagged `[SHIPPED <date>]` in Phase 4 step 2. GitHub disconnected → skip.
 4. **Working file:** If > 5 candidates, write `BT-id, scope, complexity (§12), Blocked-by, cut-line note` to `.tmp/3a-roadmap.work.md` (delete stale first). Else hold inline.
 5. Write nothing else in this phase (the `.work.md` is scratch, not an output artifact).
 
@@ -67,9 +67,9 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 
 ## Phase 4: Commit & Sync
 1. **Release close (outward write; only for releases the user confirmed at the Phase 2.5 halt, never auto-run):** close each of its open `vX.Y.*` milestones: `gh api -X PATCH repos/{owner}/{repo}/milestones/<n> -f state=closed`. All-or-nothing per release: if any of its milestones reports `open_issues > 0`, close none of them and surface those milestones. GitHub disconnected → skip; the release stays unshipped.
-2. **Write `docs/ROADMAP.md`:** instantiate `references/ROADMAP-template.md` — write its **Artifact frontmatter** block verbatim (already carries `type: roadmap`), then the **Artifact body**. Merge and preserve prose. Update release tags (`[PLANNED] / [ACTIVE] / [SHIPPED <date>]`; `[SHIPPED <date>]` only for a release whose milestones step 1 closed), update Live product marker, and collapse newly-shipped releases to a single line in Shipped section (never delete shipped).
+2. **Write `docs/ROADMAP.md`:** instantiate `references/ROADMAP-template.md` — write its **Artifact frontmatter** block verbatim (already carries `type: roadmap`), then the **Artifact body**. Merge and preserve prose. Update release tags (`[PLANNED] / [ACTIVE] / [SHIPPED <date>]`; `[SHIPPED <date>]` for a release whose `vX.Y.*` milestones are all closed, by step 1 or already), update Live product marker, and collapse newly-shipped releases to a single line in Shipped section (never delete shipped).
 3. **GitHub:** if disconnected, skip. Create milestones vX.Y.0 in GitHub, assign parent issues, and update BACKLOG_MAP Milestone column (do not touch leaf slices).
-4. **Record confirmed dependencies (amend-only, user-confirmed):** for each `[NEW-DEP]` the user confirmed at the halt, add the edge on GitHub (`addBlockedBy` mutation per `references/github-issue-relations.md`) and append the bare `BT-<prereq>` to that epic's `Blocked by` column in `BACKLOG_MAP.md`. 3a may only **add** a blocker edge here, and only with explicit confirmation — `2a` remains the birth writer (`Blocked by = —` at mint), and blocker **clearing** stays with 4a / 0b / merge. Never remove a `Blocked by` entry in 3a. Skip any proposed edge the user declined.
+4. **Record confirmed dependencies (amend-only, user-confirmed):** for each confirmed `[NEW-DEP]`, `addBlockedBy` (`references/github-issue-relations.md`) and append `BT-<prereq>` to the epic's `Blocked by`. Add only; clearing stays with 4a/0b.
 5. **Comment:** post release placement and rationale on each assigned parent feature issue.
 6. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of assigned parent BT-<padded>, plus each epic step 4 amended> --fields milestone,blocked_by` per `references/terminal-sync-invariant.md` (verifies the milestone and `Blocked by` mirrors only — 3a writes no other field). Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
 7. **Render:** invoke `plan-html` using `board` or `plan-document` to render the read-only ephemeral companion `.tmp/render/docs/ROADMAP.html` (never committed; re-render from the `.md` whenever presenting it).

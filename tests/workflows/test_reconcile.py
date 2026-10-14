@@ -423,6 +423,24 @@ def heal_checks():
             rm = rec.gh_fix_commands("parent", "10", dict(lrow, parent="—"), dict(lgh, parent={"number": 9}))
             check("removeSubIssue is printed when the map has no parent", len(rm) == 1 and "removeSubIssue" in rm[0])
 
+            # BT-162 F5: a blocker the map already cleared (its row is in review/done) is never written back
+            stale_map = HEALMAP.replace("| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | BT-006 |",
+                                        "| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | — |") + (
+                "| BT-007 | Blocker in review | in review | type:feature | v1.0.0 | — | — | ICE: 0.5 | — |\n"
+                "| BT-008 | Blocker planned | planned | type:feature | v1.0.0 | — | — | ICE: 0.5 | — |\n")
+            p.write_text(stale_map, encoding="utf-8")
+            code, out = _run(["--heal", "--kind", "blocked_by", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            check("heal blocked_by: a stale blocker (in review/done) is skipped with exit 1, the rest is healed",
+                  code == 1 and "[HEAL-SKIP BT-010 blocked_by: stale on GitHub; use --source map]" in out
+                  and cells("010")[6] == "BT-008" and "BT-007" not in row("010"))
+            p.write_text(stale_map.replace("| BT-008 | Blocker planned | planned |", "| BT-008 | Blocker done | done |"),
+                         encoding="utf-8")
+            before_text = p.read_text(encoding="utf-8")
+            code, out = _run(["--heal", "--kind", "blocked_by", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            check("heal blocked_by: all-stale blockers leave the map untouched",
+                  code == 1 and out.count("[HEAL-SKIP BT-010 blocked_by") == 1 and "0 healed" in out
+                  and p.read_text(encoding="utf-8") == before_text)
+
             # a failed write leaves neither a half-written map nor a stray .tmp
             p.write_text(HEALMAP, encoding="utf-8")
             real_replace = rec.os.replace

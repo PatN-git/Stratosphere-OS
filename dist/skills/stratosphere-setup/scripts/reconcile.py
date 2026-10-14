@@ -26,7 +26,8 @@ from GitHub, keyed by BT row (never appends a row, touches no other cell), atomi
 `gh` / GraphQL commands (references/github-issue-relations.md) for the agent to run after the user approves.
 Kinds: status, milestone, labels, parent, blocked_by. Not healable here: stale_blocker (both sides, a
 workflow decision), closed (flips a row to done: a lifecycle call), pr_link (a GitHub comment, no map cell),
-absent / not_found (a row would have to be appended or deleted). Re-run the sweep until it is clean.
+absent / not_found (a row would have to be appended or deleted). Re-run `--ids <healed> --fields <kind>` once. A blocked_by edge whose blocker's row is in review/done is
+skipped (`[HEAL-SKIP … stale on GitHub]`, use --source map): the map already cleared it.
 
 --summary (0d): counts per drift kind, new items verbatim, carried items one line per kind with ages
 (`[CHRONIC n]` from night 3). Ages come from nightly_state.py's drift map, read-only here. The only
@@ -41,9 +42,23 @@ import subprocess
 import sys
 from pathlib import Path
 
+STATE_DEFAULT = 'docs/nightly/.last-run.json'  # nightly_state.STATE; imported lazily so the gate never depends on it
+
+
+def _nightly_state():
+    """Lazy import: only --summary needs nightly_state.py (drift history, date check)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import nightly_state
+    return nightly_state
+
 STATUS_RE = re.compile(r'^status:(.+)$')
 NONE_TOKENS = {'', '-', '—'}
 ALL_FIELDS = ('status', 'milestone', 'labels', 'parent', 'blocked_by')
+STALE_STATUSES = ('in review', 'done')  # a blocker in one of these should already be cleared
+
+
+def _bt(n):
+    return f"BT-{int(n):03d}"
 
 
 def _row_cells(line):
@@ -98,7 +113,7 @@ def stale_blockers(rows):
     out = []
     for bt in open_ids(rows):
         for blocker in sorted(rows[bt]['blocked_by']):
-            if blocker in rows and rows[blocker]['status'] in ('in review', 'done'):
+            if blocker in rows and rows[blocker]['status'] in STALE_STATUSES:
                 out.append(f"{bt}: stale blocker {blocker} should be cleared")
     return out
 
@@ -145,13 +160,13 @@ def compare(row, gh, fields, check_pr):
         bb = gh.get('blockedBy') or []
         if isinstance(bb, dict):
             bb = bb.get('nodes') or []
-        gh_bb = {f"BT-{int(i['number']):03d}" for i in bb}
+        gh_bb = {_bt(i['number']) for i in bb}
         if row['blocked_by'] != gh_bb:
             drift.append(f"blocked_by map={sorted(row['blocked_by'])} gh={sorted(gh_bb)}")
 
     if 'parent' in fields and 'parent' in gh:
         p = gh.get('parent')
-        gh_parent = f"BT-{int(p['number']):03d}" if p else None
+        gh_parent = _bt(p['number']) if p else None
         if gh_parent != _norm(row['parent']):
             drift.append(f"parent map={_norm(row['parent'])} gh={gh_parent}")
 
@@ -206,23 +221,11 @@ KIND_PREFIXES = (('closed on GitHub', 'closed'), ('status', 'status'),
                  ('milestone', 'milestone'), ('labels', 'labels'), ('blocked_by', 'blocked_by'),
                  ('parent', 'parent'), ('pr-link', 'pr_link'))
 CHRONIC_NIGHTS = 3
-STATE_PATH = 'docs/nightly/.last-run.json'
 
 
 def drift_kind(text):
     """Kind of one drift description (the text after `BT-x: `). Pure."""
     return next((k for p, k in KIND_PREFIXES if text.startswith(p)), 'other')
-
-
-def load_drift_history(path):
-    """{`BT-x|kind`: {first,last,nights}} from nightly_state's file; missing/old/malformed -> {}. Read-only."""
-    try:
-        raw = json.loads(Path(path).read_text(encoding='utf-8-sig')).get('drift')
-    except (OSError, ValueError, AttributeError):
-        return {}
-    return {k: {'first': v['first'], 'last': v.get('last') or v['first'], 'nights': v['nights']}
-            for k, v in (raw.items() if isinstance(raw, dict) else ())
-            if isinstance(v, dict) and isinstance(v.get('nights'), int) and isinstance(v.get('first'), str)}
 
 
 def classify(items, history, today):
@@ -280,11 +283,11 @@ def _gh_state(kind, gh):
         return {l for l in labels if not STATUS_RE.match(l)}
     if kind == 'parent':
         p = gh.get('parent')
-        return f"BT-{int(p['number']):03d}" if p else None
+        return _bt(p['number']) if p else None
     bb = gh.get('blockedBy') or []
     if isinstance(bb, dict):
         bb = bb.get('nodes') or []
-    return {f"BT-{int(i['number']):03d}" for i in bb}
+    return {_bt(i['number']) for i in bb}
 
 
 def _cell_text(kind, row, value):
@@ -391,6 +394,14 @@ def heal(args, rows, ids):
             print(f"[HEAL-SKIP {bt}: GitHub has no status:* label; fix it there with --source map]")
             skipped += 1
             continue
+        if kind == 'blocked_by':
+            stale = {b for b in value - rows[bt]['blocked_by'] if b in rows and rows[b]['status'] in STALE_STATUSES}
+            if stale:  # a blocker the map already cleared: healing from GitHub would undo that
+                print(f"[HEAL-SKIP {bt} blocked_by: stale on GitHub; use --source map]")
+                skipped += 1
+                value -= stale
+                if value == rows[bt]['blocked_by']:
+                    continue
         plan[bt] = {kind: _cell_text(kind, rows[bt], value)}
         print(f"[HEALED {kind} {bt}] {_map_text(kind, rows[bt])} -> {plan[bt][kind]}")
     if args.source == 'map':
@@ -409,16 +420,8 @@ def heal(args, rows, ids):
         finally:
             tmp.unlink(missing_ok=True)
     print(f"[HEAL-DONE {kind} from gh: {len(plan)} healed, {synced} in sync, {local} local, {skipped} skipped; "
-          f"BACKLOG_MAP only, GitHub untouched. Re-run reconcile.py until clean.]")
+          f"BACKLOG_MAP only, GitHub untouched. Re-run reconcile.py --ids <healed> --fields {kind} once.]")
     return 1 if skipped else 0
-
-
-def _valid_date(s):
-    try:
-        datetime.date.fromisoformat(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"not a YYYY-MM-DD date: {s}")
-    return s
 
 
 def main(argv=None):
@@ -441,9 +444,9 @@ def main(argv=None):
     ap.add_argument('--out', help="with --summary: write every raw drift line to this file")
     ap.add_argument('--keys-out', help="with --summary: write tonight's `BT-x|kind` keys (input of "
                                        "nightly_state.py drift); not written when gh is unavailable")
-    ap.add_argument('--state', default=STATE_PATH,
+    ap.add_argument('--state', default=STATE_DEFAULT,
                     help="with --summary: nightly_state's file, read-only, for carried ages")
-    ap.add_argument('--date', type=_valid_date, default=None, help="with --summary: tonight, YYYY-MM-DD (default: today)")
+    ap.add_argument('--date', default=None, help="with --summary: tonight, YYYY-MM-DD (default: today)")
     ap.add_argument('--heal', action='store_true',
                     help="heal ONE drift kind for the --ids / --all-open scope; needs --kind and --source. "
                          "Writes BACKLOG_MAP only, never GitHub")
@@ -461,6 +464,11 @@ def main(argv=None):
         ap.error("--kind/--source need --heal")
     if (args.summary or args.out or args.keys_out) and not (args.all_open and args.summary):
         ap.error("--out/--keys-out need --summary, and --summary needs --all-open")
+    if args.date is not None:
+        try:
+            args.date = _nightly_state().valid_date(args.date)
+        except (argparse.ArgumentTypeError, ValueError) as e:
+            ap.error(f"--date: {e}")
 
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
     rows = parse_backlog(args.backlog)
@@ -489,7 +497,7 @@ def main(argv=None):
                 print(ok_line)
         else:
             today = args.date or datetime.date.today().isoformat()
-            print("\n".join(summarize(items, load_drift_history(args.state), today)))
+            print("\n".join(summarize(items, _nightly_state().load(args.state)['drift'], today)))
         if args.out:
             Path(args.out).parent.mkdir(parents=True, exist_ok=True)
             Path(args.out).write_text("".join(t + "\n" for _, _, t in items), encoding='utf-8')

@@ -19,6 +19,6 @@ A lesson written to `LEARNINGS.md` does not change behaviour on its own. Route e
 
 ## Rules
 
-- **Escalation:** a finding that matches any LEARNINGS id, or a law already cited on an earlier night or session, is a recurrence: rung 1 or 4, never rung 3 and never a new or duplicate entry.
+- **Escalation:** a finding that matches any LEARNINGS id, or a law already cited on an earlier night (0d: `nights ≥ 2`), is a recurrence: rung 1 or 4, never rung 3 and never a new or duplicate entry.
 - **Evidence rule:** every candidate cites a concrete session moment. Discard any that cannot.
 - **Hypothesis rule:** state a root cause as a hypothesis until verified.

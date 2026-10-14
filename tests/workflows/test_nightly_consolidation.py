@@ -42,24 +42,24 @@ def test_watermark_state_schema_is_owned_by_nightly_state_script():
     assert "sessions_reviewed" not in TEXT
     phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
     assert "python .agents/scripts/nightly_state.py stamp" in phase2
-    assert "only writer of `.last-run.json`" in phase2 and "never hand-write it" in phase2
+    assert "never hand-write" in phase2
     assert '{"last_run": ' not in TEXT  # no hand-written JSON
 
 
 def test_phase1_reads_slug_names_only_and_escalates_recurrence():
     phase1 = _phase("## Phase 1", "## Phase 2")
     assert "python .agents/scripts/nightly_state.py slugs" in phase1
-    assert "Names only" in phase1 and "do not read prior nightly reports" in phase1
+    assert "read no prior report text" in phase1
     record = next(l for l in phase1.splitlines() if "nightly_state.py findings --slugs" in l)
     route = next(l for l in phase1.splitlines() if "references/environment-fix-ladder.md" in l)
-    assert "reusing a listed slug" in record and "Name each" in record
+    assert "reusing a listed slug" in record and "(skip when there are none)" in record
     assert phase1.index(record) < phase1.index(route)  # slug + nights come before routing
     assert "`nights ≥ 2`" in route and "rung 1 or 4" in route and "rung 3" not in route
 
 
 def test_recurring_law_finding_uses_nights_and_ladder_rungs():
     rule = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if "existing law" in l)
-    assert "`nights ≥ 2`" in rule and "rung 1 or 4 per ladder Escalation" in rule
+    assert "unless it recurs" in rule
     assert "law not reaching agents" in rule
 
 
@@ -81,11 +81,12 @@ def test_phase3_promotes_assumed_cited_twice_before_the_supersede_row():
 def test_phase4_stubs_pending_decisions_before_the_halt_and_rewrites_them():
     phase4 = TEXT.split("## Phase 4")[1]
     stub = next(l for l in phase4.splitlines() if l.startswith("3. "))
-    assert "## Decisions" in stub and "`R-n · <action> · pending`" in stub and "D-a..D-b BT-x" in stub
+    assert "## Decisions" in stub and "R-n · <action> · pending" in stub and "<kind> D-a..D-b BT-x" in stub
     assert phase4.index(stub) < phase4.index("4. Halt.")
     final = phase4.split("After the user answers")[1]
-    for status in ("accepted · applied <sha>", "accepted · deferred", "declined"):
+    for status in ("accepted · applied", "accepted · deferred", "declined"):
         assert status in final, status
+    assert "`none` → every line `declined`" in final and "keeping its BT·kind" in final
     assert "never append a second one" in final
     # a carried pending line is closed at stub time in its original report, so it cannot multiply
     assert "`carried → nightly-<date> R-m`" in stub and "original report" in stub
@@ -95,24 +96,23 @@ def test_phase4_stubs_pending_decisions_before_the_halt_and_rewrites_them():
 def test_phase4_orders_forced_items_when_they_exceed_the_cap():
     step2 = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if l.startswith("2. "))
     assert "exceed 5" in step2
-    assert step2.index("carried `pending`") < step2.index("`[CHRONIC]`") < step2.index("one per drift kind")
+    assert step2.index("carried `pending`") < step2.index("`[CHRONIC]`") < step2.index("drift heals")
     assert "overflow as a one-line count" in step2
 
 
 def test_phase2_carries_pending_decisions_as_forced_binaries():
     phase2 = _phase("## Phase 2", "## Phase 3: Crystallize")
-    assert "`pending`" in phase2 and "carried forward" in phase2 and "≤5" in phase2 and "forced binary" in phase2
+    assert "`pending`" in phase2 and "carried forward" in phase2
     assert "pending" in TEXT.split("## Phase 4")[1].split("3. Write")[0] and "binary" in TEXT.split("## Phase 4")[1]
 
 
 def test_drift_runs_summary_mode_records_keys_and_forces_chronic_recommendations():
     drift = _phase("Backlog Drift Check", "## Phase 4")
     assert "reconcile.py --all-open --summary --out .tmp/nightly-drift.txt --keys-out .tmp/nightly-drift-keys.txt" in drift
-    assert "(raw list: `.tmp/nightly-drift.txt`)" in drift and "new items verbatim" in drift
-    assert "BT ids and ages" in drift and "Never paste the raw list" in drift
+    assert "new items verbatim" in drift and "never paste `.tmp/nightly-drift.txt`" in drift
     assert "nightly_state.py drift --keys-file .tmp/nightly-drift-keys.txt" in drift and "`[local-only`" in drift
-    assert "[CHRONIC n]" in drift and "heal it, or decline it" in drift
-    assert "a `declined` Decisions line for that BT·kind in the last 7 reports satisfies the force" in drift
+    assert "[CHRONIC n]" in drift and "heal-or-decline" in drift
+    assert "`declined` Decisions line for that BT·kind" in drift and "last 7 reports" in drift
     group = next(l for l in TEXT.split("## Phase 4")[1].splitlines() if l.strip().startswith("- Drift:"))
     assert "every kind in the summary" in group and "stale_blocker" in group and "`D-n` range" in group
 
@@ -137,14 +137,13 @@ def test_drift_lines_are_numbered_proposal_items_with_a_heal_route():
     drift = _phase("Backlog Drift Check", "## Phase 4")
     assert "python .agents/scripts/reconcile.py --all-open" in drift and "verbatim" in drift
     assert "`D-1`" in drift and "`D-2`" in drift
-    assert "references/terminal-sync-invariant.md" in drift
-    assert "approval" in drift
+    assert "references/terminal-sync-invariant.md" in TEXT.split("## Phase 4")[1]
 
 
 def test_decisions_cover_drift_items():
     phase4 = TEXT.split("## Phase 4")[1]
     assert "`D-n`" in phase4
-    assert "BT id" in phase4
+    assert "BT-x" in phase4
 
 
 def test_chat_is_a_ranked_brief_not_a_report_copy():
@@ -158,7 +157,7 @@ def test_chat_is_a_ranked_brief_not_a_report_copy():
     assert "`/3b-create-issue`" in phase4 and "0d never creates it" in phase4
     # StratOS skill defects are a forwardable notice, never a project issue or an outward action
     assert "StratOS framework change" not in phase4
-    assert "## Framework feedback" in phase4 and "Never file it, name a repo" in phase4
+    assert "## Framework feedback" in phase4 and "per the ladder" in phase4
     assert "law not reaching agents" in phase4  # existing-law findings escalate only on recurrence
 
 
@@ -181,18 +180,22 @@ def test_decisions_read_is_host_neutral_and_cannot_hang_without_reports():
 def test_phase1_runs_the_scan_before_any_transcript_and_opens_one_only_for_a_failing_call():
     phase1 = _phase("## Phase 1", "## Phase 2")
     scan = next(l for l in phase1.splitlines() if "nightly_scan.py" in l)
-    assert "python .agents/scripts/nightly_scan.py` first" in scan and "--since" not in scan  # the script owns the default
-    assert "`last_run`, else 24 hours" in scan and "subagents" in scan and "`repeats`" in scan
-    assert "instead of opening transcripts" in scan and "Open a transcript only to inspect one specific failing call" in scan
-    assert "Claude Code incl. subagents, and Antigravity" in scan and "never shows message text" in scan
+    assert "`python .agents/scripts/nightly_scan.py`" in scan and "--since=" not in scan  # the script owns the default
+    assert "`since`" in scan and "last-run.json" not in phase1  # no hand-read of the watermark
+    log = next(l for l in phase1.splitlines() if "git log --all" in l)
+    assert "not transcripts" in log and "open one only to inspect a failing call" in log
+    assert phase1.index("nightly_scan.py") < phase1.index("git log")
     assert "Review session transcripts" not in phase1  # the scan replaces the by-hand transcript review
-    assert "scan lists more than ~15 sessions" in phase1
+    assert "More than ~15 sessions" in phase1
     redundant = next(l for l in phase1.splitlines() if l.startswith("3. "))
-    assert "redundant tool calls (`repeats` in the scan" in redundant
+    assert "`repeats` in the scan" in redundant
 
 
 def test_drift_heal_uses_reconcile_heal_and_runs_github_commands_only_after_approval():
     drift = _phase("Backlog Drift Check", "## Phase 4")
-    assert "reconcile.py --heal --kind" in drift and "--source gh" in drift and "never writes GitHub" in drift
-    assert "`--source map` prints the `gh`/GraphQL commands" in drift
-    assert "run them only after the user approves that R-n" in drift
+    final = TEXT.split("## Phase 4")[1].split("After the user answers")[1]
+    assert "reconcile.py --heal --kind" in final and "--source gh" in final and "never writes GitHub" in final
+    assert "`--source map` prints the `gh`/GraphQL commands" in final
+    assert "run them only after the user approves that R-n" in final
+    assert "(stale_blocker, closed, pr_link, absent, not_found, other)" in final
+    assert "`reconcile.py --ids <healed> --fields <kind>` once; no loop" in final

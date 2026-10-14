@@ -135,3 +135,12 @@ def test_keys_with_extra_pipes_are_refused(state):
     assert run(state, "drift", "--keys-file", "-", stdin="a|b|c\n").returncode == 2
     assert run(state, "drift", "--keys-file", "-", stdin="|kind\n").returncode == 2
     assert not state.exists()
+
+
+def test_reconcile_gate_runs_without_nightly_state(tmp_path):
+    # reconcile.py is every workflow's terminal gate; only --summary may need nightly_state.py.
+    import shutil
+    shutil.copy(REPO_ROOT / "src" / "scripts" / "reconcile.py", tmp_path / "reconcile.py")
+    r = subprocess.run([sys.executable, str(tmp_path / "reconcile.py"), "--help"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr

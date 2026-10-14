@@ -36,8 +36,8 @@ def test_3a_proposes_new_deps_at_the_halt_and_writes_them_amend_only():
     assert "`[NEW-DEP] BT-<padded> ← BT-<prereq>`" in A3
     assert "it is proposed at the Phase 2.5 halt" in A3
     step = next(l for l in _phase4(A3).splitlines() if l.startswith("4. **Record confirmed dependencies"))
-    for part in ("`addBlockedBy` mutation per `references/github-issue-relations.md`", "`Blocked by` column in `BACKLOG_MAP.md`",
-                 "explicit confirmation", "Never remove a `Blocked by` entry in 3a", "`2a` remains the birth writer"):
+    for part in ("user-confirmed", "confirmed `[NEW-DEP]`", "`addBlockedBy`", "references/github-issue-relations.md",
+                 "`Blocked by`", "Add only; clearing stays with 4a/0b"):
         assert part in step, part
 
 
@@ -67,6 +67,9 @@ def test_3a_close_is_all_or_nothing_per_release():
 
 def test_3a_close_out_only_path_hands_off():
     assert "*\"Release vX.Y closed.\"*" in A3
+    assert "skip Phases 2–3 and the auditor" in A3
+    line = next(l for l in A3.splitlines() if l.startswith("**Hand-off contract:**"))
+    assert "milestone closes" in line and "`Blocked by` edges" in line
 
 
 def test_3b_defaults_only_onto_open_milestones():
@@ -85,7 +88,9 @@ def test_milestone_close_is_behind_the_halt_and_precedes_shipped_tag():
     assert "gh api -X PATCH repos/{owner}/{repo}/milestones/<n> -f state=closed" in close
     assert "never auto-run" in close and "confirmed at the Phase 2.5 halt" in close
     roadmap = next(l for l in p4.splitlines() if l.startswith("2. **Write `docs/ROADMAP.md`"))
-    assert "`[SHIPPED <date>]` only for a release whose milestones step 1 closed" in roadmap
+    assert "`[SHIPPED <date>]` for a release whose `vX.Y.*` milestones are all closed" in roadmap and "or already" in roadmap
+    phase1 = A3.split("## Phase 1")[1].split("## Phase 2:")[0]
+    assert "closed by hand" in phase1 and "`[SHIPPED <date>]`" in phase1  # a hand-closed release is still tagged
     halt = A3.split("3. **Present and Halt:**")[1].split("\n")[0]
     assert "each release proposed for close" in halt and "milestone close" in halt
 

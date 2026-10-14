@@ -7,14 +7,14 @@ metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
 version: "2.6.0"
-timestamp: 2026-10-13
+timestamp: 2026-10-14
 ---
 
 # Create issue
 
 **Purpose:** Convert ideas into implementation-ready vertical slices synced with memory.
 
-**Hand-off contract:** Upstream: `/3a-version-planning` gates current-release parent features to slice. PRD-sourced → reads §1, §6, §7, §8, §10 and the parent's existing sibling slices; drafts full Build slices (only for items no sibling covers) to `.tmp/BT-<padded>-issue-drafts.md`, audits coverage + fidelity against §6 + §8, mints the approved drafts verbatim. Audit-sourced → the trigger names `.tmp/refactor-proposal-<stem>.md`; the proposal is the drafts file; audits coverage against the `Source:` report per `references/audit-to-slices.md`. Else checks against captured intent. Spikes skip drafting/audit.
+**Hand-off contract:** PRD-sourced → reads §1, §6, §7, §8, §10 and the parent's existing sibling slices; drafts full Build slices (only for items no sibling covers) to `.tmp/BT-<padded>-issue-drafts.md`, audits coverage + fidelity against §6 + §8, mints the approved drafts verbatim. Audit-sourced → the trigger names `.tmp/refactor-proposal-<stem>.md`; the proposal is the drafts file; audits coverage against the `Source:` report per `references/audit-to-slices.md`. Else checks against captured intent. Spikes skip drafting/audit.
 
 ## Phase 0: Load Memory
 Run the `load-memory` skill to restore session context (read-only).
