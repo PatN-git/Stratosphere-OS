@@ -16,8 +16,15 @@ Contract + heal protocol: .agents/skills/4a-verify-and-ship/references/terminal-
 Usage:
   python .agents/scripts/reconcile.py --ids BT-007[,BT-006,BT-005] \
       [--pr-id BT-007] [--fields status,blocked_by]
+  python .agents/scripts/reconcile.py --all-open --summary [--out .tmp/nightly-drift.txt] \
+      [--keys-out .tmp/nightly-drift-keys.txt] [--state docs/nightly/.last-run.json]
+
+--summary (0d): counts per drift kind, new items verbatim, carried items one line per kind with ages
+(`[CHRONIC n]` from night 3). Ages come from nightly_state.py's drift map, read-only here. The only
+files it writes are the scratch files named by --out / --keys-out (never the mirror, GitHub or state).
 """
 import argparse
+import datetime
 import json
 import re
 import subprocess
@@ -174,6 +181,78 @@ def gh_available():
         return False
 
 
+# Texts from compare()/closed_on_github(); stale/absent/not_found items are built with their kind directly.
+KIND_PREFIXES = (('closed on GitHub', 'closed'), ('status', 'status'),
+                 ('milestone', 'milestone'), ('labels', 'labels'), ('blocked_by', 'blocked_by'),
+                 ('parent', 'parent'), ('pr-link', 'pr_link'))
+CHRONIC_NIGHTS = 3
+STATE_PATH = 'docs/nightly/.last-run.json'
+
+
+def drift_kind(text):
+    """Kind of one drift description (the text after `BT-x: `). Pure."""
+    return next((k for p, k in KIND_PREFIXES if text.startswith(p)), 'other')
+
+
+def load_drift_history(path):
+    """{`BT-x|kind`: {first,last,nights}} from nightly_state's file; missing/old/malformed -> {}. Read-only."""
+    try:
+        raw = json.loads(Path(path).read_text(encoding='utf-8-sig')).get('drift')
+    except (OSError, ValueError, AttributeError):
+        return {}
+    return {k: {'first': v['first'], 'last': v.get('last') or v['first'], 'nights': v['nights']}
+            for k, v in (raw.items() if isinstance(raw, dict) else ())
+            if isinstance(v, dict) and isinstance(v.get('nights'), int) and isinstance(v.get('first'), str)}
+
+
+def classify(items, history, today):
+    """[(bt, kind, line, age)]: age 1 = new tonight; >1 = carried. `nights` counts nights already
+    recorded, so tonight adds one unless nightly_state already recorded tonight. Pure."""
+    out = []
+    for bt, kind, line in items:
+        e = history.get(f"{bt}|{kind}")
+        if e is None or e['first'] == today:
+            age = 1
+        else:
+            age = e['nights'] if e['last'] == today else e['nights'] + 1
+        out.append((bt, kind, line, age))
+    return out
+
+
+def summarize(items, history, today):
+    """Summary lines: count per kind, new items verbatim, carried items one line per kind with ages
+    (`[CHRONIC n]` from night 3). Pure."""
+    rows = classify(items, history, today)
+    new = [r for r in rows if r[3] == 1]
+    lines = [f"[DRIFT-SUMMARY {len(rows)} items: {len(new)} new, {len(rows) - len(new)} carried]"]
+    kinds = {}
+    for r in rows:
+        kinds[r[1]] = kinds.get(r[1], 0) + 1
+    lines.append("kinds: " + " · ".join(f"{k} {n}" for k, n in sorted(kinds.items())))
+    if new:
+        lines.append("new:")
+        lines += [r[2] for r in new]
+    for kind in sorted(kinds):
+        carried = [r for r in rows if r[1] == kind and r[3] > 1]
+        if not carried:
+            continue
+        ages = {}
+        for r in carried:
+            ages.setdefault(r[3], set()).add(r[0])
+        parts = [f"night {a}: {' '.join(sorted(ids))}" + (f" [CHRONIC {a}]" if a >= CHRONIC_NIGHTS else "")
+                 for a, ids in sorted(ages.items())]
+        lines.append(f"carried {kind} {len(carried)}: " + " · ".join(parts))
+    return lines
+
+
+def _valid_date(s):
+    try:
+        datetime.date.fromisoformat(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a YYYY-MM-DD date: {s}")
+    return s
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Terminal Sync Invariant gate.")
     scope = ap.add_mutually_exclusive_group(required=True)
@@ -188,12 +267,54 @@ def main(argv=None):
     ap.add_argument('--require-gh', action='store_true',
                     help="terminal gates pass this: refuse to report success when GitHub "
                          "cannot be reached, instead of silently not verifying")
+    ap.add_argument('--summary', action='store_true',
+                    help="with --all-open: print a count per drift kind, new items verbatim and carried "
+                         "items one line per kind with ages ([CHRONIC n] from night 3) instead of every line")
+    ap.add_argument('--out', help="with --summary: write every raw drift line to this file")
+    ap.add_argument('--keys-out', help="with --summary: write tonight's `BT-x|kind` keys (input of "
+                                       "nightly_state.py drift); not written when gh is unavailable")
+    ap.add_argument('--state', default=STATE_PATH,
+                    help="with --summary: nightly_state's file, read-only, for carried ages")
+    ap.add_argument('--date', type=_valid_date, default=None, help="with --summary: tonight, YYYY-MM-DD (default: today)")
     args = ap.parse_args(argv)
+    if (args.summary or args.out or args.keys_out) and not (args.all_open and args.summary):
+        ap.error("--out/--keys-out need --summary, and --summary needs --all-open")
 
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
     rows = parse_backlog(args.backlog)
     ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
-    stale = [f"[MIRROR-DRIFT {d}]" for d in stale_blockers(rows)] if args.all_open else []
+    # (bt, kind, text); bt None = informational note. Non-summary prints them in order; summary groups the items.
+    emit = [(d.split(':')[0], 'stale_blocker', f"[MIRROR-DRIFT {d}]")
+            for d in (stale_blockers(rows) if args.all_open else [])]
+
+    def finish(code, gh_checked, ok_line=None):
+        items = [(bt, k, t) for bt, k, t in emit if bt]
+        if not args.summary:
+            for _, _, t in emit:
+                print(t)
+            if ok_line and not items:
+                print(ok_line)
+            return code
+        if not gh_checked:
+            print("[local-only — GitHub not checked]")
+        if not items:
+            if ok_line:
+                print(ok_line)
+        else:
+            today = args.date or datetime.date.today().isoformat()
+            print("\n".join(summarize(items, load_drift_history(args.state), today)))
+        if args.out:
+            Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.out).write_text("".join(t + "\n" for _, _, t in items), encoding='utf-8')
+        if args.keys_out:
+            keys = Path(args.keys_out)
+            if gh_checked:
+                keys.parent.mkdir(parents=True, exist_ok=True)
+                keys.write_text("".join(f"{k}\n" for k in sorted({f"{bt}|{kind}" for bt, kind, _ in items})),
+                                encoding='utf-8')
+            elif keys.exists():
+                keys.unlink()  # a partial (offline) key set must never reach nightly_state.py
+        return code
 
     if not gh_available():
         # A terminal gate must not pass on an unverified mirror. Without
@@ -201,26 +322,24 @@ def main(argv=None):
         if args.require_gh:
             print("[MIRROR-UNVERIFIED: gh unavailable — terminal invariant NOT checked]")
             return 3
-        print("[local-only — GitHub not checked]")
-        for line in stale:
-            print(line)
+        if not args.summary:
+            print("[local-only — GitHub not checked]")
         missing = [i for i in ids if i not in rows]
         if missing:
-            print(f"[MIRROR-DRIFT: ids absent from BACKLOG_MAP: {missing}]")
-        return 1 if missing or stale else 0
+            emit.append((None, 'absent', f"[MIRROR-DRIFT: ids absent from BACKLOG_MAP: {missing}]"))
+        return finish(1 if missing or emit else 0, gh_checked=False)
 
-    exit_code = 0
-    for line in stale:
-        print(line)
-        exit_code = 1
+    exit_code = 1 if emit else 0
+    checked = not_found = 0
     for bt in ids:
         if bt not in rows:
-            print(f"[MIRROR-DRIFT {bt}: absent from BACKLOG_MAP]")
+            emit.append((bt, 'absent', f"[MIRROR-DRIFT {bt}: absent from BACKLOG_MAP]"))
             exit_code = 1
             continue
         if bt.startswith('BT-LOCAL'):
-            print(f"[local-only {bt} — no GitHub issue to check]")
+            emit.append((None, None, f"[local-only {bt} — no GitHub issue to check]"))
             continue
+        checked += 1
         num = issue_number(bt)
         is_pr = (bt == args.pr_id)
         if not num:
@@ -230,20 +349,25 @@ def main(argv=None):
         else:
             gh = fetch_issue(num, want_comments=is_pr)
         if gh is None:
-            print(f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]")
+            not_found += 1
+            emit.append((bt, 'not_found', f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]"))
             exit_code = 1
             continue
         closed = closed_on_github(rows[bt], gh) if args.all_open else None
         # A closed issue's other fields are noise: the row itself is what needs healing.
         drift = [closed] if closed else compare(rows[bt], gh, fields, check_pr=is_pr)
         for d in drift:
-            print(f"[MIRROR-DRIFT {bt}: {d}]")
+            emit.append((bt, drift_kind(d), f"[MIRROR-DRIFT {bt}: {d}]"))
         if drift:
             exit_code = 1
 
-    if exit_code == 0:
-        print(f"[MIRROR-OK {len(ids)} open rows]" if args.all_open else f"[MIRROR-OK {','.join(ids)}]")
-    return exit_code
+    if args.summary and checked and checked == not_found:
+        # Every fetch failed: gh is flaky or unauthenticated, not 74 deleted issues. Treat as unavailable so no
+        # false drift reaches the report and a partial key set never resets ages in nightly_state.
+        emit = [e for e in emit if e[1] != 'not_found']
+        return finish(1 if any(e[0] for e in emit) else 0, gh_checked=False)
+    ok_line = f"[MIRROR-OK {len(ids)} open rows]" if args.all_open else f"[MIRROR-OK {','.join(ids)}]"
+    return finish(exit_code, gh_checked=True, ok_line=ok_line)
 
 
 if __name__ == '__main__':
