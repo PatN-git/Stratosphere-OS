@@ -44,7 +44,9 @@ Record issue URL and minted ID for PRD front matter.
 ## Phase 3: Draft
 Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, BACKLOG_MAP, LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
 
-**Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout; seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10. Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
+**Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout.
+- Seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10.
+- Do not re-interview what the brief already settled (its distilled decisions are the source of truth). The RAT Carry-Over below already reads its `## Riskiest Assumption`.
 
 **Rules:**
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.

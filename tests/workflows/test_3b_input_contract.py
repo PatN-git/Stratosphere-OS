@@ -22,7 +22,7 @@ def test_3b_reads_existing_siblings_and_credits_them_in_the_breadth_map():
 
 def test_3b_scope_is_explicit_and_blocking_questions_become_spikes_before_drafting():
     text = _3b()
-    scope = next(l for l in text.splitlines() if l.startswith("3. **Scope:**"))
+    scope = text[text.index("3. **Scope:**"):text.index("4. **Siblings")]  # lead + nested bullets
     for s in ("§1", "§6", "§7", "§8", "§10"):
         assert s in scope, s
     line = next(l for l in text.splitlines() if l.startswith("   - **§10:**"))

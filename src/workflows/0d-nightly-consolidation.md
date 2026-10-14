@@ -69,4 +69,8 @@ The report is the record; chat is a decision brief. Never restate report section
 
 After the user answers, rewrite each stub line in place (never append a second one), keeping its BT·kind: `accepted · applied` (append ` <sha>` only when a commit was made), `accepted · deferred`, or `declined`. `none` → every line `declined`; an accepted New issue → `accepted · deferred`. Phase 2 of later nights reads it.
 
-Apply an accepted drift heal per `references/terminal-sync-invariant.md` §Heal: `python .agents/scripts/reconcile.py --heal --kind <status|milestone|labels|parent|blocked_by> --source gh --ids <BT-x,…>` (or `--all-open`), one kind per run; it upserts BACKLOG_MAP cells from GitHub and never writes GitHub. When GitHub is the side to fix, `--source map` prints the `gh`/GraphQL commands; run them only after the user approves that R-n. Manual kinds (stale_blocker, closed, pr_link, absent, not_found, other) heal by hand per that reference. After a batch heal, re-run `reconcile.py --ids <healed> --fields <kind>` once; no loop.
+Apply an accepted drift heal per `references/terminal-sync-invariant.md` §Heal:
+- `python .agents/scripts/reconcile.py --heal --kind <status|milestone|labels|parent|blocked_by> --source gh --ids <BT-x,…>` (or `--all-open`), one kind per run; it upserts BACKLOG_MAP cells from GitHub and never writes GitHub.
+- When GitHub is the side to fix, `--source map` prints the `gh`/GraphQL commands; run them only after the user approves that R-n.
+- Manual kinds (stale_blocker, closed, pr_link, absent, not_found, other) heal by hand per that reference.
+- After a batch heal, re-run `reconcile.py --ids <healed> --fields <kind>` once; no loop.

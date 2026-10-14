@@ -12,16 +12,18 @@ def _line(text: str, prefix: str) -> str:
 
 
 def test_business_logic_auditor_input_is_the_slice_issue_ac_plus_prd_sections():
-    auditor = _line(_4a(), "1. **Strict Business-Logic Auditor:**")
-    assert "slice issue body's `### Acceptance Criteria`" in auditor and "gh issue view <n>" in auditor
-    assert auditor.index("Acceptance Criteria") < auditor.index("parent PRD §6/§7/§8")
-    assert "docs/design/BT-<parentPadded>-interface.md" in auditor  # BT-165 parent-keyed path kept
+    auditor = _line(_4a(), "1. **Strict Business-Logic Auditor**")
+    assert "the slice issue's `### Acceptance Criteria`" in auditor and "gh issue view <n>" in auditor
+    assert auditor.index("Acceptance Criteria") < auditor.index("resolved PRD §6/§7/§8")
+    # BT-165 parent-keyed path kept: resolved once in Phase 2's "Resolve targets first" (auditor takes "the resolved ...")
+    resolve = _line(_4a(), "- Also resolve spec inputs:")
+    assert "docs/design/BT-<parentPadded>-interface.md" in resolve
 
 
 def test_auditor_receives_plan_deviations_and_judges_them():
-    auditor = _line(_4a(), "1. **Strict Business-Logic Auditor:**")
-    assert "`## Deviations`" in auditor and ".tmp/3d-plan-BT-<padded>.md" in auditor
-    assert "judged on merit" in auditor
+    auditor = _line(_4a(), "1. **Strict Business-Logic Auditor**")
+    assert "`## Deviations`" in auditor and ".tmp/3d-plan-BT-<padded>.md" in _line(_4a(), "- Also resolve spec inputs:")
+    assert "Judge recorded deviations on merit" in auditor
 
 
 def test_phase_3_table_says_slice_ac_and_phase_1_gate_keys_on_prd_dod():

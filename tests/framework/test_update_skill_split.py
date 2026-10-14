@@ -74,7 +74,8 @@ def test_references_carry_okf_frontmatter_and_a_heading():
         text = (REFS_DIR / name).read_text(encoding="utf-8")
         fm = text.split("---\n", 2)[1]
         assert re.search(r"^description: \S", fm, re.M), f"{name}: description missing"
-        assert 'version: "1.0.0"' in fm and "timestamp: 2026-10-07" in fm, f"{name}: version/timestamp"
+        assert re.search(r'^version: "\d+\.\d+\.\d+"$', fm, re.M) and re.search(
+            r"^timestamp: \d{4}-\d{2}-\d{2}$", fm, re.M), f"{name}: version/timestamp"
         assert re.search(r"^# \S", text.split("---\n", 2)[2], re.M), f"{name}: one-line heading missing"
 
 

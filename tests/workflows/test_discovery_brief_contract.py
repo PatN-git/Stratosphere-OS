@@ -61,11 +61,12 @@ def test_brief_template_headings_parse():
 
 
 def test_every_brief_section_is_ingested_by_2a_or_exempt():
-    lines = [l for l in _read("workflows/2a-write-prd.md").splitlines()
-             if l.startswith("**Discovery-brief ingestion")]
-    assert len(lines) == 1
+    text = _read("workflows/2a-write-prd.md")
+    assert text.count("\n**Discovery-brief ingestion") == 1
+    # lead line + its nested "- " bullets, up to the next blank line
+    block = text[text.index("\n**Discovery-brief ingestion"):].split("\n\n")[0]
     for name in _brief_sections():
-        assert name in lines[0] or name in NOT_INGESTED, name
+        assert name in block or name in NOT_INGESTED, name
 
 
 def test_cheapest_test_offers_brownfield_options():
