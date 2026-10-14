@@ -15,14 +15,44 @@ def _read(rel: str) -> str:
 def test_ladder_reference_has_six_rungs_and_the_three_rules():
     text = _read("references/environment-fix-ladder.md")
     for rung in ("Deterministic check", "Reviewer standard", "Existing law",
-                 "Framework issue", "Issue / `STATUS.md`", "`LEARNINGS.md`"):
+                 "Framework feedback", "Issue / `STATUS.md`", "`LEARNINGS.md`"):
         assert rung in text, rung
-    assert "`.agents/skills/` path" in text.split("Framework issue")[1].split("Issue /")[0]
     assert "Escalation" in text
     assert "Evidence rule" in text
     assert "Hypothesis rule" in text
     assert "references/" not in text.split("Reviewer standard")[1].split("Existing law")[0], \
         "rung 2 must name CODING_STANDARDS bare filenames, never a references/ prefix"
+
+
+def _rung(n: int) -> str:
+    text = _read("references/environment-fix-ladder.md")
+    return text.split(f"{chr(10)}{n}. ")[1].split(chr(10))[0]
+
+
+def test_ladder_rung_1_absorbs_host_and_tooling_behaviour():
+    rung1 = _rung(1)
+    assert "shell quoting" in rung1 and "local hook" in rung1 and "project rule" in rung1
+
+
+def test_ladder_rung_3_is_law_only_and_recurrence_never_reaches_it():
+    text = _read("references/environment-fix-ladder.md")
+    rung3 = _rung(3)
+    assert "`[LAW]`" in rung3 and "first miss" in rung3
+    assert "`[PATTERN]`" in rung3 and "not law" in rung3
+    escalation = next(l for l in text.splitlines() if l.startswith("- **Escalation:**"))
+    assert "any LEARNINGS id" in escalation and "recurrence" in escalation
+    assert "never rung 3" in escalation and "rung 1 or 4" in escalation
+
+
+def test_ladder_rung_4_is_framework_feedback_never_filed_and_mirrors_0d_fields():
+    text = _read("references/environment-fix-ladder.md")
+    rung4 = _rung(4)
+    assert "against StratOS" not in text
+    assert "Never file it, name a repo, or edit the installed skill" in rung4
+    d0 = _read("workflows/0d-nightly-consolidation.md")
+    fields = "skill · installed version · defect · evidence · suggested fix"
+    assert fields in d0
+    assert "skill (`.agents/skills/<name>`) · installed `version:` · defect · evidence · suggested fix" in rung4
 
 
 def test_0b_cites_the_ladder_and_gates_learnings_on_friction():

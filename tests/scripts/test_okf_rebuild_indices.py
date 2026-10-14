@@ -73,3 +73,27 @@ def test_cli_prints_count_and_skips_visualization(tmp_path):
     assert r.returncode == 0, r.stderr
     assert "4 indices rebuilt" in r.stdout
     assert not (tmp_path / "docs" / "okf-view.html").exists()
+
+
+
+def test_nested_yaml_keys_do_not_overwrite_top_level_fields(tmp_path):
+    (tmp_path / ".memory").mkdir()
+    (tmp_path / ".memory" / "NESTED.md").write_text(
+        "---\ntype: proposal\ntitle: Top title\ndescription: Top description\n"
+        "generated:\n  by: skill\n  at: 2026-10-13T10:00:00\n"
+        "related:\n  title: Nested title\n  description: Nested description\n"
+        "tags:\n  - alpha\n  - beta\n---\n\nbody\n", encoding="utf-8")
+    fm = okf_view.OKFDocument.parse((tmp_path / ".memory" / "NESTED.md").read_text(encoding="utf-8")).frontmatter
+    assert fm["title"] == "Top title" and fm["description"] == "Top description"
+    assert "by" not in fm and "at" not in fm
+    assert fm["generated"] is None and fm["related"] is None
+    assert fm["tags"] == ["alpha", "beta"]
+    okf_view.rebuild_indices(tmp_path)
+    assert "* [Top title](/.memory/NESTED.md) - Top description\n" in (
+        tmp_path / ".memory" / "index.md").read_text(encoding="utf-8")
+
+
+def test_nested_key_resets_list_state():
+    fm = okf_view.OKFDocument.parse(
+        "---\ntype: x\nparent:\n  child: value\n  - stray\nafter: ok\n---\n").frontmatter
+    assert fm["parent"] is None and fm["after"] == "ok"

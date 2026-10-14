@@ -195,6 +195,15 @@ def main():
                                                        "size:small", "priority:high"]), ALL, False)
     check("label SUPERSET (gh-only label) drift", any("gh_only=['priority:high']" in x for x in superset))
 
+    # status:* in the map Labels cell is not label drift (status is compared separately)
+    with_status = dict(r7, labels=r7["labels"] | {"status:in review"})
+    check("map status: label is not label drift",
+          rec.compare(with_status, gh_issue(), {"labels"}, False) == [])
+    check("map status: label + matching gh -> no drift on all fields",
+          rec.compare(with_status, gh_issue(), ALL, False) == [])
+    check("real label drift still reported with a map status: label",
+          any("labels" in x for x in rec.compare(with_status, gh_issue(extra_labels=["area:api"]), {"labels"}, False)))
+
     # --fields scoping: milestone-only ignores a status divergence
     d = rec.compare(r7, gh_issue(status="in progress"), {"milestone"}, False)
     check("fields scoping: status ignored when not requested", d == [])
