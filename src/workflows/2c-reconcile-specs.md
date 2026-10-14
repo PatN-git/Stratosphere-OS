@@ -31,7 +31,7 @@ _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on re
 - < 2 spec artifacts beyond the PRD → SKIP: `[SKIP] BT-<padded>: too few artifacts; proceed to /3b-create-issue.`
 - Epic not pre-slicing (`status:needs_spec`/`status:planned`) → HALT; reconciliation runs before slices exist.
 
-_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it in the PRD §10 as a `migration:` item (`N. migration: <required change, phrased as a requirement> — owner: <who>, blocking: Y`; `3b` mints it as Slice 1).
+_CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo. No spec edits in Phases 2–3. **Write only** the resolved spec docs + `.tmp/` — never `src/`, `tests/`, or `scripts/`. A code-level defect is a finding, not a fix: route it to the PRD (Open Question) or record it in the PRD §10 as a `migration:` item (`N. migration: <required change, phrased as a requirement> — owner: <who>, blocking: Y`; `3b` mints it as a leading slice).
 
 ## Phase 2: Consistency Scan
 **Context Isolation Rule:** Execute natively ONLY IF this session has not authored or modified any target artifact. Otherwise, or if unsure, isolate to an independent Spec-Reconciliation Auditor subagent; resolve targets in the parent and pass the explicit file list (subagent reads only named files, never sweeps).

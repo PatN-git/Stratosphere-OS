@@ -19,7 +19,7 @@ type: discovery-brief
 title: "Discovery: <one-line problem statement>"
 description: ""
 generated:
-  by: 1b-concept-framing | 1c-concept-map   # the writing workflow picks one
+  by: <1b-concept-framing | 1c-concept-map>   # the writing workflow picks one
   at: <ISO 8601>
 status: ready-for-prd | exit-bug | exit-spike | dropped
 slug: <topic-slug> # MUST be semantic slug only. Do NOT include or pre-allocate a BT-<n> ID.
@@ -80,7 +80,7 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
 - <item>
 
 ## Decoupled Follow-ups
-<Wanted, but handled separately from this brief. Not non-goals. 1b files nothing.>
+<Wanted, but handled separately from this brief. Not non-goals. the writing workflow files nothing.>
 
 - <topic>: <why decoupled> — existing: BT-<n> | candidate
 

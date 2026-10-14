@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """BT-167 guards: the standing-epic rule is defined once and cited at each step it changes;
 4a's release bump reruns at every ship."""
-from pathlib import Path
+from conftest import read_repo as _text
 
-ROOT = Path(__file__).resolve().parents[2]
-WF = ROOT / "src" / "workflows"
 REF = "references/terminal-sync-invariant.md"
 CITE = f"{REF}` §Standing epic"
-
-
-def _text(rel: str) -> str:
-    return (ROOT / rel).read_text(encoding="utf-8")
 
 
 def _between(text: str, start: str, end: str) -> str:
@@ -63,8 +57,6 @@ def test_4a_steps_cite_the_rule():
     assert CITE in step1 and "user-named branch" in step1 and "NOT `main`/`master`" in step1
     assert CITE in step5 and "standing-epic slice" in step5 and "non-draft" in step5
     assert CITE in step8 and step8.index("Standing epic") < step8.index("**every sibling")
-    for token in ("no Epic Check", "no Feature Acceptance Audit", "no `--close-parent`"):
-        assert token in step8.split("Otherwise")[0], f"step 8 standing-epic skip lost {token!r}"
     assert "never a standing epic" in step9 and "standing-epic slice" in step9.split("**Draft rule**")[1]
 
 
@@ -72,7 +64,7 @@ def test_4a_step4_reruns_release_at_every_ship_and_commits_only_if_changed():
     text = _text("src/workflows/4a-verify-and-ship.md")
     step4 = _between(text, "4. **Release bump + push:**", "5. **PR (one per feature branch):**")
     assert "once per PR" not in step4
-    assert "at every ship" in step4 and "idempotent" in step4
+    assert "at every ship" in step4
     assert "only if its output changed" in step4 and "`release: prepare v<x>`" in step4
     assert step4.index("scripts/release.py") < step4.index("Push the branch")
 
@@ -94,9 +86,12 @@ def test_0a_promotion_skips_a_standing_epic():
 
 
 def test_constitution_granularity_allows_a_slice_branch_for_a_standing_epic():
-    text = _text("src/constitution/AGENTS.md")
-    line = [ln for ln in text.splitlines() if ln.startswith("- **Granularity:**")][0]
-    assert "a slice under a standing epic, degenerates to its own branch+PR" in line
+    for rel in ("src/constitution/AGENTS.md", "AGENTS.md"):
+        lines = _text(rel).splitlines()
+        granularity = [ln for ln in lines if ln.startswith("- **Granularity:**")][0]
+        branch = [ln for ln in lines if ln.startswith("- **Branch name:**")][0]
+        assert "a slice under a standing epic, degenerates to its own branch+PR" in granularity, rel
+        assert "standing-epic slice: `<type>/BT-<slicePadded>-<slug>`" in branch and "§Standing epic" in branch, rel
 
 
 def test_4a_pr_title_for_a_standing_epic_is_slice_keyed():

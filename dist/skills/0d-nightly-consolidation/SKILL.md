@@ -29,7 +29,6 @@ Do not modify files without user approval, except the report, `.last-run.json`, 
 ## Phase 2: Distill Plan
 - Before proposing, read the `## Decisions` section (max 30 lines) of each of the last 7 `docs/nightly/nightly-*.md` reports by filename date; none yet → skip. An item the user **declined** is not re-proposed without new evidence; an accepted-but-undone item may be. Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked — preserved so a month+ of nights can be reviewed for recurring meta-patterns), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (the index rebuild in Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`. Without it the file is non-conformant and its index row renders blank.
-- The report opens with `## Recommendations` — the same `R-n` list Phase 4 shows in chat; evidence and verbatim output go below it.
 - Update `docs/nightly/.last-run.json` to `{"last_run": "<ISO 8601>"}` and nothing else.
 - **Retention:** archive or delete `docs/nightly/*` entries older than ~90 days so the meta-review window stays bounded.
 
@@ -61,8 +60,9 @@ The report is the record; chat is a decision brief. Never restate report section
 
    Each: `R-n` · action (one line) · why (one clause + report anchor) · size.
    - A defect in an installed StratOS skill is not an `R-n`: write it under `## Framework feedback` in the report (skill · installed version · defect · evidence · suggested fix) for the project owner to forward to the StratOS maintainer, and add a one-line notice in chat. Never file it, name a repo, or edit the installed skill.
-   - A finding routed to an existing law is not a recommendation unless it recurs across nights — then recommend why the law fails to reach agents.
-   - Drift: one recommendation per heal batch, grouped by kind (labels | parent | blocked_by) with count and `D-n` range. Never list D-items in chat.
-3. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
+   - A finding routed to an existing law is not a recommendation unless it recurs across nights — then recommend a fix for the law not reaching agents.
+   - Drift: one recommendation per heal batch, grouped by kind (labels | parent | blocked_by) with count and `D-n` range.
+3. Write the `R-n` list as `## Recommendations` at the top of the report; evidence and verbatim output go below it.
+4. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
 
 After the user answers, append `## Decisions` to that night's report: one line per `R-n` (with its `D-n` range and each BT id, as `D-n` restarts nightly), `accepted` or `declined`. Phase 2 of later nights reads it.

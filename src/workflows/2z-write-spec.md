@@ -30,7 +30,7 @@ timestamp: 2026-10-13
    - PRD `docs/prds/BT-<padded>-*.md` exists → start at Phase 2.
    - Otherwise → Phase 1.
 3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID, then 2z renames it; offline ID `BT-LOCAL-<slug>`; resume checks both names). Append one line per HITL decision; on resume print its last 5 lines. The hand-off reads it too.
-4. **Resolve the brief once:** after hydrating, if the PRD exists use its `discovery:` path (`—` = none). Otherwise locate the brief: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5). Before 2a mints the ID `linked-prd:` is not set yet, so the slug fuzzy-match is the path that applies. Record its path (or `none`) in the decision log; a resumed run reuses it.
+4. **Resolve the brief once:** after hydrating: PRD with `discovery:` → use it (`—` = none); no PRD, or PRD without the field → locate: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5). Record its path (or `none`) in the decision log; a resumed run reuses it.
 
 ## Phase 1: PRD
 Run `/2a-write-prd`. Its HITL interview and cost gate stay in main thread; draft via PRD Drafter; append each decision to the log.

@@ -31,7 +31,7 @@ timestamp: 2026-10-13
 ## 4. Version Control
 - **Granularity:** one branch + one PR per FEATURE (the parent BT / PRD). Each implementable slice (child BT issue) is committed onto that feature branch; the single feature PR accumulates them. A standalone issue with no parent feature, or a slice under a standing epic, degenerates to its own branch+PR.
 - **Isolation:** plain git branches (single working dir). Worktrees are allowed but not required; the workflows assume branches.
-- **Branch name:** `<type>/BT-<parentPadded>-<slug>`, `<type>` from the PARENT feature's `type:` label (normally `feat`).
+- **Branch name:** `<type>/BT-<parentPadded>-<slug>`, `<type>` from the PARENT feature's `type:` label (normally `feat`) (standing-epic slice: `<type>/BT-<slicePadded>-<slug>` with the slice's `type:`, per terminal-sync-invariant §Standing epic).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label. (Branch is keyed to the feature; each commit is traceable to its slice.)
 - **main/master:** never a work target for code. It is only a base to branch from and a merge target.
 - **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single feature PR; it never creates the first commit and never merges.

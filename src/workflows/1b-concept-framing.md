@@ -43,7 +43,7 @@ Run the `load-memory` skill to restore session context (read-only).
 8. **Discovery Work File:**
    - Use for longer/generate path. Delete stale `.tmp/1b-discovery-<slug>.work.md` at start.
    - Path: `.tmp/1b-discovery-<slug>.work.md`.
-   - Structure: ## Coverage checklist (Actor, Problem, Vocabulary, Prior Art, Research, Facts, Success, Constraints, Decisions, Non-goals, Follow-ups) with status [ ]/[~]/[x]/[skip], plus ## Ask (verbatim), ## Candidate vocabulary, ## Candidate/Chosen framing, ## Established facts, ## Settled decisions and ## Decoupled follow-ups sections.
+   - Structure: ## Coverage checklist (Actor, Problem, Vocabulary, Prior Art, Research, Facts, Success, Constraints, Decisions, Non-goals, Follow-ups) with status [ ]/[~]/[x]/[skip], plus ## Ask (verbatim), ## Candidate vocabulary, ## Candidate/Chosen framing, ## Established Facts, ## Settled Decisions and ## Decoupled Follow-ups sections.
    - Resume: continue from first open/in-progress checklist item.
    - Write: update distilled nuggets on checklist change, G2 lookup result, or decision lock (never transcripts; keep it lean). Check-in every 5 questions.
 
@@ -52,7 +52,7 @@ Run the `load-memory` skill to restore session context (read-only).
 State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
 
 **Grill mode (facts looked up, decisions asked — batched by dependency):**
-- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up first; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user. Record each lookup result with its source in the work file's `## Established facts` when it lands; record each user-confirmed decision with its reason in `## Settled decisions`.
+- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up first; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user. Record each lookup result with its source in the work file's `## Established Facts` when it lands; record each user-confirmed decision with its reason in `## Settled Decisions`.
 - **Sharpen / short path:** grill one decision at a time.
 - **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with your recommended answer (per G1). A decision waits for a later round only if its answer depends on a sibling still open this round (per G3). Where you can confidently infer an answer (common on brownfield), present it as a batch-confirm — *"here's what I inferred; correct any that are wrong"* — never a silent assumption. Collect → mark settled on `## Coverage` → recompute the frontier → next round.
 
@@ -76,12 +76,12 @@ A thorough grill is typically 20–50 questions; do not target brevity. There is
   - **V1 (Vocabulary Stress-Test):** Stress-test terms under scenario edge-cases.
   - **V2 (Code-Contradiction Check):** Check terms against actual naming in code.
   - **V3 (Glossary-Conflict Callout):** Verify terms do not clash with `GLOSSARY.md` `[[G-xxx]]`.
-- **Internal Prior Art** — prior attempts and BT refs; current-code facts → `## Established facts`.
+- **Internal Prior Art** — prior attempts and BT refs; current-code facts → `## Established Facts`.
 - **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `generated.at` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <generated.at>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a-research. Multiple matches → list filenames, user selects.
 - **Success state** — observable, measurable outcomes.
 - **Hard constraints** — fixed boundaries.
 - **Non-goals (early)** — explicit exclusions.
-- **Decoupled follow-ups** — wanted, but deferred to separate work.
+- **Decoupled Follow-ups** — wanted, but deferred to separate work.
 
 **Pushback format:**
 - Vague term: open first — *"What do you mean by '[term]'?"* — then narrow: *"So [A] rather than [B]?"*
@@ -108,7 +108,7 @@ Runs by default (gate). User may decline; if so, record decline. If AFK, log RAT
 
 1. **Identify Riskiest Assumption:** Single assumption that makes concept fail.
 2. **Determine Cheapest Test:** Propose the fastest test that fits the domain. Demand/greenfield: landing page, waitlist, N DMs, fake-door, rough mock. Brownfield/reliability, where the want is not in question: offline sample benchmark, read-only production probe, simulation harness. Must not take >2 weeks.
-3. **Subagent - "Skeptical Challenger":** Invoke a subagent. Input: chosen framing, actor, problem, Established Facts. Guardrail: "Report only; do not write any file." Output: `{ riskiest_assumption, why_fatal, cheapest_test, est_setup_time }`, `cheapest_test` ∈ {landing page + waitlist | N DMs | fake-door button | rough mock shown to 5 | offline sample benchmark | read-only production probe | simulation harness}.
+3. **Subagent - "Skeptical Challenger":** Invoke a subagent. Input: chosen framing, actor, problem, Established Facts. Guardrail: "Report only; do not write any file." Output: `{ riskiest_assumption, why_fatal, cheapest_test, est_setup_time }`, `cheapest_test` ∈ the template's Cheapest Test set.
 4. **Present verdict:** Present challenge and cheapest test to user. Record in brief.
 
 ## Phase 5: Write Discovery Brief
@@ -131,10 +131,10 @@ Create `docs/discovery/<slug>.md` using `references/discovery_brief_template.md`
 - [ ] Chosen Framing notes rejected alternatives.
 - [ ] RAT and cheapest test documented with status (untested|running|survived|failed).
 - [ ] Established Facts each name a source and the section is dated (or omitted for greenfield).
-- [ ] Settled decisions were confirmed by the user and carry a reason.
+- [ ] Settled Decisions were confirmed by the user and carry a reason.
 - [ ] Success State is observable and measurable.
 - [ ] Decoupled Follow-ups are each marked existing BT-<n> or candidate.
-- [ ] Work-file path only: every entry under the work file's `## Established facts`, `## Settled decisions` and `## Decoupled follow-ups` appears in the matching brief section; every [x] coverage item maps to a non-empty brief section (Research → Prior Art / Chosen Framing).
+- [ ] If a work file was used: every entry under the work file's `## Established Facts`, `## Settled Decisions` and `## Decoupled Follow-ups` appears in the matching brief section; every [x] coverage item maps to a non-empty brief section (Research → Prior Art / Chosen Framing).
 - [ ] Recommended Next Step is explicit.
 - [ ] No unfiled Open Questions markers.
 

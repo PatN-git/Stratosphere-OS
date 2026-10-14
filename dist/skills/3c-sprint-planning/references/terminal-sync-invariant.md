@@ -30,8 +30,8 @@ For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<
 - `/0d` runs the same audit nightly across all rows as a human-facing backstop — it is advisory, not an in-band substitute for this gate.
 
 ## Standing epic
-A parent epic is **standing** when it has no `BT-<parentPadded>` row in `.memory/BACKLOG_MAP.md` and, with `gh` connected, no `status:*` label (offline: BACKLOG only). Feature, audit and concept-map parents always carry both, so no PRD or audit-epic test is needed. A standing epic is a catch-all that stays open across PRs, so it has no feature to finish and no mirror to sync. For a standing epic:
-- It is only the `feature:` key. Never promote it, never give it a status label or BACKLOG row (that would end its standing), never pass it to `reconcile.py --ids`.
+A parent epic is **standing** when it has no `BT-<parentPadded>` row in `.memory/BACKLOG_MAP.md` and, with `gh` connected, no `status:*` label (offline: BACKLOG only). For a standing epic:
+- It is only the `feature:` key. Never promote it, never give it a status label or BACKLOG row, never pass it to `reconcile.py --ids`.
 - Its slices branch as `<type>/BT-<slicePadded>-<slug>`, or on an existing branch the user names; never `main`/`master`.
 - Its slices' PR opens non-draft; the draft rule does not apply.
 - No Epic Check, no Feature Acceptance Audit, no `--close-parent`. After merge, mark the child slices `done` and leave the epic alone.

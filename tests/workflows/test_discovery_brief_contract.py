@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 """BT-165 guards: deterministic artifact links. The discovery brief is located by `linked-prd:` (briefs are slug-only), PRD frontmatter carries `discovery:`/`research:`, and spec paths for a slice are keyed to its parent. Later slices extend this file."""
 import re
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / "src"
-
-
-def _read(rel: str) -> str:
-    return (SRC / rel).read_text(encoding="utf-8")
+from conftest import SRC, read_src as _read
 
 
 def test_no_workflow_locates_a_brief_by_bt_id():
@@ -42,7 +36,7 @@ def test_slice_workflows_key_spec_paths_to_the_parent():
         for stale in ("docs/prds/BT-<padded>", "docs/design/BT-<padded>"):
             assert stale not in text, (rel, stale)
         assert "BT-<parentPadded>" in text, rel
-        assert "standalone slice has no" in text, rel
+        assert "no PRD/design doc at that path (standalone or standing-epic slice)" in text, rel
 
 
 # --- BT-164: the brief's sections have a home downstream ---------------------
@@ -79,6 +73,8 @@ def test_cheapest_test_offers_brownfield_options():
                 if "cheapest_test" in l)
     for opt in ("offline sample benchmark", "read-only production probe", "simulation harness"):
         assert opt in line, opt
+    # the 1b Challenger points at this set instead of restating it
+    assert "the template's Cheapest Test set" in _read("workflows/1b-concept-framing.md")
 
 
 NEW_GATES = ("Established Facts", "Success State", "Decoupled Follow-ups")
@@ -106,7 +102,7 @@ def test_1b_hand_off_points_to_2a_and_repeats_no_section_list():
 def test_brief_links_to_concept_map_and_names_both_writers():
     tpl = _read("references/discovery_brief_template.md")
     assert "\nconcept-map:" in tpl
-    assert "1b-concept-framing | 1c-concept-map" in tpl
+    assert "by: <1b-concept-framing | 1c-concept-map>" in tpl
     assert "generated.by: 1c-concept-map" in _read("workflows/1c-concept-map.md")
     assert "`concept-map:`" in _read("workflows/2c-reconcile-specs.md")
 

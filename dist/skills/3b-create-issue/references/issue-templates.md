@@ -58,7 +58,7 @@ Must cite the governing design/architectural laws violated (e.g. violates `[[A-x
 ### Dependencies
 - **Parent:** `BT-<padded>` — the epic this slice belongs to (bare ID; `—` if standalone). Mirrors the GitHub sub-issue parent and the BACKLOG `Parent` column.
 - **Blocked by:** `BT-<padded>, …` — slices that must land first (bare IDs; `—` if none). Mirrors GitHub blocked-by and the BACKLOG `Blocked by` column.
-- **Design:** `docs/design/BT-<p>-interface.md` | `—` — the parent feature's frozen interface design (`<p>` = parent ID; `—` if none or standalone). 3d reads the blueprint only when this names a path.
+- **Design:** `docs/design/BT-<parentPadded>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
 
 ### Notes
 Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.
