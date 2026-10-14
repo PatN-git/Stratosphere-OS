@@ -1,7 +1,7 @@
 ---
 description: Template for a Product Requirements Document under docs/prds/.
-version: "2.1.0"
-timestamp: 2026-10-13
+version: "2.2.0"
+timestamp: 2026-10-14
 ---
 
 # Prd Template
@@ -83,6 +83,10 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
 
 - **Constraint:**
 - **Direction:**
+- **Boundaries:** feature-specific actions as capabilities (no paths); repo-wide rules (AGENTS.md §3/§4, floor_guard) are not repeated here. A tier with nothing to say is `none — <reason>`.
+  - **Always:**
+  - **Ask first:**
+  - **Never:**
 - **Refs:** `[L-xx]`, `[A-xx]`, `[DR-xx]`
 
 ## 8. Definition of Done

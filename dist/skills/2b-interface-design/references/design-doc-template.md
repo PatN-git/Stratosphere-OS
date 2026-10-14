@@ -1,7 +1,7 @@
 ---
 description: Template for a path-aware interface design document under docs/design/.
-version: "2.0.1"
-timestamp: 2026-10-13
+version: "2.1.0"
+timestamp: 2026-10-14
 ---
 
 # Design Doc Template
@@ -50,7 +50,7 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
   - <Alternative 2> (Reason rejected: <reason>)
 
 ## States / Edge Classes
-- **UI (Path A/B):** <Specify visual states (e.g., loading, empty, active, success, validation error, responsive/break points).>
+- **UI (Path A/B):** <Specify each state the feature needs (loading, empty, active, success, validation error, permission, responsive/break points) as handled or n/a with a reason.>
 - **Non-UI (Path C):** <Specify input edge classes, boundary values, error contexts, failure modes, and retry patterns.>
 
 ### UX / System Stress Matrix
@@ -79,6 +79,8 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
   - Net-new Registration: `<Register new components as §3 Immortal Components if this is a net-new page/full-redesign>`
 - **Optional Generator Provenance Link:**
   - Link to generator snapshot: `<generator-url-or-ref>` (Provenance only; this file is the SSOT)
+- **Patterns to Reject:**
+  - <Per-feature patterns this screen must not use (e.g. stock card grid for a ranked list); the AI-slop rule is [[DR-001]], cite it, do not copy it.>
 
 ### [Path B · Reference-driven native] Blueprint
 - **Design References / Provenance:**
@@ -87,11 +89,19 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
   - DOM Hierarchy / Component tree.
 - **Visual styling rules & styling tokens:**
   - Spacing, colors, layout rules, and responsiveness breakpoints.
+- **Patterns to Reject:**
+  - <Per-feature patterns this screen must not use; cite [[DR-001]], do not copy it.>
 
 ### [Path C · Non-UI] Interface Contract
+- **Caller Usage (written first):**
+  - <The calls a consumer makes, as a short example; signatures below are derived from it.>
 - **Interface/API Signature:**
   - Method signatures, schemas, REST/RPC paths, data models, or parameter contracts.
 - **Behavioral Invariants:**
   - Code invariants, preconditions, postconditions, and side effects.
 - **Input Edge-State Matrix:**
   - Detailed table mapping input boundary values to expected outputs and error responses.
+- **Compatibility & Errors:**
+  - Keep one error shape across the interface; changes to an existing contract are additive; observable behavior counts as contract.
+- **Scrap Signals (for 3d):**
+  - This contract is wrong if <observable condition>; on a hit stop, record it in `## Deviations` and route to `/2c-reconcile-specs`.

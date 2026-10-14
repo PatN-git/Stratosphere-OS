@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.6.0"
+version: "2.7.0"
 timestamp: 2026-10-14
 ---
 
@@ -59,6 +59,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - Contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint.
    - Build slice "Current state / Problem" seeded from the brief's Established Facts (file paths allowed in issue bodies) and Constraints & Settled Decisions.
    - Governing `[[A-xxx]]`/`[[DR-xxx]]` citations (only IDs that exist in `.memory/`; a not-yet-written ADR is cited as plain text `ADR pending: <title>`, never a placeholder ID).
+   - PRD §7 Boundaries: copy the Ask first and Never lines that touch the slice into its body. Ask first = HITL halts and asks; AFK returns `stuck`.
    - Verifiable AC incl. time-to-value + stress cases from the design doc.
    - Parent/Blocked-by (a not-yet-minted sibling is written `BT-<slice:N>`, N = its position in the slice list; the only placeholder a draft may carry).
    - The Dependencies `- **Design:**` line = the real design-doc path from Phase 1 step 3 (`—` if none or standalone; never a `BT-<…>` placeholder).

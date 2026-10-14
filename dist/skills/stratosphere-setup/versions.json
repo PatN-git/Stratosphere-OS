@@ -171,19 +171,19 @@
       "version": "1.0.2"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "2149840ef9e58027d509204a6ec30d99134684b3332758994dc5f802bf2747af",
-      "timestamp": "2026-10-13",
-      "version": "1.6.0"
+      "sha256": "8cd91e8758d97bcf89c06cba05d4f825bd4521e0849ebf9827d189a400b2d950",
+      "timestamp": "2026-10-14",
+      "version": "1.7.0"
     },
     "skills/2a-write-prd/references/PRD-template.md": {
-      "sha256": "6f61cad8871a36b0962d186c4cce0e49d9670a86f7d3b314c01560264d313bea",
-      "timestamp": "2026-10-13",
-      "version": "2.1.0"
+      "sha256": "0d59dc7edfbd0271fc151654164fc4df1c782299b78cf39dac8e1e31c77fd52b",
+      "timestamp": "2026-10-14",
+      "version": "2.2.0"
     },
     "skills/2b-interface-design/SKILL.md": {
-      "sha256": "e6ce7f3af65a7261bb95eebe6bc2be86184d65b66749e52a323776831ed13aac",
+      "sha256": "24e969607b5e706463b2a5ccee297dddcd1939302cedd4a4b8093bcf99491de3",
       "timestamp": "2026-10-14",
-      "version": "1.5.1"
+      "version": "1.6.0"
     },
     "skills/2b-interface-design/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
@@ -191,9 +191,14 @@
       "version": "1.0.2"
     },
     "skills/2b-interface-design/references/design-doc-template.md": {
-      "sha256": "340d546f826960bd57b3c6e6da7506b8b42cc93c1d91561a03fa221329ede2e4",
-      "timestamp": "2026-10-13",
-      "version": "2.0.1"
+      "sha256": "cfc40a4350a279ddedaa466d622d22bc210d2db5f29dfc9d49b2a546443c5dcb",
+      "timestamp": "2026-10-14",
+      "version": "2.1.0"
+    },
+    "skills/2b-interface-design/references/design-red-flags.md": {
+      "sha256": "6ef9ee5927859514974d0a9b377c1078c4b787b00d3609db561925a6b6cb09e4",
+      "timestamp": "2026-10-14",
+      "version": "1.0.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
       "sha256": "bb9e5b532598129b49f2b73763e12289e580bff0a0527bb2d0d3d5594f1a7691",
@@ -231,9 +236,9 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "87a5d4012ba886dd03a14c919fdf2f34eb027e8e3cbb0e4797ced4bdeb36e11d",
+      "sha256": "3d020c426f60681a654a796e46468790228f8b65a39477fc26be352b206a23cb",
       "timestamp": "2026-10-14",
-      "version": "2.6.0"
+      "version": "2.7.0"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
