@@ -281,9 +281,9 @@
       "version": "1.1.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "de50ac0ee63eef5d787816118968e77080772da36f9d8dec72cce1a6e5723fa3",
-      "timestamp": "2026-10-13",
-      "version": "2.5.0"
+      "sha256": "821b836693f56a19c77298c167955163e8625e4b6ef1654fda6560d4f7f60d80",
+      "timestamp": "2026-10-14",
+      "version": "2.6.0"
     },
     "skills/3d-implement-issue/references/merge-risk-paths.md": {
       "sha256": "d9806b7302c9048399acf3a5e327b604ecd7f0e48b6e5c3c7de1cb9f265c55e6",
@@ -301,14 +301,14 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "679bbb89f510cfebad495643890406692c0f189517f6e11eb9de71b01767800d",
-      "timestamp": "2026-10-13",
-      "version": "1.6.0"
+      "sha256": "7f031afd17844a3308f0dd9961759282ea492d0b2307b90e6ec2f98f9e69ab23",
+      "timestamp": "2026-10-14",
+      "version": "1.7.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "631e68e6775dcdcd35f2f03e07de73937fcd0cee83b98eb4f3db40a2ceb3f810",
-      "timestamp": "2026-10-13",
-      "version": "1.4.0"
+      "sha256": "5b8465dd069d026196d11554cd2dfb0ef2e8015fffd51aaba2abe96e60f39544",
+      "timestamp": "2026-10-14",
+      "version": "1.5.0"
     },
     "skills/4a-verify-and-ship/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",

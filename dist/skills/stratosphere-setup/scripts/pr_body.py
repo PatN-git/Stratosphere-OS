@@ -51,11 +51,16 @@ def git_ok(*args):
     return subprocess.run(["git", *args], capture_output=True).returncode == 0
 
 
+def default_refs():
+    """Candidate refs for the default branch, best first (remote default, origin/main|master, main|master)."""
+    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+    return (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master")
+
+
 def resolve_base(given):
     if given:  # an explicit base must still be a commit, else the diff is empty and risk would read [none]
         return given if git("rev-parse", "--verify", "--quiet", f"{given}^{{commit}}") else None
-    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
-    for cand in (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master"):
+    for cand in default_refs():
         base = git("merge-base", "HEAD", cand)
         if base:
             return base
