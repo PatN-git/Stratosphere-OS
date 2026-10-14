@@ -76,7 +76,7 @@
       "version": "1.2.0"
     },
     "skills/0a-start-session/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -91,12 +91,12 @@
       "version": "1.1.0"
     },
     "skills/0b-stop-session/references/github-issue-relations.md": {
-      "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
-      "timestamp": "2026-09-29",
-      "version": "1.0.1"
+      "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.2"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -106,7 +106,7 @@
       "version": "1.0.3"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "f9cc36525093086072a5b023d8033de4a691b331cc0c066e5f0fda30a14d4e31",
+      "sha256": "726411d939f9f7012fa528df0832b039c4ddf45df081e18e81e03c92ad0c4893",
       "timestamp": "2026-10-13",
       "version": "1.3.0"
     },
@@ -116,7 +116,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -171,9 +171,9 @@
       "version": "2.0.0"
     },
     "skills/1c-concept-map/references/github-issue-relations.md": {
-      "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
-      "timestamp": "2026-09-29",
-      "version": "1.0.1"
+      "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.2"
     },
     "skills/2a-write-prd/SKILL.md": {
       "sha256": "97d12a0c7fb08df9fb0c4c30e6489b0094c45b48f873dbb7e468befca98947b2",
@@ -226,7 +226,7 @@
       "version": "2.0.0"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -246,9 +246,9 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/references/github-issue-relations.md": {
-      "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
-      "timestamp": "2026-09-29",
-      "version": "1.0.1"
+      "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.2"
     },
     "skills/3b-create-issue/references/issue-templates.md": {
       "sha256": "a0c36b9bc6d473052275ff34e6035d9f167adf891f073902c3ee0a2bb6672a18",
@@ -256,7 +256,7 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -266,9 +266,9 @@
       "version": "2.4.0"
     },
     "skills/3c-sprint-planning/references/github-issue-relations.md": {
-      "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
-      "timestamp": "2026-09-29",
-      "version": "1.0.1"
+      "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.2"
     },
     "skills/3c-sprint-planning/references/issue-templates.md": {
       "sha256": "a0c36b9bc6d473052275ff34e6035d9f167adf891f073902c3ee0a2bb6672a18",
@@ -276,7 +276,7 @@
       "version": "1.1.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -296,7 +296,7 @@
       "version": "1.0.2"
     },
     "skills/3d-implement-issue/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -311,7 +311,7 @@
       "version": "1.6.0"
     },
     "skills/3z-afk-loop/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },
@@ -341,9 +341,9 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/github-issue-relations.md": {
-      "sha256": "4eda3743a1a7b67b59bdd7438c3f409c25e7165b7ab41e0d0e3e78fda285a46b",
-      "timestamp": "2026-09-29",
-      "version": "1.0.1"
+      "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.2"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
       "sha256": "a0c36b9bc6d473052275ff34e6035d9f167adf891f073902c3ee0a2bb6672a18",
@@ -361,7 +361,7 @@
       "version": "1.0.2"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "82e620f1b345860d83131c63d583a0fc934c73914f5e0662a4f37e9e6b410963",
+      "sha256": "8e36362216794f1ea7b1bd159c73d9c5a5f7a94bdad7b0f80b300e4911a2dd11",
       "timestamp": "2026-10-13",
       "version": "1.1.0"
     },

@@ -23,10 +23,12 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 ## Heal
 For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<padded>`** — find-or-replace the row/field. **Never append** (appending double-writes the row). A stale blocker is healed on both sides: remove the id from the map cell **and** the GitHub edge (`removeBlockedBy`). Then **re-run `reconcile.py` until it exits 0.** Log each fix as `[HEALED <field> BT-<n>]`.
 
+Batch heal (0d, after the user approves): `reconcile.py --heal --kind <status|milestone|labels|parent|blocked_by> --source gh (--ids … | --all-open)` is that upsert for one kind, from GitHub, on the map only. When GitHub is the side to fix (the map is right), `--source map` prints the exact `gh`/GraphQL commands; run them only after the user approves. A stale blocker, a closed issue, a missing PR link and an absent row stay manual.
+
 ## Boundaries
 - **End-state is the citing workflow's, not this file's.** The gate asserts only that GitHub and BACKLOG *agree* for the touched ids — it never imposes a target status. Conditional transitions (e.g. 4a's epic-flip only when all siblings are `in review`) are decided by the workflow; only pass ids to reconcile once the phase's intended writes are done.
 - **Offline / no `gh`** → the script checks BACKLOG internal consistency and exits 0 with `[local-only]`. There is no GitHub to cross-check, so this case is inherently self-attested — eyeball the row you wrote.
-- **Detection only.** `reconcile.py` never writes; healing is the workflow's job (upsert, above).
+- **Never writes GitHub.** `reconcile.py` only reads it. `--heal` writes `.memory/BACKLOG_MAP.md` only (see Heal); fixes that belong on GitHub are printed as commands, never run.
 - `/0d` runs the same audit nightly across all rows as a human-facing backstop — it is advisory, not an in-band substitute for this gate.
 
 ## Standing epic
