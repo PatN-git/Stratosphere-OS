@@ -81,9 +81,9 @@
       "version": "1.4.0"
     },
     "skills/0b-stop-session/references/environment-fix-ladder.md": {
-      "sha256": "4cfafcf3765b502b7f56da5d45b53cc2a45a02acb2b14f6d78bb0db29a0d04de",
-      "timestamp": "2026-10-13",
-      "version": "1.1.0"
+      "sha256": "b855d71ca753271f04b73c817febab2da9f72062b1745344cbaf3582c963f295",
+      "timestamp": "2026-10-14",
+      "version": "1.2.0"
     },
     "skills/0b-stop-session/references/github-issue-relations.md": {
       "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
@@ -96,9 +96,9 @@
       "version": "1.1.0"
     },
     "skills/0c-handoff/SKILL.md": {
-      "sha256": "565946765819202d3ef2228ca87e8cb9fb908d726f9332894cd9dbd279b011b8",
-      "timestamp": "2026-07-17",
-      "version": "1.0.3"
+      "sha256": "82d5f35960922ac48d456909b39b9d09b53c3cbce61d21e3a20008dc405de361",
+      "timestamp": "2026-10-14",
+      "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
       "sha256": "1d80cc5ed2e4f7875b3eb1061ebf3097e1bd4f5d5b35282ecd4fdd0a61b1d296",
@@ -106,9 +106,9 @@
       "version": "1.3.0"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
-      "sha256": "4cfafcf3765b502b7f56da5d45b53cc2a45a02acb2b14f6d78bb0db29a0d04de",
-      "timestamp": "2026-10-13",
-      "version": "1.1.0"
+      "sha256": "b855d71ca753271f04b73c817febab2da9f72062b1745344cbaf3582c963f295",
+      "timestamp": "2026-10-14",
+      "version": "1.2.0"
     },
     "skills/0d-nightly-consolidation/references/terminal-sync-invariant.md": {
       "sha256": "ddf27243a79b8ba11b744a525c1c0e7bb0c4958643d8622be4af376657610302",

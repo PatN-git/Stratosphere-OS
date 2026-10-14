@@ -34,6 +34,11 @@ def test_ladder_rung_1_absorbs_host_and_tooling_behaviour():
     assert "shell quoting" in rung1 and "local hook" in rung1 and "project rule" in rung1
 
 
+def test_ladder_rung_1_requires_a_check_shown_failing_on_the_motivating_instance():
+    rung1 = _rung(1)
+    assert "motivating instance" in rung1 and "acceptance test" in rung1
+
+
 def test_ladder_rung_3_is_law_only_and_recurrence_never_reaches_it():
     text = _read("references/environment-fix-ladder.md")
     rung3 = _rung(3)
