@@ -401,6 +401,7 @@ KNOWN_SHIPPED_SCRIPT_HASHES = {
     },
     ".agents/scripts/okf_view.py": {
         "6fa6c6cffbeadf8924a596cf25b6720755126a40aef9aeec6a2f62450fb7864f",
+        "cefa8378489f57fa71f554a6671e0a1ddff0e4c18cc737314a956e2a4ae21f8c",
     },
     ".agents/scripts/okf_viewer/LICENSE": {
         "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",

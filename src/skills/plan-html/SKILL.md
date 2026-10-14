@@ -3,8 +3,8 @@ name: plan-html
 description: Use when presenting a complex or spatial plan to a human — roadmap, trade-off matrix, status dashboard, multi-section plan document, decision record, side-by-side comparison. Generates one self-contained interactive HTML file; fires on ≥~100-line or spatial human-facing output. Defaults to markdown for agent-loop content, repo docs, model input, and short/simple output.
 metadata:
   stratos.layer: execution
-version: "1.2.0"
-timestamp: 2026-09-22
+version: "1.2.1"
+timestamp: 2026-10-14
 ---
 
 # Decision Gate (Four-Scenario)
@@ -44,7 +44,7 @@ If no template fits → **custom-composition mode**: compose using primitives fr
   - **ephemeral** artifacts (decision aids, editors, throwaway comparisons) → `.tmp/` (gitignored) or OS temp;
   - **companions** (an HTML view of a committed `.md`: PRD, discovery brief, roadmap) → `.tmp/render/<source path with .md replaced by .html>` (e.g. `docs/prds/BT-012-x.md` → `.tmp/render/docs/prds/BT-012-x.html`). Never commit a companion and never present an existing render: regenerate it from the current `.md` each time, so it cannot drift from its source.
   - **durable** standalone artifacts (no `.md` source, tied to a feature/decision) → beside the artifact they document (e.g. `docs/design/…`).
-  - Invoking workflows set the concrete path (e.g. `2b` → `docs/design/BT-<n>-directions.html`). The skill stays path-agnostic.
+  - Invoking workflows set the concrete path (e.g. `2b` → `.tmp/render/docs/design/BT-<n>-directions.html`). The skill stays path-agnostic.
 - First line must be the token header:
   `<!-- plan-html | md-equivalent: ~<N> lines | html: ~<N> lines | ratio: <N>x | justified: <reason> -->`
 - Minify CSS/JS inline (remove blank lines/excess whitespace) to stay within token budget.

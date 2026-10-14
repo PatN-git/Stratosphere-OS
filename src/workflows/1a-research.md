@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.0.7"
-timestamp: 2026-07-24
+version: "1.0.8"
+timestamp: 2026-10-14
 ---
 
 # Research
@@ -15,7 +15,7 @@ timestamp: 2026-07-24
 > [!NOTE]
 > Optional. Trigger if problem space is unfamiliar, greenfield, or domain-heavy; else skip to `/1b-concept-framing`. Skip for small items.
 
-**Hand-off contract:** Writes findings to `docs/research/<slug>.md` (including Opportunity scores, Served/Pain matrices, and Cost & Viability signals). Downstream: `/1b-concept-framing` detects and cites file; `/2a-write-prd` lifts scores and cost signals.
+**Hand-off contract:** Writes `docs/research/<slug>.md`. Read by: `/1b-concept-framing`, `/2a-write-prd`, `/2c-reconcile-specs`, `/3b-create-issue`.
 
 ---
 

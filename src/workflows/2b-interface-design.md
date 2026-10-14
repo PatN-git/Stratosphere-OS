@@ -6,13 +6,13 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-05
+version: "1.5.1"
+timestamp: 2026-10-14
 ---
 
 # Interface Design
 
-**Hand-off contract:** Writes path-aware design document to `docs/design/BT-<padded>-interface.md` by instantiating `references/design-doc-template.md`. Appends design path to parent GitHub issue body. Downstream workflows (`3b`, `3d` Phase 0, `4a`) read this document.
+**Hand-off contract:** Writes `docs/design/BT-<padded>-interface.md` from `references/design-doc-template.md`, the design link on the parent issue, and the parent epic's `needs_spec → planned` (Phase 1 or 5). Read by: `/2c-reconcile-specs`, `/3b-create-issue`, `/3d-implement-issue`, `/4a-verify-and-ship`.
 
 ---
 
@@ -45,7 +45,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Feature-on-existing** (Path A A2; Path B feature) → Skip unless ≥2 distinct layouts found.
    - **Path C (non-UI)** → Generate 3 architecture/API alternatives. Use PRD §12 cost warning.
 2. Generate 3 Directions (wireframes, layout/structure only; for Path A/B, no tokens/visual style exploration):
-   - Invoke plan-html: use wireframe-compare template or 3-column CSS grid (labeled regions + 1-line rationale, trade-off matrix row) to render docs/design/BT-<padded>-directions.html.
+   - Invoke plan-html: use wireframe-compare template or 3-column CSS grid (labeled regions + 1-line rationale, trade-off matrix row) to render the ephemeral `.tmp/render/docs/design/BT-<padded>-directions.html` (never committed).
 3. **5-Lens Check:** Evaluate against desirable, usable, feasible, viable, ethical.
 4. **HITL Pick:** Show comparison. Record winner and rejected in docs under "## Direction Alternatives (Considered)".
 

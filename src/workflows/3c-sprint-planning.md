@@ -6,13 +6,13 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.4.0"
-timestamp: 2026-09-29
+version: "2.4.1"
+timestamp: 2026-10-14
 ---
 
 # Sprint planning
 
-**Hand-off contract:** Assigns leaf slices to sprint milestone `vX.Y.Z` (Z ≥ 1). Reads active release `X.Y` from parent `vX.Y.0` release milestone; defaults to `v1.0`. Sprint planning owns Z. Never invent `X.Y`.
+**Hand-off contract:** Writes sprint milestone `vX.Y.Z` (Z ≥ 1) on leaf slices. Read by: `/3z-afk-loop`.
 
 ## Phase 0: Load Memory
 Run the `load-memory` skill to restore session context (read-only).
@@ -22,7 +22,7 @@ Run the `load-memory` skill to restore session context (read-only).
 2. Extract rows with `status != done`.
 3. **Audit Strategy:**
    - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. `needs_spec` slices are Spikes (definition: `references/issue-templates.md`). **Never flip `needs_spec → planned`.**
-   - Verify Build slices belong to current release `vX.Y`. If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>` (set milestone `vX.Y.0` to schedule); do not sequence it.
+   - Verify Build slices belong to current release `vX.Y` (read from the parent `vX.Y.0` milestone; default `v1.0`; never invent `X.Y` — 3c owns only Z). If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>` (set milestone `vX.Y.0` to schedule); do not sequence it.
    - Exclude and print `[MISSING-LABELS] BT-<padded> - <title>` if a leaf issue (without `concept:*` label) lacks a BACKLOG_MAP entry or a required label: `type:`, `mode:`, `tier:slice`, `size:`.
 
 ## Phase 2: Filter & Sort Engine
