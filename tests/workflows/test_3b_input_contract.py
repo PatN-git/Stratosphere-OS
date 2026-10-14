@@ -54,7 +54,7 @@ def test_3b_drafts_fill_the_design_line_and_3d_keys_its_read_on_it():
     three_d = _read("workflows/3d-implement-issue.md")
     assert "`Design:` line" in three_d
     assert "design reference in issue/BACKLOG_MAP Ref" not in three_d
-    assert "BT-<parentPadded>-interface.md" in three_d and "no PRD/design doc at that path (standalone or standing-epic slice)" in three_d
+    assert "BT-<parentPadded>-interface.md" in three_d and "no PRD/design doc at that path (standalone slice)" in three_d
 
 
 def test_2c_tags_migrations_and_3b_mints_them_as_slice_1():

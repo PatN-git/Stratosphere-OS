@@ -10,7 +10,6 @@ def _between(text: str, start: str, end: str) -> str:
 
 def test_4a_step8_clears_the_epic_id_from_dependents_after_the_flip():
     step8 = _between(_text("src/workflows/4a-verify-and-ship.md"), "8. **Epic Check:**", "9. **Terminal sync gate:**")
-    assert "Standing epic" in step8 and step8.index("Standing epic") < step8.index("**every sibling")
     flip = step8.index('--add-label "status:in review"')
     clear = step8.index("clear `BT-<parent>` from every dependent's `Blocked by`")
     assert flip < clear, "the epic-id clear follows the epic's flip to in review"

@@ -1,5 +1,5 @@
 ---
-description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`. Also defines the standing-epic rule (3d, 4a, 3b, 3z, 0a).
+description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
 version: "1.1.0"
 timestamp: 2026-10-14
 ---
@@ -30,10 +30,3 @@ Batch heal (0d, after the user approves): `reconcile.py --heal --kind <status|mi
 - **Offline / no `gh`** → the script checks BACKLOG internal consistency and exits 0 with `[local-only]`. There is no GitHub to cross-check, so this case is inherently self-attested — eyeball the row you wrote.
 - **Never writes GitHub.** `reconcile.py` only reads it. `--heal` writes `.memory/BACKLOG_MAP.md` only (see Heal); fixes that belong on GitHub are printed as commands, never run.
 - `/0d` runs the same audit nightly across all rows as a human-facing backstop — it is advisory, not an in-band substitute for this gate.
-
-## Standing epic
-A parent epic is **standing** when it has no `BT-<parentPadded>` row in `.memory/BACKLOG_MAP.md` and, with `gh` connected, no `status:*` label (offline: BACKLOG only). For a standing epic:
-- It is only the `feature:` key. Never promote it, never give it a status label or BACKLOG row, never pass it to `reconcile.py --ids`.
-- Its slices branch as `<type>/BT-<slicePadded>-<slug>`, or on an existing branch the user names; never `main`/`master`.
-- Its slices' PR opens non-draft; the draft rule does not apply.
-- No Epic Check, no Feature Acceptance Audit, no `--close-parent`. After merge, mark the child slices `done` and leave the epic alone.

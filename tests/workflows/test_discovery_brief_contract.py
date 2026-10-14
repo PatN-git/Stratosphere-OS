@@ -36,7 +36,7 @@ def test_slice_workflows_key_spec_paths_to_the_parent():
         for stale in ("docs/prds/BT-<padded>", "docs/design/BT-<padded>"):
             assert stale not in text, (rel, stale)
         assert "BT-<parentPadded>" in text, rel
-        assert "no PRD/design doc at that path (standalone or standing-epic slice)" in text, rel
+        assert "no PRD/design doc at that path (standalone slice)" in text, rel
 
 
 # --- BT-164: the brief's sections have a home downstream ---------------------
