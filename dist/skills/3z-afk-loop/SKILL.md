@@ -39,7 +39,7 @@ _Done when:_ orchestrator context synced.
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
-5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.
+5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
 _Done when:_ user authorized slice list and ship mode.
 
@@ -47,7 +47,7 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement
-0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md` (if batch), and continue to the next slice.
+0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
 1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
    `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
@@ -72,7 +72,7 @@ _Done when:_ auditor returns valid JSON verdict.
 Evaluate subagent response:
 - Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): mark slice `status:blocked` in BACKLOG_MAP, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), post the reason and both options (`gh issue comment <n> --body "[STUCK] <reason> — options: 1) <a> 2) <b>"`), log to `.tmp/3z-loop.work.md`, continue.
 - Floor guard failed (`[FLOOR]`, Step 2A) → not passing: same retry and `status:blocked` path as `[UNCOVERED]` below, the guard's findings as the gap report (comment the `[FLOOR]` rows when blocking). The retry fixes the code; a new `## Floor exceptions` row never counts.
-- Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md` (if batch); next slice.
+- Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md`; next slice.
 - Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, `SKIP-DEP`, or `status:blocked`).
 
@@ -109,5 +109,5 @@ _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.
 
 ## Phase 5: Session Close
-Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP, run memory lint, and delete `.tmp/3z-loop.work.md`.
-_Done when:_ `/0b-stop-session` completes, working file cleaned, and repository memory persisted.
+Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP and run memory lint. The decision log is retained (gitignored) so the user can review the run; it is never removed.
+_Done when:_ `/0b-stop-session` completes and repository memory persisted.

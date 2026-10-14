@@ -236,7 +236,7 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "3d020c426f60681a654a796e46468790228f8b65a39477fc26be352b206a23cb",
+      "sha256": "8fdab7974516d8cd288f9dd30f2b3e06326386985630b1e59c81fc700378343b",
       "timestamp": "2026-10-14",
       "version": "2.7.0"
     },
@@ -286,7 +286,7 @@
       "version": "1.1.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "821b836693f56a19c77298c167955163e8625e4b6ef1654fda6560d4f7f60d80",
+      "sha256": "0438c766158544848cc421bee2980a4295a29be202e35b2bfe994687b334f60e",
       "timestamp": "2026-10-14",
       "version": "2.6.0"
     },
@@ -306,12 +306,12 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "7f031afd17844a3308f0dd9961759282ea492d0b2307b90e6ec2f98f9e69ab23",
+      "sha256": "d6728bd8199cc95ef5c030a97b21b680ae822885ca9c366caffd04cdbc22b256",
       "timestamp": "2026-10-14",
       "version": "1.7.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "5b8465dd069d026196d11554cd2dfb0ef2e8015fffd51aaba2abe96e60f39544",
+      "sha256": "3f7fc1b663682765327ac747aea5a6fe68ba80bf6ada5db0385b58b8e5df5777",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -351,9 +351,9 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "3f63fea92f20c50cf263b4961dceb9b73387cd867e6b400fb8f5b0ea101e118c",
-      "timestamp": "2026-10-13",
-      "version": "1.0.2"
+      "sha256": "e492f73a52a7591eee8093ecbf96f95b771f08ce6fa7ca5d346946cb4e2241a8",
+      "timestamp": "2026-10-14",
+      "version": "1.0.3"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
       "sha256": "ddf27243a79b8ba11b744a525c1c0e7bb0c4958643d8622be4af376657610302",
@@ -431,9 +431,9 @@
       "version": "1.1.0"
     },
     "skills/micro-tdd/SKILL.md": {
-      "sha256": "8b6a2592378e88d059a4450cd6e2dc4d828fb872033d2a75ec64830e10bef94a",
-      "timestamp": "2026-10-08",
-      "version": "1.4.0"
+      "sha256": "f833dd8f5c03b55809513a013b12be11e8ffa57bfdf228ba07ca60a30d2a81c0",
+      "timestamp": "2026-10-14",
+      "version": "1.5.0"
     },
     "skills/plan-html/SKILL.md": {
       "sha256": "e685f83ef0e5bca925f022be73abd4e0fe6e9252624ba05a6a4478e4eb8f1582",
