@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-13
+version: "1.4.0"
+timestamp: 2026-10-14
 ---
 
 # Concept framing
@@ -61,10 +61,12 @@ State synthesis of known facts and confirm — do not re-grill. Lead open-ended 
 
 - **G1 — Recommend when grounded, open when not:** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
 - **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
+  - **Empirical fork:** a local probe can answer it (read-only, <=2 min, in .tmp/; no network, installs, cost, secrets, production)? Run it, log "probe: <cmd>" in Established Facts, ask only the preference left. Else ask.
 - **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependency edges in order (a decision waits until its prerequisites are settled). Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
 
 **Stop conditions:**
 1. **Primary gate — confirmed shared understanding:** stop only when you can restate actor, problem, and chosen framing back to the user and they confirm it is correct and complete. The user — never the agent — declares "enough"; do not stop merely because the next question "wouldn't change the brief" (that lets the agent answer its own questions).
+   - **Not consent:** hedges ("sounds good", "looks reasonable"), silence, off-topic replies. Re-ask the open point. "Whatever you think": offer two options.
 2. User explicitly signals done ("enough", "write it up").
 3. Focus areas covered **and** the confirmation in (1) obtained.
 
@@ -141,7 +143,7 @@ Create `docs/discovery/<slug>.md` using `references/discovery_brief_template.md`
 - [ ] Recommended Next Step is explicit.
 - [ ] No unfiled Open Questions markers.
 
-Present brief for approval.
+Present brief for approval (Not-consent rule applies).
 
 ## Phase 7: Hand-off & Memory Sync
 

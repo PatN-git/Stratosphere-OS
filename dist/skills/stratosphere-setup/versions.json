@@ -116,14 +116,14 @@
       "version": "1.1.0"
     },
     "skills/1a-research/SKILL.md": {
-      "sha256": "459c78966f64d1d6891853bbfdea72593cae13f706da23d928d56ca15ff519bb",
+      "sha256": "5d09cd4df704d6ccb607f553dd08d3fcc13253828dea033424f2cb1d98168d74",
       "timestamp": "2026-10-14",
-      "version": "1.0.8"
+      "version": "1.0.9"
     },
     "skills/1a-research/references/research-competitive-template.md": {
-      "sha256": "dd1dd7b7f82454f3a866fc8da115c37fdd7cbe6de7ae3923f566d49b718f2b5b",
-      "timestamp": "2026-09-15",
-      "version": "2.1.1"
+      "sha256": "db25018889c71847822597e7fc1d652a8e5f6587ab977877185eb9acb8aa30f6",
+      "timestamp": "2026-10-14",
+      "version": "2.2.0"
     },
     "skills/1a-research/references/research-evidence-standards.md": {
       "sha256": "6ef0f2eb19a4fa6fd10c93362d2622f62e130b7831aa59c3d4c3749780ecbdc3",
@@ -131,14 +131,14 @@
       "version": "1.0.1"
     },
     "skills/1a-research/references/research-problem-template.md": {
-      "sha256": "85205802d0cd168969667e2ea316b3bdd35ae48233ec5e0dec0100630cf845aa",
-      "timestamp": "2026-09-15",
-      "version": "2.1.1"
+      "sha256": "7d1c8c9e101b3c57fe6e12a06a87535a0e43e40386baa48f122ae84c95e2c234",
+      "timestamp": "2026-10-14",
+      "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "8b961c764b80fa56477391459f6200dbf8c729582c47eb74f3d9d0b3db98b191",
-      "timestamp": "2026-10-13",
-      "version": "1.3.0"
+      "sha256": "2437b440d4d20eb0e1d6f75139eb1c69f6afeb3879a9bbe7da9e0df71c4b42b0",
+      "timestamp": "2026-10-14",
+      "version": "1.4.0"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
       "sha256": "5e3de6f3bda5e01fd074d56dff3e74626bfbbd07e89f11c0f641dcafb4cc09b3",
@@ -151,9 +151,9 @@
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "efdca2e3cef93bddcb33025215814e13526f15cf7f283bea73372b19c4b1fbcd",
-      "timestamp": "2026-10-13",
-      "version": "1.2.0"
+      "sha256": "e6e0e692b78b6ae5e4c4fd36df15d1b637a5276b7ccae41cef9870e8154c6be5",
+      "timestamp": "2026-10-14",
+      "version": "1.3.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
       "sha256": "6369dc121c5f66349c3389a552a5c9b76bdc9ac6db5a93e686c3006c47a5fe05",
