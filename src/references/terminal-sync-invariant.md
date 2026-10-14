@@ -16,12 +16,12 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 ```
 
 - Non-zero exit → **HALT. Do not close/ship.** The output lists each `[MIRROR-DRIFT BT-<n>: <field> map=<x> gh=<y>]`.
-- **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared **plus** the parent epic when it flipped it to `in review`.
+- **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared (slice or epic id) **plus** the parent epic when it flipped it to `in review`.
 - `--fields` = only the mirror fields this phase wrote (default: all 5 — `status,milestone,labels,parent,blocked_by`). Scoping keeps a gate from false-blocking on drift in a field outside its concern (e.g. 3a passes `--fields milestone`).
 - `--pr-id` = the single id that must carry a PR-link comment (the shipped slice); co-passed ids are not required to carry it. A PR-link comment is one whose body contains the full `/pull/` URL (`https://github.com/<owner>/<repo>/pull/<n>`); a bare `#<n>` does not count.
 
 ## Heal
-For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<padded>`** — find-or-replace the row/field. **Never append** (appending double-writes the row). Then **re-run `reconcile.py` until it exits 0.** Log each fix as `[HEALED <field> BT-<n>]`.
+For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<padded>`** — find-or-replace the row/field. **Never append** (appending double-writes the row). A stale blocker is healed on both sides: remove the id from the map cell **and** the GitHub edge (`removeBlockedBy`). Then **re-run `reconcile.py` until it exits 0.** Log each fix as `[HEALED <field> BT-<n>]`.
 
 ## Boundaries
 - **End-state is the citing workflow's, not this file's.** The gate asserts only that GitHub and BACKLOG *agree* for the touched ids — it never imposes a target status. Conditional transitions (e.g. 4a's epic-flip only when all siblings are `in review`) are decided by the workflow; only pass ids to reconcile once the phase's intended writes are done.

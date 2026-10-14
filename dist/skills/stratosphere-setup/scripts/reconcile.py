@@ -105,10 +105,12 @@ def compare(row, gh, fields, check_pr):
             drift.append(f"milestone map={_norm(row['milestone'])} gh={gh_ms}")
 
     if 'labels' in fields:
+        # status:* is compared under `status`; strip it on both sides.
         gh_nonstatus = {l for l in gh_labels if not STATUS_RE.match(l)}
-        if row['labels'] != gh_nonstatus:
-            drift.append(f"labels map_only={sorted(row['labels'] - gh_nonstatus)} "
-                         f"gh_only={sorted(gh_nonstatus - row['labels'])}")
+        map_labels = {l for l in row['labels'] if not STATUS_RE.match(l)}
+        if map_labels != gh_nonstatus:
+            drift.append(f"labels map_only={sorted(map_labels - gh_nonstatus)} "
+                         f"gh_only={sorted(gh_nonstatus - map_labels)}")
 
     if 'blocked_by' in fields and 'blockedBy' in gh:
         # Real gh returns a connection {"nodes": [...], "totalCount": n} (not paginated
