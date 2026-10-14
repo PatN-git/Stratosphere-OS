@@ -33,7 +33,8 @@ def test_description_says_backlog_drift():
 def test_phase1_ladder_sampling_and_lean_report():
     phase1 = _phase("## Phase 1", "## Phase 2")
     assert "references/environment-fix-ladder.md" in phase1
-    assert "~15" in phase1 and "5 with the most failed tool calls" in phase1 and "3 random" in phase1
+    assert "~15" in phase1 and "inspect the failing calls of the 5 with the most errors" in phase1
+    assert "state the sample in the report" in phase1
     assert "roster" in phase1 and "positive observations" in phase1  # named so they stay out of the report
 
 
@@ -175,3 +176,23 @@ def test_decisions_read_is_host_neutral_and_cannot_hang_without_reports():
     assert "$(ls" not in TEXT and "grep" not in phase2 and "tail -7" not in TEXT
     assert "docs/nightly/nightly-*.md" in phase2
     assert "none yet" in phase2 and "skip" in phase2
+
+
+def test_phase1_runs_the_scan_before_any_transcript_and_opens_one_only_for_a_failing_call():
+    phase1 = _phase("## Phase 1", "## Phase 2")
+    scan = next(l for l in phase1.splitlines() if "nightly_scan.py" in l)
+    assert "python .agents/scripts/nightly_scan.py` first" in scan and "--since" not in scan  # the script owns the default
+    assert "`last_run`, else 24 hours" in scan and "subagents" in scan and "`repeats`" in scan
+    assert "instead of opening transcripts" in scan and "Open a transcript only to inspect one specific failing call" in scan
+    assert "Claude Code incl. subagents, and Antigravity" in scan and "never shows message text" in scan
+    assert "Review session transcripts" not in phase1  # the scan replaces the by-hand transcript review
+    assert "scan lists more than ~15 sessions" in phase1
+    redundant = next(l for l in phase1.splitlines() if l.startswith("3. "))
+    assert "redundant tool calls (`repeats` in the scan" in redundant
+
+
+def test_drift_heal_uses_reconcile_heal_and_runs_github_commands_only_after_approval():
+    drift = _phase("Backlog Drift Check", "## Phase 4")
+    assert "reconcile.py --heal --kind" in drift and "--source gh" in drift and "never writes GitHub" in drift
+    assert "`--source map` prints the `gh`/GraphQL commands" in drift
+    assert "run them only after the user approves that R-n" in drift

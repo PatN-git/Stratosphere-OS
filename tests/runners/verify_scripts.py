@@ -313,6 +313,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/test_gate.py"
             elif rel_str == "scripts/nightly_state.py":
                 proj_rel_path = ".agents/scripts/nightly_state.py"
+            elif rel_str == "scripts/nightly_scan.py":
+                proj_rel_path = ".agents/scripts/nightly_scan.py"
             elif rel_str.startswith("scripts/design/"):
                 if "test" in rel.parts:
                     continue # skip design tests

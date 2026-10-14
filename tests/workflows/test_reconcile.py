@@ -280,6 +280,195 @@ def summary_checks():
         check("--keys-out needs --summary", _arg_error(["--all-open", "--keys-out", "x.txt"]))
 
 
+HEALMAP = """\
+# BACKLOG
+| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
+|----|-------|--------|--------|-----------|--------|------------|-----|-----|
+| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | BT-006 | ICE: 1.0 | [[L-1]] |
+| BT-011 | In sync | planned | type:feature | v1.0.0 | — | — | ICE: 0.5 | — |
+| BT-012 | Map status token | planned | type:feature, status:planned | v1.0.0 | — | — | ICE: 0.5 | — |
+"""
+
+
+def _healgh(num):
+    """GitHub says: BT-010 differs on every kind; BT-011 agrees with the map; BT-012 has only a new label."""
+    n = int(num)
+    if n == 10:
+        return {"number": 10, "labels": [{"name": "status:in progress"}, {"name": "type:feature"}, {"name": "area:new"}],
+                "milestone": {"title": "v1.1.0"}, "state": "OPEN", "parent": {"number": 9},
+                "blockedBy": {"nodes": [{"number": 8}, {"number": 7}], "totalCount": 2}}
+    labels = [{"name": "status:planned"}, {"name": "type:feature"}] + ([{"name": "area:added"}] if n == 12 else [])
+    return {"number": n, "labels": labels, "milestone": {"title": "v1.0.0"}, "state": "OPEN",
+            "parent": None, "blockedBy": {"nodes": [], "totalCount": 0}}
+
+
+def heal_checks():
+    """BT-163 R2: --heal upserts ONE kind's map cells from GitHub (never appends, never writes GitHub);
+    --source map prints the gh/GraphQL commands instead."""
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "BACKLOG_MAP.md"
+        path = str(p)
+        orig_avail, orig_fetch = rec.gh_available, rec.fetch_issue
+        fetched = []
+        try:
+            rec.gh_available = lambda: True
+
+            def fetch(num, want_comments, want_state=False):
+                fetched.append(num)
+                return None if num == "99" else _healgh(num)
+            rec.fetch_issue = fetch
+
+            def row(n):
+                return next(l for l in p.read_text(encoding="utf-8").splitlines() if l.startswith(f"| BT-{n} "))
+
+            def cells(n):
+                return [c.strip() for c in row(n).split("|")[1:-1]]
+
+            expect = {  # kind -> (cell index, healed cell text)
+                "status": (2, "in progress"), "labels": (3, "area:new, type:feature"), "milestone": (4, "v1.1.0"),
+                "parent": (5, "BT-009"), "blocked_by": (6, "BT-007, BT-008")}
+            before = ["BT-010", "Drifted", "planned", "type:feature, area:old", "v1.0.0", "BT-005", "BT-006", "ICE: 1.0", "[[L-1]]"]
+            for kind, (idx, text) in expect.items():
+                p.write_text(HEALMAP, encoding="utf-8")
+                code, out = _run(["--heal", "--kind", kind, "--source", "gh", "--ids", "BT-010", "--backlog", path])
+                want = list(before)
+                want[idx] = text
+                check(f"heal {kind}: only that cell of that row is upserted from GitHub", code == 0 and cells("010") == want)
+                check(f"heal {kind}: prints [HEALED] and [HEAL-DONE ... GitHub untouched]",
+                      f"[HEALED {kind} BT-010]" in out and "1 healed" in out and "GitHub untouched" in out)
+                check(f"heal {kind}: re-run is a no-op (in sync)",
+                      "0 healed, 1 in sync" in _run(["--heal", "--kind", kind, "--source", "gh", "--ids", "BT-010",
+                                                     "--backlog", path])[1])
+            check("heal: rows are never appended and other rows are untouched",
+                  len([l for l in p.read_text(encoding="utf-8").splitlines() if l.startswith("| BT-")]) == 3
+                  and row("011") == [l for l in HEALMAP.splitlines() if l.startswith("| BT-011 ")][0])
+            check("heal: no .tmp left behind", not (Path(td) / "BACKLOG_MAP.md.tmp").exists())
+
+            p.write_text(HEALMAP, encoding="utf-8")
+            _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-012", "--backlog", path])
+            check("heal labels keeps the map's own status:* token", cells("012")[3] == "area:added, status:planned, type:feature")
+
+            p.write_text(HEALMAP, encoding="utf-8")
+            n0 = len(fetched)
+            code, out = _run(["--heal", "--kind", "milestone", "--source", "gh", "--all-open", "--backlog", path])
+            check("heal --all-open covers every open row",
+                  sorted(fetched[n0:]) == ["10", "11", "12"] and "1 healed, 2 in sync" in out)
+
+            p.write_bytes(HEALMAP.replace("\n", "\r\n").encode("utf-8"))
+            _run(["--heal", "--kind", "milestone", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            raw = p.read_bytes()
+            check("heal preserves CRLF line endings and writes no BOM",
+                  raw.count(b"\r\n") == HEALMAP.count("\n") and b"\n" not in raw.replace(b"\r\n", b"")
+                  and not raw.startswith(b"\xef\xbb\xbf"))
+
+            p.write_text(HEALMAP, encoding="utf-8")
+            code, out = _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-404,BT-LOCAL-x,BT-010",
+                              "--backlog", path])
+            check("heal: an id absent from the map is skipped, never appended; others still heal; exit 1",
+                  code == 1 and "[HEAL-SKIP BT-404: absent from BACKLOG_MAP; rows are never appended]" in out
+                  and "[HEALED labels BT-010]" in out and "BT-404" not in p.read_text(encoding="utf-8"))
+            p.write_text(HEALMAP.replace("| BT-011 |", "| BT-099 |"), encoding="utf-8")
+            code, out = _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-099", "--backlog", path])
+            check("heal: a gh issue that cannot be read is skipped with exit 1", code == 1 and "gh issue #99 not found" in out)
+
+            # status with no status:* label on GitHub cannot be healed from GitHub
+            p.write_text(HEALMAP, encoding="utf-8")
+            rec.fetch_issue = lambda num, want_comments, want_state=False: dict(_healgh(num), labels=[{"name": "type:feature"}])
+            code, out = _run(["--heal", "--kind", "status", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            check("heal status: GitHub without a status:* label is skipped, map unchanged",
+                  code == 1 and "GitHub has no status:* label" in out and p.read_text(encoding="utf-8") == HEALMAP)
+            rec.fetch_issue = fetch
+
+            # --source map: nothing written, exact commands printed
+            p.write_text(HEALMAP, encoding="utf-8")
+            node = lambda n: f'"$(gh issue view {n} --json id -q .id)"'
+            for kind, needles in {
+                "status": ['gh issue edit 10 --remove-label "status:in progress" --add-label "status:planned"'],
+                "milestone": ['gh issue edit 10 --milestone "v1.0.0"'],
+                "labels": ['gh issue edit 10 --add-label "area:old" --remove-label "area:new"'],
+                "parent": ["removeSubIssue(input:{issueId:$i,subIssueId:$j})", f"-f i={node(9)} -f j={node(10)}",
+                           "addSubIssue(input:{issueId:$i,subIssueId:$j})", f"-f i={node(5)} -f j={node(10)}"],
+                "blocked_by": ["addBlockedBy(input:{issueId:$i,blockingIssueId:$j})", f"-f i={node(10)} -f j={node(6)}",
+                               "removeBlockedBy(input:{issueId:$i,blockingIssueId:$j})"],
+            }.items():
+                code, out = _run(["--heal", "--kind", kind, "--source", "map", "--ids", "BT-010,BT-011", "--backlog", path])
+                check(f"heal {kind} --source map: prints the exact gh commands, runs/writes nothing",
+                      code == 0 and all(n in out for n in needles) and "# BT-010" in out and "# BT-011" not in out
+                      and "1 issues need GitHub edits, 1 in sync" in out and "nothing run or written" in out
+                      and p.read_text(encoding="utf-8") == HEALMAP)
+            check("heal blocked_by --source map: removes the two GitHub-only edges, adds the map-only one",
+                  out.count("removeBlockedBy(") == 2 and out.count("addBlockedBy(") == 1)
+            p.write_text(HEALMAP.replace("| v1.0.0 | BT-005 |", "| — | BT-005 |"), encoding="utf-8")
+            _, out = _run(["--heal", "--kind", "milestone", "--source", "map", "--ids", "BT-010", "--backlog", path])
+            check("heal milestone --source map: a cleared map milestone is removed on GitHub",
+                  "gh issue edit 10 --remove-milestone" in out)
+
+            # BT-LOCAL rows: not applicable (own count), never a skip, never `gh issue view None`
+            local_map = HEALMAP + "| BT-LOCAL-x | Local only | planned | type:feature | — | — | — | ICE: 0.1 | — |\n"
+            p.write_text(local_map, encoding="utf-8")
+            code, out = _run(["--heal", "--kind", "labels", "--source", "gh", "--all-open", "--backlog", path])
+            check("heal --all-open: an open BT-LOCAL row is counted local, not skipped (exit 0)",
+                  code == 0 and "1 local, 0 skipped" in out and "HEAL-SKIP" not in out)
+            code, out = _run(["--heal", "--kind", "labels", "--source", "map", "--all-open", "--backlog", path])
+            check("heal --source map: local rows are counted local too", code == 0 and "1 local" in out)
+            code, out = _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-404", "--backlog", path])
+            check("heal: an id absent from the map alone still exits 1", code == 1 and "HEAL-SKIP BT-404" in out)
+            lrow = {"status": "planned", "labels": set(), "milestone": "—", "parent": "BT-LOCAL-p",
+                    "blocked_by": {"BT-LOCAL-b", "BT-006"}}
+            lgh = {"labels": [], "milestone": None, "parent": None, "blockedBy": {"nodes": [], "totalCount": 0}}
+            cmds = rec.gh_fix_commands("parent", "10", lrow, lgh) + rec.gh_fix_commands("blocked_by", "10", lrow, lgh)
+            check("relation commands skip a BT-LOCAL id with a comment, never `None`",
+                  "# skip BT-LOCAL-p: no GitHub issue" in cmds and "# skip BT-LOCAL-b: no GitHub issue" in cmds
+                  and sum("addBlockedBy" in c for c in cmds) == 1 and not any("None" in c for c in cmds))
+            rm = rec.gh_fix_commands("parent", "10", dict(lrow, parent="—"), dict(lgh, parent={"number": 9}))
+            check("removeSubIssue is printed when the map has no parent", len(rm) == 1 and "removeSubIssue" in rm[0])
+
+            # a failed write leaves neither a half-written map nor a stray .tmp
+            p.write_text(HEALMAP, encoding="utf-8")
+            real_replace = rec.os.replace
+            rec.os.replace = lambda *a, **k: (_ for _ in ()).throw(OSError("boom"))
+            try:
+                try:
+                    _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+                    failed = False
+                except OSError:
+                    failed = True
+            finally:
+                rec.os.replace = real_replace
+            check("heal: a failed swap unlinks the .tmp and leaves the map intact",
+                  failed and not (Path(td) / "BACKLOG_MAP.md.tmp").exists() and p.read_text(encoding="utf-8") == HEALMAP)
+
+            # refusals
+            check("heal needs --kind", _arg_error(["--heal", "--source", "gh", "--ids", "BT-010"]))
+            check("heal needs --source", _arg_error(["--heal", "--kind", "labels", "--ids", "BT-010"]))
+            check("heal needs an id scope (--ids or --all-open)", _arg_error(["--heal", "--kind", "labels", "--source", "gh"]))
+            check("heal takes one known kind",
+                  _arg_error(["--heal", "--kind", "stale_blocker", "--source", "gh", "--ids", "BT-010"])
+                  and _arg_error(["--heal", "--kind", "closed", "--source", "gh", "--ids", "BT-010"])
+                  and _arg_error(["--heal", "--kind", "labels,parent", "--source", "gh", "--ids", "BT-010"]))
+            check("heal is not combined with --summary",
+                  _arg_error(["--heal", "--kind", "labels", "--source", "gh", "--all-open", "--summary"]))
+            check("--kind / --source need --heal", _arg_error(["--ids", "BT-010", "--kind", "labels"])
+                  and _arg_error(["--ids", "BT-010", "--source", "gh"]))
+            p.write_text(HEALMAP, encoding="utf-8")
+            n1 = len(fetched)
+            _arg_error(["--heal", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            check("a refused heal reads nothing and writes nothing", len(fetched) == n1 and p.read_text(encoding="utf-8") == HEALMAP)
+
+            rec.gh_available = lambda: False
+            code, out = _run(["--heal", "--kind", "labels", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+            check("heal without gh: exit 3, nothing written",
+                  code == 3 and "[HEAL-UNAVAILABLE" in out and p.read_text(encoding="utf-8") == HEALMAP)
+
+            # non-heal behaviour unchanged: the gate still reports drift and never edits the map
+            rec.gh_available = lambda: True
+            code, out = _run(["--ids", "BT-010", "--backlog", path])
+            check("non-heal run still reports drift (exit 1) and never edits the map",
+                  code == 1 and "[MIRROR-DRIFT BT-010: labels" in out and p.read_text(encoding="utf-8") == HEALMAP)
+        finally:
+            rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         path = write_backlog(td)
@@ -375,6 +564,7 @@ def main():
 
     all_open_checks()
     summary_checks()
+    heal_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
