@@ -1,3 +1,12 @@
+---
+type: plan
+title: Test Wait Plan 1 - CleanTechHub Vitest Environment
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-15
+version: "1.0.0"
+---
+
 # Plan 1 — CleanTechHub: stop paying jsdom startup for non-DOM tests
 
 Executor: an Antigravity agent working in `C:\Users\patri\Dev\CleanTechHub` (PowerShell, Windows). Self-contained: no other plan needed.

@@ -1,6 +1,15 @@
+---
+type: plan
+title: Test Wait Plan 2 - StratOS Dev Setup
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-15
+version: "1.0.0"
+---
+
 # Plan 2 — StratOS: make the test suite fast and safe to run in parallel
 
-Status: v2, 2026-10-15, revised after an Opus (high) review. Independent of plans 1 and 3.
+Status: v2, 2026-10-15, revised after an Opus (high) review. Tracked as BT-182 under epic BT-181. Independent of plans 1 and 3.
 Needs its own BT issue and branch (AGENTS.md §4); do NOT build on `feat/BT-179-skill-pack-lifecycle-hardening`.
 Changes are to `tests/`, CI, `pytest.ini`, `scripts/` only: no bump and no `dist/` change expected (`bump_guard.py:31` watches only `src/scripts`, `src/github`, `src/external-skills.json`). If any `src/` file changes, bump once.
 

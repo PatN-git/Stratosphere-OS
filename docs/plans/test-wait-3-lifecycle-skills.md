@@ -1,6 +1,15 @@
+---
+type: plan
+title: Test Wait Plan 3 - Lifecycle Skills
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-15
+version: "1.0.0"
+---
+
 # Plan 3 — Lifecycle skills: fewer accidental full runs, honest suite reuse, no token bloat
 
-Status: v2, 2026-10-15, revised after an Opus (high) review. Edit `src/` (workflows, scripts, references), rebuild; needs its own BT issue and branch, one version bump per PR. Changes reach consumer projects (CleanTechHub) only via a release plus `/stratosphere-update`.
+Status: v2, 2026-10-15, revised after an Opus (high) review. Tracked as BT-183 under epic BT-181. Edit `src/` (workflows, scripts, references), rebuild; needs its own BT issue and branch, one version bump per PR. Changes reach consumer projects (CleanTechHub) only via a release plus `/stratosphere-update`.
 
 ## Goal
 At most one full suite run per slice in `/3d`; `/4a` and `/0b` reuse it when nothing relevant changed; a scoped run is never reported as "the suite". Always-loaded text does not grow.
