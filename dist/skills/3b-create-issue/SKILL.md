@@ -26,7 +26,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - PRD-sourced → load `docs/prds/BT-<padded>-<name>.md`, frozen design doc `docs/design/BT-<padded>-interface.md` and the discovery brief. Scope is PRD §1 (intent), §6, §7 (constraints), §8 + §10 and design blueprint; the brief supplies file-level facts, which the PRD keeps path-free.
      - Brief = the PRD frontmatter `discovery:` path (`—` = none); field absent → fallback: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5).
    - Audit-sourced → load the proposal and the report named on its line 1; scope is every F-xx in the report.
-   - Else raw idea/MVI is scope.
+   - Else raw idea/MVI is scope (no-PRD path). **Brief lookup:** a brief path the user names wins; else derive the slug and fuzzy-match `docs/discovery/*.md` (ignore `*.work.md`, `*.map.md`) per 2a Phase 1 step 5 (several → user selects; none → no brief). That brief is "the brief" below. Its status routes: `linked-prd: BT-<n>` or `ready-for-prd` → the PRD-sourced path or `/2a-write-prd`; `dropped` → HALT and ask; `exit-spike` → a Spike. An idea listed in its Decoupled Follow-ups seeds from Established Facts only.
 4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** read `gh issue view <parent> --json subIssues` (`.nodes`, per `references/github-issue-relations.md`) and the BACKLOG rows with `Parent = BT-<parent>`; union by ID (gh offline → BACKLOG only). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
 
 ## Phase 2: Slice, Draft & Audit
@@ -39,6 +39,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Inheritance:** inherit scope-class + ODI score from PRD §6. No slices for `[DEFERRED]` stories.
    - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
    - **Maximum-slice ceiling:** split a draft whose title joins two outcomes with "and", or that has >3 AC, 2+ independent subsystems, or ~5+ hand-written non-test, non-generated files.
+   - **Escalation rule (no-PRD path only; PRD-sourced, audit-sourced and Spikes excluded):** not a small slice when the Build slices depend on each other or split one outcome (Blocked-by edges between them, or one Success State across them), add a new UI surface, or need an ADR or add external cost. Say so, name `/2a-write-prd` (`/2b-interface-design` for a UI surface or design decisions) and HALT; continue only when the user narrows the scope. Independent bundle slices pass. A brief's blocking Open Question or `untested | running | failed` Riskiest Assumption → a Spike by the §10 rule; non-blocking questions → the slice Notes.
 2. **Prioritization Metrics (Spikes: skip; size fixed at `size:medium`):**
    - **Impact from ODI:** Map story ODI score to Impact:
      - `ODI < 5` → `0.25`
@@ -58,7 +59,8 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Size:** ∈ {size:small (weight 1), size:medium (weight 2), size:large (weight 3)}
 3. **Draft full specs to scratch (Spikes: skip):** expand each new slice (not an existing sibling) into a complete, self-contained Build slice in `.tmp/BT-<padded>-issue-drafts.md`, the issue body minted verbatim in Phase 3, every field inline:
    - Contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint.
-   - Build slice "Current state / Problem" seeded from the brief's Established Facts (file paths allowed in issue bodies) and Constraints & Settled Decisions.
+   - **Brief seed:** Established Facts → Current state / Problem (file paths allowed in issue bodies). PRD-sourced: Constraints & Settled Decisions → Current state / Problem. No-PRD path: Problem → Overview; Success State → Acceptance Criteria; Constraints & Settled Decisions → constraints in The Path; Non-Goals → Notes.
+   - **Minimum spec bar (no-PRD path):** every Build slice body carries a problem statement, at least one verifiable AC, and constraints or non-goals.
    - Governing `[[A-xxx]]`/`[[DR-xxx]]` citations (only IDs that exist in `.memory/`; a not-yet-written ADR is cited as plain text `ADR pending: <title>`, never a placeholder ID).
    - PRD §7 Boundaries: copy the Ask first and Never lines that touch the slice into its body. Ask first = HITL halts and asks; AFK returns `stuck`.
    - Verifiable AC incl. time-to-value + stress cases from the design doc.
@@ -80,7 +82,7 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Spec defect** (the PRD/design itself is ambiguous or self-contradictory, not the draft) → do not patch the draft; surface it and route to `/2c-reconcile-specs` or convert the slice to a Spike.
      - **Research-only finding** (a requirement/constraint present in research but absent from PRD + interface) → flag `[RESEARCH-GAP]` for HITL before implementing; never fold it into the draft unilaterally.
      - **Brief-only finding** (a constraint or settled decision present in the brief but absent from PRD + interface; Established Facts used as Current-state evidence are expected, not a gap) → flag `[BRIEF-GAP]` the same way.
-   - **No PRD:** restate intent as a requirement list; map slices; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
+   - **No PRD:** restate intent as a requirement list; map slices; the brief (if located) is the top source, so `[BRIEF-GAP]` and the precedence clause do not apply, and every Success State item and settled decision maps to a draft AC or constraint; check each draft body against the spec bar, a missing element is a finding; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
    - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `.agents/skills/3b-create-issue/references/audit-to-slices.md`; the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
 5. **Approval Request:** present the audited drafts + coverage map. Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Halt until user approves.
 
