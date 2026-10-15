@@ -304,3 +304,52 @@ def test_brief_required_sections_and_rat_statuses_match_the_brief_template():
     assert set(mod.BRIEF_REQUIRED) <= keys
     status = re.search(r"\*\*Status:\*\* ([a-z |]+)$", body, re.M).group(1)
     assert set(mod.RAT_STATUSES) == {s.strip() for s in status.split("|")}
+
+
+# --- false alarms found on the CleanTechHub tuning set (R1) ---------------------------------------------------------
+
+DEFERRED_TO_BT = ("2. **[DEFERRED]** As a visitor, I want failure alert emails sent after 3 scans, so that I know. "
+                  "Deferred to BT-17.")
+
+
+def test_a_paraphrased_mirror_that_shares_a_bt_id_counts_as_mirrored(tmp_path):
+    text = mutate(PRD, "2. **[DEFERRED]** As a visitor, I want cached lookups across navigation, so that repeat visits are free. (ODI: - [unbacked])", DEFERRED_TO_BT)
+    text = mutate(text, "- **Deferred:** As a visitor, I want cached lookups across navigation (from §6 story #2)",
+                  "- **Deferred to BT-17:** scraper error alert email notifications after three failed scans")
+    assert lint(tmp_path, text).returncode == 0
+
+
+def test_a_paraphrased_mirror_with_the_same_content_words_counts_as_mirrored(tmp_path):
+    text = mutate(PRD, "2. **[DEFERRED]** As a visitor, I want cached lookups across navigation, so that repeat visits are free. (ODI: - [unbacked])",
+                  "2. **[DEFERRED]** As a visitor, I want failure alert emails sent after 3 scans, so that I know.")
+    text = mutate(text, "- **Deferred:** As a visitor, I want cached lookups across navigation (from §6 story #2)",
+                  "- **Deferred:** scraper error alert email notifications after three failed scans")
+    assert lint(tmp_path, text).returncode == 0
+
+
+@pytest.mark.parametrize("ref", ["(§6.2)", "(US-2)", "(from §6 #2)"])
+def test_other_story_reference_shapes_count_as_mirrored(tmp_path, ref):
+    text = mutate(PRD, "(from §6 story #2)", ref)
+    text = mutate(text, "As a visitor, I want cached lookups across navigation", "Reworded entirely")
+    assert lint(tmp_path, text).returncode == 0
+
+
+@pytest.mark.parametrize("fence", ["```\n┌────┐\n│ A  │──▶ B\n└────┘\n```", "```mermaid\ngraph TD; A-->B\n```", "```text\nA -> B\n```",
+                                    "```\n+---+   +---+\n| A |-->| B |\n+---+   +---+\n```"])
+def test_a_diagram_fence_in_section_7_is_not_code(tmp_path, fence):
+    assert lint(tmp_path, mutate(PRD, "- **Refs:** `[A-006]`", f"{fence}\n- **Refs:** `[A-006]`")).returncode == 0
+
+
+@pytest.mark.parametrize("fence", ["```sql\nSELECT 1;\n```", "```\nconst a = require('x');\nmodule.exports = a;\n```"])
+def test_a_code_fence_in_section_7_is_still_flagged(tmp_path, fence):
+    assert rules(lint(tmp_path, mutate(PRD, "- **Refs:** `[A-006]`", f"{fence}\n- **Refs:** `[A-006]`"))) == ["prd-s7-clean"]
+
+
+@pytest.mark.parametrize("status", ["✅ survived", "~~untested~~ survived", "**running**"])
+def test_a_decorated_rat_status_still_parses(tmp_path, status):
+    assert lint(tmp_path, mutate(BRIEF, "- **Status:** untested", f"- **Status:** {status}")).returncode == 0
+
+
+def test_a_qualified_rat_status_is_flagged(tmp_path):
+    out = lint(tmp_path, mutate(BRIEF, "- **Status:** untested", "- **Status:** **partially survived**"))
+    assert rules(out) == ["brief-rat"]

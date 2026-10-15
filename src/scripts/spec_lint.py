@@ -46,6 +46,10 @@ PATH_REL_RX = re.compile(r"^(?:\.{1,2}/|~/)")
 PATH_DOTDIR_RX = re.compile(r"^\.\w[\w.-]*/")
 PATH_FILE_RX = re.compile(r"^[\w.-]+(?:/[\w.-]+)+\.(\w{1,5})$")
 TIERS = ("Always", "Ask first", "Never")
+DIAGRAM_TAGS = {"text", "txt", "ascii", "mermaid", "diagram", "plantuml", "dot", "graphviz"}
+DIAGRAM_CHARS_RX = re.compile(r"[─-╿←-⇿▶▼]|-->|\+-{2,}")
+STOP_WORDS = {"that", "this", "with", "from", "have", "will", "into", "when", "what", "they", "them", "their", "than",
+              "then", "there", "which", "would", "could", "should", "being", "also", "each", "every", "such", "only"}
 H2_TEXT_RX = re.compile(r"^##\s+(.*?)\s*$")
 AS_OF_RX = re.compile(r"\(as of \d{4}-\d{2}-\d{2}\)")
 EXISTING_RX = re.compile(r"existing:\s*(?:BT-|#)\d+", re.I)
@@ -171,12 +175,27 @@ def span_kind(span):
     return None
 
 
+def is_diagram_fence(doc, start, limit):
+    """A fence tagged text/mermaid/ascii/..., or an untagged one drawn with box or arrow characters, is a diagram."""
+    tag = doc.lines[start].strip().lstrip("`~").strip().lower()
+    if tag in DIAGRAM_TAGS:
+        return True
+    if tag:
+        return False
+    j = start + 1
+    while j < limit and not FENCE_RX.match(doc.lines[j]):
+        if DIAGRAM_CHARS_RX.search(doc.lines[j]):
+            return True
+        j += 1
+    return False
+
+
 def check_prd_s7_clean(doc, secs):
     if 7 not in secs:
         return
     for i in range(secs[7][0] + 1, secs[7][1]):
         if doc.fenced[i]:
-            if not doc.fenced[i - 1]:
+            if not doc.fenced[i - 1] and not is_diagram_fence(doc, i, secs[7][1]):
                 yield i, "fenced code block in section 7"
             continue
         for m in SPAN_RX.finditer(doc.lines[i]):
@@ -185,21 +204,33 @@ def check_prd_s7_clean(doc, secs):
                 yield i, f"{kind} in a backtick span"
 
 
+def content_words(text):
+    return {w[:-1] if w.endswith("s") and len(w) > 4 else w for w in re.findall(r"[a-z]{4,}", text) if w not in STOP_WORDS}
+
+
 def check_prd_deferred_mirror(doc, secs):
     if 6 not in secs:
         return
-    mirror = norm(" ".join(line for _, line in doc.content(secs[9]))) if 9 in secs else ""
+    mirror_lines = [norm(line) for _, line in doc.content(secs[9])] if 9 in secs else []
+    mirror = " ".join(mirror_lines)
+    mirror_ids = set(re.findall(r"bt-\d+", mirror))
     for i, line in doc.content(secs[6]):
         m = DEFERRED_RX.match(line)
         if not m:
             continue
         n = m.group(1)
-        if re.search(rf"(?:story\s*#?|§6\s*#){n}\b", mirror):
+        if re.search(rf"(?:story\s*#?|§6\s*[#.]?\s*|\bus-){n}\b", mirror):
             continue
-        after = re.split(r"\bi want\b", norm(line), maxsplit=1)
-        clause = re.split(r",|\bso that\b", after[1] if len(after) > 1 else norm(line.split("[DEFERRED]", 1)[1]))[0]
+        text = norm(line)
+        if mirror_ids & set(re.findall(r"bt-\d+", text)):
+            continue
+        after = re.split(r"\bi want\b", text, maxsplit=1)
+        clause = re.split(r",|\bso that\b", after[1] if len(after) > 1 else text.split("[deferred]", 1)[1])[0]
         words = clause.split()[:8]
         if words and " ".join(words) in mirror:
+            continue
+        key = content_words(" ".join(words))
+        if len(key) >= 3 and any(len(key & content_words(ml)) / len(key) >= 0.6 for ml in mirror_lines):
             continue
         yield i, f"deferred story {n} is not mirrored in section 9"
 
@@ -301,8 +332,8 @@ def check_brief_rat(doc, secs):
         if not val:
             yield span[0] if idx is None else idx, f"Riskiest Assumption section has no '{label}' value"
     idx, val = label_value(doc, span, "Status")
-    word = re.sub(r"[^a-z]", "", (val.split() or [""])[0].lower())
-    if word not in RAT_STATUSES:
+    tokens = re.findall(r"[a-z]+", val.lower())  # decoration (emoji, `**`, `~~`) is skipped; a qualifier like "partially" is not
+    if not tokens or tokens[0] not in RAT_STATUSES:
         yield span[0] if idx is None else idx, f"RAT status is not one of {'/'.join(RAT_STATUSES)}"
 
 
