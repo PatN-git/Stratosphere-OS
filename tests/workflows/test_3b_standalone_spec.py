@@ -11,11 +11,10 @@ def _3b():
     return _read("workflows/3b-create-issue.md")
 
 
-def test_raw_idea_branch_names_the_brief_lookup_and_its_status_routes():
+def test_raw_idea_branch_names_the_brief_lookup_and_its_routes():
     line = _line(_3b(), "- Else raw idea/MVI is scope")
-    for token in ("a brief path the user names wins", "`docs/discovery/*.md`", "`*.work.md`", "`*.map.md`",
-                  "2a Phase 1 step 5", "`linked-prd:", "`ready-for-prd`", "`dropped`", "`exit-spike`",
-                  "Decoupled Follow-ups"):
+    for token in ("2a Phase 1 step 5", "`linked-prd:", "`ready-for-prd`", "`/2a-write-prd`", "HALT", "`dropped`",
+                  "`exit-spike`", "Decoupled Follow-ups"):
         assert token in line, token
 
 
@@ -34,14 +33,19 @@ def test_minimum_spec_bar_is_defined_once_and_audited_in_no_prd_mode():
         assert token in bar, token
     audit = _line(text, "- **No PRD:**")
     assert "spec bar" in audit and "[UNCOVERED?]" in audit
-    assert "`[BRIEF-GAP]`" in audit  # states that the PRD-relative gap flag does not apply without a PRD
+    assert "`[BRIEF-GAP]`" in audit and "do not apply" in audit  # the PRD-relative gap flag is off without a PRD
 
 
-def test_escalation_rule_is_stated_once_with_its_three_triggers_and_both_routes():
+def test_escalation_rule_is_stated_once_with_its_triggers_and_routes():
     text = _3b()
     assert text.count("**Escalation rule") == 1
     line = _line(text, "- **Escalation rule")
-    for token in ("depend on each other", "new UI surface", "ADR", "external cost", "`/2a-write-prd`",
-                  "`/2b-interface-design`", "HALT", "Spikes excluded"):
+    for token in ("Blocked-by", "UI surface", "ADR", "external cost", "`/2a-write-prd`", "`/2b-interface-design`",
+                  "HALT", "overrides"):
         assert token in line, token
-    assert "Open Question" in line and "Riskiest Assumption" in line and "§10 rule" in line
+    assert line.index("`/2a-write-prd`") < line.index("`/2b-interface-design`")  # 2b is post-PRD, never an alternative to 2a
+
+
+def test_brief_open_questions_reuse_the_spike_rule_on_the_10_bullet():
+    line = _line(_3b(), "- **§10:**")
+    assert "Open Questions" in line and "Riskiest Assumption" in line and "→ a Spike" in line
