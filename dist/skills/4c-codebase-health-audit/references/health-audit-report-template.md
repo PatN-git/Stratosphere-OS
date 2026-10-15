@@ -1,7 +1,7 @@
 ---
 description: Report template for 4c-codebase-health-audit.
-version: "2.0.0"
-timestamp: 2026-09-24
+version: "2.1.0"
+timestamp: 2026-10-15
 ---
 
 # Health Audit — Report Template
@@ -31,7 +31,8 @@ generated:
 
 | | |
 |:---|:---|
-| Passes run | 6/6 |
+| Passes run | 6/6 (`inconclusive`/`n/a` passes named) |
+| Δ vs last run | <by_pass deltas, `[REGRESSION]` rows or `[NO-DELTA] <reason>`> |
 | Delta window | <start_date> → <end_date> (<N> recently-changed files prioritized) |
 | Scanned | src/, api/, scripts/ (list actuals) |
 | Skipped (in-progress) | <list or "none"> |
@@ -115,6 +116,11 @@ Write to `docs/audits/.last-run.json`:
   "skipped_targets": [],
   "total_findings": 0,
   "by_impact": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
+  "by_pass": { "security": 0, "dependency": 0, "reliability": 0, "correctness": 0, "maintainability": 0, "performance": 0 },
+  "skipped_tests": 0,
+  "cves_high_plus": 0,
+  "matrix_version": "<health-audit-scan-matrix.md version>",
+  "passes_inconclusive": [],
   "report_path": "docs/audits/health-<YYYY-MM-DD>.md",
   "delta_window_start": "<ISO-8601>",
   "priority_files_count": 0

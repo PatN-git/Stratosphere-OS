@@ -1,7 +1,7 @@
 ---
 description: Scan matrix for 4c-codebase-health-audit. Defines what each of the six passes detects.
-version: "1.1.0"
-timestamp: 2026-10-05
+version: "1.2.0"
+timestamp: 2026-10-15
 ---
 
 # Health Audit — Scan Matrix
@@ -22,6 +22,7 @@ Reference for `4c-codebase-health-audit`. Each subagent receives only its assign
 | **Permissive CORS** | `Access-Control-Allow-Origin: *` on non-public endpoints; `cors({ origin: '*' })` with `credentials: true`; wildcard origins on authenticated routes. |
 | **Exposed debug** | Routes matching `/debug`, `/test`, `/__dev`; `console.log` outputting tokens or PII; `DEBUG=true` in committed env files; stack traces in API error responses. |
 | **Missing auth** | Route handlers / API endpoints without auth middleware or session validation. Express/Fastify without `authenticate`/`requireAuth`; Next.js API routes without `getServerSession`/`auth()`; Supabase RPC without RLS. |
+| **Destructive ops on derived paths** | Recursive delete, move or overwrite (`rm -rf`, `shutil.rmtree`, `fs.rm({ recursive })`, `mv`, `os.replace`) whose target is built from a variable, env var, config or input. Flag unless the code resolves the target (symlinks included) and checks it sits under an allowlisted root and at least one level below it. |
 | **Insecure config** | Weak/deprecated crypto (`md5`, `sha1`, `des`); missing security headers (`helmet` absent, no CSP, no `X-Frame-Options`); `NODE_TLS_REJECT_UNAUTHORIZED=0`. |
 
 ### A2 — Dependency Health
@@ -37,6 +38,8 @@ cargo audit --json    # Cargo.lock
 ```
 
 Also: `npm outdated --json` (or equivalent).
+
+Audit command failed (offline, tool missing, unparseable output) → the pass is `inconclusive: <why>`, never zero findings. No lockfile or manifest → `n/a`. Return `cves_high_plus` (high + critical count from the tool JSON).
 
 | Category | What to detect |
 |:---|:---|
@@ -93,6 +96,8 @@ For each source file, check for test counterpart (`*.test.*`, `*.spec.*`, `__tes
 | **Orphaned files** | Source files not imported/referenced by any other file. Exclude entrypoints, configs, migrations. |
 
 ### C2 — Performance Anti-Patterns
+
+A number (ms, KB, row or query count) appears only if a command run in this audit produced it; otherwise the Evidence cell ends `not measured`. Impact follows `audit-to-slices.md` §2 (Medium needs measurable latency).
 
 | Category | What to detect |
 |:---|:---|

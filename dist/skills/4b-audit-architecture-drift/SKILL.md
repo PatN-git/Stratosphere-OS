@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.1"
+version: "1.2.0"
 timestamp: 2026-09-24
 ---
 
@@ -34,7 +34,7 @@ _CONSTRAINTS:_
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
 
-_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, and `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md` and `.agents/skills/4b-audit-architecture-drift/references/design-red-flags.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix
@@ -54,10 +54,12 @@ _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgica
 9. Dependency-inversion violations: high-level modules depending directly on low-level utility implementations rather than abstractions. Ensure seams are defined via clean interfaces/adapters to preserve locality.
 10. High volumes of cross-domain imports violating system boundaries and locality.
 11. Ignores historical learnings in `.memory/LEARNINGS.md`.
+12. A named red flag from `design-red-flags.md`: name the flag in the finding.
 
 ## Confidence scale & reporting threshold
 **Audit scope:** structural architectural drift, domain-boundary violations, scalability/maintainability risks, and repeated violations of documented system rules. A Report-grade (≥80) finding looks like structural drift, a leaked seam, or an ignored documented architecture rule (`[[A-xxx]]`/`[[DR-xxx]]`).
 Score findings 0–100 per the **Audit scope** above and `references/confidence-scale.md`; report only ≥ 80.
+**Intent check (before a finding scores ≥ 80):** run `git log -n 5 --format="%h %s%n%b" -- <file>` and read the matching `.memory/LEARNINGS.md` / `[[DR-xxx]]` entries. Dismiss only when a commit message or an entry states the reason for the shape and it still applies; otherwise keep the finding and cite the commit in Evidence. A dismissal is an explicit exception to "do not report": list `Dismissed (deliberate): <file> — <sha subject>` on the Phase 4 summary (or `[HEALTHY]`) line.
 
 ## Clean Exit Rule
 - *Collision Check:* Drop any detected issue that collides with an in-progress issue in `.memory/BACKLOG_MAP.md` (same components/directory affected).
