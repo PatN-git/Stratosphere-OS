@@ -311,7 +311,7 @@
       "version": "1.7.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "77e68beb2fc9b149a6f02ee20f1ee3970d40f05b0ba9eca4234bb09ff3bf50d4",
+      "sha256": "b875b380887ddf4826cd5cd278588c4cb5357894d7055353c065fd6148b18bfe",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -319,6 +319,11 @@
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
       "timestamp": "2026-09-24",
       "version": "1.0.1"
+    },
+    "skills/4a-verify-and-ship/references/ci-gate.md": {
+      "sha256": "ce6ac4fea2bf0a27547d8994ad41cca64cf21511fc5af15d4cce29359fd3d2d7",
+      "timestamp": "2026-10-16",
+      "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/code-smell-baseline.md": {
       "sha256": "1f3404aeda8ef46d9ba571066a52aec92d51a21547e26bd48c49a83232866259",

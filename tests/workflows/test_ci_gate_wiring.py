@@ -54,3 +54,60 @@ def test_scaffold_ships_ci_gate():
 def test_verify_scripts_maps_ci_gate():
     verify = (ROOT / "tests" / "runners" / "verify_scripts.py").read_text(encoding="utf-8")
     assert 'rel_str == "scripts/ci_gate.py"' in verify and ".agents/scripts/ci_gate.py" in verify
+
+
+def _section(text, start, end=None):
+    i = text.index(start)
+    j = text.index(end, i) if end else len(text)
+    return text[i:j]
+
+
+def _4a():
+    return _read("workflows/4a-verify-and-ship.md")
+
+
+STATUS = "python .agents/scripts/ci_gate.py status"
+
+
+def test_4a_step4_runs_parity_after_the_release_commit_and_before_the_push():
+    step4 = _section(_4a(), "4. **Release bump + push:**", "5. **PR (one per feature branch):**")
+    assert "python .agents/scripts/ci_gate.py parity" in step4 and "[CI-PARITY]" in step4
+    assert step4.index("release: prepare") < step4.index("ci_gate.py parity") < step4.index("Push the branch")
+    assert "references/ci-gate.md" in step4 and "waive" in step4 and "tree changed" in step4
+
+
+def test_4a_step8_runs_the_status_gate_after_the_audit_and_before_the_rebuild_and_ready():
+    step8 = _section(_4a(), "8. **Epic Check:**", "9. **Terminal sync gate:**")
+    assert STATUS in step8
+    assert step8.index("Feature Acceptance Audit") < step8.index(STATUS) < step8.index("--close-parent") < step8.index("gh pr ready")
+    for token in ("[CI-RED]", "[CI-FIX]", "--attempt", "--expect-checks", "--sha", "references/ci-gate.md"):
+        assert token in step8, f"step 8 lost {token!r}"
+
+
+def test_4a_step8_red_big_holds_the_pr_draft_and_the_epic_and_keeps_the_slice_in_review():
+    step8 = _section(_4a(), "8. **Epic Check:**", "9. **Terminal sync gate:**")
+    red = step8[step8.index("[CI-RED]"):]
+    assert "draft" in red and "`in progress`" in red and "stays `in review`" in red
+    assert "/3b-create-issue" in red and "step 9" in red
+
+
+def test_4a_step8_under_3z_returns_ci_fix_without_committing():
+    step8 = _section(_4a(), "8. **Epic Check:**", "9. **Terminal sync gate:**")
+    assert "3z" in step8 and "does not commit" in step8 and "`[CI-FIX]`" in step8
+
+
+def test_4a_standalone_issue_runs_the_gate_right_after_the_status_flip():
+    step7 = _section(_4a(), "7. **Ship-status + backport:**", "8. **Epic Check:**")
+    assert "Standalone issue" in step7 and STATUS in step7 and "non-draft" in step7
+
+
+def test_4a_gate_is_wired_exactly_twice_and_never_in_the_audit_phases():
+    text = _4a()
+    assert text.count(STATUS) == 2, "standalone (step 7) and completing ship (step 8) only, never per intermediate slice"
+    assert "ci_gate" not in _section(text, "## Phase 2", "## Phase 5"), "an audit-only run must never reach the gate"
+    assert "ci_gate" in _section(text, "## Phase 5")
+
+
+def test_4a_ship_line_names_a_pending_check_and_a_waived_parity():
+    ship = next(line for line in _4a().splitlines() if line.startswith("11. Output:"))
+    assert "ci:pending" in ship and "parity:waived" in ship
