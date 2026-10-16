@@ -7,6 +7,7 @@ import os
 import sys
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -18,21 +19,31 @@ import scaffold
 
 MIGRATION_SCRIPT = REPO_ROOT / "scripts" / "migrations" / "inject_markers.py"
 
-def _tmp_test_dirs():
-    return set((REPO_ROOT / ".tmp").glob("test_*"))
+_SANDBOXES = []
 
 
-def _remove_new_test_dirs(before):
-    """Remove the .tmp/test_* sandboxes created since `before`; many tests never clean up."""
-    for d in _tmp_test_dirs() - before:
-        shutil.rmtree(d, ignore_errors=True)
+def _sandbox(name):
+    """A fresh, unique directory under .tmp/ for one test; removed by `_remove_sandboxes`.
+
+    Unique and registered per process, so parallel workers never delete each other's
+    sandboxes (many tests never clean up after themselves).
+    """
+    root = REPO_ROOT / ".tmp"
+    root.mkdir(exist_ok=True)
+    path = Path(tempfile.mkdtemp(prefix=f"{name}-", dir=root))
+    _SANDBOXES.append(path)
+    return path
+
+
+def _remove_sandboxes():
+    while _SANDBOXES:
+        shutil.rmtree(_SANDBOXES.pop(), ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)
-def _clean_tmp_test_dirs():
-    before = _tmp_test_dirs()
+def _clean_sandboxes():
     yield
-    _remove_new_test_dirs(before)
+    _remove_sandboxes()
 
 
 def run_cmd(args, cwd, expect_code=0):
@@ -80,7 +91,7 @@ def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
 
 def test_pristine_update():
     print("--- Test: Pristine Update ---")
-    tmp = REPO_ROOT / ".tmp" / "test_pristine_update"
+    tmp = _sandbox("test_pristine_update")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -221,7 +232,7 @@ def test_pristine_update():
 
 def test_conflict_update():
     print("--- Test: Conflict Update & Merging ---")
-    tmp = REPO_ROOT / ".tmp" / "test_conflict_update"
+    tmp = _sandbox("test_conflict_update")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -351,7 +362,7 @@ def test_conflict_update():
 
 def test_invariant_trips():
     print("--- Test: Invariant Trips ---")
-    tmp = REPO_ROOT / ".tmp" / "test_invariant_trips"
+    tmp = _sandbox("test_invariant_trips")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -441,7 +452,7 @@ def test_invariant_trips():
 
 def test_crlf_bom_preservation():
     print("--- Test: CRLF & BOM Preservation ---")
-    tmp = REPO_ROOT / ".tmp" / "test_crlf_bom"
+    tmp = _sandbox("test_crlf_bom")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -559,7 +570,7 @@ def test_crlf_bom_preservation():
 
 def test_unchanged_but_bumped():
     print("--- Test: Unchanged-but-bumped File ---")
-    tmp = REPO_ROOT / ".tmp" / "test_unchanged_but_bumped"
+    tmp = _sandbox("test_unchanged_but_bumped")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -670,7 +681,7 @@ def test_unchanged_but_bumped():
 
 def test_atomicity_crash_recovery():
     print("--- Test: Atomicity and Crash Recovery ---")
-    tmp = REPO_ROOT / ".tmp" / "test_atomicity_crash"
+    tmp = _sandbox("test_atomicity_crash")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -776,7 +787,7 @@ def test_atomicity_crash_recovery():
 
 def test_unmarked_file_skipped():
     print("--- Test: Unmarked File Skipped ---")
-    tmp = REPO_ROOT / ".tmp" / "test_unmarked_skipped"
+    tmp = _sandbox("test_unmarked_skipped")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -844,7 +855,7 @@ def test_unmarked_file_skipped():
 
 def test_project_version_preserved():
     print("--- Test: Project Version Preserved ---")
-    tmp = REPO_ROOT / ".tmp" / "test_project_version_preserved"
+    tmp = _sandbox("test_project_version_preserved")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -947,7 +958,7 @@ def test_project_version_preserved():
 
 def test_frontmatter_never_written_even_when_bundle_higher():
     print("--- Test: Frontmatter Never Written Even When Bundle Higher ---")
-    tmp = REPO_ROOT / ".tmp" / "test_fm_never_written"
+    tmp = _sandbox("test_fm_never_written")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1017,7 +1028,7 @@ def test_frontmatter_never_written_even_when_bundle_higher():
 
 def test_content_based_scope_catches_stale_block_at_equal_version():
     print("--- Test: Content-Based Scope ---")
-    tmp = REPO_ROOT / ".tmp" / "test_content_based_scope"
+    tmp = _sandbox("test_content_based_scope")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1082,7 +1093,7 @@ def test_content_based_scope_catches_stale_block_at_equal_version():
 
 def test_repair_lock_does_not_inflate_or_read_frontmatter():
     print("--- Test: Repair Lock does not Inflate/Read Frontmatter ---")
-    tmp = REPO_ROOT / ".tmp" / "test_repair_lock_no_inflate"
+    tmp = _sandbox("test_repair_lock_no_inflate")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1139,7 +1150,7 @@ def test_repair_lock_does_not_inflate_or_read_frontmatter():
 
 def test_repair_then_update_pristine():
     print("--- Test: Repair then Update Pristine ---")
-    tmp = REPO_ROOT / ".tmp" / "test_repair_then_update"
+    tmp = _sandbox("test_repair_then_update")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1190,7 +1201,7 @@ def test_repair_then_update_pristine():
 
 def test_customization_survives_second_update():
     print("--- Test: Customization Survives Second Update ---")
-    tmp = REPO_ROOT / ".tmp" / "test_customization_survives"
+    tmp = _sandbox("test_customization_survives")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1507,7 +1518,7 @@ def test_known_block_ids_drift_guard():
 
 def test_legacy_lockfile():
     print("--- Test: Legacy Lockfile (whole-file hash matching) ---")
-    tmp = REPO_ROOT / ".tmp" / "test_legacy_lockfile"
+    tmp = _sandbox("test_legacy_lockfile")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1561,7 +1572,7 @@ def test_legacy_lockfile():
 
 def test_version_downgrade():
     print("--- Test: Version Downgrade Skipped ---")
-    tmp = REPO_ROOT / ".tmp" / "test_version_downgrade"
+    tmp = _sandbox("test_version_downgrade")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1615,7 +1626,7 @@ def test_version_downgrade():
 
 def test_managed_file_refresh():
     print("--- Test: Managed File Refresh ---")
-    tmp = REPO_ROOT / ".tmp" / "test_managed_refresh"
+    tmp = _sandbox("test_managed_refresh")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1667,7 +1678,7 @@ def test_managed_file_refresh():
 
 def test_constitution_needs_review():
     print("--- Test: Constitution Needs Review ---")
-    tmp = REPO_ROOT / ".tmp" / "test_constitution"
+    tmp = _sandbox("test_constitution")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1727,7 +1738,7 @@ def test_constitution_needs_review():
 
 def _bundle_env(name, bundle):
     """BT-154: a project plus a mock plugin whose manifest lists exactly `bundle` ({rel_path: bytes})."""
-    tmp = REPO_ROOT / ".tmp" / name
+    tmp = _sandbox(name)
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
@@ -1815,7 +1826,7 @@ def test_constitution_placeholder_project_vision_not_flagged():
 
 def test_malformed_template_skip():
     print("--- Test: Malformed Template Skipped Gracefully ---")
-    tmp = REPO_ROOT / ".tmp" / "test_malformed_skip"
+    tmp = _sandbox("test_malformed_skip")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1868,7 +1879,7 @@ def test_malformed_template_skip():
 
 def test_template_adds_block():
     print("--- Test: Template Adds New Block ---")
-    tmp = REPO_ROOT / ".tmp" / "test_template_adds"
+    tmp = _sandbox("test_template_adds")
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -1933,7 +1944,7 @@ def test_template_adds_block():
 # --- BT-106: Project-Level Orphan Guard Tests ------------------------------
 
 def setup_orphan_test_env(test_name):
-    tmp = REPO_ROOT / ".tmp" / test_name
+    tmp = _sandbox(test_name)
     if tmp.exists():
         shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
@@ -2807,9 +2818,24 @@ def test_script_resolution_hint():
     assert "Hint: Inspect <script>.stratosphere-new, reconcile local changes, and re-run update." in res_apply.stdout
     print("Script resolution hint test passed!")
 
+def test_sandboxes_are_unique_and_cleanup_is_scoped():
+    """BT-182: parallel workers must not delete each other's sandboxes."""
+    a, b = _sandbox("test_scoped_cleanup"), _sandbox("test_scoped_cleanup")
+    assert a != b and a.is_dir() and b.is_dir()
+    foreign = REPO_ROOT / ".tmp" / "test_foreign_worker_dir"
+    foreign.mkdir(parents=True, exist_ok=True)
+    try:
+        _remove_sandboxes()
+        assert not a.exists() and not b.exists()
+        assert foreign.exists(), "cleanup removed a directory this process did not create"
+    finally:
+        shutil.rmtree(foreign, ignore_errors=True)
+
+
 if __name__ == "__main__":
     # verify_scripts.py runs this file standalone, where the pytest fixture does not apply.
-    atexit.register(_remove_new_test_dirs, _tmp_test_dirs())
+    atexit.register(_remove_sandboxes)
+    test_sandboxes_are_unique_and_cleanup_is_scoped()
     test_pristine_update()
     test_conflict_update()
     test_invariant_trips()
