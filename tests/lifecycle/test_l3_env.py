@@ -34,15 +34,14 @@ def test_install_stratos_never_builds_in_the_repo(tmp_path, monkeypatch):
     monkeypatch.setattr(e.subprocess, "run", fake_run)
     monkeypatch.setattr(e, "assert_scaffolded", lambda project: None)
     monkeypatch.setattr(e, "assert_memory_valid", lambda project, child: None)
-    clear = getattr(getattr(e, "_built_dist", None), "cache_clear", lambda: None)
-    clear()
+    e._built_dist.cache_clear()  # the fake build must not stay cached for other tests
     try:
         home, project = tmp_path / "home", tmp_path / "project"
         home.mkdir()
         project.mkdir()
         e._install_stratos(REPO, home, project, {})
     finally:
-        clear()
+        e._built_dist.cache_clear()
     assert builds, "the bundle was never built"
     for cwd in builds:
         assert REPO.resolve() not in (cwd.resolve(), *cwd.resolve().parents), cwd
