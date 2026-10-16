@@ -175,3 +175,29 @@ def test_a_reference_that_pushes_before_the_floor_guard_is_rejected():
     ref = _read("references/ci-gate.md")
     swapped = ref.replace("`floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`; push;", "push; `floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`;")
     assert swapped != ref and not _fix_order_ok(swapped)
+
+
+def test_3z_fix_loop_states_one_round_two_commits_suite_first_and_the_safe_order():
+    step = _step3a()
+    assert "At most 2 fix commits" in step and "one round" in step and "`--attempt 2`" in step
+    assert "record the full suite (`test_gate.py record --suite`) before the commit" in step
+    order = ["ci_gate.py cap", "floor_guard.py", "ci_gate.py parity", "re-runs `ship-only`"]
+    positions = [step.index(token) for token in order]
+    assert positions == sorted(positions), "cap, floor guard and parity run before ship-only pushes again"
+
+
+def test_4a_step8_names_the_two_status_runs_and_points_to_the_fix_rule():
+    step8 = _section(_4a(), "8. **Epic Check:**", "9. **Terminal sync gate:**")
+    assert "--attempt 1" in step8 and "--attempt 2" in step8 and "§3" in step8
+    step7 = _section(_4a(), "7. **Ship-status + backport:**", "8. **Epic Check:**")
+    assert "--attempt 1" in step7
+
+
+def test_reference_states_one_attempt_rule_and_matches_the_script_behavior():
+    ref = _read("references/ci-gate.md")
+    assert "one fix round" in ref and "`--attempt 2`" in ref
+    assert "worst state" in ref and "preferring" not in ref, "the script keeps the worst state of a check's runs"
+    assert "ending at the failing step's last `##[error]`" in ref
+    assert "not a project check" in ref and "every command" in ref
+    for token in ("curl", "docker", "`sha`"):
+        assert token in ref, f"references/ci-gate.md must mention {token}"

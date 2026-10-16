@@ -42,6 +42,10 @@ DENY = (
 )
 ALLOW = re.compile(r"^(?:(?:npm|pnpm|yarn)\s+(?:ci|install|i|run|test|exec)\b|npx\s|pytest\b|python3?\s+\S|py\s+-\d?\s*\S|"
                    r"node\s+\S|bash\s+\S|sh\s+\S|make\b|go\s+test\b|cargo\s+(?:test|build|check)\b|\./\S)")
+# Plain shell plumbing that may sit around project checks in a `run:` block; anything else makes the block unsafe to guess.
+NEUTRAL = re.compile(r"^(?:#.*|if\b.*|then|else|elif\b.*|fi|for\b.*|do|done|while\b.*|case\b.*|esac|[{}]|exit\b.*|echo\b.*|"
+                     r"printf\b.*|set\s+[-+]\w.*|cd\s+\S+|export\s+\w+=.*|[A-Za-z_]\w*=.*|\[\[?.*\]\]?|test\s.*|true|false)$")
+SEGMENT_SPLIT = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
 PR_IF = "github.event_name == 'pull_request'"
 
 
@@ -198,6 +202,21 @@ def _job_skip(job):
     return None
 
 
+def _commands_ok(run):
+    """(ok, offender): every command in the block is a project check or shell plumbing, and at least one is a check."""
+    checked = False
+    for line in re.sub(r"\\\n\s*", " ", run).splitlines():
+        for segment in SEGMENT_SPLIT.split(line.strip()):
+            segment = re.sub(r"^(?:then|do|else)\s+", "", segment.strip())
+            if not segment:
+                continue
+            if ALLOW.match(segment):
+                checked = True
+            elif not NEUTRAL.match(segment):
+                return False, segment
+    return checked, ""
+
+
 def _step_skip(step):
     if step.get("uses"):
         return "uses: action"
@@ -210,8 +229,9 @@ def _step_skip(step):
     for rx, why in DENY:
         if rx.search(run):
             return why
-    if not any(ALLOW.match(line.strip()) for line in run.splitlines()):
-        return "not a project check"
+    ok, offender = _commands_ok(run)
+    if not ok:
+        return f"not a project check: runs `{offender[:40]}`" if offender else "not a project check"
     return None
 
 
@@ -386,8 +406,12 @@ def _base_is_stale(oid):
 
 
 RUN_ID_RE = re.compile(r"/actions/runs/(\d+)")
-MECHANICAL = re.compile(r"npm ci|install dependencies|lock ?file|package-lock|yarn\.lock|pnpm-lock|drift|dist/? (?:is )?out of sync|"
-                        r"bump[- ]guard|release bump|\blint\b|\bformat\b|prettier|eslint|\bruff\b|\bblack\b", re.I)
+# A failure is mechanical by the check/step NAME, or by an anchored log signature; free words like "format" in a test's
+# own error message must never make a failure in untouched code look mechanical.
+NAME_MECHANICAL = re.compile(r"install dependencies|npm ci|\blint\b|\bformat\b|prettier|eslint|\bruff\b|\bblack\b|drift|"
+                             r"bump[- ]guard|release bump", re.I)
+LOG_MECHANICAL = re.compile(r"`npm ci` can only install|Missing: \S+ from lock file|"
+                            r"(?:dist/|marketplace\.json|lock ?file|package-lock\.json)[^\n]{0,60}(?:out of sync|not in sync)", re.I)
 TEST_FILE_RES = (re.compile(r"\bFAILED\s+(\S+?)::"), re.compile(r"\bFAIL\s+(\S+)"))
 
 
@@ -419,7 +443,10 @@ def _failing_detail(group):
     m = RUN_ID_RE.search(group["url"])
     item = {"workflow": group["workflow"], "check": group["check"], "step": group["check"], "log_tail": "", "actions": bool(m)}
     if m:
-        lines = _gh("run", "view", m.group(1), "--log-failed").splitlines()
+        try:
+            lines = _gh("run", "view", m.group(1), "--log-failed").splitlines()
+        except GhError:
+            return item  # no log: the PR stays red and classifies big (unparsed runner output), never "no CI"
         last_error = max((i for i, line in enumerate(lines) if "##[error]" in line), default=len(lines) - 1)
         lines = lines[max(0, last_error - 39):last_error + 1]  # the failing step's end, not the post-job cleanup after it
         item["log_tail"] = "\n".join(lines)
@@ -435,6 +462,10 @@ def _test_files(log_tail):
     return {m.group(1).replace("\\", "/") for rx in TEST_FILE_RES for m in rx.finditer(log_tail)}
 
 
+def _mechanical(f):
+    return bool(NAME_MECHANICAL.search(f"{f['check']} {f['step']}") or LOG_MECHANICAL.search(f["log_tail"]))
+
+
 def classify(failing, changed, base_stale, attempt):
     """(`small`|`big`|None, reason). Small only for mechanical failures or failing tests inside the branch's own files."""
     if not failing:
@@ -445,13 +476,12 @@ def classify(failing, changed, base_stale, attempt):
         return "big", "stale base: rebase first"
     if any(not f["actions"] for f in failing):
         return "big", "non-Actions check failed"
-    if len(failing) >= 2 and not all(MECHANICAL.search(f"{f['check']} {f['step']} {f['log_tail']}") for f in failing):
+    if len(failing) >= 2 and not all(_mechanical(f) for f in failing):
         sets = [_test_files(f["log_tail"]) for f in failing]
         if not all(s and s == sets[0] for s in sets):
             return "big", "unrelated failures: two or more failing checks"
-    verdicts = []
     for f in failing:
-        if MECHANICAL.search(f"{f['check']} {f['step']} {f['log_tail']}"):
+        if _mechanical(f):
             continue
         files = _test_files(f["log_tail"])
         if not files:
@@ -461,12 +491,27 @@ def classify(failing, changed, base_stale, attempt):
     return "small", "mechanical failure or failing tests inside the branch's files"
 
 
+def _view(pr):
+    try:
+        return json.loads(_gh("pr", "view", str(pr), "--json", "headRefOid,baseRefOid,mergeStateStatus,statusCheckRollup"))
+    except ValueError as e:
+        raise GhError(f"malformed gh output: {e}")
+
+
 def gate_status(pr, sha, wait=480, attempt=1, expect=False, interval=15):
     result = {"verdict": "none", "failing": [], "base_stale": False, "class": None, "reason": "", "sha": sha}
     start = _now()
     deadline, grace = start + wait, start + 60
+    first = True
     while True:
-        v = json.loads(_gh("pr", "view", str(pr), "--json", "headRefOid,baseRefOid,mergeStateStatus,statusCheckRollup"))
+        try:
+            v = _view(pr)
+        except GhError as e:
+            if first:
+                raise  # gh itself is unusable: the caller reports "gh unavailable" and skips
+            result.update(verdict="pending", reason=f"gh failed while waiting: {e}")  # a red PR must not read as "no CI"
+            return result
+        first = False
         if v.get("mergeStateStatus") == "DIRTY":
             result["verdict"] = "conflict"
             return result
@@ -538,7 +583,10 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    return {"parity": cmd_parity, "status": cmd_status, "cap": cmd_cap}[args.cmd](args)
+    try:
+        return {"parity": cmd_parity, "status": cmd_status, "cap": cmd_cap}[args.cmd](args)
+    except Exception as e:  # exit 1 means fail/red; a crash is "could not run", never a verdict
+        return emit({"verdict": "cannot_run", "reason": f"{type(e).__name__}: {e}"}, 2)
 
 
 if __name__ == "__main__":

@@ -291,7 +291,7 @@
       "version": "2.6.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "ce6ac4fea2bf0a27547d8994ad41cca64cf21511fc5af15d4cce29359fd3d2d7",
+      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
@@ -311,17 +311,17 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "30ed50b5f4bbdfe3556d2a56b67a9ad70c36c73d8b4432485cda1b1bc0c176d6",
+      "sha256": "b1ad702c9398f5218057375b4ffa0792803377a401fb9e7fd877e103d5fcbae9",
       "timestamp": "2026-10-14",
       "version": "1.7.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "ce6ac4fea2bf0a27547d8994ad41cca64cf21511fc5af15d4cce29359fd3d2d7",
+      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "c2154c775ca99d23f9c616592643dd561f35fba5352fd3b3aedb9580acc16b49",
+      "sha256": "8db52578563945cf9eff18e7cd77260cd389c9868fed8c7947e02bf96080c57b",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -331,7 +331,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "ce6ac4fea2bf0a27547d8994ad41cca64cf21511fc5af15d4cce29359fd3d2d7",
+      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },

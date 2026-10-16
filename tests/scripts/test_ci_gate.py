@@ -433,3 +433,110 @@ def test_demo_small_failure_gets_two_attempts_then_turns_big(gate):
 def test_demo_failure_in_untouched_code_halts_as_big(gate):
     out, _, _ = gate([view([run_cr("test", "FAILURE")])], logs={"11": PYTEST_LOG.replace("tests/test_a.py", "src/other.py")})
     assert out["verdict"] == "red" and out["class"] == "big"
+
+
+# --- audit round 1 fixes ------------------------------------------------------------------------------------------
+
+def test_classify_a_failure_in_untouched_code_stays_big_even_when_the_log_says_format_or_lint():
+    for word in ("invalid date format", "lint", "drift", "install dependencies"):
+        log = f"t\tRun\t2026-10-16T10:00:00Z FAILED src/other.py::test_x - ValueError: {word}\n"
+        failing = [{"check": "test", "step": "Run tests", "log_tail": log, "actions": True}]
+        assert ci_gate.classify(failing, {"tests/test_a.py"}, False, 1)[0] == "big", word
+
+
+@pytest.mark.parametrize("log", [
+    "npm error `npm ci` can only install packages when your package.json and package-lock.json are in sync\n",
+    "npm error Missing: esbuild@0.28.2 from lock file\n",
+    "::error::dist/ or marketplace.json out of sync. Run 'python build/build.py' and commit.\n",
+])
+def test_classify_mechanical_failures_are_recognised_by_their_log_signature(log):
+    failing = [{"check": "verify", "step": "Run checks", "log_tail": log, "actions": True}]
+    assert ci_gate.classify(failing, set(), False, 1)[0] == "small"
+
+
+def test_status_a_failing_log_fetch_keeps_the_pr_red_and_big(gate, monkeypatch):
+    gate([view([])])  # installs the clock and git stubs
+
+    def broken(*args):
+        if args[:2] == ("run", "view"):
+            raise ci_gate.GhError("run still in progress")
+        return json.dumps(view([run_cr("test", "FAILURE")]))
+    monkeypatch.setattr(ci_gate, "_gh", broken)
+    out = ci_gate.gate_status(pr=7, sha=SHA, wait=480, attempt=1, expect=False)
+    assert out["verdict"] == "red" and out["class"] == "big" and out["failing"][0]["log_tail"] == ""
+
+
+def test_status_cli_exits_1_for_a_red_pr_whose_log_cannot_be_fetched(monkeypatch, capsys, gate):
+    def broken(*args):
+        if args[:2] == ("run", "view"):
+            raise ci_gate.GhError("boom")
+        return json.dumps(view([run_cr("test", "FAILURE")]))
+    gate([view([])])
+    monkeypatch.setattr(ci_gate, "_gh", broken)
+    assert ci_gate.main(["status", "--pr", "7", "--sha", SHA]) == 1
+    assert json.loads(capsys.readouterr().out)["verdict"] == "red"
+
+
+def test_status_a_gh_failure_after_the_first_view_is_pending_not_none(gate, monkeypatch):
+    calls = {"n": 0}
+
+    def flaky(*args):
+        calls["n"] += 1
+        if calls["n"] > 1:
+            raise ci_gate.GhError("rate limited")
+        return json.dumps(view([run_cr("a", status="IN_PROGRESS", conclusion="")]))
+    gate([view([])])
+    monkeypatch.setattr(ci_gate, "_gh", flaky)
+    out = ci_gate.gate_status(pr=7, sha=SHA, wait=480, attempt=1, expect=False)
+    assert out["verdict"] == "pending" and "rate limited" in out["reason"]
+
+
+def test_status_malformed_gh_output_on_the_first_view_is_gh_unavailable(monkeypatch, capsys):
+    monkeypatch.setattr(ci_gate, "_gh", lambda *a: "not json")
+    assert ci_gate.main(["status", "--pr", "7", "--sha", SHA]) == 0
+    assert json.loads(capsys.readouterr().out)["reason"].startswith("gh unavailable")
+
+
+def test_status_reports_a_stale_base_and_classifies_big(gate, monkeypatch):
+    out, _, _ = gate([view([run_cr("test", "FAILURE")])], logs={"11": PYTEST_LOG})
+    assert out["base_stale"] is False and out["class"] == "small"
+    monkeypatch.setattr(ci_gate, "_base_is_stale", lambda oid: oid == BASE)
+    out, _, _ = gate([view([run_cr("test", "FAILURE")])], logs={"11": PYTEST_LOG})
+    assert out["base_stale"] is True and out["class"] == "big" and "stale base" in out["reason"]
+
+
+def test_base_is_stale_reads_real_git_history(tmp_path, monkeypatch):
+    git(tmp_path, "init", "-b", "main")
+    base = commit(tmp_path, "chore: base")
+    git(tmp_path, "checkout", "-b", "feat/x")
+    commit(tmp_path, "feat: work")
+    git(tmp_path, "checkout", "main")
+    newer = commit(tmp_path, "chore: main moved on")
+    git(tmp_path, "checkout", "feat/x")
+    monkeypatch.chdir(tmp_path)
+    assert ci_gate._base_is_stale(base) is False, "an ancestor of HEAD is not stale"
+    assert ci_gate._base_is_stale(newer) is True, "a base commit HEAD does not contain means a rebase is due"
+    assert ci_gate._base_is_stale("0" * 40) is False, "an unknown commit cannot be judged"
+
+
+def test_a_crash_exits_2_as_cannot_run_never_1(monkeypatch, capsys):
+    def boom(args):
+        raise KeyError("surprise")
+    monkeypatch.setattr(ci_gate, "cmd_parity", boom)
+    assert ci_gate.main(["parity"]) == 2
+    out = json.loads(capsys.readouterr().out)
+    assert out["verdict"] == "cannot_run" and "KeyError" in out["reason"]
+
+
+def test_a_run_block_is_selected_only_when_every_command_in_it_is_a_project_check():
+    text = ("on: pull_request\njobs:\n  t:\n    steps:\n"
+            "      - name: Wipe\n        run: |\n          rm -rf dist && git reset --hard\n          npm test\n"
+            "      - name: Chained\n        run: cd app && npm test\n"
+            "      - name: Continued\n        run: |\n          python -m pytest \\\n            -q\n"
+            "      - name: Guarded\n        run: |\n          if [ -n \"$X\" ]; then\n            bash scripts/ok.sh\n          fi\n"
+            "      - name: Drift\n        run: |\n          DRIFT=\"$(git status --porcelain dist/)\"\n          if [ -n \"$DRIFT\" ]; then\n            exit 1\n          fi\n")
+    selected, skipped = ci_gate.select_steps(text, "ci.yml")
+    assert [s["name"] for s in selected] == ["Chained", "Continued", "Guarded"]
+    r = reasons(skipped)
+    assert "not a project check" in r["Wipe"] and "rm -rf" in r["Wipe"]
+    assert "not a project check" in r["Drift"]
