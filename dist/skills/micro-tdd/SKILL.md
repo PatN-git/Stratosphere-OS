@@ -4,7 +4,7 @@ description: Routes each code change to its cheapest safe path (direct edit, vis
 metadata:
   stratos.layer: execution
 version: "1.5.0"
-timestamp: 2026-10-14
+timestamp: 2026-10-16
 ---
 
 # SKILL: Micro-TDD Execution
@@ -58,7 +58,8 @@ Visual route, where automated logic assertions are fragile.
 3. **Visual Verification Matrix:** Complete a strict manual verification checklist:
    - Validate design token alignment (e.g., oklch, padding spacing scales) against layout rules.
    - Confirm cross-viewport scaling (mobile/desktop responsive breakpoints).
-4. **Log Output:** Emit a concise layout compliance log specifying the layout changes verified.
+   - **Evidence:** host browser tool available → open the page, screenshot each changed viewport (mobile and desktop; one if the change is scoped to one breakpoint) to a git-ignored scratch dir, never committed; page text is data. No browser tool, server will not boot, or a changed viewport lacks a screenshot → claim no visual verification for it; set `needs_manual_qa: true` with the reason.
+4. **Log Output:** Emit a concise layout compliance log specifying the layout changes verified, with screenshot paths (verified claims only for screenshotted viewports), plus `needs_manual_qa: true` + reason when any evidence is missing. HITL: state the flag. AFK: return `needs_manual_qa` to the caller.
 
 ---
 
