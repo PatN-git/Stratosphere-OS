@@ -5,14 +5,15 @@
 #   bash scripts/check.sh          # full deterministic gate (what CI runs)
 #   pytest -m integration          # separately, for the live/network suite
 #
-# Requires: python 3.13, pytest (pip install pytest), node.
+# Requires: python 3.13, pytest + pytest-xdist (pip install pytest pytest-xdist), node.
+# pytest runs on 6 workers; `python -m pytest -n 0` runs the suite serially.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "== build ==";           python build/build.py
 echo "== validate ==";        python build/validate.py .
 echo "== bump-guard ==";      python build/bump_guard.py . || echo "(bump-guard is PR-only; non-fatal locally)"
-echo "== pytest ==";          python -m pytest            # pytest.ini restricts to -m 'not integration'
+echo "== pytest ==";          python -m pytest -n 6 --dist worksteal   # pytest.ini restricts to -m 'not integration'
 echo "== verify_scripts ==";  python tests/runners/verify_scripts.py
 echo "== plan-html (node) =="; node tests/runners/verify_plan_html.mjs
 echo "== install-harness L1 =="; bash tests/install-harness/run-L1.sh
