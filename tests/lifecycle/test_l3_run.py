@@ -297,6 +297,26 @@ def test_teardown_removes_read_only_files(tmp_path):
     assert not root.exists()
 
 
+def test_teardown_retries_with_capped_backoff(tmp_path, monkeypatch):
+    """BT-182: a root that survives several attempts is still removed, waiting longer each time but never past 5s."""
+    root = tmp_path / "root"
+    root.mkdir()
+    sleeps, calls = [], {"n": 0}
+    real_rmtree = e.shutil.rmtree
+
+    def flaky(path, onexc=None):
+        calls["n"] += 1
+        if calls["n"] >= 9:
+            real_rmtree(path, onexc=onexc)
+
+    monkeypatch.setattr(e.shutil, "rmtree", flaky)
+    monkeypatch.setattr(e.time, "sleep", sleeps.append)
+    e._teardown(root, keep=False)
+    assert not root.exists()
+    assert len(sleeps) == 8
+    assert sleeps == sorted(sleeps) and sleeps[-1] > sleeps[0] and max(sleeps) <= 5
+
+
 def test_keep_leaves_it_and_says_where(tmp_path, capsys):
     root = tmp_path / "root"
     root.mkdir()

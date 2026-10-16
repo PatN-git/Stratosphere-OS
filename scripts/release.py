@@ -80,10 +80,19 @@ def run_cmd(args, capture=True):
     res = subprocess.run(args, cwd=str(ROOT), capture_output=capture, text=True)
     return res
 
+def validate_cmd(clean_before):
+    """The validate command; recorded as a passing run for the pre-commit test gate when the tree was clean before
+    this script wrote anything. The release commit stages build.py and *.json, which the gate only accepts after a
+    recorded run, and `record` hashes every dirty file, so an unrelated dirty tree is never recorded."""
+    base = [sys.executable, "build/validate.py"]
+    gate = ROOT / "src" / "scripts" / "test_gate.py"
+    return [sys.executable, str(gate), "record", "--", *base] if clean_before and gate.is_file() else base
+
 def main():
     parser = argparse.ArgumentParser(description="StratosphereOS release version derivation tool.")
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt (CI mode).")
     args = parser.parse_args()
+    clean_before = run_cmd(["git", "status", "--porcelain"]).stdout.strip() == ""
 
     # 1. Find last tag
     print("Finding the last release tag...")
@@ -285,7 +294,9 @@ def main():
 
         # Always validate the resulting build outputs
         print("Running validate.py...")
-        val_res = run_cmd([sys.executable, "build/validate.py"])
+        if not clean_before:
+            print("Not recorded for the test gate: the tree was dirty before the release.")
+        val_res = run_cmd(validate_cmd(clean_before))
         if val_res.returncode != 0:
             print(f"Validation failed: {val_res.stdout}\n{val_res.stderr}")
             sys.exit(1)

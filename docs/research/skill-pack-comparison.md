@@ -5,8 +5,8 @@ description: "Every Osmani agent-skills and Cursor pstack skill compared against
 status: stable
 slug: skill-pack-comparison
 generated:
-  by: ad-hoc session (1a-style problem-space review)
-  at: "2026-10-14T00:00:00Z"
+  by: 3d-implement-issue
+  at: "2026-10-15T00:00:00Z"
 sources:
   - resource: https://github.com/addyosmani/agent-skills/tree/aeac41d4d005999432bb7312f7ff06383a91d59d
     title: agent-skills (pinned commit aeac41d)
@@ -17,7 +17,7 @@ sources:
   - resource: https://youtu.be/sU9MW8Ycq2M
     title: "Pocock vs Pstack vs Osmani: Which Skill Pack Wins?"
     author: Rob Shocks
-version: "4.7.0"
+version: "4.8.0"
 ---
 
 # Research: Skill-pack comparison (Osmani agent-skills, Cursor pstack) vs StratOS lifecycle
@@ -63,7 +63,7 @@ Effort: XS = one clause · S = section or reference edit · M = new script and w
 | 1b | G1/G2/G3, user-declared stop, RAT | Hedged replies are not confirmation; empirical fork → probe, not question | [O] `skills/interview-me/SKILL.md`, `commands/build.toml`; [P] `skills/poteto-mode/SKILL.md` | High · XS | BT-170 |
 | 1c | frontier, prototype tickets | Prototype ticket names the decision it settles | [P] `skills/poteto-mode/playbooks/prototype.md` | Low · XS | BT-170 |
 | 2a | journey map, cost gate, contract_check | §7 Always / Ask first / Never boundaries | [O] `skills/spec-driven-development/SKILL.md`, `skills/security-and-hardening/SKILL.md` | High · S | [BT-171](https://github.com/PatN-git/Stratosphere-OS/issues/171) |
-| 2a/1b | prose checklists | `spec_lint` script for the mechanical checklist items | [P] `skills/poteto-mode/playbooks/multi-phase-plan.md`, `scripts/check-plan.mjs` | Med · M | [BT-175](https://github.com/PatN-git/Stratosphere-OS/issues/175) |
+| 2a/1b | prose checklists | `spec_lint` script for the mechanical checklist items | [P] `skills/poteto-mode/playbooks/multi-phase-plan.md`, `skills/poteto-mode/scripts/check-plan.mjs` | Med · M | [BT-175](https://github.com/PatN-git/Stratosphere-OS/issues/175) **closed, not adopted** (see Not adopted) |
 | 2b | 3 directions, 5-lens, stress tester, deep-vs-shallow | Shared `design-red-flags.md`; usage before types; required UI states and patterns to reject | [P] `skills/architect/`; [O] `skills/api-and-interface-design/SKILL.md`, `skills/frontend-ui-engineering/SKILL.md` | High · S | BT-171 |
 | 2c, 2z, 3a | — | No change | — | — | — |
 | 3b | minimum-slice floor, coverage auditor | Maximum-slice ceiling (split triggers); expand/contract migrations | [O] `skills/planning-and-task-breakdown/SKILL.md`, `skills/deprecation-and-migration/SKILL.md` | High · S | [BT-176](https://github.com/PatN-git/Stratosphere-OS/issues/176) |
@@ -72,15 +72,15 @@ Effort: XS = one clause · S = section or reference edit · M = new script and w
 | micro-tdd | observed RED, regression proof | Hollow-test check; error output is data; premise census after 2 failed fixes | [P] `skills/principle-test-behavior-not-implementation/`, `skills/principle-attack-the-premise/`; [O] `skills/debugging-and-error-recovery/SKILL.md` | Med · XS | BT-176 |
 | 3z/3x | isolation, retry ≤ 3, frontier, docs_read | Append-only decision log; *(optional)* different-model-family verifier | [P] `skills/show-me-your-work/`, `skills/interrogate/`, `skills/arena/`; [O] `skills/doubt-driven-development/SKILL.md` | Med · M | BT-176 |
 | 3d/4a/3z | — | **Floor guard**: diff-scoped, flags skips, suppressions, deleted tests, loosened thresholds; exit 0/1/2 | [O] `skills/constraint-driven-development/references/floor-guard.md`; [P] `skills/poteto-mode/playbooks/autopilot-full.md` | **High · M** | [BT-172](https://github.com/PatN-git/Stratosphere-OS/issues/172) |
-| 4a | 2 isolated auditors, feature acceptance audit | Mutation spot-check on `merge-risk-paths`; Dismissed list with reasons | [O] `skills/code-review-and-quality/SKILL.md`; [P] `skills/interrogate/references/lead-judgment.md` | Med · S | [BT-177](https://github.com/PatN-git/Stratosphere-OS/issues/177) |
+| 4a, 3z | 2 isolated auditors, feature acceptance audit | Dismissed list with reasons (4a); 3z `[NO-RED]` gate when tests have no observed RED (replaces the mutation spot-check, see Not adopted) | [O] `skills/code-review-and-quality/SKILL.md`; [P] `skills/interrogate/references/lead-judgment.md` | Med · S | [BT-177](https://github.com/PatN-git/Stratosphere-OS/issues/177) |
 | 4b | deletion test, collision check | Shared red-flags; git-history intent check before a finding scores ≥ 80 | [O] `skills/code-simplification/SKILL.md`; [P] `skills/why/` | Med · XS | BT-177 |
-| 4c | 3 parallel auditors, delta lens | Per-category ratchet; perf measured or "not measured"; destructive-path check | [O] `skills/constraint-driven-development/SKILL.md`, `agents/web-performance-auditor.md`, `skills/security-and-hardening/SKILL.md`; [P] `skills/benchmark-checklist/SKILL.md` | Med · S | BT-177 |
+| 4c | 3 parallel auditors, delta lens | Per-pass delta row, `[REGRESSION]` only on CVE and skipped-test counts; perf measured or "not measured"; `inconclusive` vs `n/a`; destructive-path check | [O] `skills/constraint-driven-development/SKILL.md`, `agents/web-performance-auditor.md`, `skills/security-and-hardening/SKILL.md`; [P] `skills/benchmark-checklist/SKILL.md` | Med · S | BT-177 |
 
 ## Research-first candidates
 | Candidate | Source | Why research first | Filed |
 |---|---|---|---|
 | verify-app: project-local real-surface verification skill and feature map | [P] `skills/create-verification-skill/`, `skills/maintain-verification-skill/`; [O] `skills/browser-testing-with-devtools/SKILL.md` | Host-agnostic driving, projects without a UI, token cost, overlap with micro-tdd Fast-Track B and `needs_manual_qa` | Spike [BT-173](https://github.com/PatN-git/Stratosphere-OS/issues/173) |
-| Post-PR babysit (CI classification, review-thread triage) | [P] `skills/poteto-mode/playbooks/babysit.md`, `references/bugbot-triage.md` | Push authorization under AGENTS.md §4, host overlap, new skill vs 4a phase | Spike [BT-174](https://github.com/PatN-git/Stratosphere-OS/issues/174) |
+| Post-PR babysit (CI classification, review-thread triage) | [P] `skills/poteto-mode/playbooks/babysit.md`, `references/bugbot-triage.md` | Push authorization under AGENTS.md §4, host overlap, new skill vs 4a phase | Spike [BT-174](https://github.com/PatN-git/Stratosphere-OS/issues/174) **closed 2026-10-16: no-go on babysit, narrower CI gate filed as [BT-187](https://github.com/PatN-git/Stratosphere-OS/issues/187)** (see Not adopted) |
 | `/stratos-help` router | [P] `skills/poteto-help/`; [O] `skills/using-agent-skills/SKILL.md` | Low value; not filed | — |
 
 ## Not adopted
@@ -93,6 +93,9 @@ Effort: XS = one clause · S = section or reference edit · M = new script and w
 | Anti-rationalization tables in every skill | [O] all skills | Context cost; add a line only where 0d shows a recurring excuse |
 | PR-body Scope / Blast-radius sections | [P] `playbooks/opening-a-pr.md`, `skills/blast-radius/` | PR bodies are not read in this agent-first workflow |
 | Deploy, rollout, observability | [O] `skills/shipping-and-launch/`, `skills/ci-cd-and-automation/`, `skills/observability-and-instrumentation/` | StratOS ends at PR; runtime operations are product concerns |
+| `spec_lint` script for the mechanical PRD / brief checklist items (BT-175, closed 2026-10-15) | [P] `skills/poteto-mode/scripts/check-plan.mjs` | Built and tested, then closed. The script was correct (36/36 seeded structural defects on the tuning set, 75/75 held-out; false alarms fixed) but the gain was cosmetic: 7-8 of 12 CleanTechHub PRDs had a path in §7 and 2 of 16 briefs a bad RAT status, while a 3-repeat pilot showed a fresh agent with today's checklist already catches seeded defects 27/27 (isolated reviewer 9/9). The defects that cost real rework were semantic (e.g. an inverted root cause) and no lint catches them. It would add a script run to 2a, 1b, 1c and 2c. Revisit only if 0d/0b records a structural miss it would have caught. Work: local branch `deferred/BT-175-spec-lint`. |
+| Mutation spot-check in 4a (flip a condition, rerun tests, restore) (BT-177, 2026-10-15) | [O] `skills/code-review-and-quality/SKILL.md` | micro-tdd already requires an observed RED per test; the probe edits files, so it cannot run under 3z `audit-only` (read-only, AGENTS.md §8); `merge-risk-paths` rules match only SQL, CI and one-way scripts (untestable or unsafe to mutate); equivalent mutants would block ships. Replaced by a `[NO-RED]` check on 3z's existing `red_confirmed`. |
+| Post-PR babysit lifecycle step: review-thread/bugbot triage, flake retries, watch loop (BT-174, 2026-10-16) | [P] `playbooks/babysit.md`, `references/bugbot-triage.md` | Neither repo has review bots (0 non-owner comments); CleanTechHub CI failed 50 of 300 runs, 30 of them `npm ci` lockfile sync, with no same-commit fail-then-pass; StratOS 24 of 200, mostly drift and bump-guard. Failures were real and locally reproducible, so only a post-PR CI gate is kept: red-CI triage once the feature PR completes, filed as BT-187. A pre-push local CI replay was built and dropped on measured cost (113 s locally on StratOS with the suite already recorded vs about 45 s for the whole CI on GitHub). Findings: comment on issue #174. |
 | Stack- or vendor-specific | [P] `typescript-best-practices`, `make-bot-ui`, `setup-pstack`, `runtime-forensics`, `trace-forensics`, `worktree-cleanup`; [O] `hooks/` | Host- and stack-agnostic product |
 
 ## Coverage: every reviewed skill
@@ -104,7 +107,7 @@ Outcome: **BT-n** = adopted into that slice · **covered** = StratOS already has
 
 **[P] skills:** architect BT-171, BT-177 · arena BT-176 · automate-me covered (0d recurrence) · benchmark-checklist BT-177 · blast-radius no · bro no · correct BT-169 · create-verification-skill BT-173 · figure-it-out later · how later · in-your-own-words later · interrogate BT-176, BT-177 · ketchup later · maintain-verification-skill BT-173 · make-bot-ui no · no-comments later · poteto-help later · recall BT-169 · reflect BT-169 · setup-pstack no · sharpen later · show-me-your-work BT-176 · swarm later · tdd covered · teach later · technical-writing later · typescript-best-practices no · unslop later · why BT-170, BT-177.
 
-**[P] poteto-mode playbooks:** router SKILL BT-170 · authoring-a-skill covered · autonomous-run later · autopilot-full BT-172 (countersign idea; merging no) · autopilot-stack no · babysit BT-174 · bug-fix covered · eval later · feature BT-176 · hillclimb later · investigation later · multi-phase-plan BT-175 · opening-a-pr no · orchestrate later · pause-safely BT-169 · perf-issue later · prototype BT-170 · refactoring later · runtime-forensics no · session-pickup covered · shipping no · trace-forensics no · visual-parity later · worktree-cleanup no · `references/bugbot-triage.md` BT-174.
+**[P] poteto-mode playbooks:** router SKILL BT-170 · authoring-a-skill covered · autonomous-run later · autopilot-full BT-172 (countersign idea; merging no) · autopilot-stack no · babysit BT-174 (no-go; CI gate BT-187) · bug-fix covered · eval later · feature BT-176 · hillclimb later · investigation later · multi-phase-plan no (BT-175 closed) · opening-a-pr no · orchestrate later · pause-safely BT-169 · perf-issue later · prototype BT-170 · refactoring later · runtime-forensics no · session-pickup covered · shipping no · trace-forensics no · visual-parity later · worktree-cleanup no · `references/bugbot-triage.md` BT-174.
 
 **[P] principles (24):** test-behavior-not-implementation, attack-the-premise BT-176 · encode-lessons-in-structure, guard-the-context-window, laziness-protocol, separate-before-serializing-shared-state, sequence-verifiable-units, prove-it-works, minimize-reader-load, fix-root-causes covered (AGENTS.md §5/§7, micro-tdd, code-simplifier) · never-block-on-the-human no · build-the-lever, explain-the-number, make-operations-idempotent, model-the-domain, boundary-discipline, exhaust-the-design-space, outcome-oriented-execution, redesign-from-first-principles, subtract-before-you-add, migrate-callers-then-delete-legacy-apis, foundational-thinking, experience-first, type-system-discipline later.
 

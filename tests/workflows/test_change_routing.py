@@ -52,6 +52,18 @@ def test_red_step_bans_tautological_expected_values():
     assert "Never write a test that only asserts a constant equals its new value" in red
 
 
+def test_visual_route_evidences_the_render_or_flags_manual_qa():
+    """BT-186: Fast-Track B never claims a visual check it could not make."""
+    track_b = _section(_read("skills/micro-tdd/SKILL.md"), "### Fast-Track B", "## 4.")
+    evidence = _section(track_b, "3. **Visual Verification Matrix:**", "4. **Log Output:**")
+    assert "browser tool" in evidence and "screenshot" in evidence and "never committed" in evidence
+    assert "`needs_manual_qa: true`" in evidence and "no visual verification" in evidence
+    assert "lacks a screenshot" in evidence
+    log = track_b.split("4. **Log Output:**")[1]
+    assert "screenshot paths" in log and "`needs_manual_qa: true`" in log
+    assert "HITL: state" in log and "AFK: return `needs_manual_qa` to the caller" in log
+
+
 def test_bug_loop_localizes_an_unclear_cause_and_proves_the_regression():
     loop = _read("skills/micro-tdd/SKILL.md").split("### The Anti-Regression Bug Loop")[1]
     for token in ("red-capable command", "falsifiable", "cheapest", "[DEBUG-", "repro passes"):

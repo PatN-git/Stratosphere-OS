@@ -2,9 +2,12 @@
 
 Seam: the CLI (exit code + output) run inside a throwaway git repo; the hook end to end via `git commit`.
 """
+import json
+import os
 import shutil
 import subprocess
 import sys
+import textwrap
 
 import pytest
 
@@ -132,3 +135,109 @@ def test_the_installed_hook_blocks_git_commit_until_tests_are_recorded(repo):
     assert refused.returncode != 0 and "app.py" in refused.stderr
     gate(repo, "record", "--", *PASS)
     git(repo, "commit", "-q", "-m", "feat: x")
+
+
+# --- BT-183: the hook hint and `record --suite` (the one deterministic writer of the suite record) -------------
+
+PYTEST_FULL = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+
+
+def suite_repo(repo, hook="pass"):
+    """A committed, clean repo whose whole-suite command is real pytest; `hook` runs in pytest_terminal_summary."""
+    write(repo, "test_ok.py", "def test_ok():\n    pass\n")
+    write(repo, "conftest.py", "import os\nimport subprocess\n\n\ndef pytest_terminal_summary(terminalreporter):\n"
+          + textwrap.indent(textwrap.dedent(hook).strip(), "    ") + "\n")
+    (repo / ".git" / "info" / "exclude").write_text(".tmp/\n__pycache__/\n.pytest_cache/\n", encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "chore: tests")
+
+
+MARK_RAN = 'os.makedirs(".tmp", exist_ok=True)\nopen(os.path.join(".tmp", "ran"), "w").close()'
+
+
+def suite_record(repo, issue="BT-182"):
+    return repo / ".tmp" / f"3d-suite-{issue}.json"
+
+
+def test_the_block_message_names_the_related_tests_path(repo):
+    write(repo, "app.py", "x = 1\n")
+    git(repo, "add", "app.py")
+    blocked = gate(repo, "check")
+    assert blocked.returncode == 1
+    assert "related tests" in blocked.stderr and "full suite" in blocked.stderr
+    assert "test_gate.py record --" in blocked.stderr
+
+
+def test_record_suite_writes_three_keys_only_on_a_pass_and_a_clean_tree(repo):
+    suite_repo(repo)
+    r = gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL)
+    assert r.returncode == 0, r.stdout + r.stderr
+    rec = json.loads(suite_record(repo).read_text(encoding="utf-8"))
+    assert set(rec) == {"head_sha", "cmd", "observed"}
+    assert rec["head_sha"] == git(repo, "rev-parse", "HEAD")
+    assert "pytest" in rec["cmd"] and "1 passed" in rec["observed"]
+    assert (repo / ".tmp" / "test-gate.json").is_file()
+
+
+def test_record_suite_with_a_failing_run_writes_nothing(repo):
+    suite_repo(repo)
+    write(repo, "test_ok.py", "def test_ok():\n    assert False\n")
+    git(repo, "commit", "-q", "-am", "chore: red")
+    r = gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL)
+    assert r.returncode == 1 and not suite_record(repo).exists()
+
+
+def test_record_suite_refuses_a_dirty_tree_before_running(repo):
+    suite_repo(repo, MARK_RAN)
+    write(repo, "generated.txt", "x")
+    r = gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL)
+    assert r.returncode == 2 and "commit" in r.stderr.lower()
+    assert not (repo / ".tmp" / "ran").exists() and not suite_record(repo).exists()
+
+
+def test_record_suite_refuses_a_scoped_command_without_running_it(repo):
+    suite_repo(repo, MARK_RAN)
+    r = gate(repo, "record", "--suite", "BT-182", "--", sys.executable, "-m", "pytest", "test_ok.py")
+    assert r.returncode == 2 and "scoped" in r.stderr
+    assert not (repo / ".tmp" / "ran").exists() and not suite_record(repo).exists()
+
+
+def test_record_suite_writes_nothing_when_head_moves_during_the_run(repo):
+    suite_repo(repo, 'subprocess.run(["git", "commit", "--allow-empty", "-q", "-m", "moved"], check=True)')
+    r = gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL)
+    assert r.returncode == 3 and not suite_record(repo).exists()
+    assert (repo / ".tmp" / "test-gate.json").is_file()  # the tests did pass, so the commit gate still has its record
+
+
+def test_record_suite_writes_nothing_when_the_run_leaves_the_tree_dirty(repo):
+    suite_repo(repo, 'open("generated.txt", "w").write("x")')
+    r = gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL)
+    assert r.returncode == 3 and not suite_record(repo).exists()
+
+
+def test_record_suite_observed_keeps_every_count_and_drops_colour_codes(repo):
+    suite_repo(repo, r'os.write(1, "\x1b[32m5 passed\x1b[0m in 0.1s\ninstall-harness L1: 155 passed, 0 failed\nALL CHECKS PASSED\n".encode())')
+    assert gate(repo, "record", "--suite", "BT-182", "--", *PYTEST_FULL).returncode == 0
+    observed = json.loads(suite_record(repo).read_text(encoding="utf-8"))["observed"]
+    assert "5 passed" in observed and "155 passed" in observed and "\x1b" not in observed and len(observed) <= 400
+
+
+def test_record_suite_survives_a_cp1252_piped_stdout(repo):
+    suite_repo(repo, r'os.write(1, "\u2713 vitest checkmark\n".encode("utf-8"))')
+    env = {**_GIT_ENV, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"}
+    r = subprocess.run([sys.executable, str(SCRIPT), "record", "--suite", "BT-182", "--", *PYTEST_FULL],
+                       cwd=repo, capture_output=True, env=env)
+    assert r.returncode == 0, r.stderr.decode("utf-8", "replace")
+    assert "✓".encode("utf-8") in r.stdout and b"UnicodeEncodeError" not in r.stderr
+    assert suite_record(repo).is_file()
+
+
+def test_record_suite_pads_the_issue_number_to_three_digits(repo):
+    suite_repo(repo)
+    assert gate(repo, "record", "--suite", "BT-7", "--", *PYTEST_FULL).returncode == 0
+    assert suite_record(repo, "BT-007").is_file()
+
+
+def test_record_suite_needs_an_issue_id(repo):
+    suite_repo(repo)
+    assert gate(repo, "record", "--suite", "oops", "--", *PYTEST_FULL).returncode != 0

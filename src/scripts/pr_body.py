@@ -6,23 +6,29 @@ Used by 4a Phase 5 (and 0b for suite reuse); the prior PR body is passed as a fi
   build  --slice BT-n --summary "..." --verdict PASS|WAIVED|SKIP --audit-rounds N
          [--manual-qa] [--post-merge S]... [--deviation S]... [--ref ID]... [--notes TEXT]
          [--prior-body-file F] [--base REF] [--risk-paths F] [--suite-json F]
-         [--parent BT-n] [--close-parent] [--out F]
+         [--parent BT-n] [--epic BT-n]... [--close-parent] [--out F]
     Prints the PR body: `Closes #n.` lines, one ```stratos-pr block, optional `## Notes`.
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
-    PENDING (no Closes line). post_merge/deviations/refs are unioned (order-preserving) with the prior block.
+    PENDING (no Closes line). A prior row a human set to `DROPPED` (never a `--verdict`) is kept verbatim and
+    gets no Closes line. Commits scoped to an epic (`tier:epic` row in .memory/BACKLOG_MAP.md, plus any
+    `--epic BT-n`; none when the file is absent and no flag is given) are not slices, except the shipped one. post_merge/deviations/refs are unioned
+    (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
     <base> = --base, else the remote default branch (origin/HEAD), else origin/main|master, main|master; none
     resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent must be BT-<n> (else exit 2).
   suite  [--dir .tmp]
-    Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1. Reusable =
-    head_sha is HEAD, or an ancestor with only `release: prepare` commits since (a bump changes no tested behaviour),
-    and the tree is clean outside .memory/, docs/, .tmp/ (4a's clean-tree guard).
+    Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1 with
+    `[NO-SUITE] <none|head moved|dirty tree|scoped>` on stderr. Reusable = head_sha is HEAD, or an ancestor with only
+    `release: prepare` commits since (a bump changes no tested behaviour), the tree is clean outside .memory/, docs/,
+    .tmp/ (4a's clean-tree guard), and `cmd` is a whole-suite command (`is_scoped`: unknown shapes count as scoped).
+    Write the record with `test_gate.py record --suite BT-n -- <cmd>`, never by hand.
 """
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -38,6 +44,11 @@ SLICE_RE = re.compile(rf"\{{id: (BT-\d+), summary: ({STR}|[^,}}]*), verdict: (\w
 VERDICTS = ("PASS", "WAIVED", "SKIP")
 PARENT_RE = re.compile(r"BT-\d+")
 DRIFT_OK = (".memory/", "docs/", ".tmp/")  # paths allowed to be dirty (same set as 4a's clean-tree guard)
+FULL_SIMPLE = {("npm", "test"), ("yarn", "test"), ("pnpm", "test"), ("npm", "run", "test"),
+               ("yarn", "run", "test"), ("pnpm", "run", "test"), ("make", "test")}
+RUNNER_FLAG_RE = re.compile(r"^(?:-q|-v|-vv|-x|--run|--no-header|-n\d+|-n=\S+|--dist=\S+|--tb=\S+|--color=\S+|--reporter=\S+)$")
+RUNNER_VALUE_FLAGS = ("-n", "--dist", "-p")
+SEGMENT_BREAKS = {";", "&&", "||", "|", "&"}
 
 
 def git(*args):
@@ -51,11 +62,16 @@ def git_ok(*args):
     return subprocess.run(["git", *args], capture_output=True).returncode == 0
 
 
+def default_refs():
+    """Candidate refs for the default branch, best first (remote default, origin/main|master, main|master)."""
+    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+    return (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master")
+
+
 def resolve_base(given):
     if given:  # an explicit base must still be a commit, else the diff is empty and risk would read [none]
         return given if git("rev-parse", "--verify", "--quiet", f"{given}^{{commit}}") else None
-    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
-    for cand in (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master"):
+    for cand in default_refs():
         base = git("merge-base", "HEAD", cand)
         if base:
             return base
@@ -140,30 +156,116 @@ def tree_is_clean():
     return True
 
 
-def reusable_suite(dirpath):
-    """Newest reusable suite record from `<dirpath>/3d-suite-BT-*.json`, else None."""
+def _launcher(token):
+    """Lower-cased basename of a command token without its Windows extension (`C:\\Py\\python.exe` -> python)."""
+    return re.sub(r"\.(exe|cmd|bat)$", "", re.split(r"[\\/]", token)[-1].lower())
+
+
+def _tokens(cmd):
+    try:
+        lex = shlex.shlex(cmd, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        return list(lex)
+    except ValueError:
+        return cmd.split()
+
+
+def _segment_full(t):
+    """True when one command segment (no `;`, `&&`, `||`) runs the project's whole suite."""
+    if t and _launcher(t[0]) == "npx":
+        t = t[1:]
+    if len(t) >= 3 and _launcher(t[0]) in ("python", "python3", "py") and t[1] == "-m":
+        t = t[2:]
+    if not t:
+        return False
+    head = _launcher(t[0])
+    if (head, *t[1:]) in FULL_SIMPLE:
+        return True
+    if head in ("bash", "sh"):
+        if len(t) == 3 and t[1] == "-c":
+            return _command_full(t[2])
+        return len(t) == 2 and t[1].endswith(".sh")
+    if head in ("pytest", "vitest", "jest"):
+        rest = t[1:]
+        if head == "vitest" and rest[:1] == ["run"]:
+            rest = rest[1:]
+        i = 0
+        while i < len(rest):
+            if rest[i] in RUNNER_VALUE_FLAGS:
+                i += 2
+                continue
+            if not RUNNER_FLAG_RE.match(rest[i]):
+                return False
+            i += 1
+        return True
+    return False
+
+
+def _command_full(cmd):
+    tokens = _tokens(cmd)
+    for i, tok in enumerate(tokens[:-1]):  # drop a leading `...test_gate.py record [--suite X] --` wrapper
+        if _launcher(tok) == "test_gate.py" and tokens[i + 1] == "record":
+            if "--" not in tokens[i:]:
+                return False
+            tokens = tokens[i + tokens[i:].index("--") + 1:]
+            break
+    segments, current = [], []
+    for tok in tokens:
+        if tok in SEGMENT_BREAKS:
+            segments.append(current)
+            current = []
+        else:
+            current.append(tok)
+    segments.append(current)
+    return any(_segment_full(s) for s in segments)
+
+
+def is_scoped(cmd):
+    """True unless `cmd` (a string, or an argv list) provably runs the whole suite.
+
+    An allowlist on purpose: an unknown command shape counts as scoped, which costs one re-run and can
+    never reuse a partial run as "the suite". A command is full when any of its `;`/`&&`/`||` segments is
+    (so `bash scripts/check.sh && pytest tests/jules` is full). The recorder writes `shlex.join(argv)` so the
+    same string gets the same verdict at record and read time.
+    """
+    return not _command_full(shlex.join(cmd) if isinstance(cmd, (list, tuple)) else cmd)
+
+
+def suite_status(dirpath):
+    """(record, reason): the newest reusable `<dirpath>/3d-suite-BT-*.json`, else (None, why not)."""
     if not tree_is_clean():
-        return None
+        return None, "dirty tree"
     head = git("rev-parse", "HEAD")
-    for f in sorted(Path(dirpath).glob("3d-suite-BT-*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+    files = sorted(Path(dirpath).glob("3d-suite-BT-*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    scoped_hit = False
+    for f in files:
         try:
             rec = check_suite(json.loads(f.read_text(encoding="utf-8-sig")))
         except (OSError, ValueError):
             continue
         sha = rec["head_sha"]
-        if sha == head:
-            return rec
-        if not git_ok("merge-base", "--is-ancestor", sha, "HEAD"):  # unknown sha or not an ancestor
+        if sha != head:
+            if not git_ok("merge-base", "--is-ancestor", sha, "HEAD"):  # unknown sha or not an ancestor
+                continue
+            subjects = git("log", "--format=%s", f"{sha}..HEAD")
+            if subjects is None or not all(RELEASE_RE.match(s) for s in subjects.splitlines()):
+                continue
+        if is_scoped(rec["cmd"]):
+            scoped_hit = True
             continue
-        subjects = git("log", "--format=%s", f"{sha}..HEAD")
-        if subjects is not None and all(RELEASE_RE.match(s) for s in subjects.splitlines()):
-            return rec
-    return None
+        return rec, ""
+    return None, "scoped" if scoped_hit else ("head moved" if files else "none")
+
+
+def reusable_suite(dirpath):
+    """Newest reusable suite record from `<dirpath>/3d-suite-BT-*.json`, else None."""
+    return suite_status(dirpath)[0]
 
 
 def cmd_suite(args):
-    rec = reusable_suite(args.dir)
+    rec, reason = suite_status(args.dir)
     if not rec:
+        print(f"[NO-SUITE] {reason}", file=sys.stderr)
         return 1
     print(json.dumps({"cmd": rec["cmd"], "observed": rec["observed"], "head_sha": rec["head_sha"]}))
     return 0
@@ -173,10 +275,25 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+def epic_ids(path=".memory/BACKLOG_MAP.md"):
+    """Int ids of the BACKLOG_MAP rows labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-1 ignored).
+
+    Fails open to an empty set when the map is absent or unreadable: an epic commit then shows as PENDING.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import reconcile
+        rows = reconcile.parse_backlog(path)
+    except (ImportError, OSError, ValueError):
+        return set()
+    ids = (re.fullmatch(r"BT-0*(\d+)", bt) for bt, r in rows.items() if "tier:epic" in r["labels"])
+    return {int(m.group(1)) for m in ids if m}
+
+
 def slice_rows(args, prior, parent, base):
     """(id, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new. None if --slice is malformed.
-    Commits scoped to the parent itself are not slices (the parent closes only via --close-parent)."""
+    Commits scoped to the parent itself or to an epic are not slices (the parent closes only via --close-parent)."""
     log = git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or ""
     first_subject = {}  # int id -> (digits, summary of its oldest commit)
     for subject in reversed(log.splitlines()):
@@ -191,6 +308,8 @@ def slice_rows(args, prior, parent, base):
     parent_n = int(parent[3:])
     if parent_n != ship_n:
         first_subject.pop(parent_n, None)
+    for epic_n in (epic_ids() | {int(e[3:]) for e in args.epic}) - {ship_n}:
+        first_subject.pop(epic_n, None)
 
     rows = []
     for n in sorted(first_subject):
@@ -212,7 +331,7 @@ def changed_risk_tags(base, risk_paths):
 
 
 def render_body(rows, parent, close_parent, rec, tags, lists, notes):
-    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"],
+    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[2] not in ("PENDING", "DROPPED")],
                    [f"Closes #{int(parent[3:])}."] if close_parent else [])
     out = [*closes, "", "```stratos-pr", f"feature: {parent}", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
     out += [f"  - {{id: {i}, summary: {s}, verdict: {v}, audit_rounds: {a}}}" for i, s, v, a in rows]
@@ -229,6 +348,10 @@ def cmd_build(args):
     if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
         print(f"[PR-BODY-ERROR] --parent must look like BT-<n>, got {args.parent!r}", file=sys.stderr)
         return 2
+    bad_epic = next((e for e in args.epic if not PARENT_RE.fullmatch(e)), None)
+    if bad_epic is not None:
+        print(f"[PR-BODY-ERROR] --epic must look like BT-<n>, got {bad_epic!r}", file=sys.stderr)
+        return 2
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
     except (OSError, ValueError) as e:
@@ -239,14 +362,17 @@ def cmd_build(args):
     if args.suite_json:
         try:
             rec = check_suite(json.loads(Path(args.suite_json).read_text(encoding="utf-8-sig")))
+            if is_scoped(rec["cmd"]):
+                raise ValueError("cmd is a scoped run, not the whole suite; record it with test_gate.py record --suite")
         except (OSError, ValueError) as e:
             print(f"[PR-BODY-ERROR] bad --suite-json {args.suite_json}: {e}", file=sys.stderr)
             return 2
     else:
-        rec = reusable_suite(".tmp")
+        rec, reason = suite_status(".tmp")
     if not rec:
-        print("[NO-SUITE] no reusable suite result: run the suite once and write {head_sha, cmd, observed} "
-              "to .tmp/3d-suite-BT-<padded>.json (HEAD must match and the tree be clean outside .memory/, docs/, "
+        print(f"[NO-SUITE] {reason}: no reusable suite result. Run the suite once through "
+              "`python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes "
+              ".tmp/3d-suite-BT-<padded>.json; HEAD must match and the tree be clean outside .memory/, docs/, "
               ".tmp/)", file=sys.stderr)
         return 2
     base = resolve_base(args.base)
@@ -297,6 +423,8 @@ def build_parser():
     b.add_argument("--risk-paths", default=DEFAULT_RISK_PATHS)
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
+    b.add_argument("--epic", action="append", default=[],
+                   help="BT-n of an epic whose commits are not slices (repeatable; adds to BACKLOG_MAP's tier:epic rows)")
     b.add_argument("--close-parent", action="store_true")
     b.add_argument("--out")
     s = sub.add_parser("suite")

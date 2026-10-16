@@ -18,5 +18,11 @@ def test_0b_step9_reuses_suite_result_via_pr_body_suite():
     assert "python .agents/scripts/validate_memory.py" in step9
 
 
+def test_0b_runs_the_suite_only_when_a_tracked_file_changed():
+    step9 = _step9()
+    assert "test_gate.py record --suite BT-<padded>" in step9
+    assert "suite: not run (no tracked change)" in step9
+
+
 def test_0b_does_not_restate_the_reuse_rule():
     assert "release: prepare" not in TEXT and "head_sha" not in TEXT

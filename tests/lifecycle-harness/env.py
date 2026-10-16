@@ -24,7 +24,9 @@ hypothetical:
 """
 from __future__ import annotations
 
+import atexit
 import contextlib
+import functools
 import hashlib
 import json
 import os
@@ -148,11 +150,10 @@ def manifest(paths, max_depth: int = 1) -> dict[str, str]:
 def repo_status(repo_root: Path) -> str:
     """`git status --porcelain` of the developer's real working repo (E1).
 
-    The three watched HOME directories are only half of E1. The harness builds
-    inside the real repo and the agent runs with `--dangerously-skip-permissions`,
-    so the repo's own dirt is the other half. `build/build.py` is idempotent -
-    `dist/` is tracked and regenerates byte-identically - so a clean tree stays
-    clean across a run and any change here is the run's own doing.
+    The three watched HOME directories are only half of E1. The agent runs with
+    `--dangerously-skip-permissions` inside the real repo, so the repo's own dirt is
+    the other half. The harness build runs in a temp copy (`_built_dist`), so a clean
+    tree stays clean across a run and any change here is the run's own doing.
 
     Unlike `manifest`, this is exact rather than coarse: `git status` already
     ignores the live churn (`.tmp/`, `.agents/`) that forced the names-only
@@ -616,11 +617,25 @@ def _write_git_config(root: Path, bare: Path) -> Path:
     return cfg
 
 
+@functools.lru_cache(maxsize=None)
+def _built_dist(repo_root: Path) -> Path:
+    """Build the bundle once per process in a temp copy of build/ + src/ and return its dist/skills.
+
+    build.py removes the bundle before rebuilding, so running it in the real repo races
+    every parallel test that reads dist/. The temp copy leaves the repo untouched.
+    """
+    root = Path(tempfile.mkdtemp(prefix="l3b-"))
+    atexit.register(shutil.rmtree, root, ignore_errors=True)
+    for d in ("build", "src"):
+        shutil.copytree(repo_root / d, root / d, ignore=shutil.ignore_patterns("__pycache__"))
+    subprocess.run([sys.executable, str(root / "build" / "build.py")], cwd=str(root), check=True,
+                   capture_output=True)
+    return root / "dist" / "skills"
+
+
 def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) -> None:
     """Build the bundle and scaffold it into the project (Slice 1's core)."""
-    subprocess.run(["python", "build/build.py"], cwd=str(repo_root), check=True,
-                   capture_output=True)
-    dist = repo_root / "dist" / "skills"
+    dist = _built_dist(repo_root)
     claude_dir = home / ".claude"
     # The canonical bundle is what a skills installer places: skill folders, with the
     # scaffolder payload riding inside stratosphere-setup.
@@ -681,7 +696,7 @@ def assert_memory_valid(project: Path, child: dict) -> None:
             f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-400:]}")
 
 
-def _teardown(root: Path, keep: bool, attempts: int = 5, delay: float = 0.2) -> None:
+def _teardown(root: Path, keep: bool, attempts: int = 10, delay: float = 0.2) -> None:
     """Remove the temp root, or say plainly that it could not be (E2).
 
     `shutil.rmtree(ignore_errors=True)` alone leaves residue on Windows for two
@@ -703,7 +718,7 @@ def _teardown(root: Path, keep: bool, attempts: int = 5, delay: float = 0.2) -> 
         shutil.rmtree(root, onexc=_clear_readonly)
         if not root.exists():
             return
-        time.sleep(delay)
+        time.sleep(min(delay * 2 ** attempt, 5))  # backoff: handles outlive a busy machine's process
     print(f"[warn] could not remove the temp root, so this run left residue: {root}",
           file=sys.stderr)
 

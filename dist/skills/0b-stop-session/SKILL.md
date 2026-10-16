@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-14
+version: "1.4.1"
+timestamp: 2026-10-16
 ---
 
 # STOP SESSION
@@ -42,7 +42,7 @@ Leave next session with context to resume immediately. Ensure new entries are ta
    - If a step-4 learning is now codified by the new `[[A-xxx]]`, propose superseding it (`[[L-xxx]]` → `[[A-xxx]]`); apply on confirmation.
 7. If DB schema or understanding changed, update `.memory/DATABASE_SCHEMA.md` (always `[LAW]`).
 8. Propose UI structural (`[[DR-xxx]]`/immortal component) or brand token changes before updating `DESIGN_RULES.md`/`DESIGN.md`.
-9. Verify: `python .agents/scripts/pr_body.py suite` prints a reusable suite result (reuse it); else run the suite. Then run memory lint: `python .agents/scripts/validate_memory.py`. Propose fixes for any reported errors, list warnings, and await confirmation.
+9. Verify: `python .agents/scripts/pr_body.py suite` prints a reusable suite result (reuse it); else, if this session changed no tracked file outside `.memory/` and `.tmp/` (commits included), report `suite: not run (no tracked change)`; otherwise run it via `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (no slice: `record -- <cmd>`). Then run memory lint: `python .agents/scripts/validate_memory.py`. Propose fixes for any reported errors, list warnings, and await confirmation.
 10. Regenerate OKF Visualizer: `python .agents/scripts/okf_view.py` after lint passes.
 11. Ensure `.memory/STATUS.md` allows resuming without re-discovery.
 

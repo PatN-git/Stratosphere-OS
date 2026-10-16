@@ -26,16 +26,23 @@ def test_3d_owns_the_single_full_run_and_records_it():
     text = _read("workflows/3d-implement-issue.md")
     assert ".tmp/3d-suite-BT-<padded>.json" in text
     assert "3d owns the full-suite runs" in text
+    assert "test_gate.py record --suite BT-<padded> --" in text, "the one full run goes through the recorder, never a hand-written JSON"
+    assert "record -- <related-tests cmd>`" in text, "incremental commits record related tests, not the full suite"
     assert "no tracked writes" in text
     assert "Ephemeral (no writes)" not in text
     assert "return to the micro-tdd loop" in text.split("Run the full suite once at HEAD")[1]
 
 
-def test_4a_reuses_suite_result_by_head_sha():
+def test_3d_forbids_a_baseline_suite_run_before_planning():
+    """BT-183: an agent started /3d by running the whole suite "to verify the baseline"; the observed RED is the baseline."""
+    before_plan = _read("workflows/3d-implement-issue.md").split("## Phase 0.5")[0]
+    assert "No baseline suite run" in before_plan
+
+
+def test_4a_reuses_the_recorded_suite_result():
     text = _read("workflows/4a-verify-and-ship.md") + _read("references/pr-body-and-ship.md")
     assert ".tmp/3d-suite-BT-" in text
-    assert "head_sha" in text
-    assert "observed" in text
+    assert "test_gate.py record --suite BT-<padded>" in text, "the suite record is written by the recorder, not by hand"
     assert "Never delete these files" in text
 
 
