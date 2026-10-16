@@ -19,6 +19,35 @@ _spec.loader.exec_module(e)
 REPO = Path(__file__).resolve().parents[2]
 
 
+def test_install_stratos_never_builds_in_the_repo(tmp_path, monkeypatch):
+    """BT-182: build.py rewrites dist/ (it removes the bundle first), so running it in the
+    real repo races every parallel test that reads dist/."""
+    builds = []
+
+    def fake_run(args, **kw):
+        if any(str(a).endswith("build.py") for a in args):
+            cwd = Path(kw["cwd"])
+            builds.append(cwd)
+            (cwd / "dist" / "skills").mkdir(parents=True, exist_ok=True)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(e.subprocess, "run", fake_run)
+    monkeypatch.setattr(e, "assert_scaffolded", lambda project: None)
+    monkeypatch.setattr(e, "assert_memory_valid", lambda project, child: None)
+    clear = getattr(getattr(e, "_built_dist", None), "cache_clear", lambda: None)
+    clear()
+    try:
+        home, project = tmp_path / "home", tmp_path / "project"
+        home.mkdir()
+        project.mkdir()
+        e._install_stratos(REPO, home, project, {})
+    finally:
+        clear()
+    assert builds, "the bundle was never built"
+    for cwd in builds:
+        assert REPO.resolve() not in (cwd.resolve(), *cwd.resolve().parents), cwd
+
+
 def _repo(path, remote=None):
     path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "init", str(path)], capture_output=True, check=True)
