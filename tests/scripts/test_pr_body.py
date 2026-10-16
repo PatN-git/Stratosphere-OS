@@ -539,3 +539,65 @@ def test_pr_body_is_registered_like_contract_check():
     assert ".agents/scripts/pr_body.py" in placed, "scaffold must ship pr_body.py to .agents/scripts/"
     verify = (REPO_ROOT / "tests" / "runners" / "verify_scripts.py").read_text(encoding="utf-8")
     assert 'rel_str == "scripts/pr_body.py"' in verify and ".agents/scripts/pr_body.py" in verify
+
+
+def write_backlog(repo, *rows):
+    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels)."""
+    (repo / ".memory").mkdir(exist_ok=True)
+    lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | PR |", "|---|---|---|---|---|---|---|---|---|"]
+    lines += [f"| {i} | t | open | {labels} | — | — | — | — | — |" for i, labels in rows]
+    (repo / ".memory" / "BACKLOG_MAP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_dropped_prior_row_is_kept_without_a_closes_line(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "feat(BT-12): deferred then dropped")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text("```stratos-pr\nfeature: BT-10\nslices:\n"
+                     '  - {id: BT-12, summary: "closed not planned", verdict: DROPPED, audit_rounds: 2}\n```\n',
+                     encoding="utf-8")
+    commit(repo, "feat(BT-13): third")
+    body = build(repo, "BT-13", prior=prior)
+    by_id = {s[0]: s for s in slices(body)}
+    assert by_id["BT-12"][2] == "DROPPED"
+    assert "Closes #13." in body and "Closes #12." not in body
+
+
+@pytest.mark.parametrize("map_id", ["BT-007", "BT-7"])
+def test_epic_scoped_commit_adds_no_slice_row(repo, map_id):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    write_backlog(repo, (map_id, "type:feature, tier:epic"), ("BT-11", "tier:slice"))
+    body = build(repo, "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"]
+    assert "Closes #7." not in body
+
+
+def test_epic_label_must_be_an_exact_token(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): not an epic")
+    write_backlog(repo, ("BT-7", "tier:epic-ish, xtier:epic, tier:slice"))
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+
+
+def test_without_a_backlog_map_epic_commits_stay_pending(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    by_id = {s[0]: s for s in slices(build(repo, "BT-11"))}
+    assert by_id["BT-7"][2] == "PENDING"
+
+
+def test_shipped_slice_is_never_filtered_as_an_epic(repo):
+    commit(repo, "feat(BT-11): first")
+    write_backlog(repo, ("BT-11", "tier:epic"), ("BT-LOCAL-1", "tier:epic"))
+    body = build(repo, "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #11." in body
+
+
+def test_non_numeric_epic_ids_are_ignored_and_unreadable_map_fails_open(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    write_backlog(repo, ("BT-LOCAL-1", "tier:epic"))
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+    (repo / ".memory" / "BACKLOG_MAP.md").write_bytes(b"\xff\xfe\x00bad")
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]

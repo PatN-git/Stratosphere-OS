@@ -10,7 +10,10 @@ Used by 4a Phase 5 (and 0b for suite reuse); the prior PR body is passed as a fi
     Prints the PR body: `Closes #n.` lines, one ```stratos-pr block, optional `## Notes`.
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
-    PENDING (no Closes line). post_merge/deviations/refs are unioned (order-preserving) with the prior block.
+    PENDING (no Closes line). A prior row a human set to `DROPPED` (never a `--verdict`) is kept verbatim and
+    gets no Closes line. Commits scoped to an epic (`tier:epic` row in .memory/BACKLOG_MAP.md; none when the
+    file is absent) are not slices, except the shipped one. post_merge/deviations/refs are unioned
+    (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
     <base> = --base, else the remote default branch (origin/HEAD), else origin/main|master, main|master; none
@@ -272,10 +275,25 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+def epic_ids(path=".memory/BACKLOG_MAP.md"):
+    """Int ids of the BACKLOG_MAP rows labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-1 ignored).
+
+    Fails open to an empty set when the map is absent or unreadable: an epic commit then shows as PENDING.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import reconcile
+        rows = reconcile.parse_backlog(path)
+    except (ImportError, OSError, ValueError):
+        return set()
+    ids = (re.fullmatch(r"BT-0*(\d+)", bt) for bt, r in rows.items() if "tier:epic" in r["labels"])
+    return {int(m.group(1)) for m in ids if m}
+
+
 def slice_rows(args, prior, parent, base):
     """(id, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new. None if --slice is malformed.
-    Commits scoped to the parent itself are not slices (the parent closes only via --close-parent)."""
+    Commits scoped to the parent itself or to an epic are not slices (the parent closes only via --close-parent)."""
     log = git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or ""
     first_subject = {}  # int id -> (digits, summary of its oldest commit)
     for subject in reversed(log.splitlines()):
@@ -290,6 +308,8 @@ def slice_rows(args, prior, parent, base):
     parent_n = int(parent[3:])
     if parent_n != ship_n:
         first_subject.pop(parent_n, None)
+    for epic_n in epic_ids() - {ship_n}:
+        first_subject.pop(epic_n, None)
 
     rows = []
     for n in sorted(first_subject):
@@ -311,7 +331,7 @@ def changed_risk_tags(base, risk_paths):
 
 
 def render_body(rows, parent, close_parent, rec, tags, lists, notes):
-    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[2] != "PENDING"],
+    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[2] not in ("PENDING", "DROPPED")],
                    [f"Closes #{int(parent[3:])}."] if close_parent else [])
     out = [*closes, "", "```stratos-pr", f"feature: {parent}", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
     out += [f"  - {{id: {i}, summary: {s}, verdict: {v}, audit_rounds: {a}}}" for i, s, v, a in rows]
