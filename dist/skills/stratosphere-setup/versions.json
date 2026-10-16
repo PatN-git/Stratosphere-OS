@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "d0fa8c5b17e284c8a94a79a6b123c4ee9d8e314a34ccb7b15181c14cb3fcc2d1",
+      "sha256": "21fcfa281dbaba7e79a61f25e627d07f5badfeae53aa6fead5a5d44ce059cda4",
       "timestamp": "2026-10-16",
       "version": "3.4.0"
     },
@@ -291,7 +291,7 @@
       "version": "2.6.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
+      "sha256": "f1f4ebb6d99dfd73bcced8691293033e840f36d217cc72a1faaaed31ec5b0d4a",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
@@ -311,17 +311,17 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "b1ad702c9398f5218057375b4ffa0792803377a401fb9e7fd877e103d5fcbae9",
+      "sha256": "91e8d130db283c5c417dd415d0a14ca649d3c4c0ce3cc0d24382370408250602",
       "timestamp": "2026-10-14",
       "version": "1.7.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
+      "sha256": "f1f4ebb6d99dfd73bcced8691293033e840f36d217cc72a1faaaed31ec5b0d4a",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "8db52578563945cf9eff18e7cd77260cd389c9868fed8c7947e02bf96080c57b",
+      "sha256": "6d777166ea8a9fd4a60c7da205e5e4d330d84d206a762e13a97298ad4e9db240",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -331,7 +331,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "8ca0773dbd65a6d06e509eef2258a0eaa49088f867d4c752363b5d01d7ea7336",
+      "sha256": "f1f4ebb6d99dfd73bcced8691293033e840f36d217cc72a1faaaed31ec5b0d4a",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },

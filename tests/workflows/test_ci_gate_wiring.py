@@ -7,9 +7,9 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 CONSTITUTIONS = ("src/constitution/AGENTS.md", "AGENTS.md")
 CONSTITUTION_BUDGET = 9200  # tests/framework/test_host_hygiene.py
-SENTENCE = ("- **CI-fix exception:** after the ship confirmation, 4a (inline) or a 3z-dispatched 3d implementer may commit "
-            "and push up to 2 `fix(BT-n): ci` commits for a failure `ci_gate.py` marks small; never `main`, never a merge. "
-            "See `references/ci-gate.md`.")
+SENTENCE = ("- **CI-fix exception:** after the ship confirmation, 4a may commit and push up to 2 `fix(BT-n): ci` commits "
+            "for a failure `ci_gate.py` marks small; a 3z-dispatched 3d implementer only commits, `ship-only` pushes; "
+            "never `main`, never a merge. See `references/ci-gate.md`.")
 
 
 def _read(rel: str) -> str:
@@ -161,7 +161,7 @@ def _fix_order_ok(text):
     fix = text[text.index("## 3. Fix"):text.index("## 4. Big")]
     order = ["test_gate.py record --suite", "commit;", "ci_gate.py cap --commit HEAD", "floor_guard.py", "parity", "push;", "status --attempt"]
     positions = [fix.find(token) for token in order]
-    return all(p >= 0 for p in positions) and positions == sorted(positions) and "At most 2 fix commits" in fix
+    return all(p >= 0 for p in positions) and positions == sorted(positions) and "at most 2 fix commits" in fix.lower()
 
 
 def test_reference_runs_each_fix_in_the_safe_order_with_the_two_commit_cap():
@@ -195,9 +195,34 @@ def test_4a_step8_names_the_two_status_runs_and_points_to_the_fix_rule():
 
 def test_reference_states_one_attempt_rule_and_matches_the_script_behavior():
     ref = _read("references/ci-gate.md")
-    assert "one fix round" in ref and "`--attempt 2`" in ref
+    assert "one fix round" in ref.lower() and "`--attempt 2`" in ref
     assert "worst state" in ref and "preferring" not in ref, "the script keeps the worst state of a check's runs"
     assert "ending at the failing step's last `##[error]`" in ref
     assert "not a project check" in ref and "every command" in ref
     for token in ("curl", "docker", "`sha`"):
         assert token in ref, f"references/ci-gate.md must mention {token}"
+
+
+def test_status_calls_name_the_host_tool_timeout_and_exit_2_is_a_halt():
+    ref = _read("references/ci-gate.md")
+    step7 = _section(_4a(), "7. **Ship-status + backport:**", "8. **Epic Check:**")
+    step8 = _section(_4a(), "8. **Epic Check:**", "9. **Terminal sync gate:**")
+    for name, text in (("reference", ref), ("4a step 7", step7), ("4a step 8", step8)):
+        assert "timeout" in text and "--wait" in text, f"{name} must say how to keep the 480 s wait inside the host tool timeout"
+    assert "600000" in step8 and "600000" in step7
+    for name, text in (("reference", ref), ("4a step 8", step8), ("3z Step 3A", _step3a())):
+        assert "exit 2" in text and "could not check" in text, f"{name} must treat exit 2 from status or cap as a halt"
+    assert "cannot_run" in ref.split("## 2. Status")[1].split("## 3.")[0]
+
+
+def test_the_constitution_says_the_implementer_only_commits_and_ship_only_pushes():
+    for rel in CONSTITUTIONS:
+        sentence = next(line for line in _root(rel).splitlines() if line.startswith("- **CI-fix exception:**"))
+        assert "only commits" in sentence and "`ship-only` pushes" in sentence
+    ref = _read("references/ci-gate.md")
+    assert "does not push" in ref or "no push" in ref
+
+
+def test_reference_states_the_fix_cap_once():
+    fix = _read("references/ci-gate.md").split("## 3. Fix")[1].split("## 4. Big")[0]
+    assert fix.lower().count("at most 2 fix commits") == 1 and fix.lower().count("one fix round") <= 1

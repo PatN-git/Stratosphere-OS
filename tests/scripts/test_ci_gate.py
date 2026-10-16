@@ -95,7 +95,7 @@ def test_pr_true_if_is_kept_and_other_if_is_skipped():
 
 def test_block_scalar_runs_are_kept_whole():
     text = ("on: pull_request\njobs:\n  t:\n    steps:\n      - name: Drift\n        run: |\n"
-            "          DRIFT=\"$(git status --porcelain dist/)\"\n          if [ -n \"$DRIFT\" ]; then\n            exit 1\n          fi\n"
+            "          DRIFT=\"$X\"\n          if [ -n \"$DRIFT\" ]; then\n            exit 1\n          fi\n"
             "          bash scripts/ok.sh\n")
     selected, _ = ci_gate.select_steps(text, "ci.yml")
     assert len(selected) == 1 and selected[0]["run"].count("\n") == 4 and "exit 1" in selected[0]["run"]
@@ -540,3 +540,66 @@ def test_a_run_block_is_selected_only_when_every_command_in_it_is_a_project_chec
     r = reasons(skipped)
     assert "not a project check" in r["Wipe"] and "rm -rf" in r["Wipe"]
     assert "not a project check" in r["Drift"]
+
+
+# --- audit round 2 fixes ------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("check,log", [
+    ("lint-and-test", "t\tRun tests\t2026-10-16T10:00:00Z FAILED src/other.py::test_x - assert 1 == 2\n"),
+    ("Lint & Test", "t\tRun tests\t2026-10-16T10:00:00Z FAIL src/other.test.js\n"),
+    ("verify", "t\tRun tests\t2026-10-16T10:00:00Z FAILED src/other.py::test_x - AssertionError: package-lock.json is out of sync\n"),
+])
+def test_classify_a_parsed_test_failure_in_an_untouched_file_is_big_whatever_the_job_name_says(check, log):
+    failing = [{"check": check, "step": "Run tests", "log_tail": log, "actions": True}]
+    assert ci_gate.classify(failing, {"tests/test_a.py"}, False, 1)[0] == "big"
+
+
+def test_classify_names_count_only_on_the_failing_step_and_only_with_a_log():
+    lint_step = [{"check": "build", "step": "Lint", "log_tail": "t\tLint\t2026-10-16T10:00:00Z error: unexpected token\n", "actions": True}]
+    assert ci_gate.classify(lint_step, set(), False, 1)[0] == "small"
+    job_named_lint = [{"check": "lint", "step": "Run tests", "log_tail": "t\tRun tests\t2026-10-16T10:00:00Z boom\n", "actions": True}]
+    assert ci_gate.classify(job_named_lint, set(), False, 1)[0] == "big", "a job name alone proves nothing"
+    no_log = [{"check": "lint", "step": "lint", "log_tail": "", "actions": True}]
+    assert ci_gate.classify(no_log, set(), False, 1)[0] == "big", "an unreadable log is never mechanical"
+
+
+@pytest.mark.parametrize("block", [
+    "if rm -rf dist; then\n  pytest\nfi",
+    "X=$(rm -rf build)\npytest",
+    "pytest & rm -rf x",
+    "echo $(rm -rf x)\npytest",
+    "echo `rm -rf x`\npytest",
+    "while rm -rf dist; do\n  pytest\ndone",
+])
+def test_the_run_block_allow_rule_cannot_be_bypassed(block):
+    text = "on: pull_request\njobs:\n  t:\n    steps:\n      - name: Sneaky\n        run: |\n" + "".join(f"          {line}\n" for line in block.splitlines())
+    selected, skipped = ci_gate.select_steps(text, "ci.yml")
+    assert selected == [] and "not a project check" in reasons(skipped)["Sneaky"]
+
+
+def test_a_condition_that_is_only_a_test_still_passes_the_allow_rule():
+    text = ("on: pull_request\njobs:\n  t:\n    steps:\n      - name: Ok\n        run: |\n"
+            "          if [ -f package.json ]; then\n            npm test\n          fi\n"
+            "          while [ -n \"$X\" ]; do\n            bash scripts/ok.sh\n          done\n")
+    selected, _ = ci_gate.select_steps(text, "ci.yml")
+    assert [s["name"] for s in selected] == ["Ok"]
+
+
+def test_a_partial_record_segment_never_covers_a_step():
+    partial = {"cmd": "bash scripts/check.sh && pytest tests/jules"}
+    assert ci_gate.covered_by_suite("pytest -q", partial) is False, "the record only ran part of the suite with pytest"
+    assert ci_gate.covered_by_suite("bash scripts/check.sh", partial) is True
+    assert ci_gate.covered_by_suite("npm test", {"cmd": "npm test -- --watch=false && npm run lint"}) is False
+
+
+def test_parity_a_step_that_outlives_the_step_timeout_is_cannot_run_exit_2(tmp_path, monkeypatch, capsys):
+    need_bash()
+    make_repo(tmp_path, wf([("Hang", "bash scripts/hang.sh")]), {"hang.sh": "sleep 5\n"})
+    monkeypatch.chdir(tmp_path)
+    code = ci_gate.main(["parity", "--step-timeout", "1"])
+    out = json.loads(capsys.readouterr().out)
+    assert code == 2 and out["verdict"] == "cannot_run" and "timed out" in out["reason"] and "Hang" in out["reason"]
+
+
+def test_parity_step_timeout_defaults_to_ten_minutes():
+    assert ci_gate.build_parser().parse_args(["parity"]).step_timeout == 600

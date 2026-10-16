@@ -43,9 +43,11 @@ DENY = (
 ALLOW = re.compile(r"^(?:(?:npm|pnpm|yarn)\s+(?:ci|install|i|run|test|exec)\b|npx\s|pytest\b|python3?\s+\S|py\s+-\d?\s*\S|"
                    r"node\s+\S|bash\s+\S|sh\s+\S|make\b|go\s+test\b|cargo\s+(?:test|build|check)\b|\./\S)")
 # Plain shell plumbing that may sit around project checks in a `run:` block; anything else makes the block unsafe to guess.
-NEUTRAL = re.compile(r"^(?:#.*|if\b.*|then|else|elif\b.*|fi|for\b.*|do|done|while\b.*|case\b.*|esac|[{}]|exit\b.*|echo\b.*|"
+NEUTRAL = re.compile(r"^(?:#.*|then|else|fi|for\b.*|do|done|case\b.*|esac|[{}]|exit\b.*|echo\b.*|"
                      r"printf\b.*|set\s+[-+]\w.*|cd\s+\S+|export\s+\w+=.*|[A-Za-z_]\w*=.*|\[\[?.*\]\]?|test\s.*|true|false)$")
-SEGMENT_SPLIT = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
+SEGMENT_SPLIT = re.compile(r"\s*(?:&&|\|\||;|\||&)\s*")
+REDIRECT_FD = re.compile(r"\d*>&\d+|&>>?")
+CONTROL_KEYWORD = re.compile(r"^(?:if|elif|while|until|then|do|else)\s+")  # the condition after it is classified like any command
 PR_IF = "github.event_name == 'pull_request'"
 
 
@@ -204,16 +206,18 @@ def _job_skip(job):
 
 def _commands_ok(run):
     """(ok, offender): every command in the block is a project check or shell plumbing, and at least one is a check."""
+    if "$(" in run or "`" in run:
+        return False, "command substitution"
     checked = False
     for line in re.sub(r"\\\n\s*", " ", run).splitlines():
-        for segment in SEGMENT_SPLIT.split(line.strip()):
-            segment = re.sub(r"^(?:then|do|else)\s+", "", segment.strip())
+        for segment in SEGMENT_SPLIT.split(REDIRECT_FD.sub(" ", line).strip()):
+            segment = CONTROL_KEYWORD.sub("", segment.strip())
             if not segment:
                 continue
             if ALLOW.match(segment):
                 checked = True
             elif not NEUTRAL.match(segment):
-                return False, segment
+                return False, f"runs `{segment[:40]}`"
     return checked, ""
 
 
@@ -231,7 +235,7 @@ def _step_skip(step):
             return why
     ok, offender = _commands_ok(run)
     if not ok:
-        return f"not a project check: runs `{offender[:40]}`" if offender else "not a project check"
+        return f"not a project check: {offender}" if offender else "not a project check"
     return None
 
 
@@ -282,7 +286,7 @@ def find_bash():
     return pick_bash(shutil.which("bash"), git_bash)
 
 
-def _signatures(cmd):
+def _signatures(cmd, full_only=False):
     tokens = pr_body._tokens(cmd)
     for i, tok in enumerate(tokens[:-1]):  # drop a leading `...test_gate.py record [--suite X] --` wrapper
         if pr_body._launcher(tok) == "test_gate.py" and tokens[i + 1] == "record" and "--" in tokens[i:]:
@@ -294,6 +298,8 @@ def _signatures(cmd):
             seg.append(tok)
             continue
         t, seg = seg, []
+        if full_only and not pr_body._segment_full(t):
+            continue  # a partial run (`pytest tests/jules`) proves nothing about the whole suite
         if t and pr_body._launcher(t[0]) == "npx":
             t = t[1:]
         if len(t) >= 3 and pr_body._launcher(t[0]) in ("python", "python3", "py") and t[1] == "-m":
@@ -312,7 +318,7 @@ def _signatures(cmd):
 
 def covered_by_suite(cmd, record):
     """True when `cmd` is a full-suite run and `record` (a reusable suite record) ran the same runner or script."""
-    return (not pr_body.is_scoped(cmd)) and bool(_signatures(cmd) & _signatures(record["cmd"]))
+    return (not pr_body.is_scoped(cmd)) and bool(_signatures(cmd) & _signatures(record["cmd"], full_only=True))
 
 
 def tracked_changes():
@@ -349,8 +355,14 @@ def cmd_parity(args):
             entry["status"] = "not run"
             return emit(result, 2)
         env = {**os.environ, "CI": "true", **step["env"]}
-        run = subprocess.run([bash, "--noprofile", "--norc", "-eo", "pipefail", "-c", step["run"]], cwd=step["cwd"],
-                             env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        try:
+            run = subprocess.run([bash, "--noprofile", "--norc", "-eo", "pipefail", "-c", step["run"]], cwd=step["cwd"],
+                                 env=env, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                 timeout=args.step_timeout)
+        except subprocess.TimeoutExpired:
+            entry["status"] = "timeout"
+            result.update(verdict="cannot_run", reason=f"step timed out after {args.step_timeout}s: {step['name']}")
+            return emit(result, 2)
         entry["status"] = "pass" if run.returncode == 0 else "fail"
         if run.returncode != 0:
             entry["tail"] = tail(run.stdout + run.stderr)
@@ -463,7 +475,10 @@ def _test_files(log_tail):
 
 
 def _mechanical(f):
-    return bool(NAME_MECHANICAL.search(f"{f['check']} {f['step']}") or LOG_MECHANICAL.search(f["log_tail"]))
+    """The failing STEP is named for it, or the log carries an anchored signature; a parsed test failure never is."""
+    if not f["log_tail"] or _test_files(f["log_tail"]):
+        return False
+    return bool(NAME_MECHANICAL.search(f["step"]) or LOG_MECHANICAL.search(f["log_tail"]))
 
 
 def classify(failing, changed, base_stale, attempt):
@@ -568,7 +583,8 @@ def emit(result, code):
 def build_parser():
     p = argparse.ArgumentParser(prog="ci_gate.py", description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("parity")
+    pa = sub.add_parser("parity")
+    pa.add_argument("--step-timeout", type=int, default=600, help="seconds per step; a hung step is cannot_run (exit 2)")
     st = sub.add_parser("status")
     st.add_argument("--pr", required=True, type=int)
     st.add_argument("--sha", required=True, help="the pushed head commit; results for any other commit are ignored")
