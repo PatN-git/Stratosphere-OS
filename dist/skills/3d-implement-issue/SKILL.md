@@ -29,7 +29,7 @@ Apply strictly to backend logic, database operations, hooks, and state functions
    python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css
    ```
 
-**NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
+**NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.** No baseline suite run before it: the observed RED is the baseline; Phase 3 step 6 is the only full run.
 
 ## Phase 0.5: Plan
 Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; 4a deletes it after ship).
@@ -50,7 +50,7 @@ Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, o
 Adhere to:
 1. **Simplify:** run the `code-simplifier` skill on the slice diff under green tests — simplify/refine without changing behavior; re-run related tests after and keep them green.
 2. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
-3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; before each incremental commit run related tests through `python .agents/scripts/test_gate.py record -- <cmd>` (the opt-in pre-commit test gate checks the record). Never `--no-verify`: a gate block means record a passing run, then commit.
+3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; before each incremental commit run related tests through `python .agents/scripts/test_gate.py record -- <related-tests cmd>` (the opt-in pre-commit test gate checks the record). Never `--no-verify`: a gate block means record a passing run, then commit.
 4. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
 5. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
 
@@ -61,7 +61,7 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no track
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced, and step 6's full run is green.
 5. Compare the coverage map with the plan's AC → test list (skipped when Phase 0.5 was skipped). Name every deviation and write them to a `## Deviations` section of `.tmp/3d-plan-BT-<padded>.md`; none → `none`.
-6. First run `python .agents/scripts/floor_guard.py` (fails on skips, suppressions, removed assertions, loosened thresholds): exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record -- <cmd>`; red → return to the micro-tdd loop, do not hand off. Write `{"head_sha", "cmd", "observed"}` (the observed summary line) to `.tmp/3d-suite-BT-<padded>.json`.
+6. First run `python .agents/scripts/floor_guard.py` (fails on skips, suppressions, removed assertions, loosened thresholds): exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes `.tmp/3d-suite-BT-<padded>.json`); red → return to the micro-tdd loop, do not hand off.
 7. Done also requires a clean tree after the full run, so files the suite generated are checked (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.

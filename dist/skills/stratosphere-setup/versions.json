@@ -76,9 +76,9 @@
       "version": "1.1.2"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "f5baec1897f36949111796d87fdd0d4c1907d5f1f48d65dd065bf8bc8b34a724",
-      "timestamp": "2026-10-14",
-      "version": "1.4.0"
+      "sha256": "151b98e28c4fbf49ae13465c9a50bd36658f877014694f0e94ec079cf9515c25",
+      "timestamp": "2026-10-16",
+      "version": "1.4.1"
     },
     "skills/0b-stop-session/references/environment-fix-ladder.md": {
       "sha256": "b855d71ca753271f04b73c817febab2da9f72062b1745344cbaf3582c963f295",
@@ -286,7 +286,7 @@
       "version": "1.1.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "0438c766158544848cc421bee2980a4295a29be202e35b2bfe994687b334f60e",
+      "sha256": "d54bd883825d9b33f56540866b5f8b6cc5d7f533313c4deb41b5e60af18662dd",
       "timestamp": "2026-10-14",
       "version": "2.6.0"
     },
@@ -351,7 +351,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "c9045247f31d207408cc1f278f6d166f8bc009ddda81820ded5e1f3e8cd9d5dc",
+      "sha256": "4f90be8a7ef2bd53b436737c3d686df6c7be1569a41c5adf6542701c04fd3117",
       "timestamp": "2026-10-14",
       "version": "1.0.3"
     },

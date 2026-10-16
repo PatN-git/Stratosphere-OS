@@ -33,7 +33,7 @@ refs: [<only IDs that constrained the change>]
 - **Optional flags:** `--manual-qa` (`needs_manual_qa` true: 3z Step 3A dispatch, or a manual-only AC the Phase 2 table marks `[NONE]`), `--post-merge "<step>"` (also `noticed: <line>` per the 3d plan's `Noticed, not touched`; `none` → omit), `--deviation "<decision>"` (one per line of the 3d plan's `## Deviations`; `none` → omit), `--ref <ID>`.
 
 ## Suite
-`python .agents/scripts/pr_body.py suite` prints the reusable result: HEAD matches (or only release commits since) **and** the tree is clean outside `.memory/`, `docs/`, `.tmp/`. None → run the suite once and write `{"head_sha", "cmd", "observed"}` to `.tmp/3d-suite-BT-<padded>.json` (the `3d-` prefix stays so 3d and 4a share the file). Never delete these files. `build` reads it.
+`python .agents/scripts/pr_body.py suite` prints the reusable result: HEAD matches (or only release commits since) **and** the tree is clean outside `.memory/`, `docs/`, `.tmp/`. None → run the suite once through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes `.tmp/3d-suite-BT-<padded>.json`; the `3d-` prefix stays so 3d and 4a share the file). Never delete these files. `build` reads it.
 
 ## Risk label
 `risk:` follows `references/merge-risk-paths.md` (plus the project's `## One-way paths`). Not `[none]` → `gh label create risk:one-way --force --description "Hard-to-reverse change; human must read before merge"` (`--add-label` fails on a missing label), then `gh pr edit <n> --add-label risk:one-way`.
