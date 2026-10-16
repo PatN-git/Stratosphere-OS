@@ -6,13 +6,13 @@ Used by 4a Phase 5 (and 0b for suite reuse); the prior PR body is passed as a fi
   build  --slice BT-n --summary "..." --verdict PASS|WAIVED|SKIP --audit-rounds N
          [--manual-qa] [--post-merge S]... [--deviation S]... [--ref ID]... [--notes TEXT]
          [--prior-body-file F] [--base REF] [--risk-paths F] [--suite-json F]
-         [--parent BT-n] [--close-parent] [--out F]
+         [--parent BT-n] [--epic BT-n]... [--close-parent] [--out F]
     Prints the PR body: `Closes #n.` lines, one ```stratos-pr block, optional `## Notes`.
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
     PENDING (no Closes line). A prior row a human set to `DROPPED` (never a `--verdict`) is kept verbatim and
-    gets no Closes line. Commits scoped to an epic (`tier:epic` row in .memory/BACKLOG_MAP.md; none when the
-    file is absent) are not slices, except the shipped one. post_merge/deviations/refs are unioned
+    gets no Closes line. Commits scoped to an epic (`tier:epic` row in .memory/BACKLOG_MAP.md, plus any
+    `--epic BT-n`; none when the file is absent and no flag is given) are not slices, except the shipped one. post_merge/deviations/refs are unioned
     (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
@@ -308,7 +308,7 @@ def slice_rows(args, prior, parent, base):
     parent_n = int(parent[3:])
     if parent_n != ship_n:
         first_subject.pop(parent_n, None)
-    for epic_n in epic_ids() - {ship_n}:
+    for epic_n in (epic_ids() | {int(e[3:]) for e in args.epic}) - {ship_n}:
         first_subject.pop(epic_n, None)
 
     rows = []
@@ -347,6 +347,10 @@ def render_body(rows, parent, close_parent, rec, tags, lists, notes):
 def cmd_build(args):
     if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
         print(f"[PR-BODY-ERROR] --parent must look like BT-<n>, got {args.parent!r}", file=sys.stderr)
+        return 2
+    bad_epic = next((e for e in args.epic if not PARENT_RE.fullmatch(e)), None)
+    if bad_epic is not None:
+        print(f"[PR-BODY-ERROR] --epic must look like BT-<n>, got {bad_epic!r}", file=sys.stderr)
         return 2
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
@@ -419,6 +423,8 @@ def build_parser():
     b.add_argument("--risk-paths", default=DEFAULT_RISK_PATHS)
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
+    b.add_argument("--epic", action="append", default=[],
+                   help="BT-n of an epic whose commits are not slices (repeatable; adds to BACKLOG_MAP's tier:epic rows)")
     b.add_argument("--close-parent", action="store_true")
     b.add_argument("--out")
     s = sub.add_parser("suite")

@@ -601,3 +601,42 @@ def test_non_numeric_epic_ids_are_ignored_and_unreadable_map_fails_open(repo):
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
     (repo / ".memory" / "BACKLOG_MAP.md").write_bytes(b"\xff\xfe\x00bad")
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+
+
+# --- --epic: name the epics explicitly, for a clone or CI without .memory/BACKLOG_MAP.md -----------------------
+
+def test_epic_flag_drops_epic_commits_without_a_backlog_map(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    body = build(repo, "BT-11", "--epic", "BT-7")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #7." not in body
+
+
+def test_epic_flag_repeats_and_accepts_padded_ids(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    commit(repo, "docs(BT-8): other epic doc")
+    body = build(repo, "BT-11", "--epic", "BT-007", "--epic", "BT-8")
+    assert [s[0] for s in slices(body)] == ["BT-11"]
+
+
+def test_epic_flag_adds_to_the_backlog_epics(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    commit(repo, "docs(BT-8): other epic doc")
+    write_backlog(repo, ("BT-7", "tier:epic"))
+    assert [s[0] for s in slices(build(repo, "BT-11", "--epic", "BT-8"))] == ["BT-11"]
+
+
+def test_epic_flag_never_filters_the_shipped_slice(repo):
+    commit(repo, "feat(BT-11): first")
+    body = build(repo, "BT-11", "--epic", "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #11." in body
+
+
+def test_epic_flag_rejects_a_malformed_id_cleanly(repo):
+    commit(repo, "feat(BT-11): one")
+    suite = write_suite(repo, "s.json")
+    r = build_raw(repo, "--epic", "oops", suite=suite)
+    assert_clean_error(r)
+    assert "--epic" in r.stderr
