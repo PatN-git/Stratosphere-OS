@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.3.2"
-timestamp: 2026-10-13
+version: "3.4.0"
+timestamp: 2026-10-16
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -38,6 +38,7 @@ timestamp: 2026-10-13
 - **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
+- **CI-fix exception:** after the ship confirmation, 4a (inline) or a 3z-dispatched 3d implementer may commit and push up to 2 `fix(BT-n): ci` commits for a failure `ci_gate.py` marks small; never `main`, never a merge. See `references/ci-gate.md`.
 - **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected — the artifact must be readable by whoever picks the work up next, not stranded in one working copy. Exactly one document per run, **never code**, never swept drift; nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
  
 ## 5. Operating Principles
