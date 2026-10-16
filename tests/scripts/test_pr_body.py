@@ -440,6 +440,97 @@ def test_build_default_suite_lookup_exits_no_suite_on_a_dirty_tree(repo):
     assert r.returncode == 2 and "[NO-SUITE]" in r.stderr and not r.stdout
 
 
+# --- BT-183: a scoped run is never "the suite"; the reason a record is not reusable is named ---------------------
+
+SCOPED_CMDS = [
+    "npx vitest run tests/ingestion/BT235_IngestionOfflineFallback.test.js tests/ingestion/BT164_StuttgartShootoutIngest.test.js",
+    "python .agents/scripts/test_gate.py record -- python -m pytest -q tests/workflows tests/jules",
+    "pytest tests/x.py::test_y", "pytest -k foo", "pytest -kfoo", "pytest -m slow", "pytest --ignore=tests/a",
+    "pytest --last-failed", "vitest run --changed", "npx vitest run ingestion", "npm run test:ingestion",
+    "pytest tests", "npm test -- src/lib", "bash -c 'npx vitest run src/lib'",
+]
+FULL_CMDS = [
+    "pytest", "pytest -q", "python -m pytest -n 6 --dist worksteal", "python -m pytest -n auto -q -p no:cacheprovider",
+    "bash scripts/check.sh", "npm test", "make test", "npx vitest run", "py -m pytest -q",
+    "python .agents/scripts/test_gate.py record -- python -m pytest -q",
+    "python .agents/scripts/test_gate.py record --suite BT-5 -- bash scripts/check.sh",
+    "bash scripts/check.sh && python -m pytest tests/jules -q",
+    "npm test && python .agents/scripts/validate_memory.py --path .memory",
+    'bash -c "python -m pytest -q; bash scripts/check.sh"',
+]
+
+
+def suite_run(repo):
+    return run(repo, "suite", "--dir", repo / ".tmp")
+
+
+@pytest.mark.parametrize("cmd", SCOPED_CMDS)
+def test_scoped_records_are_not_reusable(repo, cmd):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c, cmd=cmd)
+    r = suite_run(repo)
+    assert (r.returncode, r.stdout) == (1, "")
+    assert "[NO-SUITE] scoped" in r.stderr
+
+
+@pytest.mark.parametrize("cmd", FULL_CMDS)
+def test_full_suite_commands_stay_reusable(repo, cmd):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c, cmd=cmd)
+    r = suite_run(repo)
+    assert r.returncode == 0 and json.loads(r.stdout)["cmd"] == cmd
+
+
+def load_pr_body():
+    spec = importlib.util.spec_from_file_location("pr_body_under_test", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_quoting_round_trip_gives_the_same_verdict_at_record_and_read_time():
+    import shlex
+    pb = load_pr_body()
+    full = ["bash", "-c", "python -m pytest -q; bash scripts/check.sh"]
+    scoped = ["bash", "-c", "npx vitest run src/lib"]
+    assert pb.is_scoped(shlex.join(full)) is False
+    assert pb.is_scoped(shlex.join(scoped)) is True
+
+
+def test_no_suite_reasons_none_head_moved_dirty_tree_scoped(repo):
+    assert "[NO-SUITE] none" in suite_run(repo).stderr
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    commit(repo, "fix(BT-11): behaviour change")
+    assert "[NO-SUITE] head moved" in suite_run(repo).stderr
+    write_suite(repo)  # a record at the current HEAD
+    untracked_src(repo)
+    assert "[NO-SUITE] dirty tree" in suite_run(repo).stderr
+
+
+def test_build_rejects_a_scoped_suite_json(repo):
+    c = commit(repo, "feat(BT-11): one")
+    scoped = write_suite(repo, "scoped.json", sha=c, cmd="pytest tests/x.py")
+    r = build_raw(repo, suite=scoped)
+    assert_clean_error(r)
+    assert "scoped" in r.stderr
+
+
+def test_build_no_suite_message_names_the_recorder(repo):
+    commit(repo, "feat(BT-11): one")
+    r = build_raw(repo)
+    assert r.returncode == 2 and "[NO-SUITE]" in r.stderr
+    assert "test_gate.py record --suite" in r.stderr and "none" in r.stderr
+
+
+def test_suite_not_reused_across_a_docs_only_commit(repo):
+    """Reuse is deliberately not widened: tests read docs/ and .memory/, so any new commit moves HEAD."""
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    commit(repo, "docs(BT-11): notes", ["docs/notes.md"])
+    assert suite_out(repo) == (1, "")
+
+
 def test_pr_body_is_registered_like_contract_check():
     spec = importlib.util.spec_from_file_location("scaffold", REPO_ROOT / "src" / "scripts" / "scaffold.py")
     scaffold = importlib.util.module_from_spec(spec)
