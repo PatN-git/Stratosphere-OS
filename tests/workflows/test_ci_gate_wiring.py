@@ -45,3 +45,12 @@ def test_reference_exists_with_stamp_and_names_every_halt():
     assert re.search(r"^description: .+", head, re.M)
     for token in ("[CI-PARITY]", "[CI-RED]", "[CI-FIX]", "small", "big", "ci_gate.py parity", "ci_gate.py status", "ci_gate.py cap"):
         assert token in text, f"references/ci-gate.md lost {token!r}"
+
+
+def test_scaffold_ships_ci_gate():
+    assert '"ci_gate.py"' in _read("scripts/scaffold.py")
+
+
+def test_verify_scripts_maps_ci_gate():
+    verify = (ROOT / "tests" / "runners" / "verify_scripts.py").read_text(encoding="utf-8")
+    assert 'rel_str == "scripts/ci_gate.py"' in verify and ".agents/scripts/ci_gate.py" in verify

@@ -313,6 +313,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/test_gate.py"
             elif rel_str == "scripts/floor_guard.py":
                 proj_rel_path = ".agents/scripts/floor_guard.py"
+            elif rel_str == "scripts/ci_gate.py":
+                proj_rel_path = ".agents/scripts/ci_gate.py"
             elif rel_str == "scripts/nightly_state.py":
                 proj_rel_path = ".agents/scripts/nightly_state.py"
             elif rel_str == "scripts/nightly_scan.py":
