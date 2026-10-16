@@ -154,3 +154,24 @@ def test_3d_honors_the_ci_fix_dispatch_overrides():
 def test_4a_step6_skips_a_duplicate_pr_link_comment():
     step6 = _section(_4a(), "6. **PR-link comment", "7. **Ship-status + backport:**")
     assert "already" in step6 and "CI fix" in step6
+
+
+def _fix_order_ok(text):
+    """True when section 3 of the reference runs the fix steps in the safe order and states the 2-commit cap."""
+    fix = text[text.index("## 3. Fix"):text.index("## 4. Big")]
+    order = ["test_gate.py record --suite", "commit;", "ci_gate.py cap --commit HEAD", "floor_guard.py", "parity", "push;", "status --attempt"]
+    positions = [fix.find(token) for token in order]
+    return all(p >= 0 for p in positions) and positions == sorted(positions) and "At most 2 fix commits" in fix
+
+
+def test_reference_runs_each_fix_in_the_safe_order_with_the_two_commit_cap():
+    ref = _read("references/ci-gate.md")
+    assert _fix_order_ok(ref)
+    fix = ref[ref.index("## 3. Fix"):ref.index("## 4. Big")]
+    assert "[FLOOR]" in fix and "never `main`, never a merge" in fix and "[CI-FIX]" in fix
+
+
+def test_a_reference_that_pushes_before_the_floor_guard_is_rejected():
+    ref = _read("references/ci-gate.md")
+    swapped = ref.replace("`floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`; push;", "push; `floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`;")
+    assert swapped != ref and not _fix_order_ok(swapped)
