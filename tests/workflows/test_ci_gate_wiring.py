@@ -111,3 +111,46 @@ def test_4a_gate_is_wired_exactly_twice_and_never_in_the_audit_phases():
 def test_4a_ship_line_names_a_pending_check_and_a_waived_parity():
     ship = next(line for line in _4a().splitlines() if line.startswith("11. Output:"))
     assert "ci:pending" in ship and "parity:waived" in ship
+
+
+def _3z():
+    return _read("workflows/3z-afk-loop.md")
+
+
+def _step3a():
+    return _section(_3z(), "### Step 3A", "### Step 3B")
+
+
+def test_3z_step3a_runs_the_gate_once_per_feature_and_delegates_the_fix_to_a_3d_implementer():
+    step = _step3a()
+    for token in ("references/ci-gate.md", "`[CI-FIX]`", "fresh 3d implementer", "ci_gate.py cap", "floor_guard.py",
+                  "ci_gate.py parity", "`ship-only`", "never per intermediate slice", "do NOT push", "skip the Phase 0 status flip"):
+        assert token in step, f"3z Step 3A lost {token!r}"
+    assert "fix(BT-<padded>): ci - <step>" in step, "3z names the commit subject the 3d implementer must use"
+
+
+def test_3z_halt_list_names_the_ci_halts_and_keeps_the_literal_flag():
+    step = _step3a()
+    assert "[BLOCKED-ship] <the halt message>" in step and "continue the frontier" in step
+    assert "`[CI-PARITY]`" in step and "`[CI-RED]`" in step
+    assert "pushed" in step and "held draft" in step, "a halt after the push must not claim the slice stayed local"
+
+
+def test_3z_never_mints_an_issue_for_a_big_ci_failure_and_never_runs_the_gate_in_audit_only():
+    z = _3z()
+    step = _step3a()
+    assert "never mints" in step and "3b" in step and "HITL" in step
+    assert "ci_gate" not in _section(z, "### Step 2B", "### Step 2C"), "audit-only must never reach the CI gate"
+
+
+def test_3d_honors_the_ci_fix_dispatch_overrides():
+    d = _read("workflows/3d-implement-issue.md")
+    step2 = next(line for line in d.splitlines() if line.startswith("2. Read slice issue."))
+    assert "CI fix" in step2 and "references/ci-gate.md" in step2 and "skips this flip" in step2
+    commits = next(line for line in d.splitlines() if line.startswith("3. **Incremental Commits:**"))
+    assert "fix(BT-<slicePadded>): ci - <step>" in commits
+
+
+def test_4a_step6_skips_a_duplicate_pr_link_comment():
+    step6 = _section(_4a(), "6. **PR-link comment", "7. **Ship-status + backport:**")
+    assert "already" in step6 and "CI fix" in step6

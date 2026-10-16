@@ -18,7 +18,7 @@ timestamp: 2026-10-14
 - **Workspace:** dispatch 3d/4a subagents with workspace `shared/inherit`, never a worktree — 3d's commits and the `.tmp/` plan and suite files must be visible to the next step, and a worktree lacks untracked deps (e.g. `node_modules`) and branches from the default branch.
 - **Depth:** 3z → 3d/4a subagent → at most one further level (AGENTS.md §8 Subagent nesting). Where the host has no subagents, run each step inline.
 - **AFK-only:** never autonomously execute non-`mode:AFK` slices.
-- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4).
+- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4; a capped CI fix is its one exception).
 
 ## Phase 1: Bootstrap & Scope Intake
 
@@ -85,7 +85,8 @@ For each feature whose queued slices are all `VERIFIED`:
 2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue.
    - The `ship-only` gate is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass.
    - Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them.
-   - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → leave the slice local, flag `[BLOCKED-ship] <the halt message>`, continue the frontier.
+   - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, `[CI-PARITY]`, `[CI-RED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → leave the slice local, flag `[BLOCKED-ship] <the halt message>`, continue the frontier. After the push (`[CI-RED]`) nothing stays local: the slice is pushed and the feature PR held draft. `[CI-PARITY] could not run` has no AFK waiver: it blocks the same way.
+   - **CI gate:** the last `ship-only` of a feature also runs 4a step 8's CI gate (`references/ci-gate.md`), never per intermediate slice. `ship-only` returns `[CI-FIX]` + `log_tail` instead of committing; the Orchestrator then dispatches a fresh 3d implementer: "Run `/3d-implement-issue` for `BT-<padded>` as a CI fix: gap report = the `log_tail`; skip the Phase 0 status flip (the slice stays `in review`); commit `fix(BT-<padded>): ci - <step>`; do NOT push; attempt = <k>." The Orchestrator itself then runs `ci_gate.py cap --commit HEAD`, `floor_guard.py` and `ci_gate.py parity`, and re-runs `ship-only` with `--attempt <k+1>`. At most 2 fixes per feature; a failed cap, floor guard or parity, or a second red, is `[CI-RED]`. `[CI-RED]` (big): write the brief to `.tmp/`, comment `[CI-RED]` on the PR and the slice issue; 3z never mints issues (3b is HITL).
    - Step 1B's confirmation is the ship pre-authorization for 4a Phase 5 step 3.
    - Log each outcome to `.tmp/3z-loop.work.md`.
 _Done when:_ every all-passed feature has all its slices `in review` on an open/updated PR (or flagged), and no merge.
