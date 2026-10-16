@@ -43,7 +43,7 @@ def test_reference_exists_with_stamp_and_names_every_halt():
     head = text.split("---")[1]
     assert re.search(r'^version: "\d+\.\d+\.\d+"$', head, re.M) and re.search(r"^timestamp: \d{4}-\d{2}-\d{2}$", head, re.M)
     assert re.search(r"^description: .+", head, re.M)
-    for token in ("[CI-PARITY]", "[CI-RED]", "[CI-FIX]", "small", "big", "ci_gate.py parity", "ci_gate.py status", "ci_gate.py cap"):
+    for token in ("[CI-RED]", "[CI-FIX]", "small", "big", "ci_gate.py status", "ci_gate.py cap"):
         assert token in text, f"references/ci-gate.md lost {token!r}"
 
 
@@ -69,11 +69,16 @@ def _4a():
 STATUS = "python .agents/scripts/ci_gate.py status"
 
 
-def test_4a_step4_runs_parity_after_the_release_commit_and_before_the_push():
+def test_no_pre_push_parity_replay_is_wired_anywhere():
+    """BT-187 measured a local CI replay at 113 s against about 45 s on GitHub and dropped it; nothing may bring it back unseen."""
+    script = _read("scripts/ci_gate.py")
+    assert "parity" not in script and "select_steps" not in script
+    for rel in ("workflows/4a-verify-and-ship.md", "workflows/3z-afk-loop.md", "references/ci-gate.md"):
+        text = _read(rel)
+        assert "ci_gate.py parity" not in text and "[CI-PARITY]" not in text and "parity:waived" not in text, rel
     step4 = _section(_4a(), "4. **Release bump + push:**", "5. **PR (one per feature branch):**")
-    assert "python .agents/scripts/ci_gate.py parity" in step4 and "[CI-PARITY]" in step4
-    assert step4.index("release: prepare") < step4.index("ci_gate.py parity") < step4.index("Push the branch")
-    assert "references/ci-gate.md" in step4 and "waive" in step4 and "tree changed" in step4
+    assert step4.rstrip().endswith("Push the branch.") and "ci_gate" not in step4
+    assert "replaying CI locally before the push" in _read("references/ci-gate.md")
 
 
 def test_4a_step8_runs_the_status_gate_after_the_audit_and_before_the_rebuild_and_ready():
@@ -108,9 +113,9 @@ def test_4a_gate_is_wired_exactly_twice_and_never_in_the_audit_phases():
     assert "ci_gate" in _section(text, "## Phase 5")
 
 
-def test_4a_ship_line_names_a_pending_check_and_a_waived_parity():
+def test_4a_ship_line_names_a_pending_check():
     ship = next(line for line in _4a().splitlines() if line.startswith("11. Output:"))
-    assert "ci:pending" in ship and "parity:waived" in ship
+    assert "ci:pending" in ship
 
 
 def _3z():
@@ -124,7 +129,7 @@ def _step3a():
 def test_3z_step3a_runs_the_gate_once_per_feature_and_delegates_the_fix_to_a_3d_implementer():
     step = _step3a()
     for token in ("references/ci-gate.md", "`[CI-FIX]`", "fresh 3d implementer", "ci_gate.py cap", "floor_guard.py",
-                  "ci_gate.py parity", "`ship-only`", "never per intermediate slice", "do NOT push", "skip the Phase 0 status flip"):
+                  "`ship-only`", "never per intermediate slice", "do NOT push", "skip the Phase 0 status flip"):
         assert token in step, f"3z Step 3A lost {token!r}"
     assert "fix(BT-<padded>): ci - <step>" in step, "3z names the commit subject the 3d implementer must use"
 
@@ -132,7 +137,7 @@ def test_3z_step3a_runs_the_gate_once_per_feature_and_delegates_the_fix_to_a_3d_
 def test_3z_halt_list_names_the_ci_halts_and_keeps_the_literal_flag():
     step = _step3a()
     assert "[BLOCKED-ship] <the halt message>" in step and "continue the frontier" in step
-    assert "`[CI-PARITY]`" in step and "`[CI-RED]`" in step
+    assert "`[CI-RED]`" in step
     assert "pushed" in step and "held draft" in step, "a halt after the push must not claim the slice stayed local"
 
 
@@ -159,7 +164,7 @@ def test_4a_step6_skips_a_duplicate_pr_link_comment():
 def _fix_order_ok(text):
     """True when section 3 of the reference runs the fix steps in the safe order and states the 2-commit cap."""
     fix = text[text.index("## 3. Fix"):text.index("## 4. Big")]
-    order = ["test_gate.py record --suite", "commit;", "ci_gate.py cap --commit HEAD", "floor_guard.py", "parity", "push;", "status --attempt"]
+    order = ["test_gate.py record --suite", "commit;", "ci_gate.py cap --commit HEAD", "floor_guard.py", "push;", "status --attempt"]
     positions = [fix.find(token) for token in order]
     return all(p >= 0 for p in positions) and positions == sorted(positions) and "at most 2 fix commits" in fix.lower()
 
@@ -171,19 +176,13 @@ def test_reference_runs_each_fix_in_the_safe_order_with_the_two_commit_cap():
     assert "[FLOOR]" in fix and "never `main`, never a merge" in fix and "[CI-FIX]" in fix
 
 
-def test_a_reference_that_pushes_before_the_floor_guard_is_rejected():
-    ref = _read("references/ci-gate.md")
-    swapped = ref.replace("`floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`; push;", "push; `floor_guard.py` (exit 1 or 2 -> `[FLOOR]`, treat as `big`); `parity`;")
-    assert swapped != ref and not _fix_order_ok(swapped)
-
-
 def test_3z_fix_loop_states_one_round_two_commits_suite_first_and_the_safe_order():
     step = _step3a()
     assert "At most 2 fix commits" in step and "one round" in step and "`--attempt 2`" in step
     assert "record the full suite (`test_gate.py record --suite`) before the commit" in step
-    order = ["ci_gate.py cap", "floor_guard.py", "ci_gate.py parity", "re-runs `ship-only`"]
+    order = ["ci_gate.py cap", "floor_guard.py", "re-runs `ship-only`"]
     positions = [step.index(token) for token in order]
-    assert positions == sorted(positions), "cap, floor guard and parity run before ship-only pushes again"
+    assert positions == sorted(positions), "cap and floor guard run before ship-only pushes again"
 
 
 def test_4a_step8_names_the_two_status_runs_and_points_to_the_fix_rule():
@@ -196,11 +195,8 @@ def test_4a_step8_names_the_two_status_runs_and_points_to_the_fix_rule():
 def test_reference_states_one_attempt_rule_and_matches_the_script_behavior():
     ref = _read("references/ci-gate.md")
     assert "one fix round" in ref.lower() and "`--attempt 2`" in ref
-    assert "worst state" in ref and "preferring" not in ref, "the script keeps the worst state of a check's runs"
-    assert "ending at the failing step's last `##[error]`" in ref
-    assert "not a project check" in ref and "every command" in ref
-    for token in ("curl", "docker", "`sha`"):
-        assert token in ref, f"references/ci-gate.md must mention {token}"
+    assert "worst state" in ref, "the script keeps the worst state of a check's runs"
+    assert "ending at the failing step's last `##[error]`" in ref and "`sha`" in ref
 
 
 def test_status_calls_name_the_host_tool_timeout_and_exit_2_is_a_halt():
