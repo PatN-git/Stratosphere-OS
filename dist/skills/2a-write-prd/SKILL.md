@@ -52,7 +52,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.
 - Forbidden: file paths, code, module/interface designs, slice lists, per-slice AC, Data/Logic/UI breakdowns.
 - Unknown → `> open: <question>` inline; rolls to §10 at validation.
-- §7 `Boundaries` (Always / Ask first / Never) is path-free and feature-specific; seed it from Constraints & Settled Decisions and the cost gate. 3b copies the Ask-first and Never lines into the slices they touch.
+- §7 `Boundaries` (Always / Ask first / Never) is path-free and feature-specific; seed it from Constraints & Settled Decisions and the cost gate.
 
 **Journey Mapping & Scope-Classing (§6):**
 - Group stories under chronological journey steps (Jeff Patton Story Mapping). For each step, ask *"What has to be true for the user to get through this step?"* to discover features.

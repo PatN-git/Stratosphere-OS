@@ -72,7 +72,7 @@ Run the `load-memory` skill to restore session context (read-only).
 3. Immortal Components: A1 → propose new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. A2 → discard any generator changes to global shell components (DR-008/DR-010).
 4. Run design-theme: python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css. Import theme.tokens.css below @import "tailwindcss" (or bottom of stylesheet).
 5. Run UX / System Stress Test.
-6. Freeze layout into Path A body block with `Patterns to Reject` (per feature, cite [[DR-001]]); the `## States / Edge Classes` line covers each state the feature needs (loading, empty, error, success, permission) as handled or n/a with a reason. design doc `status → stable` (editorial).
+6. Freeze layout into Path A body block incl. `Patterns to Reject` (per feature, cite [[DR-001]]); the template's `## States / Edge Classes` line marks each state handled or n/a with a reason. design doc `status → stable` (editorial).
 7. Generator output is read once/frozen. Downstream workflows (3b, 3d, 4a) read only frozen doc/DESIGN.md; 4b audits .memory/. Never access live generator.
 
 ### Path B (Reference-driven native):

@@ -39,7 +39,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Inheritance:** inherit scope-class + ODI score from PRD §6. No slices for `[DEFERRED]` stories.
    - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
    - **Maximum-slice ceiling:** split a draft whose title joins two outcomes with "and", or that has >3 AC, 2+ independent subsystems, or ~5+ hand-written non-test, non-generated files.
-   - **Escalation rule (no-PRD path, Build slices only):** not a small slice when the Build slices depend on each other or split one outcome (Blocked-by edges between them, or one Success State item across them), add a new UI surface, or need an ADR or add external cost. Say so, name `/2a-write-prd` (then `/2b-interface-design` for a UI surface or design decisions) and HALT until the user narrows the scope or overrides. Independent bundle slices pass.
+   - **Escalation rule (no-PRD path, Build slices only):** HALT when Build slices depend on each other or split one outcome (Blocked-by edges between them, or one Success State item across them), add a new UI surface, need an ADR or add external cost: say so, name `/2a-write-prd` (then `/2b-interface-design` for a UI surface or design decisions); resume when the user narrows the scope or overrides. Independent bundle slices pass.
 2. **Prioritization Metrics (Spikes: skip; size fixed at `size:medium`):**
    - **Impact from ODI:** Map story ODI score to Impact:
      - `ODI < 5` → `0.25`
@@ -62,7 +62,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Brief seed:** Established Facts → Current state / Problem (file paths allowed in issue bodies). PRD-sourced: Constraints & Settled Decisions → Current state / Problem. No-PRD path: Problem → Overview; Success State → Acceptance Criteria; Constraints & Settled Decisions → constraints in The Path; Non-Goals → Notes.
    - **Minimum spec bar (no-PRD path):** every Build slice body carries a problem statement (Overview or Current state / Problem), at least one verifiable AC, and constraints or non-goals.
    - Governing `[[A-xxx]]`/`[[DR-xxx]]` citations (only IDs that exist in `.memory/`; a not-yet-written ADR is cited as plain text `ADR pending: <title>`, never a placeholder ID).
-   - PRD §7 Boundaries: copy the Ask first and Never lines that touch the slice into its body. Ask first = HITL halts and asks; AFK returns `stuck`.
+   - PRD §7 Boundaries: copy the Ask first and Never lines that touch the slice into its body; end each Ask first line with `(HITL: halt and ask; AFK: return `stuck`)`.
    - Verifiable AC incl. time-to-value + stress cases from the design doc.
    - Parent/Blocked-by (a not-yet-minted sibling is written `BT-<slice:N>`, N = its position in the slice list; the only placeholder a draft may carry).
    - The Dependencies `- **Design:**` line = the real design-doc path from Phase 1 step 3 (`—` if none or standalone; never a `BT-<…>` placeholder).

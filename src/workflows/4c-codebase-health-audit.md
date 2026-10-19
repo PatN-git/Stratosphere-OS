@@ -107,7 +107,7 @@ Drop findings below 60.
 Assign `F-01…F-NN` per `references/audit-to-slices.md` §1.
 
 ### 3.6 Delta vs Last Run
-Compare against the previous `.last-run.json`; the report's `Δ vs last run` row shows `by_pass` and `by_impact` (informational). Flag `[REGRESSION] <metric>: <old> → <new>` only for the deterministic counts `cves_high_plus` and `skipped_tests`; finding counts vary run to run and never count as a regression. Print `[NO-DELTA] <reason>` instead when `scan_targets`, `skipped_targets` or `matrix_version` differ, the previous file lacks the field, or the pass was `inconclusive` in either run. This is advisory: 4c blocks nothing; surface regressions in the Phase 6 handoff.
+Compare against the previous `.last-run.json`; the report's `Δ vs last run` row shows `by_pass` and `by_impact`. Flag `[REGRESSION] <metric>: <old> → <new>` only for the deterministic counts `cves_high_plus` and `skipped_tests`; finding counts vary run to run and never count as a regression. Print `[NO-DELTA] <reason>` instead when `scan_targets`, `skipped_targets` or `matrix_version` differ, the previous file lacks the field, or the pass was `inconclusive` in either run. This is advisory: 4c blocks nothing; surface regressions in the Phase 6 handoff.
 
 ---
 
@@ -146,6 +146,7 @@ Delete `docs/audits/health-*.md` where the filename date `<YYYY-MM-DD>` is older
 [AUDIT COMPLETE] docs/audits/health-<date>.md
   🔴 Critical: N  🟠 High: N  🟡 Medium: N  ⚪ Low: N  (Total: N)
   Delta window: <start> → <end> | <N> priority files.
+  Δ vs last run: <[REGRESSION] rows | [NO-DELTA] reason | none>
 
   Proposal: .tmp/refactor-proposal-<report-stem>.md  (<S> slices, epic: yes|no)
   Review it, then run /3b-create-issue .tmp/refactor-proposal-<report-stem>.md
@@ -160,8 +161,9 @@ Await user direction. No further action.
 If no finding ≥60 confidence across any pass:
 1. Do NOT write report or proposal (avoid empty artifacts).
 2. Update `.last-run.json` with the full schema (`total_findings: 0`, zero `by_pass`), so the next run keeps its baseline.
-3. Output `[HEALTHY]` only if no pass is `inconclusive`; otherwise `[HEALTHY*] No findings ≥60 in the passes that ran. Inconclusive: <pass: why>.` In both cases:
+3. Output:
 ```
 [HEALTHY] No findings ≥60 confidence across <N> passes run.
   Scanned: <dirs>. Delta: <start> → <end>. .last-run.json updated.
 ```
+Any pass `inconclusive`: first token `[HEALTHY*]` and add `Inconclusive: <pass: why>.`

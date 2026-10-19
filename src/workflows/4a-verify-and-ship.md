@@ -21,7 +21,7 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Value-Add Gate
 *Input:* slice issue + parent PRD §8 (`BT-<parentPadded>` resolved as in Phase 2).
-0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue; a loosening needs a human-merged `## Floor exceptions` row`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below, so a cosmetic or skipped audit cannot ship uncommitted code or a lowered bar.
+0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue (a loosening needs a human-merged Floor exceptions row)`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below.
 1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
 2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, covers a PRD §8 Definition of Done item, or is `[size:large]` / `[mode:AFK]` → proceed to Phase 2: Execution (Context Isolation).
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
@@ -60,7 +60,7 @@ Advisory findings (does not block shipping):
 |---|---|---|---|
 | [filename] | [Rule ID] | [Hard breach or Judgment] | [Proposed fix] |
 
-`Dismissed` (omit when empty): one line each, so the human can overrule a rejection.
+`Dismissed` (omit when empty): one line each; HITL shows them at the ship halt, 3z's `audit-only` return drops them.
 
 ## Phase 4: Handoff
 Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
@@ -86,11 +86,11 @@ Halt. Await human approval. If approved, or if user response to gap report autho
    - **Clear blockers (single writer for this edge):** this slice is now `in review`, so remove its bare ID from every dependent's `Blocked by` in `.memory/BACKLOG_MAP.md` **and** the GitHub blocked-by relationship (`removeBlockedBy` mutation per `references/github-issue-relations.md`), so dependents become visibly unblocked and the map stays a faithful mirror. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
    - **Standalone issue (no parent):** same CI gate here (rules: `references/ci-gate.md` §2-§4): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]`; tool timeout `600000` or `--wait` below host limit. `[CI-RED]` leaves PR open, non-draft; halt text says so.
 8. **Epic Check:** If **every sibling sub-issue under parent is `status:in review` or `status:done`** (Spikes close as `done` without a PR; Build slices close only on merge; query `gh issue view <parent> --json subIssues`):
-   - Run the **Feature Acceptance Audit** below.
-   - **CI gate** (once per feature, after the audit, before the body rebuild, never per intermediate slice; spec `references/ci-gate.md`): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]`; tool timeout `600000` or `--wait` below host limit (§2). By result:
+   - Run the **Feature Acceptance Audit** below (skip on a `ship-only` re-run after a CI fix).
+   - **CI gate** (once per feature, after the audit, before the body rebuild, never per intermediate slice; spec `references/ci-gate.md`): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]` (`--attempt 2` on a `ship-only` re-run after a CI fix; dispatch passes it); tool timeout `600000` or `--wait` below host limit (`ci-gate.md` §2). By result:
      - `green` | `pending` | `none` → continue (`pending`: `ci:pending` in ship line). `conflict` → report only.
-     - `red`+`small` → fix per §3, re-run once `--attempt 2`. Under 3z (dispatch carries `verdict`/`audit_rounds`): return `[CI-FIX]` + `log_tail`, 4a does not commit.
-     - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice stays `in review`, PR stays draft, epic stays `in progress`, step 9 for slice only (parent not flipped), `/3b-create-issue` with `log_tail` as brief (§4).
+     - `red`+`small` → fix per `ci-gate.md` §3, re-run once `--attempt 2`. Under 3z (dispatch carries `verdict`/`audit_rounds`): return `[CI-FIX]` + `log_tail`, 4a does not commit.
+     - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice stays `in review`, PR stays draft, epic stays `in progress`, step 9 for slice and dependents cleared in step 7 (parent not flipped), `/3b-create-issue` with `log_tail` as brief (`ci-gate.md` §4).
    - Rebuild the body: re-save the PR's current body to `.tmp/4a-prior-body.md` (step 5 deleted it; `gh pr view <n> --json body -q .body`), then run `pr_body.py build … --prior-body-file .tmp/4a-prior-body.md --close-parent` (adds `Closes #<parent>.`; without the prior body earlier slices become `PENDING` and lose their `Closes` lines).
    - `gh pr edit --body-file` it, `rm -f` both scratch files as in step 5, and re-run the `closingIssuesReferences` read-back for the parent.
    - Mark the feature PR ready for review (`gh pr ready <n>`, if connected; no-op if it was opened non-draft) and state `"All slices for BT-<parent> in review! PR #<n> ready to merge."`.

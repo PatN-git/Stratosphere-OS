@@ -32,7 +32,7 @@ _CONSTRAINTS:_
 **Context Isolation Rule:** Execute natively ONLY IF you can positively confirm this session has been read-only with respect to the target code (you have not authored or modified code within the target directory this session). Otherwise, or if unsure, isolate: invoke an independent Staff-Level Architect subagent (using the host's subagent mechanism) for Phase 2.
 - **Resolve targets first:** in the parent, enumerate the target directory's files and pass the explicit list; the subagent reads the named files and must not sweep to locate them (never ingest the whole repo).
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
-- **Output Contract:** the subagent returns the findings + confidence mapping; the main agent handles subsequent logic.
+- **Output Contract:** the subagent returns the findings + confidence mapping + `Dismissed (deliberate)` lines; the main agent handles subsequent logic.
 
 _INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md` and `.agents/skills/4b-audit-architecture-drift/references/design-red-flags.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
@@ -59,7 +59,7 @@ _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgica
 ## Confidence scale & reporting threshold
 **Audit scope:** structural architectural drift, domain-boundary violations, scalability/maintainability risks, and repeated violations of documented system rules. A Report-grade (≥80) finding looks like structural drift, a leaked seam, or an ignored documented architecture rule (`[[A-xxx]]`/`[[DR-xxx]]`).
 Score findings 0–100 per the **Audit scope** above and `references/confidence-scale.md`; report only ≥ 80.
-**Intent check (before a finding scores ≥ 80):** run `git log -n 5 --format="%h %s%n%b" -- <file>` and read the matching `.memory/LEARNINGS.md` / `[[DR-xxx]]` entries. Dismiss only when a commit message or an entry states the reason for the shape and it still applies; otherwise keep the finding and cite the commit in Evidence. A dismissal is an explicit exception to "do not report": list `Dismissed (deliberate): <file> — <sha subject>` on the Phase 4 summary (or `[HEALTHY]`) line.
+**Intent check (before a finding scores ≥ 80):** run `git log -n 5 --format="%h %s%n%b" -- <file>` and read the matching `.memory/LEARNINGS.md` / `[[DR-xxx]]` entries. Dismiss only when a commit message or an entry states the reason for the shape and it still applies; otherwise keep the finding and cite the commit in Evidence. Dismissed findings are not reported: list `Dismissed (deliberate): <file> — <sha subject>` on the Phase 4 summary (or `[HEALTHY]`) line.
 
 ## Clean Exit Rule
 - *Collision Check:* Drop any detected issue that collides with an in-progress issue in `.memory/BACKLOG_MAP.md` (same components/directory affected).

@@ -18,7 +18,7 @@ Several modules depend on one internal decision (representation, policy, protoco
 Modules split by execution order (load, validate, transform, save) not owned knowledge: one representation and its invariants repeat at each boundary. Group by knowledge; code running at different times may share a module when it protects the same decisions.
 
 ## Pass-through method
-Middle Man smell: `code-smell-baseline.md`. Keep forwarding boundary only if it adds policy, adaptation or distinct abstraction.
+Middle Man smell: `references/code-smell-baseline.md`. Keep forwarding boundary only if it adds policy, adaptation or distinct abstraction.
 
 ## Split ownership
 Several modules write or copy same state: agent editing one writer cannot see others. One owner per state; others read it or ask owner to change it.

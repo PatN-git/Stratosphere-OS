@@ -18,7 +18,7 @@ timestamp: 2026-10-14
 - **Workspace:** dispatch 3d/4a subagents with workspace `shared/inherit`, never a worktree — 3d's commits and the `.tmp/` plan and suite files must be visible to the next step, and a worktree lacks untracked deps (e.g. `node_modules`) and branches from the default branch.
 - **Depth:** 3z → 3d/4a subagent → at most one further level (AGENTS.md §8 Subagent nesting). Where the host has no subagents, run each step inline.
 - **AFK-only:** never autonomously execute non-`mode:AFK` slices.
-- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4; a capped CI fix is its one exception).
+- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4; one capped CI-fix round may follow the push).
 
 ## Phase 1: Bootstrap & Scope Intake
 
@@ -85,12 +85,12 @@ For each feature whose queued slices are all `VERIFIED`:
 2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue.
    - The `ship-only` gate is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass.
    - Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them.
-   - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, `[CI-RED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → leave slice local, flag `[BLOCKED-ship] <the halt message>`, continue the frontier. After the push (`[CI-RED]`) nothing stays local: slice pushed, feature PR held draft.
+   - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, `[CI-RED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → flag `[BLOCKED-ship] <the halt message>`, continue the frontier; slice stays local, except `[CI-RED]`: slice pushed, feature PR held draft.
    - **CI gate** (last `ship-only` of a feature, never per intermediate slice; `references/ci-gate.md`):
      - `ship-only` returns `[CI-FIX]` + `log_tail`, commits nothing.
      - Orchestrator dispatches a fresh 3d implementer: "Run `/3d-implement-issue` for `BT-<padded>` as a CI fix: gap report = the `log_tail`; skip the Phase 0 status flip (the slice stays `in review`); record the full suite (`test_gate.py record --suite`) before the commit; commit `fix(BT-<padded>): ci - <step>`; do NOT push."
      - Orchestrator runs `ci_gate.py cap --commit HEAD` and `floor_guard.py`, then re-runs `ship-only` with `--attempt 2`.
-     - At most 2 fix commits per feature, one round. `[CI-RED]`: failed cap or floor guard, second red, exit 2 from `ci_gate.py` (`[CI-RED] could not check`), or big: brief → `.tmp/`, comment `[CI-RED]` on PR and slice issue; 3z never mints issues (3b is HITL).
+     - At most 2 fix commits per feature, one round. `[CI-RED]`: implementer `stuck` or red suite, failed cap or floor guard, second red, exit 2 from `ci_gate.py` (`[CI-RED] could not check`), or big: brief → `.tmp/`, comment `[CI-RED]` on PR and slice issue; 3z never mints issues (3b is HITL).
    - Step 1B's confirmation is the ship pre-authorization for 4a Phase 5 step 3.
    - Log each outcome to `.tmp/3z-loop.work.md`.
 _Done when:_ every all-passed feature has all its slices `in review` on an open/updated PR (or flagged), and no merge.
@@ -102,7 +102,7 @@ _Done when:_ every all-passed feature has all its slices `in review` on an open/
 _Done when:_ mergeability and path overlaps scanned.
 
 ## Phase 4: Final Report [output]
-Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature:
+Read `.tmp/3z-loop.work.md` and output summary per feature:
 - PR # (or `local`).
 - Status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on and "re-run /3z after BT-<blocker> reaches in review").
 - Commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags.
@@ -115,5 +115,5 @@ _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.
 
 ## Phase 5: Session Close
-Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP and run memory lint. The decision log is retained (gitignored) so the user can review the run; it is never removed.
+Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP and run memory lint. The decision log is retained (gitignored).
 _Done when:_ `/0b-stop-session` completes and repository memory persisted.
