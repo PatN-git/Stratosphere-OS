@@ -81,7 +81,8 @@ def test_constitution_intermediates_names_scratch_scripts_and_no_inline_code_ide
     assert bullet(CONSTITUTIONS[0]) == bullet(CONSTITUTIONS[1])
     text = bullet(CONSTITUTIONS[0])
     assert "scratch scripts" in text and "`.tmp/`" in text
-    assert "`python -c`" in text and "`node -e`" in text and "write it to `.tmp/` and run the file" in text
+    assert "`python -c`" in text and "heredocs" in text and "file content" in text
+    assert "write it with the file-write tool, code to `.tmp/`" in text
 
 
 def test_constitution_section_8_identical_across_copies():
