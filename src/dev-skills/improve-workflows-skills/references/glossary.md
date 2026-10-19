@@ -83,4 +83,4 @@ Reach for **these tokens**, not the listed synonyms. (Structural terms also live
 ---
 
 ## Provenance
-Adapted from Matt Pocock's `github.com/mattpocock/skills` — `writing-great-skills` (the discipline + Part A) and `codebase-design` (Part B structural terms + the `_Avoid_` discipline). Read the originals **only when extending this lexicon**; for routine authoring, this pair is sufficient.
+Adapted from an MIT-licensed external skill pack (Copyright (c) 2026 Matt Pocock). Extend the lexicon from first principles; for routine authoring, this pair is sufficient.

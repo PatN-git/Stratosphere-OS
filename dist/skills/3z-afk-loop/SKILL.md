@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.6.0"
-timestamp: 2026-10-13
+version: "1.7.0"
+timestamp: 2026-10-14
 ---
 
 # AFK END-TO-END LOOP
@@ -18,7 +18,7 @@ timestamp: 2026-10-13
 - **Workspace:** dispatch 3d/4a subagents with workspace `shared/inherit`, never a worktree — 3d's commits and the `.tmp/` plan and suite files must be visible to the next step, and a worktree lacks untracked deps (e.g. `node_modules`) and branches from the default branch.
 - **Depth:** 3z → 3d/4a subagent → at most one further level (AGENTS.md §8 Subagent nesting). Where the host has no subagents, run each step inline.
 - **AFK-only:** never autonomously execute non-`mode:AFK` slices.
-- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4).
+- **Ship:** push + open/update PR for fully-passed feature branches when `gh` is connected; never merge (AGENTS.md §4; one capped CI-fix round may follow the push).
 
 ## Phase 1: Bootstrap & Scope Intake
 
@@ -39,7 +39,7 @@ _Done when:_ orchestrator context synced.
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by parent feature; order by `(parent_feature, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
-5. **Working file:** if batch run (`count > 1`), delete stale `.tmp/3z-loop.work.md` and initialize ephemeral run log.
+5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
 _Done when:_ user authorized slice list and ship mode.
 
@@ -47,7 +47,7 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement
-0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md` (if batch), and continue to the next slice.
+0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
 1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
    `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
@@ -57,7 +57,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
    > Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\", \"stuck\": null}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5; `stuck` = micro-tdd's `{reason, options}` when it froze, else null).
    > Do NOT push; do NOT open PR."
 
-_Done when:_ subagent returns valid JSON and git status is clean. `stuck` set → skip Step 2B; go to Step 2C.
+_Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
 1. **Dispatch** (`BT-<parentPadded>` = the slice's Parent: BACKLOG `Parent`, else `gh issue view <n> --json parent`):
@@ -71,7 +71,9 @@ _Done when:_ auditor returns valid JSON verdict.
 ### Step 2C: Decision Gate (Orchestrator)
 Evaluate subagent response:
 - Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): mark slice `status:blocked` in BACKLOG_MAP, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), post the reason and both options (`gh issue comment <n> --body "[STUCK] <reason> — options: 1) <a> 2) <b>"`), log to `.tmp/3z-loop.work.md`, continue.
-- Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md` (if batch); next slice.
+- Floor guard failed (`[FLOOR]`, Step 2A) → not passing: same retry and `status:blocked` path as `[UNCOVERED]` below, the guard's findings as the gap report (comment the `[FLOOR]` rows when blocking). The retry fixes the code; a new `## Floor exceptions` row never counts.
+- `tests_added` non-empty and `red_confirmed` empty (Step 2A) → `[NO-RED]`: not passing, same retry and `status:blocked` path as `[UNCOVERED]` below; gap report: record the observed RED per micro-tdd (a characterization test names the wrong value it fails on).
+- Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md`; next slice.
 - Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, `SKIP-DEP`, or `status:blocked`).
 
@@ -83,7 +85,12 @@ For each feature whose queued slices are all `VERIFIED`:
 2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the feature, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update feature PR, move the slice to `status:in review`, comment PR link on its issue.
    - The `ship-only` gate is single-slice — its Epic Check flips the feature PR ready and the parent epic to `status:in review` only when the **last** sibling reaches `in review`, so every VERIFIED slice must get its own Phase-5 pass.
    - Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them.
-   - Any `ship-only` halt (`[UNCOMMITTED]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → leave the slice local, flag `[BLOCKED-ship] <the halt message>`, continue the frontier.
+   - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, `[CI-RED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → flag `[BLOCKED-ship] <the halt message>`, continue the frontier; slice stays local, except `[CI-RED]`: slice pushed, feature PR held draft.
+   - **CI gate** (last `ship-only` of a feature, never per intermediate slice; `references/ci-gate.md`):
+     - `ship-only` returns `[CI-FIX]` + `log_tail`, commits nothing.
+     - Orchestrator dispatches a fresh 3d implementer: "Run `/3d-implement-issue` for `BT-<padded>` as a CI fix: gap report = the `log_tail`; skip the Phase 0 status flip (the slice stays `in review`); record the full suite (`test_gate.py record --suite`) before the commit; commit `fix(BT-<padded>): ci - <step>`; do NOT push."
+     - Orchestrator runs `ci_gate.py cap --commit HEAD` and `floor_guard.py`, then re-runs `ship-only` with `--attempt 2`.
+     - At most 2 fix commits per feature, one round. `[CI-RED]`: implementer `stuck` or red suite, failed cap or floor guard, second red, exit 2 from `ci_gate.py` (`[CI-RED] could not check`), or big: brief → `.tmp/`, comment `[CI-RED]` on PR and slice issue; 3z never mints issues (3b is HITL).
    - Step 1B's confirmation is the ship pre-authorization for 4a Phase 5 step 3.
    - Log each outcome to `.tmp/3z-loop.work.md`.
 _Done when:_ every all-passed feature has all its slices `in review` on an open/updated PR (or flagged), and no merge.
@@ -95,7 +102,7 @@ _Done when:_ every all-passed feature has all its slices `in review` on an open/
 _Done when:_ mergeability and path overlaps scanned.
 
 ## Phase 4: Final Report [output]
-Read `.tmp/3z-loop.work.md` (or in-memory state) and output summary per feature:
+Read `.tmp/3z-loop.work.md` and output summary per feature:
 - PR # (or `local`).
 - Status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on and "re-run /3z after BT-<blocker> reaches in review").
 - Commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags.
@@ -108,5 +115,5 @@ _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which features stayed local.
 
 ## Phase 5: Session Close
-Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP, run memory lint, and delete `.tmp/3z-loop.work.md`.
-_Done when:_ `/0b-stop-session` completes, working file cleaned, and repository memory persisted.
+Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS + BACKLOG_MAP and run memory lint. The decision log is retained (gitignored).
+_Done when:_ `/0b-stop-session` completes and repository memory persisted.

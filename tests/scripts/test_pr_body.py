@@ -440,6 +440,97 @@ def test_build_default_suite_lookup_exits_no_suite_on_a_dirty_tree(repo):
     assert r.returncode == 2 and "[NO-SUITE]" in r.stderr and not r.stdout
 
 
+# --- BT-183: a scoped run is never "the suite"; the reason a record is not reusable is named ---------------------
+
+SCOPED_CMDS = [
+    "npx vitest run tests/ingestion/BT235_IngestionOfflineFallback.test.js tests/ingestion/BT164_StuttgartShootoutIngest.test.js",
+    "python .agents/scripts/test_gate.py record -- python -m pytest -q tests/workflows tests/jules",
+    "pytest tests/x.py::test_y", "pytest -k foo", "pytest -kfoo", "pytest -m slow", "pytest --ignore=tests/a",
+    "pytest --last-failed", "vitest run --changed", "npx vitest run ingestion", "npm run test:ingestion",
+    "pytest tests", "npm test -- src/lib", "bash -c 'npx vitest run src/lib'",
+]
+FULL_CMDS = [
+    "pytest", "pytest -q", "python -m pytest -n 6 --dist worksteal", "python -m pytest -n auto -q -p no:cacheprovider",
+    "bash scripts/check.sh", "npm test", "make test", "npx vitest run", "py -m pytest -q",
+    "python .agents/scripts/test_gate.py record -- python -m pytest -q",
+    "python .agents/scripts/test_gate.py record --suite BT-5 -- bash scripts/check.sh",
+    "bash scripts/check.sh && python -m pytest tests/jules -q",
+    "npm test && python .agents/scripts/validate_memory.py --path .memory",
+    'bash -c "python -m pytest -q; bash scripts/check.sh"',
+]
+
+
+def suite_run(repo):
+    return run(repo, "suite", "--dir", repo / ".tmp")
+
+
+@pytest.mark.parametrize("cmd", SCOPED_CMDS)
+def test_scoped_records_are_not_reusable(repo, cmd):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c, cmd=cmd)
+    r = suite_run(repo)
+    assert (r.returncode, r.stdout) == (1, "")
+    assert "[NO-SUITE] scoped" in r.stderr
+
+
+@pytest.mark.parametrize("cmd", FULL_CMDS)
+def test_full_suite_commands_stay_reusable(repo, cmd):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c, cmd=cmd)
+    r = suite_run(repo)
+    assert r.returncode == 0 and json.loads(r.stdout)["cmd"] == cmd
+
+
+def load_pr_body():
+    spec = importlib.util.spec_from_file_location("pr_body_under_test", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_quoting_round_trip_gives_the_same_verdict_at_record_and_read_time():
+    import shlex
+    pb = load_pr_body()
+    full = ["bash", "-c", "python -m pytest -q; bash scripts/check.sh"]
+    scoped = ["bash", "-c", "npx vitest run src/lib"]
+    assert pb.is_scoped(shlex.join(full)) is False
+    assert pb.is_scoped(shlex.join(scoped)) is True
+
+
+def test_no_suite_reasons_none_head_moved_dirty_tree_scoped(repo):
+    assert "[NO-SUITE] none" in suite_run(repo).stderr
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    commit(repo, "fix(BT-11): behaviour change")
+    assert "[NO-SUITE] head moved" in suite_run(repo).stderr
+    write_suite(repo)  # a record at the current HEAD
+    untracked_src(repo)
+    assert "[NO-SUITE] dirty tree" in suite_run(repo).stderr
+
+
+def test_build_rejects_a_scoped_suite_json(repo):
+    c = commit(repo, "feat(BT-11): one")
+    scoped = write_suite(repo, "scoped.json", sha=c, cmd="pytest tests/x.py")
+    r = build_raw(repo, suite=scoped)
+    assert_clean_error(r)
+    assert "scoped" in r.stderr
+
+
+def test_build_no_suite_message_names_the_recorder(repo):
+    commit(repo, "feat(BT-11): one")
+    r = build_raw(repo)
+    assert r.returncode == 2 and "[NO-SUITE]" in r.stderr
+    assert "test_gate.py record --suite" in r.stderr and "none" in r.stderr
+
+
+def test_suite_not_reused_across_a_docs_only_commit(repo):
+    """Reuse is deliberately not widened: tests read docs/ and .memory/, so any new commit moves HEAD."""
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, sha=c)
+    commit(repo, "docs(BT-11): notes", ["docs/notes.md"])
+    assert suite_out(repo) == (1, "")
+
+
 def test_pr_body_is_registered_like_contract_check():
     spec = importlib.util.spec_from_file_location("scaffold", REPO_ROOT / "src" / "scripts" / "scaffold.py")
     scaffold = importlib.util.module_from_spec(spec)
@@ -448,3 +539,104 @@ def test_pr_body_is_registered_like_contract_check():
     assert ".agents/scripts/pr_body.py" in placed, "scaffold must ship pr_body.py to .agents/scripts/"
     verify = (REPO_ROOT / "tests" / "runners" / "verify_scripts.py").read_text(encoding="utf-8")
     assert 'rel_str == "scripts/pr_body.py"' in verify and ".agents/scripts/pr_body.py" in verify
+
+
+def write_backlog(repo, *rows):
+    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels)."""
+    (repo / ".memory").mkdir(exist_ok=True)
+    lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | PR |", "|---|---|---|---|---|---|---|---|---|"]
+    lines += [f"| {i} | t | open | {labels} | — | — | — | — | — |" for i, labels in rows]
+    (repo / ".memory" / "BACKLOG_MAP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_dropped_prior_row_is_kept_without_a_closes_line(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "feat(BT-12): deferred then dropped")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text("```stratos-pr\nfeature: BT-10\nslices:\n"
+                     '  - {id: BT-12, summary: "closed not planned", verdict: DROPPED, audit_rounds: 2}\n```\n',
+                     encoding="utf-8")
+    commit(repo, "feat(BT-13): third")
+    body = build(repo, "BT-13", prior=prior)
+    by_id = {s[0]: s for s in slices(body)}
+    assert by_id["BT-12"][2] == "DROPPED"
+    assert "Closes #13." in body and "Closes #12." not in body
+
+
+@pytest.mark.parametrize("map_id", ["BT-007", "BT-7"])
+def test_epic_scoped_commit_adds_no_slice_row(repo, map_id):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    write_backlog(repo, (map_id, "type:feature, tier:epic"), ("BT-11", "tier:slice"))
+    body = build(repo, "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"]
+    assert "Closes #7." not in body
+
+
+def test_epic_label_must_be_an_exact_token(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): not an epic")
+    write_backlog(repo, ("BT-7", "tier:epic-ish, xtier:epic, tier:slice"))
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+
+
+def test_without_a_backlog_map_epic_commits_stay_pending(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    by_id = {s[0]: s for s in slices(build(repo, "BT-11"))}
+    assert by_id["BT-7"][2] == "PENDING"
+
+
+def test_shipped_slice_is_never_filtered_as_an_epic(repo):
+    commit(repo, "feat(BT-11): first")
+    write_backlog(repo, ("BT-11", "tier:epic"), ("BT-LOCAL-1", "tier:epic"))
+    body = build(repo, "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #11." in body
+
+
+def test_non_numeric_epic_ids_are_ignored_and_unreadable_map_fails_open(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    write_backlog(repo, ("BT-LOCAL-1", "tier:epic"))
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+    (repo / ".memory" / "BACKLOG_MAP.md").write_bytes(b"\xff\xfe\x00bad")
+    assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
+
+
+# --- --epic: name the epics explicitly, for a clone or CI without .memory/BACKLOG_MAP.md -----------------------
+
+def test_epic_flag_drops_epic_commits_without_a_backlog_map(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    body = build(repo, "BT-11", "--epic", "BT-7")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #7." not in body
+
+
+def test_epic_flag_repeats_and_accepts_padded_ids(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    commit(repo, "docs(BT-8): other epic doc")
+    body = build(repo, "BT-11", "--epic", "BT-007", "--epic", "BT-8")
+    assert [s[0] for s in slices(body)] == ["BT-11"]
+
+
+def test_epic_flag_adds_to_the_backlog_epics(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    commit(repo, "docs(BT-8): other epic doc")
+    write_backlog(repo, ("BT-7", "tier:epic"))
+    assert [s[0] for s in slices(build(repo, "BT-11", "--epic", "BT-8"))] == ["BT-11"]
+
+
+def test_epic_flag_never_filters_the_shipped_slice(repo):
+    commit(repo, "feat(BT-11): first")
+    body = build(repo, "BT-11", "--epic", "BT-11")
+    assert [s[0] for s in slices(body)] == ["BT-11"] and "Closes #11." in body
+
+
+def test_epic_flag_rejects_a_malformed_id_cleanly(repo):
+    commit(repo, "feat(BT-11): one")
+    suite = write_suite(repo, "s.json")
+    r = build_raw(repo, "--epic", "oops", suite=suite)
+    assert_clean_error(r)
+    assert "--epic" in r.stderr

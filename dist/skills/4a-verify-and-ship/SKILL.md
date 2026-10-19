@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-13
+version: "1.5.0"
+timestamp: 2026-10-14
 ---
 
 # Verify and Ship
@@ -21,7 +21,7 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Value-Add Gate
 *Input:* slice issue + parent PRD §8 (`BT-<parentPadded>` resolved as in Phase 2).
-0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` It runs before the bypasses below, so a cosmetic or skipped audit cannot ship uncommitted code.
+0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue (a loosening needs a human-merged Floor exceptions row)`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below.
 1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
 2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, covers a PRD §8 Definition of Done item, or is `[size:large]` / `[mode:AFK]` → proceed to Phase 2: Execution (Context Isolation).
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
@@ -36,10 +36,10 @@ Run the `load-memory` skill to restore session context (read-only).
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d-implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
     1. **Strict Business-Logic Auditor** (independent subagent). Input (full files): the slice issue's `### Acceptance Criteria` (primary, `gh issue view <n>`); the resolved PRD §6/§7/§8, design doc and 3d `## Deviations`; resolved tests + implementation; `.memory/LEARNINGS.md`; `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit." Output: AC↔test gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
-    2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix).
+    2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix), plus `Dismissed` (cap 3): findings it considered and rejected, each `File · Rule · reason ≤ 8 words`.
 
 ### Clean Exit Rule
-If no spec issues (confidence ≥ 80) and no standards violations → proceed directly to Phase 5: Isolated Ship Gate. Output: `[PASS] Slice verified.`
+If no spec issues (confidence ≥ 80) and no standards violations → proceed directly to Phase 5: Isolated Ship Gate. Output: `[PASS] Slice verified.` plus any `Dismissed` lines.
 
 ## Phase 3: Output
 If issues exist, output in two separate sections:
@@ -60,12 +60,14 @@ Advisory findings (does not block shipping):
 |---|---|---|---|
 | [filename] | [Rule ID] | [Hard breach or Judgment] | [Proposed fix] |
 
+`Dismissed` (omit when empty): one line each; HITL shows them at the ship halt, 3z's `audit-only` return drops them.
+
 ## Phase 4: Handoff
 Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
 
 ## Phase 5: Isolated Ship Gate
 
-> **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard first.
+> **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard and floor guard first.
 1. **Branch isolation:** Verify branch is NOT `main`/`master` AND is correct feature branch for parent. Else halt.
 2. **CSS check (UI surfaces only):** Skip when the feature has no UI surface — no `theme.tokens.css` in the app and no UI block in the interface design doc (`2b` Path C). State the skip. A backend-only project has no tokens to synchronize and must not be blocked on them. Otherwise run the design validator:
    ```bash
@@ -76,14 +78,19 @@ Halt. Await human approval. If approved, or if user response to gap report autho
 4. **Release bump + push:** if `scripts/release.py` exists and the branch changes shipped content (`src/` artifacts), run `python scripts/release.py -y` at every ship and commit the result as `release: prepare v<x>` only if its output changed — CI's bump-guard fails the PR otherwise. The clean-tree guard guarantees no uncommitted slice code; commit nothing here except the release bump — never sweep unrelated `.memory/`/`docs/` drift in. (4a never creates the first commit; 3d owns commits.) Push the branch.
 5. **PR (one per feature branch):** none exists → `gh pr create` (if connected) as **draft** (`--draft`): feature PR accumulates sibling slices, un-mergeable until parent epic completes (step 8 flips it ready). **Exception:** standalone issue with no parent feature → non-draft. PR exists → update its body; no duplicate PR per slice, no draft-state change here. Title: `feat(BT-<parentPadded>): <parent feature name>`. Body format, build flags, suite record, risk label and read-back: `references/pr-body-and-ship.md`.
    - **Suite:** `python .agents/scripts/pr_body.py suite`; none → run the suite once and record it per the reference.
-   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--deviation "<deviation line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
+   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--deviation "<deviation line>"]... [--post-merge "noticed: <line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
    - **Body file:** pass `--body-file .tmp/4a-pr-body-BT-<padded>.md` on `gh pr create` / `gh pr edit`; once the call succeeds, `rm -f .tmp/4a-pr-body-BT-<padded>.md .tmp/4a-prior-body.md`. Never commit them.
    - **Risk label, then closing-link read-back:** per the reference, after the call.
-6. **PR-link comment (bi-directional trace):** `gh issue comment <n> --body "Shipped in PR #<pr> — <pr-url>"`, where `<pr-url>` is the full `https://github.com/<owner>/<repo>/pull/<pr>` link. The terminal gate (step 9) accepts only a comment containing that `/pull/` URL — a bare `#<pr>` fails it — so posting exactly this is what makes the check pass. Its own step on purpose: folded into the status write below, it is the clause that drops.
+6. **PR-link comment (bi-directional trace):** `gh issue comment <n> --body "Shipped in PR #<pr> — <pr-url>"`, where `<pr-url>` is the full `https://github.com/<owner>/<repo>/pull/<pr>` link. The terminal gate (step 9) accepts only a comment containing that `/pull/` URL — a bare `#<pr>` fails it — so posting exactly this is what makes the check pass. Its own step on purpose: folded into the status write below, it is the clause that drops. Skip the post when the issue already carries a comment with that URL (a `ship-only` re-run after a CI fix).
 7. **Ship-status + backport:** Move the slice to `status:in review` (code complete + verified + pushed; awaiting merge): `gh issue edit <n> --remove-label "status:in progress" --add-label "status:in review"` and update BACKLOG Status. Do **not** set `status:done` on ship — `done` is marked when the PR merges and auto-closes the issue.
    - **Clear blockers (single writer for this edge):** this slice is now `in review`, so remove its bare ID from every dependent's `Blocked by` in `.memory/BACKLOG_MAP.md` **and** the GitHub blocked-by relationship (`removeBlockedBy` mutation per `references/github-issue-relations.md`), so dependents become visibly unblocked and the map stays a faithful mirror. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
+   - **Standalone issue (no parent):** same CI gate here (rules: `references/ci-gate.md` §2-§4): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]`; tool timeout `600000` or `--wait` below host limit. `[CI-RED]` leaves PR open, non-draft; halt text says so.
 8. **Epic Check:** If **every sibling sub-issue under parent is `status:in review` or `status:done`** (Spikes close as `done` without a PR; Build slices close only on merge; query `gh issue view <parent> --json subIssues`):
-   - Run the **Feature Acceptance Audit** below.
+   - Run the **Feature Acceptance Audit** below (skip on a `ship-only` re-run after a CI fix).
+   - **CI gate** (once per feature, after the audit, before the body rebuild, never per intermediate slice; spec `references/ci-gate.md`): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]` (`--attempt 2` on a `ship-only` re-run after a CI fix; dispatch passes it); tool timeout `600000` or `--wait` below host limit (`ci-gate.md` §2). By result:
+     - `green` | `pending` | `none` → continue (`pending`: `ci:pending` in ship line). `conflict` → report only.
+     - `red`+`small` → fix per `ci-gate.md` §3, re-run once `--attempt 2`. Under 3z (dispatch carries `verdict`/`audit_rounds`): return `[CI-FIX]` + `log_tail`, 4a does not commit.
+     - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice stays `in review`, PR stays draft, epic stays `in progress`, step 9 for slice and dependents cleared in step 7 (parent not flipped), `/3b-create-issue` with `log_tail` as brief (`ci-gate.md` §4).
    - Rebuild the body: re-save the PR's current body to `.tmp/4a-prior-body.md` (step 5 deleted it; `gh pr view <n> --json body -q .body`), then run `pr_body.py build … --prior-body-file .tmp/4a-prior-body.md --close-parent` (adds `Closes #<parent>.`; without the prior body earlier slices become `PENDING` and lose their `Closes` lines).
    - `gh pr edit --body-file` it, `rm -f` both scratch files as in step 5, and re-run the `closingIssuesReferences` read-back for the parent.
    - Mark the feature PR ready for review (`gh pr ready <n>`, if connected; no-op if it was opened non-draft) and state `"All slices for BT-<parent> in review! PR #<n> ready to merge."`.
@@ -94,4 +101,4 @@ Halt. Await human approval. If approved, or if user response to gap report autho
    - Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded; do not emit the ship line until it passes.
    - **Draft rule** (skip for a standalone issue or `local-only`): if any BACKLOG row with `Parent = BT-<parent>` is not `in review`/`done`, the PR must be draft (`gh pr view <n> --json isDraft`). Not draft → heal once with `gh pr ready <n> --undo` and re-check; still not draft → halt `[DRAFT-RULE]`.
 10. **Cleanup:** `rm -f .tmp/3d-plan-BT-<padded>.md` (last step). Keep `.tmp/3d-suite-BT-<padded>.json`.
-11. Output: `[SHIPPED] PR #<n> open for BT-<padded>.` (append `risk:one-way` when the label was applied). Never merge.
+11. Output: `[SHIPPED] PR #<n> open for BT-<padded>.` (append `risk:one-way` when the label was applied, `ci:pending` when the CI check was still running). Never merge.

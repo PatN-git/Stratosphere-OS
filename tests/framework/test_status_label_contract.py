@@ -1,3 +1,4 @@
+# md-crosscheck: label contract vs template registry and board sync
 """The status:* labels are an integration contract with the Projects board sync Action.
 
 Renaming a label makes the Action skip the board update with only a log warning, so the

@@ -10,7 +10,7 @@ updated: 2026-06-22
 # Workflow Proposal: 3c / 4a verification & completion gates
 
 **Status:** Parked proposal. Not yet implemented. Pick this up in a fresh session.
-**Origin:** Surfaced during a review of `github.com/mattpocock/skills` v1 applied to StratOS (see "References" §8). This document is self-contained — you should not need to redo that research.
+**Origin:** Surfaced during a review of the reference skill pack v1 applied to StratOS (see "References" §8). This document is self-contained — you should not need to redo that research.
 
 > **Note on numbering:** this proposal was written before the 3-series renumber (version-planning=3a, create-issue=3b, sprint-planning=3c, implement-issue=3d). Where it says "3c implement-issue" read **3d_implement-issue**; where it says "3a create-issue" read **3b_create-issue**. The logic is unchanged.
 
@@ -72,14 +72,14 @@ So the real shape is: each slice → implement → (user runs) `4a` verifies *th
 - Source map: workflows `src/workflows/<name>.md`; shared reference docs `src/references/<name>.md` → installed at `.agents/workflows/.reference/<name>.md` (scaffold globs the whole dir — new files are auto-included); memory templates `src/memory-templates/`.
 - A workflow cites a reference by its **installed** path: `.agents/workflows/.reference/<name>.md`.
 - **Branch, don't work on `main`.** Follow `AGENT.md` precedence and the constitution's ASK / no-silent-memory-rewrite rules.
-- Coordinate with the implemented changes (from `docs/plans/mattpocock-learnings-implementation-instructions.md`): the implement workflow delegates its loop to `micro-tdd` — add Proposal 1 as a new *exit* phase, not inside the loop; `4a`'s confidence scale lives in `src/references/confidence-scale.md` — Proposal 2, if built as a workflow, can reuse it.
+- Coordinate with the implemented changes (from an earlier implementation plan (since removed)): the implement workflow delegates its loop to `micro-tdd` — add Proposal 1 as a new *exit* phase, not inside the loop; `4a`'s confidence scale lives in `src/references/confidence-scale.md` — Proposal 2, if built as a workflow, can reuse it.
 
 ---
 
 ## 6. Considered and rejected (with reasons — settled, don't reopen)
 
 - **Dissolve `4a` into the implement workflow (one continuous implement→verify→ship).** Rejected: breaks isolation (the author would grade its own code), and folds **PR side effects + the HITL gate** into the auto-flow, violating principles 3–4.
-- **Turn `4a`'s audit into an auto-invoked skill called at the end of the implement loop.** Tempting (mirrors Matt's `implement → review` where review uses sub-agents), but: the *ship* half can't be a skill (side effects), and the *audit* half is redundant given F2. If ever pursued, the rubric must be inlined (principle 2) and the sub-agent dispatch made mandatory (since the implement session is always tainted) — but §F2 makes the payoff small.
+- **Turn `4a`'s audit into an auto-invoked skill called at the end of the implement loop.** Tempting (mirrors its `implement → review` where review uses sub-agents), but: the *ship* half can't be a skill (side effects), and the *audit* half is redundant given F2. If ever pursued, the rubric must be inlined (principle 2) and the sub-agent dispatch made mandatory (since the implement session is always tainted) — but §F2 makes the payoff small.
 - **Hybrid: keep `4a`, add a smaller sub-agent verify at the end of the implement loop.** Rejected as mostly token bloat: because `4a` runs the independent AC↔test audit **per slice immediately after** implementation (F2), a sub-agent audit inside the loop re-runs the adjacent check and risks the anchoring trap (principle 3). The non-redundant residue of this idea is Proposal 1 (a cheap *completion criterion*, not an audit).
 
 ---
@@ -121,9 +121,9 @@ So the real shape is: each slice → implement → (user runs) `4a` verifies *th
 ## 8. References
 
 - Current source: the implement workflow, `src/workflows/4a_verify-and-ship.md`, `src/workflows/4b_audit-architecture-drift.md`, `src/workflows/3b_create-issue.md` (Coverage Auditor).
-- Related work: `docs/plans/mattpocock-learnings-implementation-instructions.md` (the implement→`micro-tdd` delegation; confidence-scale + issue-templates references).
-- Fuller analysis & rationale: `docs/plans/mattpocock-skills-v1-learnings-and-stratos-recommendations.md`.
-- External inspiration: `github.com/mattpocock/skills` v1 — `implement` (delegates to `tdd` + `review`), `review` (sub-agent-based), and the user-invoked/model-invoked invocation model (`docs/invocation.md`). Key transferable principles: feedback latency ("the rate of feedback is your speed limit"), premature-completion defense (sharpen the completion criterion first), and side-effect skills stay user-invoked.
+- Related work: an earlier implementation plan (since removed) (the implement→`micro-tdd` delegation; confidence-scale + issue-templates references).
+- Fuller analysis & rationale: an earlier analysis (since removed).
+- External inspiration: the reference skill pack v1 — `implement` (delegates to `tdd` + `review`), `review` (sub-agent-based), and the user-invoked/model-invoked invocation model (`docs/invocation.md`). Key transferable principles: feedback latency ("the rate of feedback is your speed limit"), premature-completion defense (sharpen the completion criterion first), and side-effect skills stay user-invoked.
 
 ---
 

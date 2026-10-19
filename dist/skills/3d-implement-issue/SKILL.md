@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.5.0"
-timestamp: 2026-10-13
+version: "2.6.0"
+timestamp: 2026-10-14
 ---
 
 # Implement issue
@@ -18,7 +18,7 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 **Hydrate first:** Run the `load-memory` skill to restore session context (read-only); the steps below own all side effects.
 0. **Spike guard (first, before any side effect):** if the slice is `status:needs_spec`, HALT: `[SPIKE] BT-<n> is not buildable. Close it on its Exit Criteria, or mint a Build slice with /3b-create-issue.`
 1. **Branch Isolation:** Resolve parent BT (`BT-<parentPadded>` = the slice's Parent: BACKLOG `Parent`, else `gh issue view <n> --json parent`; none → slice ID). feature branch: `<type>/BT-<parentPadded>-<slug>` (using parent `type:`). Checkout/pull if exists, else create from default. If parent ambiguous, prompt (if AFK, default to slice branch). Never work on `main`. Update `.memory/STATUS.md` `Current Branch`/`Active issue`. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
-2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`. Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic).
+2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`. Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip: its slice stays `in review`.
 3. **Conditional Read:** If a design path resolved, read the frozen blueprint at it; no PRD/design doc at that path (standalone slice) → skip the blueprint.
    - UI slices also read brand tokens `.memory/DESIGN.md` and design rules `.memory/DESIGN_RULES.md` §3 (a backend-only slice reads just the blueprint/contract).
    - UI slices must implement design *only* from these files via Fast-Track B; never access/re-read the live generator.
@@ -29,13 +29,13 @@ Apply strictly to backend logic, database operations, hooks, and state functions
    python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css
    ```
 
-**NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST**
+**NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.** No baseline suite run before it: the observed RED is the baseline; Phase 3 step 6 is the only full run.
 
 ## Phase 0.5: Plan
 Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; 4a deletes it after ship).
 - **HITL:** use the host's native planning mode where one exists (e.g. Antigravity `/plan`, Claude Code plan mode). Any approval prompt is the host's own; add no extra review halt.
 - **AFK** (dispatched by 3z): no approval.
-- **Required sections:** (1) files `[NEW]`/`[MODIFY]`, one-line intent each; (2) seams to test; (3) AC → planned test path; (4) existing tests at risk and how each stays green; (5) cross-cutting touchpoints (state/URL hydration, mocks/fixtures, env stubs needed for CI parity); (6) applicable memory IDs (`[[L/A/DR/G-xxx]]`); (7) open decisions.
+- **Required sections:** (1) files `[NEW]`/`[MODIFY]`, one-line intent each; (2) seams to test; (3) AC → planned test path; (4) existing tests at risk and how each stays green; (5) cross-cutting touchpoints (state/URL hydration, mocks/fixtures, env stubs needed for CI parity); (6) applicable memory IDs (`[[L/A/DR/G-xxx]]`); (7) open decisions; (8) `Noticed, not touched`: issues seen outside the slice, one line each, never fixed here, `none` if empty.
 - **Mechanical plan check (agent-run):** derive the repo's test-file naming pattern(s) from `git ls-files`; no test files yet (greenfield) → skip the pattern match and say so. Every AC needs a planned test path matching one, or an explicit `[UNCOVERED] <AC>: <reason>` plan row (one line: manual-only or design blocker; Phase 3 surfaces it), and every planned test path must match one. Any other miss → fix the plan before Phase 1.
 
 ## Phase 1: Execution via Micro-TDD Skill
@@ -50,7 +50,7 @@ Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, o
 Adhere to:
 1. **Simplify:** run the `code-simplifier` skill on the slice diff under green tests — simplify/refine without changing behavior; re-run related tests after and keep them green.
 2. **Architecture Rules:** verify architectural structure matches `[[A-xxx]]` rules in `.memory/ARCHITECTURE.md`.
-3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>`; before each incremental commit run related tests through `python .agents/scripts/test_gate.py record -- <cmd>` (the opt-in pre-commit test gate checks the record). Never `--no-verify`: a gate block means record a passing run, then commit.
+3. **Incremental Commits:** commit incrementally per TDD milestone: `<type>(BT-<slicePadded>): <summary>` (a CI fix: `fix(BT-<slicePadded>): ci - <step>`); before each incremental commit run related tests through `python .agents/scripts/test_gate.py record -- <related-tests cmd>` (the opt-in pre-commit test gate checks the record). Never `--no-verify`: a gate block means record a passing run, then commit.
 4. **Canonical naming:** name identifiers after GLOSSARY terms; never introduce `Avoid:` synonyms.
 5. **Avoid-drift check:** check changed identifiers against GLOSSARY `Avoid:` lists (whole-identifier only). Ignore third-party/library names, import paths, string literals, and comments. Propose renames (citing the canonical term + `[[G-xxx]]`) at REFACTOR/HITL gate; never auto-rename. Scope: slice diff only.
 
@@ -61,7 +61,7 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no track
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced, and step 6's full run is green.
 5. Compare the coverage map with the plan's AC → test list (skipped when Phase 0.5 was skipped). Name every deviation and write them to a `## Deviations` section of `.tmp/3d-plan-BT-<padded>.md`; none → `none`.
-6. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record -- <cmd>`; red → return to the micro-tdd loop, do not hand off. Write `{"head_sha", "cmd", "observed"}` (the observed summary line) to `.tmp/3d-suite-BT-<padded>.json`.
+6. First run `python .agents/scripts/floor_guard.py`: exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes `.tmp/3d-suite-BT-<padded>.json`); red → return to the micro-tdd loop, do not hand off.
 7. Done also requires a clean tree after the full run, so files the suite generated are checked (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.

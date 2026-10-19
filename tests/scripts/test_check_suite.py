@@ -56,6 +56,13 @@ def test_suite_ignores_execution_skills(suite):
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def test_suite_detects_missing_execution_skill_asset(suite):
+    (suite / "plan-html" / "assets" / "templates" / "plan-document.html").unlink()
+    r = run("suite", "--skills-dir", suite)
+    assert r.returncode == 1
+    assert "plan-html" in r.stdout and "plan-document.html" in r.stdout
+
+
 def test_suite_halts_listing_7_missing_with_remediation(suite):
     missing = lifecycle_names()[:7]
     for name in missing:

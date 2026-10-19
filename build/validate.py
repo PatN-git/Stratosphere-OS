@@ -210,6 +210,28 @@ for md_file in md_files_to_scan:
     except Exception as e:
         errs.append(f"ERROR reading {md_file} during reference validation: {e}")
 
+# 4.4 Every `.agents/scripts/<name>.py` a workflow, skill or reference runs must exist in src/scripts and be
+# shipped to projects by the scaffolder (replaces per-workflow "scaffold ships X" tests).
+scaffold_src = (src_path / "scripts" / "scaffold.py").read_text(encoding="utf-8")
+script_cite = re.compile(r'\.agents/scripts/([A-Za-z0-9_]+\.py)')
+for md_file in src_path.rglob("*.md"):
+    for name in sorted(set(script_cite.findall(md_file.read_text(encoding="utf-8")))):
+        if not (src_path / "scripts" / name).exists():
+            errs.append(f"MISSING SCRIPT: {md_file.relative_to(root)} runs .agents/scripts/{name}, absent from src/scripts/")
+        elif f'"{name}"' not in scaffold_src:
+            errs.append(f"UNSHIPPED SCRIPT: {md_file.relative_to(root)} runs .agents/scripts/{name}, which scaffold.py does not ship")
+
+# 4.45 Tests must not only pin phrases in markdown. A test file that reads src markdown has to compare it with
+# something real (a script, the build, a subprocess) or carry a `# md-crosscheck: <what it compares>` line.
+md_read = re.compile(r'''read_src\(|\.md["']|SKILL\.md|"workflows"|"references"|"commands"|"rules"''')
+real_check = re.compile(r'spec_from_file_location|subprocess|import_module|importlib|closure_for|"dist"|\bDIST\b|'
+                        r'from scripts|import (reconcile|validate|build|scaffold|check_suite)|md-crosscheck:')
+for t in sorted((root / "tests").rglob("test_*.py")):
+    body = t.read_text(encoding="utf-8")
+    if md_read.search(body) and not real_check.search(body):
+        errs.append(f"MARKDOWN-ONLY TEST: {t.relative_to(root)} only inspects markdown; test the script/build it depends on, "
+                    "or add `# md-crosscheck: <what it compares against>` (see improve-workflows-skills playbook)")
+
 # 4.5 Absolute file:// link guard check
 for mr in [root/"src", root/BUNDLE]:
     if not mr.exists(): continue

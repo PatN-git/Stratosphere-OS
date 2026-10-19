@@ -48,6 +48,20 @@ def cited_refs(text):
     return {a or b for a, b in REF_CITE.findall(text)}
 
 
+# Non-markdown files an assets/ index names in backticks (e.g. `plan-document.html`).
+ASSET_NAME = re.compile(r'`([A-Za-z0-9_.-]+\.(?!md\b)[a-z0-9]+)`')
+
+
+def asset_problems(skill_dir: Path):
+    """Asset files a skill's assets/**/index.md names but the install lacks."""
+    problems = []
+    for index in sorted((skill_dir / "assets").rglob("index.md")):
+        for name in sorted(set(ASSET_NAME.findall(index.read_text(encoding="utf-8")))):
+            if not (index.parent / name).is_file():
+                problems.append(f"{index.parent.relative_to(skill_dir).as_posix()}/{name} missing")
+    return problems
+
+
 def frontmatter(text):
     m = re.match(r"^---\r?\n(.*?)\r?\n---", text, re.S)
     return m.group(1) if m else ""
@@ -82,7 +96,7 @@ def skill_problems(skill_dir: Path):
             problems.append(f"references/{name} missing")
             continue
         queue.extend(cited_refs(ref.read_text(encoding="utf-8")) - seen)
-    return problems
+    return problems + asset_problems(skill_dir)
 
 
 def check_suite(skills_dir: Path):
@@ -92,6 +106,11 @@ def check_suite(skills_dir: Path):
         if not d.is_dir():
             missing.append(name)
         elif (p := skill_problems(d)):
+            corrupt[name] = p
+    # Execution skills ship assets too (plan-html templates); an absent one is not an error here.
+    for name in EXECUTION_SKILLS:
+        d = skills_dir / name
+        if d.is_dir() and (p := asset_problems(d)):
             corrupt[name] = p
     return missing, corrupt
 

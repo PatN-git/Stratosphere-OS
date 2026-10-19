@@ -1,6 +1,6 @@
 ---
 name: discovery-pipeline-quality-fixes-proposal
-description: Quality fixes to the discovery→design pipeline (1a/1b/1c/2a/2b) — five audit-verified correctness/protocol defects plus three depth improvements benchmarked against Matt Pocock's current skills.
+description: Quality fixes to the discovery→design pipeline (1a/1b/1c/2a/2b) — five audit-verified correctness/protocol defects plus three depth improvements benchmarked against the reference pack's current skills.
 type: proposal
 version: "1.1.0"
 generated:
@@ -13,7 +13,7 @@ generated:
 **Status:** Open proposal. Not implemented. Self-contained — pick up in any session (incl. mobile / claude.ai/code).
 **Origin:** Two review passes combined —
 - **Part A (defects):** a source audit of the Discover phase (`1a`/`1b`/`1c`) that found five correctness/protocol defects, each verified against source `file:line` and cross-checked against the OKF and memory protocols.
-- **Part B (depth):** a session review of three workflow-quality questions benchmarked against Matt Pocock's current skills (`/grilling`, `/wayfinder`, `/to-spec`, `/handoff`) via web research on `github.com/mattpocock/skills` + `aihero.dev`. Prior lineage record: [`docs/research/archive/v1-1-learnings-and-concept-framing-exploration.md`](../research/archive/v1-1-learnings-and-concept-framing-exploration.md).
+- **Part B (depth):** a session review of three workflow-quality questions benchmarked against the reference pack's current skills (`/grilling`, `/wayfinder`, `/to-spec`, `/handoff`) via web research on the reference pack's public repo and docs. Prior lineage record: [`docs/research/archive/v1-1-learnings-and-concept-framing-exploration.md`](../research/archive/v1-1-learnings-and-concept-framing-exploration.md).
 
 **Scope:** Edits to StratOS's OWN workflow source under `src/workflows/` (and one shared reference under `src/references/`); governed by the `improve-workflows-skills` discipline (per-file OKF version bump once per PR; rebuild `dist/` after edits). NOT product code.
 
@@ -35,7 +35,7 @@ generated:
 | F4 | P3 — cosmetic | `1a:30` | Confidence tag `[MEDIUM]` is undefined; the file's set is `[HIGH\|MED\|LOW]`. |
 | F5 | P3 — minor gap | `1b:103` / template | RAT subagent returns `est_setup_time` and enforces a ≤2-week cap, but the brief template has nowhere to record it. |
 
-**Part B — Pocock-benchmarked depth improvements** (design changes; larger blast radius):
+**Part B — reference-pack-benchmarked depth improvements** (design changes; larger blast radius):
 
 | # | Area | One-line |
 |---|------|----------|
@@ -116,18 +116,18 @@ Ordered by blast radius. Each item is independent; ship as commits on one branch
 
 ---
 
-# Part B — Pocock-benchmarked depth improvements
+# Part B — reference-pack-benchmarked depth improvements
 
 ## Q3 — 1b→2a handover loses information (main leak)
 
-**Finding:** Pocock's `grilling → to-spec` passes NO artifact — `to-spec` reuses the live in-session conversation. StratOS deliberately does the harder cross-session thing (durable `docs/discovery/<slug>.md`), which is correct for its architecture but inherits his `/handoff` principle: **"reference, don't duplicate; external artifacts are the source of truth."** Measured against that, four leaks (verified: `2a` reads the brief only at [`2a:57`](../../src/workflows/2a-write-prd.md) RAT Carry-Over; Phase 3 synthesizes "from **conversation**, BACKLOG_MAP, LEARNINGS, and ADR" at `2a:38`, with the brief not a named structural input):
+**Finding:** the reference pack's `grilling → to-spec` passes NO artifact — `to-spec` reuses the live in-session conversation. StratOS deliberately does the harder cross-session thing (durable `docs/discovery/<slug>.md`), which is correct for its architecture but inherits its `/handoff` principle: **"reference, don't duplicate; external artifacts are the source of truth."** Measured against that, four leaks (verified: `2a` reads the brief only at [`2a:57`](../../src/workflows/2a-write-prd.md) RAT Carry-Over; Phase 3 synthesizes "from **conversation**, BACKLOG_MAP, LEARNINGS, and ADR" at `2a:38`, with the brief not a named structural input):
 
 1. **Contract declared in 1b, not honored in 2a (main leak).** [`1b`](../../src/workflows/1b-concept-framing.md)'s hand-off contract says 2a reads Vocabulary/Actor/Problem/Framing/Non-Goals. But [`2a`](../../src/workflows/2a-write-prd.md) reads the brief in ONE place only — the RAT carry-over. So the handoff silently depends on the conversation still being alive.
 2. **No forward pointer.** 2a detects mode from *PRD existence*, never locates `docs/discovery/<slug>.md` by slug. A brief from a prior session may never be opened.
 3. **Broken bidirectional link.** Brief carries `linked-prd: —`; 2a never writes the minted `BT-<n>` back, and never records the brief path in the PRD/issue.
 4. **Open Questions can evaporate.** 1b writes brief Open Questions "for 2a §10"; 2a's §10 handling only moves 2a's own `> open:` markers. Ingesting the brief's Open Questions is nobody's explicit step.
 
-Sources: `aihero.dev/skills-to-spec` ("does not interview you again… synthesises what is already known"), `aihero.dev/skills-handoff` ("referenced by path or URL, never copied").
+Sources: the reference pack's published `to-spec` ("does not interview you again… synthesises what is already known") and `handoff` ("referenced by path or URL, never copied") docs.
 
 **Recommended fixes:**
 1. **Move ingestion into 2a and make it structural.** Add a Phase-3 sub-step: *"If `docs/discovery/<slug>.md` exists, read it and seed §1/§2/§4/§6/§7 from Vocabulary/Actor/Problem/Framing/Non-Goals; absorb its Open Questions into §10."* Enforce the contract on the consuming side. *(Also covers `1c`-produced briefs — same artifact type; see F3 interaction.)*
@@ -137,15 +137,15 @@ Sources: `aihero.dev/skills-to-spec` ("does not interview you again… synthesis
 
 ## Q2 — 1b stops grilling too early (contradicts its role model)
 
-**Finding:** [`src/workflows/1b-concept-framing.md`](../../src/workflows/1b-concept-framing.md) Phase 2 stop conditions bias toward premature completion, diverging from Matt Pocock's current `/grilling` loop (its acknowledged role model).
+**Finding:** [`src/workflows/1b-concept-framing.md`](../../src/workflows/1b-concept-framing.md) Phase 2 stop conditions bias toward premature completion, diverging from the reference pack's current `/grilling` loop (its acknowledged role model).
 
-| | Pocock `/grilling` (current) | StratOS 1b today |
+| | Reference-pack `/grilling` (current) | StratOS 1b today |
 |---|---|---|
 | Primary stop | **Confirmed shared understanding** (positive gate; "won't act until you confirm") | Coverage checkboxes + "next Q wouldn't change the brief" |
 | Question budget | **None by design** — "fifty questions… or three"; walks the full decision tree | "Focus areas covered at **minimum depth**" |
 | Typical session | ~45 min, has asked 50+ questions before writing | 5-question check-in offering an off-ramp |
 
-Sources: `aihero.dev/my-grill-me-skill-has-gone-viral`, `github.com/mattpocock/skills/releases/tag/v1.1.0`, `aihero.dev/skills-wayfinder`. v1.1 added exactly two sharpening changes to his loop — a **confirmation gate** and a **facts-vs-decisions split** (StratOS already has the split in G2 — keep it).
+Sources: the reference pack's published release notes and docs. v1.1 added exactly two sharpening changes to its loop — a **confirmation gate** and a **facts-vs-decisions split** (StratOS already has the split in G2 — keep it).
 
 **Recommended fixes (in impact order):**
 1. **Make the confirmation gate the primary stop condition**, not coverage. Replace "minimum depth" with: *"Stop only when you can restate actor, problem, and framing back to the user and they confirm the shared understanding is correct and complete."*
@@ -153,7 +153,7 @@ Sources: `aihero.dev/my-grill-me-skill-has-gone-viral`, `github.com/mattpocock/s
 3. **Reframe the 5-question check-in** from an off-ramp (*"or do I have enough?"*) to a direction check: *"Here's what's still fuzzy: [X, Y]. Keep drilling these, or are they intentionally open?"*
 4. **State the "no fixed budget" norm explicitly** (à la `/wayfinder`'s "halt when the fog is pushed back"): e.g. *"A thorough grill is 20–50 questions; do not target brevity."*
 
-Already ahead of the role model: V1/V2/V3 vocabulary stress-tests ≈ his `/grill-with-docs` ubiquitous-language pinning. Keep.
+Already ahead of the role model: V1/V2/V3 vocabulary stress-tests ≈ its `/grill-with-docs` ubiquitous-language pinning. Keep.
 
 ## Q1 — 2b covers UI *or* non-UI, never both (full-stack gap)
 
@@ -188,5 +188,5 @@ So a genuinely full-stack slice (new screen **+** new API/schema/adapter seam) g
 ## Residual risk / what remains unverified
 
 - Part A line numbers were confirmed at `timestamp`; Part B findings were verified against the workflows in-session (`2a` brief-read locations re-confirmed at `2a:38`/`2a:57`). Re-anchor every edit by content.
-- The Pocock benchmark (Part B) rests on the cited `aihero.dev` / GitHub sources captured during the origin session; treat the "50+ questions / no budget" characterization as his stated norm, not a StratOS measurement.
+- The reference-pack benchmark (Part B) rests on the cited public sources captured during the origin session; treat the "50+ questions / no budget" characterization as its stated norm, not a StratOS measurement.
 - F3's fix assumes convergence *should* be a hard HITL stop — see the open decision above.

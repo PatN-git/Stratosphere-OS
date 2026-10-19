@@ -34,7 +34,7 @@ Three problems:
 
 The convention is a **dual path**: a managed plugin for hosts that have a marketplace, and one generic installer for everyone else.
 
-- `mattpocock/skills`: `claude plugins install mattpocock-skills` (managed, read-only, auto-updating) **or** `npx skills@latest add mattpocock/skills` (editable, copied into your repo, re-syncable via `npx skills update`).
+- the reference skill catalog: a managed plugin install (read-only, auto-updating) **or** `npx skills@latest add <catalog>` (editable, copied into your repo, re-syncable via `npx skills update`).
 - That second command is [vercel-labs/skills](https://github.com/vercel-labs/skills) (`skills.sh`) — a host-agnostic installer that already places skills for **antigravity, claude-code, codex, cursor, github-copilot, gemini-cli, opencode, windsurf, amp, droid, goose, kilo, kiro, roo, trae** and more, and lets the user pick which skills and which agents.
 
 Nobody is hand-writing per-host copy scripts anymore. Per-host placement is the installer's job, not the skill package's.

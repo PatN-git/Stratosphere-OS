@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.0"
-timestamp: 2026-10-13
+version: "1.7.0"
+timestamp: 2026-10-14
 ---
 
 # Write PRD
@@ -52,6 +52,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - §7 is the only home for architectural content — ADRs fold in here, no separate ADR files.
 - Forbidden: file paths, code, module/interface designs, slice lists, per-slice AC, Data/Logic/UI breakdowns.
 - Unknown → `> open: <question>` inline; rolls to §10 at validation.
+- §7 `Boundaries` (Always / Ask first / Never) is path-free and feature-specific; seed it from Constraints & Settled Decisions and the cost gate.
 
 **Journey Mapping & Scope-Classing (§6):**
 - Group stories under chronological journey steps (Jeff Patton Story Mapping). For each step, ask *"What has to be true for the user to get through this step?"* to discover features.
@@ -77,6 +78,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] §6 stories journey-grouped with scope tags; no per-story AC; no slice lists
 - [ ] [DEFERRED] stories mirrored in §9
 - [ ] §7 free of module designs, paths, code, slice content
+- [ ] §7 Boundaries has three tier lines (Always / Ask first / Never), each non-empty or `none — <reason>`
 - [ ] §8 is feature-level observable end-state (not per-slice)
 - [ ] §12 Viability & Cost populated (complexity, cost table, arch warning, money check, profit alignment)
 - [ ] Ethical: dark-pattern exclusions in §4; profit-alignment in §12

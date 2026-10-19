@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.1"
+version: "1.6.0"
 timestamp: 2026-10-14
 ---
 
@@ -47,7 +47,8 @@ Run the `load-memory` skill to restore session context (read-only).
 2. Generate 3 Directions (wireframes, layout/structure only; for Path A/B, no tokens/visual style exploration):
    - Invoke plan-html: use wireframe-compare template or 3-column CSS grid (labeled regions + 1-line rationale, trade-off matrix row) to render the ephemeral `.tmp/render/docs/design/BT-<padded>-directions.html` (never committed).
 3. **5-Lens Check:** Evaluate against desirable, usable, feasible, viable, ethical.
-4. **HITL Pick:** Show comparison. Record winner and rejected in docs under "## Direction Alternatives (Considered)".
+4. **Red-flag screen (Path C and any new `seam`):** screen each direction against `references/design-red-flags.md`; name the flags that apply, skip the rest. Record hits per direction under "## Direction Alternatives (Considered)". Layout-only Path A/B directions skip it.
+5. **HITL Pick:** Show comparison. Record winner and rejected in docs under "## Direction Alternatives (Considered)".
 
 ## Phase 3: Design Brief & Pause (PATH A ONLY)
 *(Path B and Path C skip directly to Phase 4: Harmonize & Freeze)*
@@ -71,17 +72,17 @@ Run the `load-memory` skill to restore session context (read-only).
 3. Immortal Components: A1 → propose new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. A2 → discard any generator changes to global shell components (DR-008/DR-010).
 4. Run design-theme: python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --out <app-css-dir>/theme.tokens.css. Import theme.tokens.css below @import "tailwindcss" (or bottom of stylesheet).
 5. Run UX / System Stress Test.
-6. Freeze layout into Path A body block. design doc `status → stable` (editorial).
+6. Freeze layout into Path A body block incl. `Patterns to Reject` (per feature, cite [[DR-001]]); the template's `## States / Edge Classes` line marks each state handled or n/a with a reason. design doc `status → stable` (editorial).
 7. Generator output is read once/frozen. Downstream workflows (3b, 3d, 4a) read only frozen doc/DESIGN.md; 4b audits .memory/. Never access live generator.
 
 ### Path B (Reference-driven native):
 1. Conform to frozen `DESIGN.md` + §3 Immortal Components.
 2. Immortal Components: new page → propose registering new shell as §3 Immortal Component; on confirmation, register in `.memory/DESIGN_RULES.md` §3 immediately. feature → conform to / shield existing components.
 3. Run UX / System Stress Test.
-4. Write blueprint into Path B body block. design doc `status → stable` (editorial).
+4. Write blueprint into Path B body block with `Patterns to Reject` and the States line, as Path A step 6. design doc `status → stable` (editorial).
 
 ### Path C (Non-UI interface contract):
-1. Define the interface and seam boundaries, API signatures, schemas, adapter layers (if mapping domains), I/O params, behavioral invariants, and the input edge-case matrix; evaluate interface depth (deep vs. shallow) and write into the Path C body block.
+1. Write the caller's usage first (the calls a consumer makes), then define the interface and seam boundaries, API signatures, schemas, adapter layers (if mapping domains), I/O params, behavioral invariants, compatibility and error shape, and the input edge-case matrix. Screen the contract against `references/design-red-flags.md` and write it into the Path C body block with scrap signals for 3d.
 2. Run UX / System Stress Test.
 3. Set design doc `status → stable` (editorial).
 

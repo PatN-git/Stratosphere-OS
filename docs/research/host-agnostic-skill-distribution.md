@@ -47,9 +47,9 @@ sources:
     title: "OpenClaw Skills Reference and Precedence Order"
     author: "OpenClaw"
     last_modified: "2026-09-08"
-  - resource: "https://github.com/mattpocock/skills"
-    title: "Matt Pocock Skills Repository & Plugin Structure"
-    author: "Matt Pocock"
+  - resource: "reference skill catalog (external)"
+    title: "Reference skill catalog and plugin structure"
+    author: "external"
     last_modified: "2026-09-24"
   - resource: "https://github.com/affaan-m/ECC"
     title: "Everything Claude Code (ECC) Multi-Harness Architecture"
@@ -114,7 +114,7 @@ The distribution layer has settled into a clean **dual-path model**:
 | :--- | :--- | :---: | :---: | :--- |
 | **N-01** | **One-command installation across any agent:** Users want to install StratOS skills into whatever agent they use (Cursor, Antigravity, Codex, etc.) without downloading repo scripts. | 9 | `[HIGH]` | Triangulated: `vercel-labs/skills` ecosystem growth + StratOS BT-108 issue discussion. |
 | **N-02** | **Zero platform drift across skill bodies:** Users expect identical behavior and references across Claude Code, Antigravity, Cursor, and Codex. | 9 | `[HIGH]` | Triangulated: Constitution §1 byte-identical invariant + v4 spec-conformance audit. |
-| **N-03** | **Guaranteed Human-In-The-Loop safety:** Heavy lifecycle orchestrators (`0a`–`4c`) must never be autonomously invoked by the agent without explicit user slash commands. | 10 | `[HIGH]` | Triangulated: Matt Pocock Skills v1 learnings (63% token reduction) + Codex/Cursor HITL docs. |
+| **N-03** | **Guaranteed Human-In-The-Loop safety:** Heavy lifecycle orchestrators (`0a`–`4c`) must never be autonomously invoked by the agent without explicit user slash commands. | 10 | `[HIGH]` | Triangulated: reference-pack v1 learnings (63% token reduction) + Codex/Cursor HITL docs. |
 | **N-04** | **Preservation of nested skill documentation:** Skills relying on progressive disclosure (`references/`, `scripts/`) must keep their subdirectories upon installation. | 8 | `[HIGH]` | Triangulated: Live `skills add` S1 spike execution + `cli.mjs` inspection. |
 | **N-05** | **Clean project bootstrap separation:** Users need a clear distinction between installing the skill runbooks onto their machine vs bootstrapping a project repository (`.memory/`, constitution, rules). | 8 | `[HIGH]` | Triangulated: `host-agnostic-install-framework-plan.md` §3 + `scaffold.py` code inspection. |
 
@@ -224,16 +224,16 @@ To benchmark StratosphereOS's distribution strategy, four prominent AI agent ski
 
 | Repository | Primary Architecture | Skill Placement in Repo | Distribution Method(s) | Project vs. Dist Separation |
 | :--- | :--- | :--- | :--- | :--- |
-| **[`mattpocock/skills`](https://github.com/mattpocock/skills)** | Skill catalog + repo bootstrap flow | `skills/<category>/<name>/` (e.g. `skills/engineering/`, `skills/productivity/`) | Dual-path: Claude Code Marketplace (`mattpocock-skills`) + `npx skills@latest add mattpocock/skills` (54 skills, 25M+ installs) | **None** (pure markdown tree; `skills/` is both source and distribution). Ships `/setup-matt-pocock-skills` as a run-once onboarding orchestrator to configure the repo. |
+| **reference skill catalog** | Skill catalog + repo bootstrap flow | `skills/<category>/<name>/` (e.g. `skills/engineering/`, `skills/productivity/`) | Dual-path: Claude Code Marketplace (`<pack>-skills`) + `npx skills@latest add <catalog>` (54 skills, 25M+ installs) | **None** (pure markdown tree; `skills/` is both source and distribution). Ships its `/setup-…` bootstrap skill as a run-once onboarding orchestrator to configure the repo. |
 | **[`affaan-m/ECC`](https://github.com/affaan-m/ECC)** *(Everything Claude Code)* | Multi-harness agent OS & framework | `skills/<name>/SKILL.md` (root `skills/` alongside `rules/`, `workflows/`, `scaffolds/`) | Custom NPM package runner: `npx ecc-universal setup` / `install --guided` + native `ecc@ecc` marketplace plugin | **Partial** (`skills/` at root acts as source and distribution; runner inspects active harness scopes before copying). |
 | **[`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core)** *(GSD Core)* | Meta-prompting & context framework | `skills/<name>/SKILL.md` (root `skills/` alongside `src/` TypeScript engine, `hooks/`) | Dedicated package runner: `npx @opengsd/gsd-core@latest` (prompts for runtime and copies skills) | **Partial** (`skills/` at root contains canonical skill runbooks; custom CLI handles placement into agent targets). |
 | **[`ComposioHQ/awesome-claude-skills`](https://github.com/ComposioHQ/awesome-claude-skills)** | Curated community showcase | `<skill-name>/SKILL.md` (flat directories at repo root) | Direct clone / `npx skills add ComposioHQ/awesome-claude-skills` | **None** (pure flat catalog; no build step, no framework rules or memory layers). |
 
 ### Key Takeaways from the Ecosystem
-1. **Catalog vs. Framework Distinction:** Pure skill catalogs (`mattpocock/skills`, `awesome-claude-skills`) place skills directly in root `skills/` or flat folders because they do not compile artifacts, run test harnesses, or manage project state. In contrast, full frameworks (`ECC`, `gsd-core`) distribute more than loose markdown—they require rules, hooks, and project templates.
+1. **Catalog vs. Framework Distinction:** Pure skill catalogs (the reference skill catalog, `awesome-claude-skills`) place skills directly in root `skills/` or flat folders because they do not compile artifacts, run test harnesses, or manage project state. In contrast, full frameworks (`ECC`, `gsd-core`) distribute more than loose markdown—they require rules, hooks, and project templates.
 2. **Dedicated CLI Runners for Frameworks:** Both `ECC` (`npx ecc-universal`) and `GSD Core` (`npx @opengsd/gsd-core`) concluded that raw shell scripts fail across heterogeneous environments. Instead of maintaining per-host bash/PowerShell scripts, they use a lightweight Node package runner for project bootstrapping.
-3. **Explicit Plugin Manifests:** In `mattpocock/skills`, `.claude-plugin/plugin.json` explicitly enumerates all skills via `"skills": ["./skills/engineering/ask-matt", ...]` rather than relying on a hardcoded directory structure.
-4. **The Setup-Skill Bootstrap Pattern (`setup-matt-pocock-skills` vs. `stratosphere-setup`):** In `mattpocock/skills` (analyzed via `aihero.dev/skills-setup-matt-pocock-skills` and `skills.sh/mattpocock/skills`), the repository onboarding mechanism is not an external shell installer, but a self-contained bootstrap skill: `/setup-matt-pocock-skills` (ranking in the top 5 with >900K installs). Once `skills.sh` delivers the skills pack into the agent's path, the user executes `/setup-matt-pocock-skills` to initialize repo-level markdown configuration (`docs/agents/issue-tracker.md`, labels, `CONTEXT.md`) and inject skill pointers into `CLAUDE.md`. This directly validates StratosphereOS's separation of concerns:
+3. **Explicit Plugin Manifests:** In the reference skill catalog, `.claude-plugin/plugin.json` explicitly enumerates all skills via `"skills": ["./skills/engineering/<router-skill>", ...]` rather than relying on a hardcoded directory structure.
+4. **The Setup-Skill Bootstrap Pattern (`setup-<pack>-skills` vs. `stratosphere-setup`):** In the reference skill catalog (analyzed from its published docs), the repository onboarding mechanism is not an external shell installer, but a self-contained bootstrap skill: its `/setup-…` bootstrap skill (ranking in the top 5 with >900K installs). Once `skills.sh` delivers the skills pack into the agent's path, the user executes its `/setup-…` bootstrap skill to initialize repo-level markdown configuration (`docs/agents/issue-tracker.md`, labels, `CONTEXT.md`) and inject skill pointers into `CLAUDE.md`. This directly validates StratosphereOS's separation of concerns:
    - **Step 1 (Distribution):** `skills.sh` / native marketplace copies the skills into agent directories (`dist/skills/` $\rightarrow$ `.agents/skills/`).
    - **Step 2 (Scaffolding):** The user triggers the `/stratosphere-setup` lifecycle skill inside the agent, which initializes `.memory/`, installs the constitution (`AGENTS.md` and pointer files), and configures project rules. Neither phase requires brittle host-specific shell installers.
 

@@ -97,7 +97,7 @@ StratosphereOS skills install through the open agent-skills ecosystem using stan
 
 ## 11. Further Notes
 - **S1 Empirical Spike Results:** Spikes executed against `skills@1.7.0` confirmed recursive copying of `references/`, verbatim preservation of `agents/openai.yaml`, and complete indexing of leading-digit skill names (`0a-start-session`, `1a-research`).
-- **Benchmark Alignment:** Benchmarking against `mattpocock/skills` validated that top-tier agent skill repositories decouple skill placement from repository onboarding (`setup-matt-pocock-skills` $\leftrightarrow$ `stratosphere-setup`).
+- **Benchmark Alignment:** Benchmarking against the reference skill catalog validated that top-tier agent skill repositories decouple skill placement from repository onboarding (`setup-<pack>-skills` $\leftrightarrow$ `stratosphere-setup`).
 
 ## 12. Viability & Cost
 - **Complexity Estimate:** 3 / 10 (Consolidation of build output, deletion of shell scripts, update of test harnesses and documentation; low architectural risk).

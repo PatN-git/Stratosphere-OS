@@ -45,10 +45,10 @@ Ordered lowest-risk-first. All items are now unblocked.
 
 ### 2.1 Q4 — frontier-batched grilling with inference-collapse (D3, revised after review)
 
-**Design correction (2026-07-24 review):** the earlier "structural tier = always one-by-one" rule is **dropped**. It was *stricter* than Matt Pocock's own `batch-grill-me`, which is **purely frontier-based with no categorical exception** (*"a question whose answer depends on another still open in this round belongs to a later round"*). The objection that stands: for brownfield, actor/problem/framing are usually obvious, so forcing them one-at-a-time buys nothing. Community grill-me clones (RobMitt, coderocketai, …) add nothing here — all one-at-a-time copies of his stable skill. So the design follows Matt's frontier model, not a category rule.
+**Design correction (2026-07-24 review):** the earlier "structural tier = always one-by-one" rule is **dropped**. It was *stricter* than the reference pack's own `batch-grill-me`, which is **purely frontier-based with no categorical exception** (*"a question whose answer depends on another still open in this round belongs to a later round"*). The objection that stands: for brownfield, actor/problem/framing are usually obvious, so forcing them one-at-a-time buys nothing. Community grill-me clones (RobMitt, coderocketai, …) add nothing here — all one-at-a-time copies of the reference pack's stable skill. So the design follows its frontier model, not a category rule.
 
 **The rule — dependency-driven, not category-driven:**
-1. **Facts are never asked (inference-collapse).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up (or sub-agent-dispatched *in parallel, non-blocking*), so it never becomes a question. Matt's rule verbatim: *"Finding facts is your job, never the user's."* This is what makes the brownfield "obvious" case disappear from the queue entirely.
+1. **Facts are never asked (inference-collapse).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up (or sub-agent-dispatched *in parallel, non-blocking*), so it never becomes a question. Its rule, verbatim: *"Finding facts is your job, never the user's."* This is what makes the brownfield "obvious" case disappear from the queue entirely.
 2. **A question serializes only on a genuine dependency edge**, never because it is "structural." Each round asks the whole **frontier** = every open *decision* whose prerequisites are settled, numbered, each with a recommended answer (G1). A question waits only if its answer depends on a sibling still open this round.
 3. **Obvious decisions collapse to a batch-confirm.** Where the agent can confidently infer an answer (common brownfield), it pre-fills the recommended answer and presents actor/problem/framing as *one confirmation* — *"here's what I inferred; correct any that are wrong"* — not N serial questions.
 4. Collect answers → mark settled on the `## Coverage` checklist → recompute frontier → next round. **Done** when the frontier is empty **and** the user confirms shared understanding (the Q2 gate).
@@ -65,7 +65,7 @@ Ordered lowest-risk-first. All items are now unblocked.
 
 ### 2.2 D4 — does `2a` PRD + `2b` design doc cover enough to implement? (**yes, once Q1 lands**)
 
-Mapping StratOS artifacts against Pocock's `to-spec` sections and against what `3d` needs:
+Mapping StratOS artifacts against the reference pack's `to-spec` sections and against what `3d` needs:
 
 | `to-spec` section | StratOS home | Verdict |
 |---|---|---|
@@ -81,7 +81,7 @@ Plus StratOS adds §3 Goals, §5 Success Signals, §7 Constraints+ADR, §8 Defin
 
 **Conclusion:** Coverage is sufficient for implementation **once Q1 closes the Interface-Contract gap for full-stack UI slices.** That reframes Q1 from "nice full-stack fix" to **the load-bearing coverage fix** — it is what makes the artifact set implementation-complete. No spec reframe (D4 = no).
 
-**Optional, low-priority (not a work item):** the `2b` "Handoff Notes for 3c/4a" section is freeform; it *could* explicitly name test targets (Pocock's "Testing Decisions"). Deferred — `micro-tdd` + `3c` already cover it procedurally; revisit only if under-tested slices are observed.
+**Optional, low-priority (not a work item):** the `2b` "Handoff Notes for 3c/4a" section is freeform; it *could* explicitly name test targets (the reference pack's "Testing Decisions"). Deferred — `micro-tdd` + `3c` already cover it procedurally; revisit only if under-tested slices are observed.
 
 ---
 
@@ -91,7 +91,7 @@ Plus StratOS adds §3 Goals, §5 Success Signals, §7 Constraints+ADR, §8 Defin
 |---|----------|---------|
 | D1 | `1c` convergence gate | **Hard HITL stop**, mirror `1b` Phase 6 self-review + approval before closing the map. (F3 ready.) |
 | D2 | `1b` stop-conditions scope | **Full rewrite** — all 4 fixes (confirmation gate primary; delete stop-cond-2; reframe 5-Q check-in to direction-check; state "no fixed budget, 20–50 Q" norm). |
-| D3 | Batched grill | **Yes, reliably — via Matt's pure-frontier model, not a structural tier** (that earlier idea dropped as too rigid on review). Dependency-driven rounds + inference-collapse: facts looked up (never asked), obvious brownfield decisions batch-confirmed, genuine dependencies serialize themselves. Default for generate/longer path. (§2.1) |
+| D3 | Batched grill | **Yes, reliably — via the reference pack's pure-frontier model, not a structural tier** (that earlier idea dropped as too rigid on review). Dependency-driven rounds + inference-collapse: facts looked up (never asked), obvious brownfield decisions batch-confirmed, genuine dependencies serialize themselves. Default for generate/longer path. (§2.1) |
 | D4 | Spec reframe / coverage | **No reframe.** Coverage sufficient once Q1 lands; Q1 is the load-bearing coverage fix. (§2.2) |
 | D5 | Packaging | **One PR**, all items, OKF version bumps per touched file. |
 | D6 | Ship path | Confirmed: `improve-workflows-skills` → edit `src/` (never `dist/`/`.agents/`) → rebuild `dist/` → `/4a_verify-and-ship`. |
@@ -127,10 +127,4 @@ Same source-audit method as F1–F5, run across the 14 non-Discover workflows (0
 **Grep sweep for the F1/F6 `updated`-field class (done):** searched all of `src/` — the only two metadata-field occurrences are `1b:73` (F1) and `2b:32` (F6). Every other `updated` hit is prose ("Roadmap updated", "open/updated PR", "registered/updated"). **No further instances** — F1+F6 are the complete set of this defect.
 
 ## 4. Sources (benchmark research)
-
-- [The /grilling Skill](https://www.aihero.dev/skills-grilling) · [grilling/SKILL.md](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md)
-- [batch-grill-me (in-progress)](https://github.com/mattpocock/skills/tree/main/skills/in-progress/batch-grill-me)
-- [The /to-spec Skill](https://www.aihero.dev/skills-to-spec) · [to-spec/SKILL.md](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md)
-- [v1.1.0 CHANGELOG](https://github.com/mattpocock/skills/blob/main/CHANGELOG.md) · [Release v1.1.0](https://github.com/mattpocock/skills/releases/tag/v1.1.0)
-- [/wayfinder](https://www.aihero.dev/skills-wayfinder) (the map layer) · [Pocock on wayfinder + central map](https://x.com/mattpocockuk/status/2072716979195326905)
 - Community grill-me clones surveyed (all one-at-a-time, no batching innovation): [RobMitt/grill-me-skill](https://github.com/RobMitt/grill-me-skill) · [coderocketai/claude-skills](https://github.com/coderocketai/claude-skills/blob/main/grill-me/SKILL.md)

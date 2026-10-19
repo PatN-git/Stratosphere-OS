@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# md-crosscheck: producer hand-off lines vs the workflows that really contain the artifact
 """BT-168 H2: a producer's hand-off line is names-only -- `Writes <path>. Read by: /x, /y.` -- and its
 reader names equal, both ways, the workflows that actually contain the artifact token. The meaning of
 what a reader does with the artifact lives in the reader's own body, never restated in the producer."""

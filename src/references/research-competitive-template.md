@@ -1,7 +1,7 @@
 ---
 description: Template for a competitive research brief under docs/research/.
-version: "2.1.1"
-timestamp: 2026-09-15
+version: "2.2.0"
+timestamp: 2026-10-14
 ---
 
 # Research Competitive Template
@@ -107,6 +107,6 @@ spend, anything indicating people already pay to solve this. Mark a signal you c
 find as [Unknown] rather than omitting it - `/2a-write-prd` section 12 cites this section
 and its Cost Approval Gate cannot fire on a section that is not here.>
 
-## Open Questions & Unknowns
-- <Explicitly list any missing info, product trial requirements, or unconfirmed claims.>
+## What we don't know
+- <Each gap: question · where searched · what found. Empty needs a one-line reason.>
 
