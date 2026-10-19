@@ -2,7 +2,7 @@
 type: reference
 title: Improving Workflows & Skills
 description: Dev-time discipline for authoring and improving StratOS's own skills (src/skills) and workflows (src/workflows). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.1.2"
+version: "2.1.3"
 generated:
   by: Patrick Nennewitz
   at: 2026-09-15
@@ -149,3 +149,4 @@ Perform a systematic, word-level economy pass on every sentence. Prune words tha
 
 - Edit `src/` only — never hand-edit `dist/`. Rebuild via `python build/build.py`; confirm `build/validate.py` + the install-harness are green. Bump `version` once per PR on every changed file. `timestamp:` stays on `src/` files (build field); in-scope `.memory/`+`docs/` documents use `generated: {by, at}` instead (`okf-protocol.md` §2).
 - These references never ship, so they need not be self-contained against a consumer project — but they **are** self-contained as a pair (playbook + `glossary.md`).
+- **No markdown-pin tests.** A markdown edit gets no test that only asserts a phrase exists: it fails on harmless rewording and cannot show the workflow still works. Verify with `build.py`, `validate.py` and `check_suite`. If a markdown rule is load-bearing, add one rule to those linters. A test may read markdown only to compare it with a script, the build output or another artifact; mark it `# md-crosscheck: <what it compares>` (`validate.py` rejects the rest).

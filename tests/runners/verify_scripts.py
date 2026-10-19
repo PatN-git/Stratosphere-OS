@@ -203,19 +203,6 @@ def test_update_flow():
         sys.stderr.flush()
         raise AssertionError(f"test_update_flow.py failed with exit code {result.returncode}.\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
 
-def test_update_preflight():
-    print("\n--- Testing update preflight instructions ---")
-    repo_root = Path(__file__).resolve().parents[2]
-    result = subprocess.run([sys.executable, "tests/framework/test_update_preflight.py"], cwd=str(repo_root), capture_output=True, text=True)
-    print("Exit code:", result.returncode)
-    sys.stdout.flush()
-    if result.returncode == 0:
-        print("update_preflight instructions test passed!")
-        return True
-    else:
-        print("update_preflight instructions test failed! Output:\n", result.stdout, result.stderr)
-        return False
-
 def test_orphan_guard():
     print("\n--- Testing Orphan-Guard Anti-Recurrence Check ---")
     repo_root = Path(__file__).resolve().parents[2]
@@ -390,8 +377,6 @@ if __name__ == "__main__":
     if not test_scaffold():
         success = False
     if not test_scaffold_repair_lock():
-        success = False
-    if not test_update_preflight():
         success = False
     if not test_update_flow():
         success = False

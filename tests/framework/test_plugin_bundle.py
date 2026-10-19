@@ -1,3 +1,4 @@
+# md-crosscheck: shipped files vs the bundle layout
 """BT-150: the Antigravity plugin install (`agy plugin install dist`) is a first-class location.
 
 `agy` copies the plugin to ~/.gemini/config/plugins/stratosphere-os/ (manifest + skills/), so the

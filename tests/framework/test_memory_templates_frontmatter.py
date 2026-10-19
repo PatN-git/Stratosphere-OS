@@ -1,3 +1,4 @@
+# md-crosscheck: templates vs the version reader in src/scripts
 """Memory templates mint in-scope .memory/ documents, so they carry OKF v0.2 `generated:`.
 
 `timestamp:` is retired inside the bundle scope (okf-protocol §1-§2). The templates

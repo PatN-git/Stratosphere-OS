@@ -221,6 +221,17 @@ for md_file in src_path.rglob("*.md"):
         elif f'"{name}"' not in scaffold_src:
             errs.append(f"UNSHIPPED SCRIPT: {md_file.relative_to(root)} runs .agents/scripts/{name}, which scaffold.py does not ship")
 
+# 4.45 Tests must not only pin phrases in markdown. A test file that reads src markdown has to compare it with
+# something real (a script, the build, a subprocess) or carry a `# md-crosscheck: <what it compares>` line.
+md_read = re.compile(r'''read_src\(|\.md["']|SKILL\.md|"workflows"|"references"|"commands"|"rules"''')
+real_check = re.compile(r'spec_from_file_location|subprocess|import_module|importlib|closure_for|"dist"|\bDIST\b|'
+                        r'from scripts|import (reconcile|validate|build|scaffold|check_suite)|md-crosscheck:')
+for t in sorted((root / "tests").rglob("test_*.py")):
+    body = t.read_text(encoding="utf-8")
+    if md_read.search(body) and not real_check.search(body):
+        errs.append(f"MARKDOWN-ONLY TEST: {t.relative_to(root)} only inspects markdown; test the script/build it depends on, "
+                    "or add `# md-crosscheck: <what it compares against>` (see improve-workflows-skills playbook)")
+
 # 4.5 Absolute file:// link guard check
 for mr in [root/"src", root/BUNDLE]:
     if not mr.exists(): continue

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# md-crosscheck: doc invocations vs the pinned CLI behaviour
 """@google/design.md toolchain pin and lint invocation (BT-135).
 
 The pin documents the version consumers get from unpinned `npx`; the bare

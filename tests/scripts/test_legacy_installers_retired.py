@@ -1,3 +1,4 @@
+# md-crosscheck: repo-wide grep guard for retired names
 """BT-119: legacy per-host installers are retired; nothing live may reference them.
 
 Superseded by the canonical dist/skills bundle (BT-118) and the Antigravity bridge

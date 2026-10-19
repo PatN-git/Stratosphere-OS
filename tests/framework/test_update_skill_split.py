@@ -1,3 +1,4 @@
+# md-crosscheck: router citations vs files that exist, and size budget
 """PR #151 round 3: the update skill stays lean.
 
 The host-specific "Out of date" update paths live in src/references/update-*.md and SKILL.md only
