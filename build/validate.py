@@ -210,6 +210,17 @@ for md_file in md_files_to_scan:
     except Exception as e:
         errs.append(f"ERROR reading {md_file} during reference validation: {e}")
 
+# 4.4 Every `.agents/scripts/<name>.py` a workflow, skill or reference runs must exist in src/scripts and be
+# shipped to projects by the scaffolder (replaces per-workflow "scaffold ships X" tests).
+scaffold_src = (src_path / "scripts" / "scaffold.py").read_text(encoding="utf-8")
+script_cite = re.compile(r'\.agents/scripts/([A-Za-z0-9_]+\.py)')
+for md_file in src_path.rglob("*.md"):
+    for name in sorted(set(script_cite.findall(md_file.read_text(encoding="utf-8")))):
+        if not (src_path / "scripts" / name).exists():
+            errs.append(f"MISSING SCRIPT: {md_file.relative_to(root)} runs .agents/scripts/{name}, absent from src/scripts/")
+        elif f'"{name}"' not in scaffold_src:
+            errs.append(f"UNSHIPPED SCRIPT: {md_file.relative_to(root)} runs .agents/scripts/{name}, which scaffold.py does not ship")
+
 # 4.5 Absolute file:// link guard check
 for mr in [root/"src", root/BUNDLE]:
     if not mr.exists(): continue

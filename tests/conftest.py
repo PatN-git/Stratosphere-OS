@@ -64,3 +64,11 @@ def update_skill_text():
     skill = (REPO_ROOT / "src/commands/stratosphere-update/SKILL.md").read_text(encoding="utf-8")
     cited = dict.fromkeys(re.findall(r"(?<![\w/.])references/(update-[A-Za-z0-9_.-]+\.md)", skill))
     return skill + "".join("\n" + (REPO_ROOT / "src/references" / name).read_text(encoding="utf-8") for name in cited)
+
+
+def pytest_collection_modifyitems(items):
+    """tests/lifecycle guards tests/lifecycle-harness, which neither CI nor check.sh runs (last live L3 run
+    2026-09-17); the `integration` marker keeps it out of the default run. `pytest -m integration tests/lifecycle`."""
+    for item in items:
+        if "tests/lifecycle/" in item.nodeid.replace("\\", "/"):
+            item.add_marker(pytest.mark.integration)
