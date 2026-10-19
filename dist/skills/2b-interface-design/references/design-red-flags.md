@@ -1,36 +1,36 @@
 ---
-description: Named structural red flags screened against a non-UI interface design (2b Path C) so design and audit share one vocabulary; flags already defined elsewhere are pointers.
+description: Named structural red flags to screen a non-UI interface design (2b Path C) against; one vocabulary for design and audit; flags defined elsewhere are pointers.
 version: "1.0.0"
 timestamp: 2026-10-14
 ---
 
 # Design Red Flags
 
-Screen each candidate interface; name the flags that apply, skip the rest. A hit means revise or reject the shape. Assume the next contributor is an agent that sees only the files it opened, copies the nearest example and takes the shortest path that compiles: prefer the design where a change that looks right from one file is right for the whole repo.
+Screen each candidate interface: name flags that apply, skip rest. Hit → revise or reject shape. Next contributor is an agent: sees only opened files, copies nearest example, takes shortest path that compiles. Prefer design where a change right from one file is right repo-wide.
 
 ## Shallow module
-Depth and the Deletion Test: `.memory/ARCHITECTURE.md` vocabulary. Depth concentrates capability behind one interface; a deep call chain scatters it across layers.
+Depth, Deletion Test: `.memory/ARCHITECTURE.md` vocabulary. Depth concentrates capability behind one interface; deep call chain scatters it across layers.
 
 ## Information leakage
-Several modules depend on one internal decision (representation, policy, protocol detail), so changing it needs coordinated edits. Re-exporting wire or transport types is leakage: parse external data into domain types and keep storage schemas and framework objects private.
+Several modules depend on one internal decision (representation, policy, protocol detail): change needs coordinated edits. Re-exported wire or transport types leak. Parse external data into domain types; keep storage schemas and framework objects private.
 
 ## Temporal decomposition
-Modules split by execution order (load, validate, transform, save) instead of owned knowledge, repeating one representation and its invariants at each boundary. Group by knowledge; code that runs at different times can share a module when it protects the same decisions.
+Modules split by execution order (load, validate, transform, save) not owned knowledge: one representation and its invariants repeat at each boundary. Group by knowledge; code running at different times may share a module when it protects the same decisions.
 
 ## Pass-through method
-The Middle Man smell in `code-smell-baseline.md`. Keep a forwarding boundary only when it adds policy, adaptation or a distinct abstraction.
+Middle Man smell: `code-smell-baseline.md`. Keep forwarding boundary only if it adds policy, adaptation or distinct abstraction.
 
 ## Split ownership
-Several modules write the same state or keep their own copy, so an agent editing one writer cannot see the others. Give each piece of state one owner; others read it or ask the owner to change it.
+Several modules write or copy same state: agent editing one writer cannot see others. One owner per state; others read it or ask owner to change it.
 
 ## Two ways to do one task
-An agent copies whichever way it finds first, so both keep gaining callers. Keep one, move callers off the other, delete it in the same change.
+Agent copies first way found; both gain callers. Keep one, move callers, delete other in same change.
 
 ## Importable internals
-An agent takes the shortest path that compiles, so importable internals become interface. Make them unreachable so an outside import fails the build.
+Agent takes shortest path that compiles: importable internals become interface. Make unreachable; outside import fails build.
 
 ## Hand-synced list
-Several places list the same items; an agent that sees one list updates only that one. Keep one list and derive the others; if one cannot be derived, fail the build when they disagree.
+Several places list same items; agent updates only the list it sees. Keep one list, derive others; underivable → fail build on disagreement.
 
 ---
 *Adapted from cursor/plugins pstack `architect` (MIT, Copyright (c) 2026 Lauren Tan); condensed for StratosphereOS.*
