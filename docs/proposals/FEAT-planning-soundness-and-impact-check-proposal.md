@@ -11,7 +11,7 @@ generated:
 # Workflow Proposal: planning soundness via upstream scaffolding (+ an impact check)
 
 **Status:** Parked proposal. Not implemented. Pick up in a fresh session.
-**Origin:** Decided after reviewing Matt Pocock's skills + the user's observation that Antigravity (Gemini) is weaker than Claude Code at producing long, sound plans. This document is self-contained.
+**Origin:** Decided after reviewing the reference pack's skills + the user's observation that Antigravity (Gemini) is weaker than Claude Code at producing long, sound plans. This document is self-contained.
 
 > **Decisions already locked (do not re-open):**
 > - `plan-html` stays a single, focused **planning-support** skill — NOT split, and NO separate prototype skill (runnable-throwaway needs are covered by `3b` Template A spikes + `micro-tdd`). `plan-html` is a *rendering* layer; it helps a human *engage with* a plan but cannot make the model's plan *content* sounder.
@@ -80,7 +80,7 @@ One new subagent + one new design-doc section, threaded through hand-off contrac
 These tighten what already exists; they are lower priority than §2. Unifying principle from §1: **bounded slots + exhaustive checklists + decomposition + interview-extracted soundness** beat free-form long-form reasoning.
 
 1. **Section-by-section authoring, not one-shot drafts (`2a-write-prd`).** Make the model fill each PRD section against a crisp slot spec + a one-line example ("§2 Solution: 2–3 sentences, user perspective, no implementation"), validating per section — rather than composing the whole §1–§12 doc in one pass. A weak model nails a constrained slot and fumbles a long narrative. (Tighten the PRD-template slot specs in `.agents/workflows/.reference/PRD-template.md`.)
-2. **Exhaustive, checkable completion checklists as the anti-omission defense.** Harden `2a` Phase 4 validate and `3b`'s Coverage Auditor so criteria are exhaustive ("every §6 story has scope-class + ODI; every `[DEFERRED]` mirrored in §9; every open question in §10"). This is Matt's "sharp completion criterion" applied to planning.
+2. **Exhaustive, checkable completion checklists as the anti-omission defense.** Harden `2a` Phase 4 validate and `3b`'s Coverage Auditor so criteria are exhaustive ("every §6 story has scope-class + ODI; every `[DEFERRED]` mirrored in §9; every open question in §10"). This is the reference pack's "sharp completion criterion" applied to planning.
 3. **Decomposition over length.** Keep each artifact short and push detail downstream (brief → PRD → interface → slices), chained by the existing hand-off contracts. Several short bounded steps beat one long plan for a weaker model — so resist letting any single workflow carry everything.
 4. **Let the grill extract soundness (`1b`).** The relentless one-question-at-a-time interview sources soundness from the *dialogue*, not the model's solo reasoning. Tighten the coverage axes and the "name the ambiguity, re-ask until sharp" discipline. (Consider adding an **"Existing-code impact"** axis to 1b's grill so the ripple question is raised at concept time too — a cheap upstream complement to §2.)
 

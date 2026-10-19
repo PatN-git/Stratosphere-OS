@@ -201,7 +201,7 @@
       "version": "2.1.0"
     },
     "skills/2b-interface-design/references/design-red-flags.md": {
-      "sha256": "e0f1280a04c41ea1612b286fce28b36896ec020b0bd295cc0130150ce286b375",
+      "sha256": "1cc44c940a39084479dc604e7857495c28ed16473eba788fbd4026efe7fa7e66",
       "timestamp": "2026-10-14",
       "version": "1.0.0"
     },
@@ -406,7 +406,7 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/design-red-flags.md": {
-      "sha256": "e0f1280a04c41ea1612b286fce28b36896ec020b0bd295cc0130150ce286b375",
+      "sha256": "1cc44c940a39084479dc604e7857495c28ed16473eba788fbd4026efe7fa7e66",
       "timestamp": "2026-10-14",
       "version": "1.0.0"
     },

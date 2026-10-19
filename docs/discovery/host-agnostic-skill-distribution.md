@@ -47,7 +47,7 @@ Maintaining bespoke shell scripts (`install-claude-code.{sh,ps1}` and `install-a
 - *Marketplace-First Monopolization:* Frames distribution entirely around individual host marketplaces (e.g. Claude Code marketplace, OpenClaw registry). Rejected: creates high friction because several major hosts (Antigravity, Cursor, Codex, Devin) lack public plugin registries, making `skills.sh` and direct copy-paste essential.
 
 ## Prior Art
-- **`mattpocock/skills`:** Ships 54 skills via dual distribution (`claude plugins install` and `npx skills add mattpocock/skills`), utilizing a dedicated internal bootstrap skill (`/setup-matt-pocock-skills`) to initialize repo-level context and tracker markdown.
+- **the reference skill catalog:** Ships 54 skills via dual distribution (`claude plugins install` and `npx skills add <catalog>`), utilizing a dedicated internal bootstrap skill (its `/setup-…` bootstrap skill) to initialize repo-level context and tracker markdown.
 - **`affaan-m/ECC` & `open-gsd/gsd-core`:** Multi-harness frameworks that retired raw shell scripts in favor of standardized package distribution runners.
 - **StratosphereOS v4.0.0 (#107):** Added 6 consumption hosts but left distribution tied to 2 legacy shell installers and byte-identical `dist/` trees.
 - **`docs/plans/host-agnostic-install-framework-plan.md`:** Initial architectural plan identifying S1–S5 slicing structure.

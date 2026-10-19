@@ -1,6 +1,6 @@
-# Matt Pocock Skills v1.0 Learnings & Recommendations
+# Reference Skill Pack v1.0 Learnings & Recommendations
 
-This document outlines the core learnings from Matt Pocock's Skills v1.0 release and provides recommendations on how to apply these concepts to the StratOS architecture to improve token efficiency and reduce cognitive load.
+This document outlines the core learnings from the reference pack's v1.0 release and provides recommendations on how to apply these concepts to the StratOS architecture to improve token efficiency and reduce cognitive load.
 
 ## 1. Core Learnings
 
@@ -19,7 +19,7 @@ This document outlines the core learnings from Matt Pocock's Skills v1.0 release
 
 ### 1.4 The Router Skill
 - **Problem:** As the library of user-invoked orchestrators grows, users forget which skill to use when.
-- **Solution:** A master router skill (`/ask-matt`) that serves as a single entry point. It briefly names all other skills, explains the lifecycle on-ramps, and guides the user on how to start their work.
+- **Solution:** A master router skill (`/ask-<pack>`) that serves as a single entry point. It briefly names all other skills, explains the lifecycle on-ramps, and guides the user on how to start their work.
 
 ### 1.5 Writing Great Skills
 - **Vocabulary:** Skills should establish and utilize shared terminology (like "sprawl", "sediment", "premature completion") to compress complex concepts into dense "leading words" that the LLM already understands, further minimizing token consumption.

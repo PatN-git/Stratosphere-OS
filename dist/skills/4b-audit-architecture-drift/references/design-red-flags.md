@@ -33,4 +33,4 @@ Agent takes shortest path that compiles: importable internals become interface. 
 Several places list same items; agent updates only the list it sees. Keep one list, derive others; underivable → fail build on disagreement.
 
 ---
-*Adapted from cursor/plugins pstack `architect` (MIT, Copyright (c) 2026 Lauren Tan); condensed for StratosphereOS.*
+*Adapted from an MIT-licensed external plugin's `architect` skill (Copyright (c) 2026 Lauren Tan); condensed for StratosphereOS.*

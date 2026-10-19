@@ -1,6 +1,6 @@
 ---
-name: pocock-v1-3-learnings-proposal
-description: Per-workflow (0a–4c) improvement plan derived from mattpocock/skills v1.3 (implement-spec, pr, retro, chief-of-staff) and CleanTechHub evidence (3d experiment, test cost, LEARNINGS, nightly reports, last 10 PRs).
+name: reference-pack-v1-3-learnings-proposal
+description: Per-workflow (0a–4c) improvement plan derived from the reference pack v1.3 (implement-spec, pr, retro, chief-of-staff) and CleanTechHub evidence (3d experiment, test cost, LEARNINGS, nightly reports, last 10 PRs).
 type: proposal
 version: "1.0.0"
 generated:
@@ -8,13 +8,13 @@ generated:
   at: 2026-10-05
 ---
 
-# Proposal: lifecycle improvements from mattpocock/skills v1.3
+# Proposal: lifecycle improvements from the reference pack v1.3
 
 **Status:** Proposal, second review round (2026-10-05). Nothing is implemented. Mint the accepted items with `/3b`.
-**Lineage:** [`.archive/matt-pocock-skills-v1-learnings.md`](.archive/matt-pocock-skills-v1-learnings.md) (v1.0), [`FEAT-discovery-pipeline-quality-fixes-proposal.md`](FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1).
+**Lineage:** [`.archive/reference-pack-v1-learnings.md`](.archive/reference-pack-v1-learnings.md) (v1.0), [`FEAT-discovery-pipeline-quality-fixes-proposal.md`](FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1).
 
 **Sources:**
-- **Upstream:** the v1.3 release post (pasted by the user; its URL returns 404), `CHANGELOG.md` 1.3.0/1.3.1, release PR [mattpocock/skills#1120](https://github.com/mattpocock/skills/pull/1120), and the `SKILL.md` + docs page of `implement-spec`, `implement`, `pr`, `retro`, plus in-progress `chief-of-staff` (added 2026-10-05).
+- **Upstream:** the v1.3 release post (pasted by the user; its URL returns 404), `CHANGELOG.md` 1.3.0/1.3.1, its release PR, and the `SKILL.md` + docs page of `implement-spec`, `implement`, `pr`, `retro`, plus in-progress `chief-of-staff` (added 2026-10-05).
 - **Host capabilities:** official docs and changelogs, plus the user's Antigravity logs.
 - **CleanTechHub evidence (all read-only):**
   - `.tmp/3d-test/` experiment reports
@@ -399,7 +399,7 @@ Per the version-bump policy, OKF `version:` bumps happen once per PR.
 - **`implement` vs `implement-spec`:**
   - `implement`: one ticket per session, the human dispatches, `tdd` at seams, single files often, full suite once at the end, `code-review`, commit to the current branch.
   - `implement-spec`: a whole spec per run. It reads the task graph, runs the frontier in worktree subagents, lands everything on one integration branch via a merger subagent, then one `code-review` + fixer. The PR is optional.
-  - Pocock ranks the agent loop below a deterministic loop.
+  - The reference pack ranks the agent loop below a deterministic loop.
   - Known rough edges: one big branch, collisions at merge time, stale GitHub frontier, gitignored files missing in worktrees.
 - **StratOS mapping:**
   - `3d` ≈ `implement`.
