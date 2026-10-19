@@ -7,9 +7,9 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 CONSTITUTIONS = ("src/constitution/AGENTS.md", "AGENTS.md")
 CONSTITUTION_BUDGET = 9200  # tests/framework/test_host_hygiene.py
-SENTENCE = ("- **CI-fix exception:** after the ship confirmation, 4a may commit and push up to 2 `fix(BT-n): ci` commits "
-            "for a failure `ci_gate.py` marks small; a 3z-dispatched 3d implementer only commits, `ship-only` pushes; "
-            "never `main`, never a merge. See `references/ci-gate.md`.")
+SENTENCE = ("- **CI-fix exception:** after ship confirmation, 4a may commit/push at most 2 `fix(BT-n): ci` commits "
+            "for a small `ci_gate.py` failure; a 3z-dispatched 3d implementer only commits, `ship-only` pushes; "
+            "never `main`/merge. See `.agents/skills/4a-verify-and-ship/references/ci-gate.md`.")
 
 
 def _read(rel: str) -> str:
@@ -162,11 +162,15 @@ def test_4a_step6_skips_a_duplicate_pr_link_comment():
 
 
 def _fix_order_ok(text):
-    """True when section 3 of the reference runs the fix steps in the safe order and states the 2-commit cap."""
+    """True when section 3 of the reference lists the fix steps in the safe order and states the 2-commit cap."""
     fix = text[text.index("## 3. Fix"):text.index("## 4. Big")]
-    order = ["test_gate.py record --suite", "commit;", "ci_gate.py cap --commit HEAD", "floor_guard.py", "push;", "status --attempt"]
-    positions = [fix.find(token) for token in order]
-    return all(p >= 0 for p in positions) and positions == sorted(positions) and "at most 2 fix commits" in fix.lower()
+    steps = fix[fix.index("Per fix, in order:"):]
+    order = ["test_gate.py record --suite", "commit", "ci_gate.py cap --commit HEAD", "floor_guard.py", "push", "status --attempt 2"]
+    pos, last = [], -1
+    for token in order:
+        last = steps.find(token, last + 1)
+        pos.append(last)
+    return all(p >= 0 for p in pos) and "at most 2 fix commits" in fix.lower()
 
 
 def test_reference_runs_each_fix_in_the_safe_order_with_the_two_commit_cap():
@@ -207,8 +211,16 @@ def test_status_calls_name_the_host_tool_timeout_and_exit_2_is_a_halt():
         assert "timeout" in text and "--wait" in text, f"{name} must say how to keep the 480 s wait inside the host tool timeout"
     assert "600000" in step8 and "600000" in step7
     for name, text in (("reference", ref), ("4a step 8", step8), ("3z Step 3A", _step3a())):
-        assert "exit 2" in text and "could not check" in text, f"{name} must treat exit 2 from status or cap as a halt"
+        assert "exit 2" in text.lower() and "could not check" in text, f"{name} must treat exit 2 from status or cap as a halt"
     assert "cannot_run" in ref.split("## 2. Status")[1].split("## 3.")[0]
+
+
+def test_the_constitution_names_the_installed_path_of_the_reference():
+    """AGENTS.md is read at the project root: a bare `references/...` does not resolve there, only the installed path does."""
+    for rel in CONSTITUTIONS:
+        sentence = next(line for line in _root(rel).splitlines() if line.startswith("- **CI-fix exception:**"))
+        assert ".agents/skills/4a-verify-and-ship/references/ci-gate.md" in sentence and " `references/ci-gate.md`" not in sentence
+    assert (SRC / "references" / "ci-gate.md").is_file()
 
 
 def test_the_constitution_says_the_implementer_only_commits_and_ship_only_pushes():

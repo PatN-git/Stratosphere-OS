@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "21fcfa281dbaba7e79a61f25e627d07f5badfeae53aa6fead5a5d44ce059cda4",
+      "sha256": "1c832819771ca5d644266844583f7a01247593c60b86af93793da5f48ad72ed2",
       "timestamp": "2026-10-16",
       "version": "3.4.0"
     },
@@ -196,7 +196,7 @@
       "version": "2.1.0"
     },
     "skills/2b-interface-design/references/design-red-flags.md": {
-      "sha256": "6ef9ee5927859514974d0a9b377c1078c4b787b00d3609db561925a6b6cb09e4",
+      "sha256": "20c27ba86c583632d88eab86df90d61b267d87e93d9d17dcd0e8b95a9b46abd9",
       "timestamp": "2026-10-14",
       "version": "1.0.0"
     },
@@ -291,7 +291,7 @@
       "version": "2.6.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "5ffe11a455a4d59962f6101cd0f82b157cfb26e31bce7577da95221864fc30ee",
+      "sha256": "8de8387a44fe028b36283f5f009adbc8575e0538835c587c679e794b94cd1827",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
@@ -311,17 +311,17 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "602cf509a07f90e1ef97e04a35eb2d439ab8f8237b8b6399b4879acb50bdaa97",
+      "sha256": "65f338adea76229518f21e79ed9740af75c483ee2969a1053e311ed6c5e3cab5",
       "timestamp": "2026-10-14",
       "version": "1.7.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "5ffe11a455a4d59962f6101cd0f82b157cfb26e31bce7577da95221864fc30ee",
+      "sha256": "8de8387a44fe028b36283f5f009adbc8575e0538835c587c679e794b94cd1827",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "3dbb66684c1fc50b9b163cb38ed9295d71162607004beccb691a0de7588928f5",
+      "sha256": "ba9ec2145836746415ca6af4199e2a7b6aa0fb18adf4a8a8cb3e284e119c3b1b",
       "timestamp": "2026-10-14",
       "version": "1.5.0"
     },
@@ -331,7 +331,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "5ffe11a455a4d59962f6101cd0f82b157cfb26e31bce7577da95221864fc30ee",
+      "sha256": "8de8387a44fe028b36283f5f009adbc8575e0538835c587c679e794b94cd1827",
       "timestamp": "2026-10-16",
       "version": "1.0.0"
     },
@@ -396,7 +396,7 @@
       "version": "1.1.0"
     },
     "skills/4b-audit-architecture-drift/references/design-red-flags.md": {
-      "sha256": "6ef9ee5927859514974d0a9b377c1078c4b787b00d3609db561925a6b6cb09e4",
+      "sha256": "20c27ba86c583632d88eab86df90d61b267d87e93d9d17dcd0e8b95a9b46abd9",
       "timestamp": "2026-10-14",
       "version": "1.0.0"
     },
