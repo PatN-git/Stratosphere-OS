@@ -72,7 +72,14 @@ def field(body, name):
 
 
 def slices(body):
-    return re.findall(r"^  - \{id: (BT-\d+), summary: (\".*?\"), verdict: (\w+), audit_rounds: (\d+)\}$", block(body), re.M)
+    return re.findall(r"^  - \{id: (BT-\d+), (?:parent: BT-\d+, )?summary: (\".*?\"), verdict: (\w+), audit_rounds: (\d+)\}$",
+                      block(body), re.M)
+
+
+def slice_parents(body):
+    """{slice id: parent id or None} from the block's slice rows."""
+    rows = re.findall(r"^  - \{id: (BT-\d+), (?:parent: (BT-\d+), )?summary: ", block(body), re.M)
+    return {i: p or None for i, p in rows}
 
 
 def test_body_shape_closing_lines_then_block_and_parent_only_on_flag(repo):
@@ -80,7 +87,7 @@ def test_body_shape_closing_lines_then_block_and_parent_only_on_flag(repo):
     body = build(repo, "BT-11")
     assert body.startswith("Closes #11.\n\n```stratos-pr\n")
     assert "Closes #10." not in body
-    assert field(body, "feature") == "BT-10"
+    assert field(body, "features") == "[BT-010]"
     assert field(body, "head") == git(repo, "rev-parse", "HEAD")
     closed = build(repo, "BT-11", "--close-parent")
     assert closed.splitlines()[:2] == ["Closes #11.", "Closes #10."]
@@ -235,18 +242,14 @@ def test_commit_scoped_to_the_parent_is_not_a_slice_or_closes_line(repo):
     assert "Closes #10." in build(repo, "BT-11", "--close-parent")
 
 
-def test_parent_conflicting_with_prior_feature_warns_and_overrides(repo):
+def test_parent_differing_from_prior_feature_joins_features_without_a_warning(repo):
     commit(repo, "feat(BT-11): first")
     prior = repo / ".tmp" / "prior.md"
     prior.write_text("```stratos-pr\nfeature: BT-77\nslices:\n```\n", encoding="utf-8")
     r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-10", suite=write_suite(repo))
     assert r.returncode == 0, r.stderr
-    assert "[PR-BODY-WARN] --parent BT-10 overrides prior feature BT-77" in r.stderr
-    assert field(r.stdout, "feature") == "BT-10"
-    same = repo / ".tmp" / "same.md"
-    same.write_text("```stratos-pr\nfeature: BT-10\nslices:\n```\n", encoding="utf-8")
-    assert "[PR-BODY-WARN]" not in build_raw(repo, "--prior-body-file", same, "--parent", "BT-10",
-                                              suite=write_suite(repo)).stderr
+    assert "[PR-BODY-WARN]" not in r.stderr
+    assert field(r.stdout, "features") == "[BT-077, BT-010]"
 
 
 @pytest.mark.parametrize("bad", ["136", "BT-", "bt-10", "BT-10x", "BT-1 0", ""])
@@ -542,10 +545,10 @@ def test_pr_body_is_registered_like_contract_check():
 
 
 def write_backlog(repo, *rows):
-    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels)."""
+    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels[, parent])."""
     (repo / ".memory").mkdir(exist_ok=True)
     lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | PR |", "|---|---|---|---|---|---|---|---|---|"]
-    lines += [f"| {i} | t | open | {labels} | — | — | — | — | — |" for i, labels in rows]
+    lines += [f"| {i} | t | open | {labels} | — | {(parent or ['—'])[0]} | — | — | — |" for i, labels, *parent in rows]
     (repo / ".memory" / "BACKLOG_MAP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -640,3 +643,235 @@ def test_epic_flag_rejects_a_malformed_id_cleanly(repo):
     r = build_raw(repo, "--epic", "oops", suite=suite)
     assert_clean_error(r)
     assert "--epic" in r.stderr
+
+
+# --- BT-191: several epics per PR (`features:`, per-slice `parent:`, repeatable `--close`) --------------------
+
+def two_epic_prior(repo):
+    """Ship BT-11 (epic BT-10), then BT-21 (epic BT-20) on top of it; return (path of the 2nd body, its text)."""
+    commit(repo, "feat(BT-11): first")
+    first = repo / ".tmp" / "first.md"
+    first.write_text(build(repo, "BT-11", parent="BT-10"), encoding="utf-8")
+    commit(repo, "feat(BT-21): second")
+    second = repo / ".tmp" / "second.md"
+    text = build(repo, "BT-21", prior=first, parent="BT-20")
+    second.write_text(text, encoding="utf-8")
+    return second, text
+
+
+def test_two_epics_accumulate_in_features_with_per_slice_parents(repo):
+    _, body = two_epic_prior(repo)
+    assert field(body, "features") == "[BT-010, BT-020]"
+    assert slice_parents(body) == {"BT-11": "BT-010", "BT-21": "BT-020"}
+    assert body.startswith("Closes #11.\nCloses #21.\n\n")
+    assert "Closes #10." not in body and "Closes #20." not in body
+
+
+def test_close_is_repeatable_ordered_after_slice_lines_and_deduped(repo):
+    prior, _ = two_epic_prior(repo)
+    body = build(repo, "BT-21", "--close", "BT-10", "--close", "BT-20", "--close", "BT-11", prior=prior, parent="BT-20")
+    assert body.splitlines()[:5] == ["Closes #11.", "Closes #21.", "Closes #10.", "Closes #20.", ""]
+    only_parent = build(repo, "BT-21", "--close-parent", prior=prior, parent="BT-20")
+    assert only_parent.splitlines()[:4] == ["Closes #11.", "Closes #21.", "Closes #20.", ""]
+
+
+def test_commits_scoped_to_any_feature_epic_are_not_slices(repo):
+    prior, _ = two_epic_prior(repo)
+    commit(repo, "fix(BT-10): touches epic one")
+    commit(repo, "docs(BT-20): touches epic two")
+    body = build(repo, "BT-21", prior=prior, parent="BT-20")
+    assert [s[0] for s in slices(body)] == ["BT-11", "BT-21"]
+    assert "Closes #10." not in body and "Closes #20." not in body
+
+
+def test_shipped_slice_equal_to_a_feature_epic_is_never_filtered(repo):
+    prior, _ = two_epic_prior(repo)
+    commit(repo, "feat(BT-20): the epic as its own slice")
+    body = build(repo, "BT-20", prior=prior, parent="BT-20")
+    assert [s[0] for s in slices(body)] == ["BT-11", "BT-20", "BT-21"]
+
+
+LEGACY_PRIOR = ("```stratos-pr\nfeature: BT-10\nhead: abc\nslices:\n"
+                '  - {id: BT-11, summary: "one", verdict: PASS, audit_rounds: 1}\n```\n')
+
+
+def test_legacy_single_feature_prior_upgrades_and_the_rebuild_is_idempotent(repo):
+    commit(repo, "feat(BT-11): one")
+    commit(repo, "feat(BT-21): two")
+    legacy = repo / ".tmp" / "legacy.md"
+    legacy.write_text(LEGACY_PRIOR, encoding="utf-8")
+    body = build(repo, "BT-21", prior=legacy, parent="BT-20")
+    assert field(body, "features") == "[BT-010, BT-020]"
+    assert slice_parents(body) == {"BT-11": "BT-010", "BT-21": "BT-020"}
+    upgraded = repo / ".tmp" / "upgraded.md"
+    upgraded.write_text(body, encoding="utf-8")
+    assert build(repo, "BT-21", prior=upgraded, parent="BT-20") == body
+
+
+def test_legacy_single_feature_prior_without_a_parent_flag_keeps_its_feature(repo):
+    commit(repo, "feat(BT-11): one")
+    legacy = repo / ".tmp" / "legacy.md"
+    legacy.write_text(LEGACY_PRIOR, encoding="utf-8")
+    r = build_raw(repo, "--prior-body-file", legacy, suite=write_suite(repo))
+    assert r.returncode == 0, r.stderr
+    assert field(r.stdout, "features") == "[BT-010]"
+
+
+@pytest.mark.parametrize("bad", ["oops", "10", "BT-", "bt-10", ""])
+def test_close_must_look_like_bt_n_else_clean_exit_2(repo, bad):
+    commit(repo, "feat(BT-11): one")
+    r = build_raw(repo, "--close", bad, suite=write_suite(repo))
+    assert_clean_error(r)
+    assert "--close" in r.stderr
+
+
+def test_pending_row_parent_comes_from_the_backlog_parent_column(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "feat(BT-12): has a parent")
+    commit(repo, "feat(BT-13): no parent")
+    write_backlog(repo, ("BT-012", "tier:slice", "BT-030"), ("BT-013", "tier:slice"))
+    body = build(repo, "BT-11")
+    assert slice_parents(body) == {"BT-11": "BT-010", "BT-12": "BT-030", "BT-13": None}
+    assert field(body, "features") == "[BT-010, BT-030]"
+
+
+def test_standalone_slice_with_no_parent_and_no_prior_is_its_own_feature(repo):
+    commit(repo, "feat(BT-11): solo")
+    r = build_raw(repo, suite=write_suite(repo))
+    assert r.returncode == 0, r.stderr
+    assert field(r.stdout, "features") == "[BT-011]" and slice_parents(r.stdout) == {"BT-11": None}
+
+
+# --- BT-191: `unit` resolves the ship unit (D1) ---------------------------------------------------------------
+
+NONE = "—"
+
+
+def unit(repo, *args):
+    return run(repo, "unit", *args)
+
+
+def unit_ok(repo, *args):
+    r = unit(repo, *args)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)
+
+
+def assert_unit_error(r):
+    assert r.returncode == 2 and r.stderr.startswith("[SHIP-UNIT-ERROR]") and "Traceback" not in r.stderr and not r.stdout, r.stderr
+
+
+@pytest.mark.parametrize("milestone,parent,parent_ms,unit_key,kind", [
+    ("v1.2.5", "BT-51", None, "v1.2", "release"),
+    ("v1.2.0", "BT-51", None, "v1.2", "release"),
+    (NONE, "BT-51", "v1.3.0", "v1.3", "release"),   # a milestone-less child inherits its epic's release
+    ("", "BT-51", "v1.3.0", "v1.3", "release"),
+    ("-", "BT-51", "v1.3.0", "v1.3", "release"),
+    ("v1.2.5", "BT-51", "v1.9.0", "v1.2", "release"),  # own milestone wins over the epic's
+    (NONE, "BT-51", NONE, "BT-051", "epic"),
+    (NONE, "BT-51", None, "BT-051", "epic"),
+    ("v1.2.5", NONE, None, "BT-070", "issue"),     # a standalone issue keeps its own unit even with a milestone
+    (NONE, NONE, None, "BT-070", "issue"),
+    ("v1.2.5", None, "v1.2.0", "BT-070", "issue"),
+])
+def test_unit_resolution_table(repo, milestone, parent, parent_ms, unit_key, kind):
+    args = ["--slice", "BT-070", "--milestone", milestone]
+    if parent is not None:
+        args += ["--parent", parent]
+    if parent_ms is not None:
+        args += ["--parent-milestone", parent_ms]
+    out = unit_ok(repo, *args)
+    assert (out["unit"], out["kind"]) == (unit_key, kind)
+
+
+def test_unit_globs_put_the_legacy_epic_glob_first(repo):
+    out = unit_ok(repo, "--slice", "BT-70", "--milestone", "v1.2.5", "--parent", "BT-51")
+    assert out["globs"] == ["*/BT-051-*", "*/v1.2-*"]
+    assert unit_ok(repo, "--slice", "BT-70", "--milestone", NONE, "--parent", "BT-51")["globs"] == ["*/BT-051-*"]
+    assert unit_ok(repo, "--slice", "BT-70", "--milestone", "v1.2.5")["globs"] == ["*/BT-070-*"]
+
+
+def test_unit_epic_flag_uses_its_own_milestone_else_its_own_id(repo):
+    assert unit_ok(repo, "--slice", "BT-51", "--epic", "--milestone", "v1.2.0")["unit"] == "v1.2"
+    child = unit_ok(repo, "--slice", "BT-70", "--milestone", NONE, "--parent", "BT-51")
+    bare = unit_ok(repo, "--slice", "BT-51", "--epic", "--milestone", NONE)
+    assert bare["unit"] == "BT-051" and bare["kind"] == "epic" and bare["unit"] == child["unit"]
+
+
+def test_epics_of_one_release_share_a_unit_and_v1_2_is_not_v1_20(repo):
+    a = unit_ok(repo, "--slice", "BT-51", "--epic", "--milestone", "v1.2.5")
+    b = unit_ok(repo, "--slice", "BT-204", "--epic", "--milestone", "v1.2.6")
+    assert a["unit"] == b["unit"] == "v1.2"
+    assert unit_ok(repo, "--slice", "BT-70", "--milestone", "v1.2.9", "--parent", "BT-51")["unit"] == "v1.2"
+    assert unit_ok(repo, "--slice", "BT-71", "--milestone", "v1.20.1", "--parent", "BT-51")["unit"] == "v1.20"
+
+
+BASE_UNIT = ["--slice", "BT-70", "--milestone", "v1.2.5", "--parent", "BT-51"]
+
+
+@pytest.mark.parametrize("args", [
+    ["--slice", "BT-70", "--milestone", "1.2.3"],
+    ["--slice", "BT-70", "--milestone", "v1.2"],
+    ["--slice", "BT-70", "--milestone", "v1.2.x"],
+    ["--slice", "BT-70", "--milestone", "v1.2.3-rc1"],
+    [*BASE_UNIT, "--parent-milestone", "v1.2"],
+    ["--slice", "BT-70", "--milestone", "v1.2.5", "--parent", "51"],
+    ["--slice", "BT-70", "--milestone", "v1.2.5", "--parent", "BT-"],
+    [*BASE_UNIT, "--type", "Feat"],
+    [*BASE_UNIT, "--type", "f1"],
+    ["--slice", "70", "--milestone", "v1.2.5"],
+], ids=str)
+def test_unit_rejects_malformed_inputs_cleanly(repo, args):
+    assert_unit_error(unit(repo, *args))
+
+
+def test_unit_branch_name_from_type_and_slug(repo):
+    out = unit_ok(repo, *BASE_UNIT, "--type", "fix", "--slug", "Offline Sync: v2!")
+    assert out["branch"] == "fix/v1.2-offline-sync-v2"
+    default_type = unit_ok(repo, "--slice", "BT-70", "--milestone", NONE, "--parent", "BT-51", "--slug", "Epic name")
+    assert default_type["branch"] == "feat/BT-051-epic-name"
+    long = unit_ok(repo, "--slice", "BT-70", "--milestone", NONE, "--slug", "word " * 20)
+    assert len(long["branch"].split("BT-070-", 1)[1]) <= 40 and not long["branch"].endswith("-")
+
+
+def test_unit_empty_slug_after_slugify_is_an_error(repo):
+    assert_unit_error(unit(repo, "--slice", "BT-70", "--milestone", NONE, "--slug", "!!!"))
+    assert "branch" not in unit_ok(repo, "--slice", "BT-70", "--milestone", NONE)
+
+
+@pytest.mark.parametrize("branch,ok", [
+    ("feat/v1.2-x", True),
+    ("origin/feat/v1.2-x", True),
+    ("feat/BT-051-x", True),          # a mid-flight per-epic branch stays valid for its own epic
+    ("feat/BT-204-x", False),
+    ("feat/v1.20-x", False),
+    ("main", False),
+])
+def test_unit_branch_ok(repo, branch, ok):
+    assert unit_ok(repo, *BASE_UNIT, "--branch", branch)["branch_ok"] is ok
+
+
+def test_unit_smoke_matches_the_plan(repo):
+    out = unit_ok(repo, "--slice", "BT-070", "--milestone", "v1.2.5", "--parent", "BT-051", "--type", "feat",
+                  "--slug", "Offline sync", "--branch", "feat/BT-051-old")
+    assert (out["unit"], out["branch"], out["branch_ok"]) == ("v1.2", "feat/v1.2-offline-sync", True)
+
+
+def test_resolve_unit_is_importable_and_pure():
+    pb = load_pr_body()
+    assert pb.resolve_unit("BT-51", "v1.2.5", "BT-12")["unit"] == "v1.2"
+    assert pb.resolve_unit("BT-51", None, "BT-12", "v1.4.0")["unit"] == "v1.4"
+    assert pb.resolve_unit("BT-51", "—", None, epic=True)["unit"] == "BT-051"
+    assert pb.slugify("Offline Sync: v2!") == "offline-sync-v2"
+    with pytest.raises(ValueError):
+        pb.resolve_unit("BT-51", "1.2", "BT-12")
+
+
+def test_epic_ids_are_padded_and_padding_variants_collapse(repo):
+    commit(repo, "feat(BT-11): first")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text("```stratos-pr\nfeature: BT-10\nslices:\n```\n", encoding="utf-8")
+    r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-010", "--close", "BT-10", suite=write_suite(repo))
+    assert r.returncode == 0, r.stderr
+    assert field(r.stdout, "features") == "[BT-010]" and slice_parents(r.stdout) == {"BT-11": "BT-010"}
+    assert r.stdout.splitlines()[:3] == ["Closes #11.", "Closes #10.", ""]

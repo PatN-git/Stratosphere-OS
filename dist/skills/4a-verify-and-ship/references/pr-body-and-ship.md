@@ -1,7 +1,7 @@
 ---
 description: PR body format, `pr_body.py` build flags and verdicts, suite record, risk label and closing-link read-back for 4a Phase 5 step 5.
-version: "1.0.3"
-timestamp: 2026-10-14
+version: "1.1.0"
+timestamp: 2026-10-20
 ---
 
 # PR Body & Ship Details
@@ -13,10 +13,10 @@ Detail for 4a Phase 5 step 5. The body is for agents, not readers: closing lines
 Closes #<n>.                <- one line per shipped slice; the literal form, nothing after the period
 
 ```stratos-pr
-feature: BT-<parentPadded>
+features: [BT-<parentPadded>, ...]   # one per epic in the PR
 head: <sha>
 slices:
-  - {id: BT-<padded>, summary: "<one line>", verdict: PASS|WAIVED|SKIP|DROPPED|PENDING, audit_rounds: <n>}
+  - {id: BT-<padded>, parent: BT-<parentPadded>, summary: "<one line>", verdict: PASS|WAIVED|SKIP|DROPPED|PENDING, audit_rounds: <n>}   # parent: omitted when standalone
 test: {cmd: "<cmd>", observed: "<observed summary line>", at: <sha>}
 risk: [<tags>]              # from references/merge-risk-paths.md; [none] if no rule fires
 post_merge: ["<manual step>"]   # [] if none; manual-QA items go here
@@ -28,8 +28,9 @@ refs: [<only IDs that constrained the change>]
 
 ## Build
 `pr_body.py build` rebuilds the slice list from `git log` (others keep their prior verdicts; commits not yet through 4a are `PENDING`), unions follow-ups with the prior block, writes the `Closes` lines, `test:` and `risk:`.
-- **Verdicts:** `PASS` = audited clean; `WAIVED` = shipped on user authorization over gaps (Phase 4); `SKIP` = audit bypassed by the Value-Add Gate; `DROPPED` = deferred and closed not planned: a human sets it once in the prior body block (never `--verdict`), the row is kept and gets no `Closes` line. Commits scoped to an epic (a `tier:epic` row in `.memory/BACKLOG_MAP.md`, or `--epic BT-<n>` when that file is absent, e.g. CI) are skipped, never a slice row. A `ship-only` run never audited: take verdict and rounds from the dispatcher (3z Step 3A).
+- **Verdicts:** `PASS` = audited clean; `WAIVED` = shipped on user authorization over gaps (Phase 4); `SKIP` = audit bypassed by the Value-Add Gate; `DROPPED` = deferred and closed not planned: a human sets it once in the prior body block (never `--verdict`), the row is kept and gets no `Closes` line. Commits scoped to any epic in `features:` (a `tier:epic` row in `.memory/BACKLOG_MAP.md`, or `--epic BT-<n>` when that file is absent, e.g. CI) are skipped, never a slice row. A `ship-only` run never audited: take verdict and rounds from the dispatcher (3z Step 3A).
 - **Base:** `--base`, else the remote default branch (`origin/HEAD`), else the `main`/`master` candidates (it scopes the slice list and `risk:`). None resolves → `[PR-BODY-ERROR]` (status 2), never `risk: [none]`: pass `--base <default-branch>` then.
+- **Parent flags:** `--parent` = the shipped slice's parent (joins `features:`; omit when standalone). `--close BT-<n>` (repeatable) = an epic this PR completes: adds `Closes #<n>.` after the slice lines. `--close-parent` = alias for `--close <--parent>`.
 - **Optional flags:** `--manual-qa` (`needs_manual_qa` true: 3z Step 3A dispatch, or a manual-only AC the Phase 2 table marks `[NONE]`), `--post-merge "<step>"` (also `noticed: <line>` per the 3d plan's `Noticed, not touched`; `none` → omit), `--deviation "<decision>"` (one per line of the 3d plan's `## Deviations`; `none` → omit), `--ref <ID>`.
 
 ## Suite
@@ -39,4 +40,4 @@ refs: [<only IDs that constrained the change>]
 `risk:` follows `references/merge-risk-paths.md` (plus the project's `## One-way paths`). Not `[none]` → `gh label create risk:one-way --force --description "Hard-to-reverse change; human must read before merge"` (`--add-label` fails on a missing label), then `gh pr edit <n> --add-label risk:one-way`.
 
 ## Closing-link read-back
-After `gh pr create` / `gh pr edit`, run `gh pr view <pr> --json closingIssuesReferences` and confirm the slice issue is listed. Not listed → correct the closing lines and re-check **once**; still unlisted → report `[NO-AUTOCLOSE #<n>]` in the ship output and leave it to `/0b` done-detection to close after merge (GitHub only auto-closes what is linked; #128/#129 were not, whatever the wording). Never loop.
+After `gh pr create` / `gh pr edit`, run `gh pr view <pr> --json closingIssuesReferences` and confirm the slice issue **and each closed epic** are listed. Not listed → correct the closing lines and re-check **once**; still unlisted → report `[NO-AUTOCLOSE #<n>]` in the ship output and leave it to `/0b` done-detection to close after merge (GitHub only auto-closes what is linked; #128/#129 were not, whatever the wording). Never loop.

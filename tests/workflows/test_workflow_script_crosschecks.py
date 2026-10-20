@@ -35,7 +35,7 @@ def _4a() -> str:
 
 def _step5() -> str:
     text = _4a()
-    return text[text.index("5. **PR (one per feature branch):**"):text.index("6. **PR-link comment")]
+    return text[text.index("5. **PR (one per ship unit):**"):text.index("6. **PR-link comment")]
 
 
 # --- reconcile.py ---------------------------------------------------------------------------
@@ -104,6 +104,22 @@ def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
     accepted = {flag for action in sub._actions for flag in action.option_strings if flag.startswith("--")}
     assert {"--slice", "--summary", "--verdict", "--audit-rounds", "--prior-body-file"} <= used
     assert used <= accepted, f"{used - accepted} not accepted by pr_body.py"
+
+
+# md-crosscheck: pr_body.py unit/build calls in 3d, 4a and 3z vs argparse
+def test_workflow_pr_body_unit_and_build_calls_use_only_real_flags():
+    choices = pr_body.build_parser()._subparsers._group_actions[0].choices
+    accepted = {name: {f for a in sub._actions for f in a.option_strings if f.startswith("--")} for name, sub in choices.items()}
+    call = re.compile(r"pr_body\.py (unit|build) ([^`]+)`")
+    seen = {"unit": set(), "build": set()}
+    for name in ("3d-implement-issue.md", "4a-verify-and-ship.md", "3z-afk-loop.md"):
+        for sub, args in call.findall((WF / name).read_text(encoding="utf-8")):
+            used = set(re.findall(r"--[a-z-]+", re.sub(r"\$\([^)]*\)", "", args)))
+            assert used <= accepted[sub], f"{name}: pr_body.py {sub} {used - accepted[sub]} not accepted"
+            seen[sub] |= used
+    assert {"--slice", "--milestone", "--parent", "--parent-milestone"} <= seen["unit"]
+    assert "--branch" in seen["unit"], "4a step 1 must check the branch with `pr_body.py unit --branch`"
+    assert "--close" in seen["build"], "4a step 8 must rebuild the body with `pr_body.py build --close`"
 
 
 # --- contract_check.py ------------------------------------------------------------------------

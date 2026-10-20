@@ -16,7 +16,7 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 ```
 
 - Non-zero exit → **HALT. Do not close/ship.** The output lists each `[MIRROR-DRIFT BT-<n>: <field> map=<x> gh=<y>]`.
-- **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared (slice or epic id) **plus** the parent epic when it flipped it to `in review`.
+- **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared (slice or epic id) **plus** each epic it flipped to `in review`.
 - `--fields` = only the mirror fields this phase wrote (default: all 5 — `status,milestone,labels,parent,blocked_by`). Scoping keeps a gate from false-blocking on drift in a field outside its concern (e.g. 3a passes `--fields milestone,blocked_by`, never `status`).
 - With `--fields status` the gate also asserts closed ≡ done: a `done` row whose issue is still open on GitHub is drift (`open on GitHub, map=done`).
 - `--pr-id` = the single id that must carry a PR-link comment (the shipped slice); co-passed ids are not required to carry it. A PR-link comment is one whose body contains the full `/pull/` URL (`https://github.com/<owner>/<repo>/pull/<n>`); a bare `#<n>` does not count.

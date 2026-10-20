@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "e4b7b04963e5dd6b222945204ed7ecd957fcb95ad57219f0c2a894ba10193db6",
-      "timestamp": "2026-10-16",
-      "version": "3.4.0"
+      "sha256": "96eafc916c4b1db36dcc57991d8767e4e650a9f15df3e2f9f8af12913389b65a",
+      "timestamp": "2026-10-20",
+      "version": "3.5.0"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
@@ -91,7 +91,7 @@
       "version": "1.0.2"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -111,7 +111,7 @@
       "version": "1.2.0"
     },
     "skills/0d-nightly-consolidation/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -236,7 +236,7 @@
       "version": "1.0.2"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -266,7 +266,7 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -286,17 +286,17 @@
       "version": "1.1.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "17527243b4717ccd6eccebb5d9b7791529d4971f284da55c1cff12112cc999c1",
+      "sha256": "ed2d84c5e02fce96881f340c2e5ec5086f4ae5b63bbb47802ccf8e2af10a8a24",
       "timestamp": "2026-10-20",
       "version": "2.7.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "3cb6bb014a9c6b8dc556a04cab63ec7adc848fdd79fff668356f2a0ccf4c274d",
+      "sha256": "d6385b71a8d8f45e947abfcfeef604bd76ccbbb244d118e44b2582cde54b213b",
       "timestamp": "2026-10-20",
       "version": "1.0.1"
     },
@@ -316,17 +316,17 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "8b48944a97bd0da181cbfdf0ebf515ed3ebe9ccf30729bc6ae97b0394cd4f832",
+      "sha256": "7c70ea04e1ca739524d0cada42f25c803b0ed403554548ac8a3ff6de6b04dd07",
       "timestamp": "2026-10-20",
       "version": "1.8.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "3cb6bb014a9c6b8dc556a04cab63ec7adc848fdd79fff668356f2a0ccf4c274d",
+      "sha256": "d6385b71a8d8f45e947abfcfeef604bd76ccbbb244d118e44b2582cde54b213b",
       "timestamp": "2026-10-20",
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "c5836918344de98b84169be9b0d23e6e62f2823ffe00dea4ffa4699edae54843",
+      "sha256": "b757270f686aa0092a8c6a66fe95105d922590c38aa27c73abd1a6e242360768",
       "timestamp": "2026-10-20",
       "version": "1.6.0"
     },
@@ -336,7 +336,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "3cb6bb014a9c6b8dc556a04cab63ec7adc848fdd79fff668356f2a0ccf4c274d",
+      "sha256": "d6385b71a8d8f45e947abfcfeef604bd76ccbbb244d118e44b2582cde54b213b",
       "timestamp": "2026-10-20",
       "version": "1.0.1"
     },
@@ -351,9 +351,9 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
-      "sha256": "b29634eecca8ddec8c5ff02e561c7a27428b035b3b5eda73dd94f18a3a72d125",
-      "timestamp": "2026-10-13",
-      "version": "1.1.0"
+      "sha256": "7a1844f0fc93dfbf9ff78d6568cff81b244a8b5449ac8e4ce6331997cee98063",
+      "timestamp": "2026-10-20",
+      "version": "1.1.1"
     },
     "skills/4a-verify-and-ship/references/github-issue-relations.md": {
       "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
@@ -371,12 +371,12 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "77e329557feb0a0e456fe9c1ac52df1535dd8241d9612e9b07f33847813aa67f",
-      "timestamp": "2026-10-14",
-      "version": "1.0.3"
+      "sha256": "25db68b44041d8a9de91e5526871fd5d00f6cb82294f2a8bcd3426295b75a6e2",
+      "timestamp": "2026-10-20",
+      "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "7b64750fa7fe01afa71e4ab94e5bdfc8103fba2c20b9c770c355bebd9133ade0",
+      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
