@@ -21,7 +21,7 @@
       "version": "1.0.5"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "2b0080926af6630c83486162c964b48f5af3f0073f0fb6f9cbc36e7c4bebb844",
+      "sha256": "74c3dd35dbd109d8ce43e7e05edb1614af913483769b37712d2a9fd97a7c0983",
       "timestamp": "2026-09-29",
       "version": "1.4.0"
     },
@@ -76,7 +76,7 @@
       "version": "1.1.3"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "4d81358cc22d0c44e674a1f25f174285ed173f71b515798e592d72b8b21a503d",
+      "sha256": "dc9cfd70f9967e3fe34757e0289dcfecf3da0ca6841b16928f9b0da06c6e91f0",
       "timestamp": "2026-10-20",
       "version": "1.5.0"
     },
@@ -91,7 +91,7 @@
       "version": "1.0.2"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -111,7 +111,7 @@
       "version": "1.2.0"
     },
     "skills/0d-nightly-consolidation/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -236,7 +236,7 @@
       "version": "1.0.2"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
@@ -266,14 +266,14 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "b57eb37fa916dba7647b35e17a95566b1c2b5672386018c5b993be46d425b037",
-      "timestamp": "2026-10-14",
-      "version": "2.4.1"
+      "sha256": "6e4f0f12af2205b77298ab557596486fed355a9cf56f229131df7e5401039f3d",
+      "timestamp": "2026-10-20",
+      "version": "2.5.0"
     },
     "skills/3c-sprint-planning/references/github-issue-relations.md": {
       "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
@@ -286,12 +286,12 @@
       "version": "1.1.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "ed2d84c5e02fce96881f340c2e5ec5086f4ae5b63bbb47802ccf8e2af10a8a24",
+      "sha256": "7a45dcbc00218745dccff03b9e6381c411f07ea94eb0621140b28b5206f4bbd8",
       "timestamp": "2026-10-20",
       "version": "2.7.0"
     },
@@ -316,7 +316,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "7c70ea04e1ca739524d0cada42f25c803b0ed403554548ac8a3ff6de6b04dd07",
+      "sha256": "7aed23aa2f941a3c1babf5d39dcd73cbd82a12fc6a8ac497c189fc64e88cfaf1",
       "timestamp": "2026-10-20",
       "version": "1.8.0"
     },
@@ -326,7 +326,7 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "b757270f686aa0092a8c6a66fe95105d922590c38aa27c73abd1a6e242360768",
+      "sha256": "2509973f1b6e91b6eb47a6988153af3e79a1ec310cc32d66bc0ebc7e09d237be",
       "timestamp": "2026-10-20",
       "version": "1.6.0"
     },
@@ -376,7 +376,7 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "65e4793e0e21de8ffaa129e4d2d3db476e1b9517947a0d067d6fcccc3b9cec54",
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },

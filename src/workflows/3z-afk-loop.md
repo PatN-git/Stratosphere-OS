@@ -37,7 +37,7 @@ _Done when:_ orchestrator context synced.
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d-implement-issue + /4a-verify-and-ship manually").
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
-3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the BACKLOG rows, as 3d step 1; unit = its `unit` key); order by `(unit, dependency_order, slice_id)`. A `Blocked by` entry already at `status:in review` or `status:done` counts as satisfied (not blocking).
+3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the BACKLOG rows, as 3d step 1; unit = its `unit` key); order by `(unit, dependency_order, slice_id)`. Blocker satisfaction comes from `python .agents/scripts/reconcile.py --edges blockers --ids <slices>`, never from status words.
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
@@ -47,13 +47,13 @@ _Done when:_ user authorized slice list and ship mode.
 For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement
-0. **Frontier check (Orchestrator):** each `Blocked by` entry of this slice must be `VERIFIED`/`VERIFIED-LOCAL` in this run, or already `status:in review`/`status:done`. Otherwise emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
+0. **Frontier check (Orchestrator):** run `python .agents/scripts/reconcile.py --edges blockers --ids BT-<padded>`. Every `[BLOCKER-OK]` passes, and so does a `[BLOCKER-UNMET] same-unit` blocker that is `VERIFIED`/`VERIFIED-LOCAL` in this run. Any cross-unit unmet/unknown, or a same-unit blocker not verified, → emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
 1. **Activate Slice (Orchestrator):** Set the target slice `BT-<padded>` to `status:in progress` in `.memory/BACKLOG_MAP.md` and on GitHub:
    `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"` (if connected; else skip remote).
    Promote parent epic `planned → in progress` in `.memory/BACKLOG_MAP.md` and GitHub **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
-   > "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the ship-unit branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally.
+   > "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the ship-unit branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. The blocker guard is already satisfied by the frontier check; skip it.
    > Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\", \"branch\": \"\", \"stuck\": null}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5; `branch` = `git branch --show-current` after 3d's last commit; `stuck` = micro-tdd's `{reason, options}` when it froze, else null).
    > Do NOT push; do NOT open PR."
 
@@ -104,7 +104,7 @@ _Done when:_ mergeability and path overlaps scanned.
 ## Phase 4: Final Report [output]
 Read `.tmp/3z-loop.work.md` and output summary per ship unit:
 - PR # (or `local`).
-- Status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on and "re-run /3z after BT-<blocker> reaches in review").
+- Status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on and "re-run /3z after BT-<blocker> ships (same-unit) or merges (cross-unit)").
 - Commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags.
 - **The reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc).**
 - **Each slice's plan deviations (recorded at Step 2C; `none` when none, `n/a` for `status:blocked`/stuck slices, which never reach it) next to `docs_read`.**

@@ -66,12 +66,12 @@ def write_backlog(td):
 ALLOPEN = """\
 | ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
 |----|-------|--------|--------|-----------|--------|------------|-----|-----|
-| BT-001 | Shipped | done | type:feature | v1.0.0 | — | — | ICE | — |
-| BT-002 | In review | in review | type:feature | v1.0.0 | — | — | ICE | — |
-| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | BT-002 | ICE | — |
-| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | BT-001 | ICE | — |
-| BT-005 | Waits on 9 | planned | type:feature | v1.0.0 | — | BT-009 | ICE | — |
-| BT-009 | In progress | in progress | type:feature | v1.0.0 | — | — | ICE | — |
+| BT-001 | Shipped | done | type:feature | v1.0.0 | BT-100 | — | ICE | — |
+| BT-002 | In review | in review | type:feature | v1.0.0 | BT-100 | — | ICE | — |
+| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | BT-100 | BT-002 | ICE | — |
+| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | BT-100 | BT-001 | ICE | — |
+| BT-005 | Waits on 9 | planned | type:feature | v1.0.0 | BT-100 | BT-009 | ICE | — |
+| BT-009 | In progress | in progress | type:feature | v1.0.0 | BT-100 | — | ICE | — |
 """
 
 
@@ -235,10 +235,10 @@ def summary_checks():
             rec.fetch_issue = lambda num, want_comments, want_state=False: {
                 "number": int(num), "labels": [{"name": "status:planned"}, {"name": "type:feature"}],
                 "milestone": {"title": "v1.0.0"}, "state": "OPEN"}
-            clean = ALLOPEN.replace("| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | BT-002 |",
-                                    "| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | — | — |").replace(
-                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | BT-001 |",
-                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | — | — |")
+            clean = ALLOPEN.replace("| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | BT-100 | BT-002 |",
+                                    "| BT-003 | Waits on 2 | planned | type:feature | v1.0.0 | BT-100 | — |").replace(
+                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | BT-100 | BT-001 |",
+                "| BT-004 | Waits on 1 | planned | type:feature | v1.0.0 | BT-100 | — |")
             clean = clean.replace("| in review |", "| planned |").replace("| in progress |", "| planned |")
             p.write_text(clean, encoding="utf-8")
             code, ok = _run(["--all-open", "--backlog", path, "--summary", "--state", str(state),
@@ -426,8 +426,8 @@ def heal_checks():
             # BT-162 F5: a blocker the map already cleared (its row is in review/done) is never written back
             stale_map = HEALMAP.replace("| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | BT-006 |",
                                         "| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | — |") + (
-                "| BT-007 | Blocker in review | in review | type:feature | v1.0.0 | — | — | ICE: 0.5 | — |\n"
-                "| BT-008 | Blocker planned | planned | type:feature | v1.0.0 | — | — | ICE: 0.5 | — |\n")
+                "| BT-007 | Blocker in review | in review | type:feature | v1.0.0 | BT-005 | — | ICE: 0.5 | — |\n"
+                "| BT-008 | Blocker planned | planned | type:feature | v1.0.0 | BT-005 | — | ICE: 0.5 | — |\n")
             p.write_text(stale_map, encoding="utf-8")
             code, out = _run(["--heal", "--kind", "blocked_by", "--source", "gh", "--ids", "BT-010", "--backlog", path])
             check("heal blocked_by: a stale blocker (in review/done) is skipped with exit 1, the rest is healed",
@@ -545,6 +545,275 @@ def ids_state_checks():
         rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
 
+EDGE_BASE = {  # id: (status, tier, milestone, parent, blocked_by) -- cleantech_jobs shape
+    "BT-051": ("in progress", "epic", "v1.2.0", "—", "—"),
+    "BT-204": ("in progress", "epic", "v1.2.0", "—", "—"),
+    "BT-070": ("in review", "slice", "v1.2.5", "BT-051", "—"),
+    "BT-207": ("planned", "slice", "v1.2.6", "BT-204", "BT-070"),
+    "BT-300": ("planned", "epic", "v1.3.0", "—", "BT-051"),
+    "BT-301": ("planned", "slice", "v1.3.1", "BT-300", "BT-070"),
+    "BT-302": ("planned", "slice", "v1.3.2", "BT-300", "—"),
+    "BT-309": ("planned", "epic", "—", "—", "—"),
+    "BT-310": ("planned", "slice", "—", "BT-300", "—"),
+}
+
+
+def edge_text(status=None, blocked=None):
+    """BACKLOG_MAP text of EDGE_BASE with status / blocked_by overrides ({id: value}). BT-309 is standalone (no tier)."""
+    lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |",
+             "|----|-------|--------|--------|-----------|--------|------------|-----|-----|"]
+    for bt, (st, tier, ms, parent, blk) in EDGE_BASE.items():
+        label = "type:feature" if bt == "BT-309" else f"type:feature, tier:{tier}"
+        lines.append(f"| {bt} | t | {(status or {}).get(bt, st)} | {label} | {ms} | {parent} | "
+                     f"{(blocked or {}).get(bt, blk)} | ICE | — |")
+    return "\n".join(lines) + "\n"
+
+
+def edge_rows(status=None, blocked=None):
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "BACKLOG_MAP.md"
+        p.write_text(edge_text(status, blocked), encoding="utf-8")
+        return rec.parse_backlog(p)
+
+
+def _merged(table):
+    """merged_of stub over {bt: 'merged'|'open'|'none'|None}; `.calls` records the lookups."""
+    def merged_of(bt):
+        merged_of.calls.append(bt)
+        return table.get(bt)
+    merged_of.calls = []
+    return merged_of
+
+
+def edge_checks():
+    """BT-192: D3 predicate (same ship unit -> shipped; cross unit -> code on the default branch) and --edges."""
+    rows = edge_rows()
+    verdict = lambda dep, blk, r=None, m=None: rec.edge_verdict(dep, blk, r or rows, m or _merged({}))
+
+    # 1. ship_unit adapter smoke (the rule itself is tested with pr_body.resolve_unit)
+    check("ship_unit: slices v1.2.5 and v1.2.6 share release v1.2",
+          rec.ship_unit("BT-070", rows) == rec.ship_unit("BT-207", rows) == "v1.2")
+    check("ship_unit: milestone-less slice inherits its epic's release", rec.ship_unit("BT-310", rows) == "v1.3")
+    check("ship_unit: epic row with a milestone is in that release", rec.ship_unit("BT-051", rows) == "v1.2")
+    check("ship_unit: epic without a milestone is its own unit", rec.ship_unit("BT-309", rows) == "BT-309")
+    standalone = edge_rows()
+    standalone["BT-400"] = {"status": "planned", "labels": {"type:feature"}, "milestone": "v1.2.0",
+                            "parent": "—", "blocked_by": set()}
+    check("ship_unit: a standalone issue is its own unit even with a milestone",
+          rec.ship_unit("BT-400", standalone) == "BT-400")
+    bad = edge_rows()
+    bad["BT-207"]["milestone"] = "Backlog"
+    check("ship_unit: bad milestone -> None (unknown), never a crash", rec.ship_unit("BT-207", bad) is None)
+    check("ship_unit: absent row -> None", rec.ship_unit("BT-404", rows) is None)
+
+    # 2. same unit: shipped = in review | done
+    for st, want in (("in review", "OK"), ("done", "OK"), ("in progress", "UNMET"), ("planned", "UNMET"),
+                     ("blocked", "UNMET")):
+        m = _merged({})
+        v = rec.edge_verdict("BT-207", "BT-070", edge_rows({"BT-070": st}), m)
+        check(f"same unit: blocker {st} -> {want}", v[0] == want and v[1] == "same-unit" and not m.calls)
+
+    # 3. cross unit, child-slice blocker: the blocker's PR must be merged
+    for state, want in (("merged", "OK"), ("open", "UNMET"), (None, "UNKNOWN"), ("none", "OK")):
+        v = verdict("BT-301", "BT-070", m=_merged({"BT-070": state}))
+        check(f"cross unit child blocker, PR {state} -> {want}", v[0] == want and v[1] == "cross-unit")
+    m = _merged({"BT-070": "merged"})
+    v = rec.edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "planned"}), m)
+    check("cross unit child blocker not shipped -> UNMET without a PR lookup", v[0] == "UNMET" and not m.calls)
+    m = _merged({"BT-070": "merged"})
+    check("cross unit child blocker done + merged -> OK",
+          rec.edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "done"}), m)[0] == "OK" and m.calls == ["BT-070"])
+
+    # 4. cross unit, epic/standalone blocker: merged <=> closed <=> done (in review = PR still open)
+    for st, want in (("done", "OK"), ("in review", "UNMET"), ("in progress", "UNMET")):
+        m = _merged({})
+        v = rec.edge_verdict("BT-300", "BT-051", edge_rows({"BT-051": st}), m)
+        check(f"cross unit epic blocker {st} -> {want}, no PR lookup", v[0] == want and v[1] == "cross-unit" and not m.calls)
+    check("blocker row absent -> UNKNOWN", verdict("BT-207", "BT-404")[0] == "UNKNOWN")
+    check("dependent with an unresolvable milestone -> UNKNOWN", rec.edge_verdict("BT-207", "BT-070", bad, _merged({}))[0] == "UNKNOWN")
+
+    # 5. effective blockers = own + parent epic's, deduped, never the dependent itself
+    check("effective_blockers: inherited from the parent epic", rec.effective_blockers("BT-302", rows) == {"BT-051"})
+    check("effective_blockers: own + parent's", rec.effective_blockers("BT-301", rows) == {"BT-070", "BT-051"})
+    both = edge_rows(blocked={"BT-302": "BT-051"})
+    check("effective_blockers: deduped", rec.effective_blockers("BT-302", both) == {"BT-051"})
+    selfie = edge_rows(blocked={"BT-300": "BT-051, BT-302"})
+    check("effective_blockers: a dependent never blocks itself", rec.effective_blockers("BT-302", selfie) == {"BT-051"})
+    check("effective_blockers: parent row absent -> own only",
+          rec.effective_blockers("BT-310", {"BT-310": dict(rows["BT-310"], parent="BT-999", blocked_by={"BT-070"})}) == {"BT-070"})
+    check("inherited epic blocker is UNMET while the epic is in progress", verdict("BT-302", "BT-051")[0] == "UNMET")
+
+    orig_avail, orig_state = rec.gh_available, rec.pr_merge_state
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "BACKLOG_MAP.md"
+            path = str(p)
+            p.write_text(edge_text(), encoding="utf-8")
+            rec.gh_available = lambda: True
+            looked = []
+
+            def state(table):
+                def pr_state(bt, cache=None):
+                    looked.append(bt)
+                    return table.get(bt)
+                return pr_state
+            rec.pr_merge_state = state({"BT-070": "open"})
+
+            # 6. --edges dependents
+            code, out = _run(["--edges", "dependents", "--ids", "BT-070", "--backlog", path])
+            lines = out.splitlines()
+            check("dependents: same-unit edge CLEAR with a removeBlockedBy cmd line, exit 0",
+                  code == 0 and lines[0].startswith("[CLEAR BT-207 <- BT-070] same-unit: ")
+                  and lines[1].startswith("  cmd: ") and "removeBlockedBy" in lines[1])
+            check("dependents: cross-unit edge with the PR open is KEEP (no cmd)",
+                  any(l.startswith("[KEEP BT-301 <- BT-070] cross-unit: ") for l in lines)
+                  and sum("cmd:" in l for l in lines) == 1)
+            rec.pr_merge_state = state({"BT-070": "merged"})
+            _, out = _run(["--edges", "dependents", "--ids", "BT-070", "--backlog", path])
+            check("dependents: merged PR -> CLEAR", "[CLEAR BT-301 <- BT-070] cross-unit: " in out and "[KEEP" not in out)
+            code, out = _run(["--edges", "dependents", "--all-open", "--backlog", path])
+            heads = [l.split("]")[0] + "]" for l in out.splitlines() if l.startswith("[")]
+            check("dependents --all-open: every stored edge once",
+                  code == 0 and sorted(heads) == sorted(["[CLEAR BT-207 <- BT-070]", "[CLEAR BT-301 <- BT-070]",
+                                                         "[KEEP BT-300 <- BT-051]"]))
+            code, out = _run(["--edges", "dependents", "--ids", "BT-404", "--backlog", path])
+            check("dependents: absent id -> exit 1", code == 1 and "BT-404" in out)
+            looked.clear()
+            _run(["--edges", "dependents", "--ids", "BT-051", "--backlog", path])
+            check("dependents: epic blocker edges need no PR lookup", looked == [])
+
+            # 7. --edges blockers exit codes and tokens
+            p.write_text(edge_text(blocked={"BT-301": "BT-070"}), encoding="utf-8")
+            code, out = _run(["--edges", "blockers", "--ids", "BT-207", "--backlog", path])
+            check("blockers: all OK -> exit 0 with [BLOCKER-OK BT-207 <- BT-070] same-unit",
+                  code == 0 and out.startswith("[BLOCKER-OK BT-207 <- BT-070] same-unit: "))
+            code, out = _run(["--edges", "blockers", "--ids", "BT-302", "--backlog", path])
+            check("blockers: parent epic's edge is UNMET -> exit 1",
+                  code == 1 and out.startswith("[BLOCKER-UNMET BT-302 <- BT-051] cross-unit: "))
+            rec.pr_merge_state = state({"BT-070": None})
+            code, out = _run(["--edges", "blockers", "--ids", "BT-301", "--backlog", path])
+            check("blockers: unknown PR state -> [BLOCKER-UNKNOWN], exit 1",
+                  code == 1 and "[BLOCKER-UNKNOWN BT-301 <- BT-070] cross-unit: " in out)
+            code, out = _run(["--edges", "blockers", "--ids", "BT-309", "--backlog", path])
+            check("blockers: no effective blockers -> [BLOCKERS-NONE], exit 0",
+                  code == 0 and out.strip() == "[BLOCKERS-NONE BT-309]")
+            code, out = _run(["--edges", "blockers", "--ids", "BT-404", "--backlog", path])
+            check("blockers: absent id -> exit 1", code == 1 and "BT-404" in out)
+            code, out = _run(["--edges", "blockers", "--ids", "BT-207,BT-309", "--backlog", path])
+            check("blockers: several ids, one line per edge", code == 0 and len(out.splitlines()) == 2)
+            code, out = _run(["--edges", "blockers", "--all-open", "--backlog", path])
+            check("blockers --all-open covers every open row", code == 1 and "[BLOCKER-OK BT-207 <- BT-070]" in out
+                  and "[BLOCKERS-NONE BT-309]" in out)
+
+            # 10. offline: same-unit edges still decide; cross-unit child edges are UNKNOWN, no gh lookup
+            rec.gh_available = lambda: False
+            looked.clear()
+            code, out = _run(["--edges", "blockers", "--ids", "BT-207", "--backlog", path])
+            check("offline blockers: same-unit edge -> exit 0", code == 0 and "[BLOCKER-OK BT-207 <- BT-070]" in out)
+            code, out = _run(["--edges", "blockers", "--ids", "BT-301", "--backlog", path])
+            check("offline blockers: cross-unit child blocker -> [BLOCKER-UNKNOWN], exit 1",
+                  code == 1 and "[BLOCKER-UNKNOWN BT-301 <- BT-070]" in out)
+            code, out = _run(["--edges", "dependents", "--ids", "BT-070", "--backlog", path])
+            check("offline dependents: KEEP for the unknown edge, CLEAR for same-unit, exit 0",
+                  code == 0 and "[KEEP BT-301 <- BT-070]" in out and "[CLEAR BT-207 <- BT-070]" in out)
+            check("offline: pr_merge_state is never called", looked == [])
+    finally:
+        rec.gh_available, rec.pr_merge_state = orig_avail, orig_state
+
+    # 8. stale_blockers flags an edge only when the predicate says OK
+    xrows = edge_rows(blocked={"BT-301": "BT-070"})
+    for state_, flagged in (("open", False), (None, False), ("merged", True)):
+        out = rec.stale_blockers(xrows, _merged({"BT-070": state_}))
+        check(f"stale_blockers: cross-unit child edge, PR {state_} -> {'flagged' if flagged else 'not flagged'}",
+              ("BT-301: stale blocker BT-070 should be cleared" in out) == flagged)
+    check("stale_blockers: same-unit shipped edge flagged without a PR lookup",
+          "BT-207: stale blocker BT-070 should be cleared" in rec.stale_blockers(xrows, _merged({})))
+    check("stale_blockers: default merged_of is unknown (never flags a cross-unit child edge)",
+          not any(x.startswith("BT-301") for x in rec.stale_blockers(xrows)))
+
+    # 9. heal skip: only an OK edge is skipped; a kept cross-unit edge GitHub still has is healed from gh
+    heal_map = HEALMAP.replace("| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | BT-006 |",
+                               "| BT-010 | Drifted | planned | type:feature, area:old | v1.0.0 | BT-005 | — |") + (
+        "| BT-007 | Blocker in review | in review | type:feature, tier:slice | v1.1.0 | BT-020 | — | ICE: 0.5 | — |\n"
+        "| BT-008 | Blocker planned | planned | type:feature | v1.0.0 | BT-005 | — | ICE: 0.5 | — |\n")
+    orig_avail, orig_fetch, orig_state = rec.gh_available, rec.fetch_issue, rec.pr_merge_state
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "BACKLOG_MAP.md"
+            path = str(p)
+            rec.gh_available = lambda: True
+            rec.fetch_issue = lambda num, want_comments, want_state=False: _healgh(num)
+            for pr, skipped in (("open", False), ("merged", True)):
+                rec.pr_merge_state = lambda bt, cache=None, pr=pr: pr
+                p.write_text(heal_map, encoding="utf-8")
+                code, out = _run(["--heal", "--kind", "blocked_by", "--source", "gh", "--ids", "BT-010", "--backlog", path])
+                cell = [c.strip() for c in next(l for l in p.read_text(encoding="utf-8").splitlines()
+                                                if l.startswith("| BT-010 ")).split("|")[1:-1]][6]
+                check(f"heal blocked_by: cross-unit child blocker, PR {pr} -> "
+                      f"{'skipped as stale' if skipped else 'healed from gh, not skipped'}",
+                      ("HEAL-SKIP BT-010 blocked_by" in out) == skipped and cell == ("BT-008" if skipped else "BT-007, BT-008")
+                      and code == (1 if skipped else 0))
+    finally:
+        rec.gh_available, rec.fetch_issue, rec.pr_merge_state = orig_avail, orig_fetch, orig_state
+
+    # 11. pr_merge_state: last /pull/ comment wins; tri-state plus None
+    orig_json, orig_pr = rec._gh_json, rec._pr_state
+    try:
+        asked = []
+
+        def pr_state(k):
+            asked.append(k)
+            return {"10": "OPEN", "11": "MERGED", "12": "CLOSED", "13": None}[k]
+
+        def comments(*bodies):
+            return lambda num, fields: {"comments": [{"body": b} for b in bodies]}
+        rec._pr_state = pr_state
+        rec._gh_json = comments("Shipped in PR #10 https://x/o/r/pull/10", "noise", "Re-shipped https://x/o/r/pull/11")
+        check("pr_merge_state: the last /pull/ comment wins -> merged", rec.pr_merge_state("BT-070") == "merged" and asked == ["11"])
+        rec._gh_json = comments("https://x/o/r/pull/10")
+        check("pr_merge_state: OPEN -> open", rec.pr_merge_state("BT-070") == "open")
+        rec._gh_json = comments("https://x/o/r/pull/12")
+        check("pr_merge_state: CLOSED unmerged -> open", rec.pr_merge_state("BT-070") == "open")
+        rec._gh_json = comments("https://x/o/r/pull/13")
+        check("pr_merge_state: PR lookup fails -> None", rec.pr_merge_state("BT-070") is None)
+        asked.clear()
+        rec._gh_json = comments("no link here", "none either")
+        check("pr_merge_state: no /pull/ comment -> none, no PR lookup", rec.pr_merge_state("BT-070") == "none" and not asked)
+        rec._gh_json = comments()
+        check("pr_merge_state: no comments -> none", rec.pr_merge_state("BT-070") == "none")
+        rec._gh_json = lambda num, fields: None
+        check("pr_merge_state: gh failure -> None", rec.pr_merge_state("BT-070") is None)
+        check("pr_merge_state: BT-LOCAL has no GitHub issue -> None", rec.pr_merge_state("BT-LOCAL-x") is None)
+        n, cache = [], {}
+        rec._gh_json = lambda num, fields: n.append(num) or {"comments": []}
+        rec.pr_merge_state("BT-070", cache)
+        rec.pr_merge_state("BT-070", cache)
+        check("pr_merge_state: cached per run when a cache is passed", n == ["70"])
+    finally:
+        rec._gh_json, rec._pr_state = orig_json, orig_pr
+    real_run = rec.subprocess.run
+    try:
+        class Done:
+            def __init__(self, code, out):
+                self.returncode, self.stdout = code, out
+        rec.subprocess.run = lambda *a, **k: Done(0, '{"state": "MERGED"}')
+        check("_pr_state parses gh pr view --json state", rec._pr_state("11") == "MERGED")
+        rec.subprocess.run = lambda *a, **k: Done(1, "")
+        check("_pr_state: gh error -> None", rec._pr_state("11") is None)
+        rec.subprocess.run = lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError())
+        check("_pr_state: no gh binary -> None", rec._pr_state("11") is None)
+    finally:
+        rec.subprocess.run = real_run
+
+    # 12. argparse
+    for flag, argv in (("--heal", ["--ids", "BT-007", "--heal", "--kind", "labels", "--source", "gh"]),
+                       ("--summary", ["--all-open", "--summary"]), ("--pr-id", ["--ids", "BT-007", "--pr-id", "BT-007"]),
+                       ("--fields", ["--ids", "BT-007", "--fields", "status"])):
+        check(f"--edges refuses {flag}", _arg_error(["--edges", "blockers"] + argv))
+    check("--edges needs --ids or --all-open", _arg_error(["--edges", "blockers"]))
+    check("--edges takes blockers|dependents only", _arg_error(["--edges", "both", "--ids", "BT-007"]))
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         path = write_backlog(td)
@@ -642,6 +911,7 @@ def main():
     all_open_checks()
     summary_checks()
     heal_checks()
+    edge_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")

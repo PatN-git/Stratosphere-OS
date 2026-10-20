@@ -122,6 +122,26 @@ def test_workflow_pr_body_unit_and_build_calls_use_only_real_flags():
     assert "--close" in seen["build"], "4a step 8 must rebuild the body with `pr_body.py build --close`"
 
 
+# md-crosscheck: workflow reconcile --edges literals vs reconcile.py's real argparse
+def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_path, monkeypatch):
+    monkeypatch.setattr(rec, "gh_available", lambda: False)
+    backlog = tmp_path / "BACKLOG_MAP.md"
+    backlog.write_text("", encoding="utf-8")
+    call = re.compile(r"python \.agents/scripts/reconcile\.py ([^`]*--edges[^`]*)`")
+    seen = 0
+    for name in ("4a-verify-and-ship.md", "3d-implement-issue.md", "3z-afk-loop.md", "3c-sprint-planning.md", "0b-stop-session.md"):
+        for args in call.findall((WF / name).read_text(encoding="utf-8")):
+            seen += 1
+            argv = re.sub(r"<[^>]*>", "001", args).split()
+            mode = argv[argv.index("--edges") + 1]
+            assert mode in {"blockers", "dependents"}, f"{name}: --edges {mode}"
+            try:
+                rec.main(argv + ["--backlog", str(backlog)])
+            except SystemExit as e:
+                assert e.code != 2, f"{name}: `{args}` rejected by reconcile.py argparse"
+    assert seen >= 5
+
+
 # --- contract_check.py ------------------------------------------------------------------------
 
 def test_every_workflow_call_uses_only_real_contract_check_flags():

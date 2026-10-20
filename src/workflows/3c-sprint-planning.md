@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.4.1"
-timestamp: 2026-10-14
+version: "2.5.0"
+timestamp: 2026-10-20
 ---
 
 # Sprint planning
@@ -27,9 +27,9 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependencies. Batch lookup native GitHub dependencies (e.g., `gh issue list --state open --json number,blockedBy`; read `blockedBy.nodes`) if supported to avoid individual queries; else parse text `Blocked by:` in issue body and the `Blocked by` column in `BACKLOG_MAP.md`.
-   - A blocker already at `status:in review` or `status:done` counts as satisfied (not blocking) and should already be cleared from `Blocked by`; treat any stale entry as satisfied.
-   - Set `[BLOCKED]` if prereqs not `done` and not in current sprint.
-   - Set `[blocked-but-sequenced-in-sprint]` if prereqs not `done` but in current sprint.
+   - Run `python .agents/scripts/reconcile.py --edges blockers --ids <candidate slices>` once; effective blockers include the parent epic's. `[BLOCKER-OK]` is not blocking.
+   - Set `[BLOCKED]` on `[BLOCKER-UNMET]`/`[BLOCKER-UNKNOWN]` when the blocker is not in the current sprint.
+   - Set `[blocked-but-sequenced-in-sprint]` on the same when the blocker is in the current sprint.
    - **Late-discovered dependency:** if sequencing reveals a genuine prerequisite not yet recorded in a slice's `Blocked by` (a real ordering constraint missed at creation), flag it `[NEW-DEP] BT-<padded> ← BT-<prereq>`. Do **not** write it yet — it is proposed for HITL confirmation in Phase 5.
 2. **ICE Prioritization:** Read pre-calculated ICE from `BACKLOG_MAP.md`. Recalculate ICE ONLY if empty or effort weight disagrees with label (ICE = (Impact * Confidence) / Effort weight; small=1, medium=2, large=3). **Spikes skip ICE** (per 3b).
    - Sort, in order:
@@ -71,7 +71,7 @@ Output compressed readout matching capacity thresholds:
 Halt for confirmation. When confirmed:
 1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, mirror the new `priority:*` into the `BACKLOG_MAP.md` Labels column — it is gate-checked in step 5.
 2. Create sprint milestone `vX.Y.Z` in GitHub if absent, then assign every sequenced item (Build slices and Spikes; not `[NEXT]` or `[BLOCKED]`) to it, moving it from `vX.Y.0` or an earlier sprint milestone. Update Milestone column in `BACKLOG_MAP.md`. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. Set status to `status:planned` for Build slices only; **Spikes keep `status:needs_spec`** (never set `planned`).
-3. **Record confirmed dependencies (amend-only, user-confirmed):** for each `[NEW-DEP]` the user confirmed at the halt, add the edge on GitHub (`addBlockedBy` mutation per `references/github-issue-relations.md`) and append the bare `BT-<prereq>` to that slice's `Blocked by` column in `BACKLOG_MAP.md`. 3c may only **add** a blocker edge here, and only with explicit confirmation — `3b` remains the birth writer for `Blocked by`, and blocker **clearing** stays with 4a (at `in review`) / 0b / merge. Never remove a `Blocked by` entry in 3c. Skip any proposed edge the user declined.
+3. **Record confirmed dependencies (amend-only, user-confirmed):** for each `[NEW-DEP]` the user confirmed at the halt, add the edge on GitHub (`addBlockedBy` mutation per `references/github-issue-relations.md`) and append the bare `BT-<prereq>` to that slice's `Blocked by` column in `BACKLOG_MAP.md`. 3c may only **add** a blocker edge here, and only with explicit confirmation — `3b` remains the birth writer for `Blocked by`, and blocker **clearing** stays with 4a (same-unit edges, at ship) / 0b (at merge). Never remove a `Blocked by` entry in 3c. Skip any proposed edge the user declined.
 4. Comment on each updated issue: 'Sprint vX.Y.Z sync: ICE <score> → priority:<priority>; milestone vX.Y.Z; status:planned.' Spike: 'Sprint vX.Y.Z sync: Spike; milestone vX.Y.Z; status:needs_spec; close on Exit Criteria.'
 5. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list of all sequenced BT-<padded>, Spikes included> --fields status,milestone,labels,blocked_by` per `references/terminal-sync-invariant.md`. Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
 6. Output: 'Sprint vX.Y.Z locked. Build slices: `/3d-implement-issue` or `/3z-afk-loop`.' If the sprint holds Spikes, add: 'Spikes in vX.Y.Z stay `needs_spec` and are not runnable by `/3d`, `/3z`, or `/3x`. Close each on its Exit Criteria; mint follow-up Build slices with `/3b-create-issue`. Unfinished Spikes are re-sequenced by the next 3c run.'

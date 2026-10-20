@@ -93,8 +93,8 @@ def select_eligible(slices):
     done = {s["slice_id"] for s in slices if s.get("state") == "done"}
     out = []
     for s in slices:
-        if s.get("state") == "done":
-            continue  # already complete — don't re-dispatch
+        if s.get("state") in ("done", "closed"):
+            continue  # already complete (or closed but unmerged) — don't re-dispatch
         labels = set(s.get("labels", []))
         if "mode:AFK" not in labels or "tier:slice" not in labels or "tier:epic" in labels or "status:needs_spec" in labels:
             continue
@@ -104,11 +104,40 @@ def select_eligible(slices):
     return out
 
 
+def _load_reconcile():
+    """Lazy import of reconcile.py: `<root>/scripts/` is a sibling of `<root>/skills/` (installed
+    `.agents/`) and of `src/experimental/` (dev checkout), so `parents[2]/scripts` resolves in both."""
+    import sys
+    scripts = str(Path(__file__).resolve().parents[2] / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import reconcile
+    return reconcile
+
+
+def _merge_state(reconcile, number, cache, repo=None):
+    """reconcile.pr_merge_state for issue `number` in `repo` (gh reads GH_REPO), else the cwd repo."""
+    import os
+    prev = os.environ.get("GH_REPO")
+    if repo:
+        os.environ["GH_REPO"] = repo
+    try:
+        return reconcile.pr_merge_state(f"BT-{number}", cache)
+    finally:
+        if repo:
+            if prev is None:
+                os.environ.pop("GH_REPO", None)
+            else:
+                os.environ["GH_REPO"] = prev
+
+
 def _sprint_candidates(repo=None):
     """mode:AFK issues via gh, shaped for select_eligible. Fetches BOTH states so the
     `done` set (closed issues) is populated for dependency gating; carries the full
     issue under `_issue` so preflight reuses it (no N+1 re-fetch). `Blocked-by:` body
-    tokens must be issue numbers to match slice_id (documented in SKILL.md)."""
+    tokens must be issue numbers to match slice_id (documented in SKILL.md). A child slice is closed at
+    ship, before its PR merges, and Jules branches from the default branch: a closed blocker counts as
+    done only when its last PR is merged or it has none (Spike); a gh failure counts as not done."""
     import subprocess
     args = ["gh", "issue", "list", "--label", "mode:AFK", "--state", "all",
             "--json", "number,title,body,labels,state", "--limit", "200"]
@@ -117,18 +146,30 @@ def _sprint_candidates(repo=None):
     out = subprocess.run(args, capture_output=True, text=True)
     if out.returncode != 0:
         raise JulesError(0, f"gh issue list failed: {out.stderr.strip()}")
+    issues = json.loads(out.stdout or "[]")
+    blockers, merge_cache, reconcile = set(), {}, None
+    for iss in issues:
+        for line in (iss.get("body") or "").splitlines():
+            low = line.lower()
+            if low.startswith("blocked-by:") or low.startswith("blocked by:"):
+                blockers.update(b.strip().lstrip("#") for b in line.split(":", 1)[1].split(",") if b.strip())
     slices = []
-    for iss in json.loads(out.stdout or "[]"):
+    for iss in issues:
         blocked = []
         for line in (iss.get("body") or "").splitlines():
             low = line.lower()
             if low.startswith("blocked-by:") or low.startswith("blocked by:"):
                 blocked = [b.strip().lstrip("#") for b in line.split(":", 1)[1].split(",") if b.strip()]
         closed = str(iss.get("state", "")).upper() in ("CLOSED", "DONE")
+        state = "done" if closed else "open"
+        if closed and str(iss["number"]) in blockers:
+            reconcile = reconcile or _load_reconcile()
+            if _merge_state(reconcile, iss["number"], merge_cache, repo) not in ("merged", "none"):
+                state = "closed"  # shipped, PR not merged (or unknown): not done, never re-dispatched
         slices.append({"slice_id": str(iss["number"]),
                        "labels": [lbl.get("name") for lbl in iss.get("labels", [])],
                        "blocked_by": blocked,
-                       "state": "done" if closed else "open",
+                       "state": state,
                        "_issue": iss})
     return slices
 
