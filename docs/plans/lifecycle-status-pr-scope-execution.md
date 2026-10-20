@@ -1,3 +1,12 @@
+---
+type: plan
+title: Lifecycle Epic Execution Plan
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-20
+version: "1.0.0"
+---
+
 # Execution plan: epic BT-190 (BT-188 → BT-191 → BT-192)
 
 Status: agreed 2026-10-20.

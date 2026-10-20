@@ -1,3 +1,12 @@
+---
+type: plan
+title: Release-Scoped PR Plan
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-20
+version: "1.0.0"
+---
+
 # Plan: release-scoped PR (epic slice 2, D1)
 
 Draft by Sonnet 5.5; reviewed and revised by Opus 5.5 on 2026-10-20. Where this file differs from the **Consistency rulings** in `lifecycle-status-pr-scope-epic.md`, the epic plan wins; that includes the final version table.

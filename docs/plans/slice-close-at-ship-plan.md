@@ -1,3 +1,12 @@
+---
+type: plan
+title: Close Child Slices at Ship Plan
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-20
+version: "1.0.0"
+---
+
 # Plan: close child slices at ship
 
 Draft: Sonnet 5.5 (high). Reviewed and revised by Opus 5.5 against the source on 2026-10-19.

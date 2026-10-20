@@ -1,3 +1,12 @@
+---
+type: plan
+title: Blocker Timing Plan
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-20
+version: "1.0.0"
+---
+
 # Plan: blocker timing (slice 3 of lifecycle-status-pr-scope epic)
 
 Draft by Sonnet 5.5; reviewed and revised by Opus 5.5 on 2026-10-20. Where this file differs from the **Consistency rulings** in `lifecycle-status-pr-scope-epic.md`, the epic plan wins; that includes the final version table. Below, `rel:X.Y` / `epic:N` / `self:N` read as slice 2's keys `vX.Y` / `BT-<padded>`.

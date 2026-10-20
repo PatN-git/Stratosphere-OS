@@ -1,3 +1,12 @@
+---
+type: plan
+title: Lifecycle Status, PR Scope and Blocker Timing Epic Plan
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-20
+version: "1.0.0"
+---
+
 # Epic plan: lifecycle status, PR scope and blocker timing
 
 Epic: BT-190
