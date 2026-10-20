@@ -67,6 +67,7 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 | **3d. Execution** | `/3d-implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
 | **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
 | **4. Ship & Audit** | `/4a-verify-and-ship`<br/>`/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, audit reports (docs/audits/) + slice proposals |
+| **0. Anytime** | `/0e-plain-english` | Restates the agent's last message or question in plain, non-technical English; say "more" to elaborate. | Last agent message | Plain-language explanation |
 | **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
@@ -75,7 +76,7 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 ## Getting Started (Installation)
 
 ### 1. Install the Skills
-StratosphereOS ships as one canonical bundle, `dist/skills/` (27 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
+StratosphereOS ships as one canonical bundle, `dist/skills/` (28 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
 
 > **Trust the project first (Codex, Gemini CLI).** Codex >= 0.150.0 skips project `AGENTS.md` until the project is trusted, and Gemini CLI >= 0.59.0 fails closed on untrusted workspaces. Nothing errors: on Codex the skills can still appear (reported, not verified) while the constitution's precedence, security and git rules are absent. Trust the folder in the host before `/stratosphere-setup`; a skill cannot check this for you.
 
@@ -102,7 +103,7 @@ npx skills update
 
 - **Always pass `--copy`.** Without it the CLI symlinks, which fails on Windows without Developer Mode (`EPERM: operation not permitted, symlink`) and breaks hosts that do not follow symlinks into `references/`.
 - **Always include the `/dist/skills` subpath.** The bundle lives there; the repository root is not a skills root.
-- **Keep `-y`** so all 27 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
+- **Keep `-y`** so all 28 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
 - No network? Run it against a local clone: `npx skills add ./dist/skills -a <agent> --copy -y`.
 
 ### Track B — Direct copy (offline / no Node.js)
@@ -142,7 +143,7 @@ Pass `--target <skills-dir>` to install elsewhere (for example a project's `.age
 Checked on `agy` 1.3.0 (one run each): the Antigravity CLI listed a throwaway skill placed in `~/.gemini/config/skills/` and did not list one placed in `~/.gemini/antigravity-cli/skills/`, so this target works for the CLI too, whatever its docs say. Re-check after a major `agy` upgrade.
 
 ### Track E — Antigravity plugin install
-`dist/` is also a plugin root for Antigravity: `dist/plugin.json` sits beside the 27 bundled skills in `dist/skills/`. From a clone of this repository:
+`dist/` is also a plugin root for Antigravity: `dist/plugin.json` sits beside the 28 bundled skills in `dist/skills/`. From a clone of this repository:
 ```bash
 agy plugin install dist
 ```

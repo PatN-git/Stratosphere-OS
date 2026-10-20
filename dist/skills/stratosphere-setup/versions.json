@@ -115,6 +115,11 @@
       "timestamp": "2026-10-20",
       "version": "1.2.0"
     },
+    "skills/0e-plain-english/SKILL.md": {
+      "sha256": "e3fca4c5abf5ea96b2d6697c39da4574573222eaf7476a41014074c850b4be00",
+      "timestamp": "2026-10-20",
+      "version": "1.0.0"
+    },
     "skills/1a-research/SKILL.md": {
       "sha256": "31b092882f8988022327b620569fde6084512e51709fa6688e7ed1f1c3352df0",
       "timestamp": "2026-10-14",
@@ -486,9 +491,9 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "42262de5a843f932812bfc1a63415c141f8ac3a57830e901284565f5eeb88b78",
-      "timestamp": "2026-10-14",
-      "version": "1.4.1"
+      "sha256": "bcbf4e037c9069061df58d016b5fe461372960ffd29676397f7b26056d27294b",
+      "timestamp": "2026-10-20",
+      "version": "1.5.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",

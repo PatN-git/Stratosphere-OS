@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.1"
-timestamp: 2026-10-14
+version: "1.5.0"
+timestamp: 2026-10-20
 ---
 
 # Instantiate StratosphereOS
@@ -94,7 +94,7 @@ Find `<plugin>` by checking these locations in order and using the first that co
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 
-**Suite integrity check (before scaffolding):** assert the 23 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
+**Suite integrity check (before scaffolding):** assert the 24 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
 
 ```bash
 python <plugin>/scripts/check_suite.py suite

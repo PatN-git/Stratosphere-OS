@@ -1,0 +1,4 @@
+# Codex reads invocation policy from this fixed path, not from SKILL.md
+# frontmatter. Keep in sync with `disable-model-invocation` / `triggers`.
+policy:
+  allow_implicit_invocation: false

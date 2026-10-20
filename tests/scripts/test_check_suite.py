@@ -43,10 +43,10 @@ def lifecycle_names():
 
 # --- suite ---------------------------------------------------------------
 
-def test_suite_passes_when_all_23_lifecycle_skills_present(suite):
+def test_suite_passes_when_all_24_lifecycle_skills_present(suite):
     r = run("suite", "--skills-dir", suite)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "23/23" in r.stdout
+    assert "24/24" in r.stdout
 
 
 def test_suite_ignores_execution_skills(suite):
@@ -69,7 +69,7 @@ def test_suite_halts_listing_7_missing_with_remediation(suite):
         shutil.rmtree(suite / name)
     r = run("suite", "--skills-dir", suite)
     assert r.returncode == 1
-    assert "16/23" in r.stdout
+    assert "17/24" in r.stdout
     assert all(name in r.stdout for name in missing)
     assert REMEDIATION in r.stdout
 
@@ -111,7 +111,7 @@ def test_hardcoded_lifecycle_list_matches_bundle_frontmatter():
     sys.path.insert(0, str(SCRIPT.parent))
     import check_suite
     assert sorted(check_suite.LIFECYCLE_SKILLS) == lifecycle_names()
-    assert len(check_suite.LIFECYCLE_SKILLS) == 23
+    assert len(check_suite.LIFECYCLE_SKILLS) == 24
 
 
 # --- visibility ----------------------------------------------------------
@@ -258,7 +258,7 @@ def test_suite_check_runs_from_an_installed_antigravity_plugin(tmp_path):
     shutil.copytree(DIST_SKILLS, skills)
     installed = skills / "stratosphere-setup" / "scripts" / "check_suite.py"
     r = subprocess.run([sys.executable, str(installed), "suite"], capture_output=True, text=True)
-    assert r.returncode == 0 and "23/23" in r.stdout, r.stdout + r.stderr
+    assert r.returncode == 0 and "24/24" in r.stdout, r.stdout + r.stderr
 
 
 def test_legacy_flags_antigravity_dir_carrying_a_skills_payload(proj):
@@ -499,7 +499,7 @@ def test_legacy_leaves_config_skills_bridge_target_alone(proj):
 
 
 def test_bundled_skill_names_match_the_dist_bundle():
-    """Drift guard for the names the runtime-dir cleanup keys on (23 lifecycle + 4 execution)."""
+    """Drift guard for the names the runtime-dir cleanup keys on (24 lifecycle + 4 execution)."""
     sys.path.insert(0, str(SCRIPT.parent))
     import check_suite
     assert sorted(check_suite.BUNDLED_SKILLS) == sorted(d.name for d in DIST_SKILLS.iterdir() if (d / "SKILL.md").is_file())
