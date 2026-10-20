@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.2"
-timestamp: 2026-09-17
+version: "1.1.3"
+timestamp: 2026-10-20
 ---
 
 # START SESSION
@@ -27,7 +27,7 @@ Restore session context (read-only), then activate: restore the branch and trans
 1. If no task resolved (`Session Status: no-active-task`) → output next-step guidance (`/1a-research` or `/1b-concept-framing`) and HALT before any side effect.
 2. **Branch restore:** read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. **NEVER create a branch** — `3d` owns branch creation; `0a` only restores an existing one.
 3. **State transition (first-slice rule):** set the target slice (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub:
-   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`.
+   `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --remove-label "status:done" --add-label "status:in progress"` (a closed slice is reopened by `/3d-implement-issue`).
    If it is a sub-issue, promote the parent epic (`BT-<parent>`) `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). Update `.memory/STATUS.md` as this session's resume hint (not the authoritative active set).
 
 ## Output Pattern

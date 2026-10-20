@@ -56,6 +56,16 @@ def test_a_slice_without_a_github_milestone_drifts_from_its_backlog_row():
     assert not any("milestone" in d for d in rec.compare(row, gh, set(rec.ALL_FIELDS), False))
 
 
+# md-crosscheck: 4a close literal vs the board Action
+def test_4a_close_reason_is_the_one_the_board_action_maps_to_done():
+    m = re.search(r"gh issue close <n> --reason (\w+)", _4a())
+    assert m, "4a has no `gh issue close <n> --reason <x>` literal"
+    assert m.group(1) == "completed", f"4a closes with --reason {m.group(1)}; the board Action maps only `completed` to done"
+    action = (SRC / "github" / "sync-labels-to-project.yml").read_text(encoding="utf-8")
+    assert re.search(r"state_reason === 'completed'[^\n]*\{\s*statusOverrideVal = 'done';", action), \
+        "the board Action no longer maps a `completed` close to done"
+
+
 # --- pr_body.py and the merge-risk reference --------------------------------------------------
 
 def _risk_rules():

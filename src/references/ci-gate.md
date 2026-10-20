@@ -1,7 +1,7 @@
 ---
 description: CI gate for 4a Phase 5 and 3z Step 3A; `ci_gate.py status` triages feature PR CI, small fix vs big halt, fix cap, 3z dispatch overrides.
-version: "1.0.0"
-timestamp: 2026-10-16
+version: "1.0.1"
+timestamp: 2026-10-20
 ---
 
 # CI gate
@@ -41,6 +41,6 @@ Steps 1-3 fail (`stuck`, red suite, nothing to commit) → `big`, push nothing. 
 
 ## 4. Big (halt)
 HALT `[CI-RED] <failing check>`:
-- Slice stays `in review` (code pushed). Step 9 runs for slice and dependents cleared in step 7, not parent.
+- Slice keeps its shipped status (code pushed). Step 9 runs for slice and dependents cleared in step 7, not parent.
 - Feature PR stays draft, epic stays `in progress`. Standalone PR stays open, non-draft; halt text says so.
 - HITL: name `/3b-create-issue`, `log_tail` is its brief. AFK: 3z Step 3A.

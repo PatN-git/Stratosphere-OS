@@ -98,6 +98,7 @@ The slice plans were drafted in parallel by Sonnet 5.5 and reviewed against the 
 | `src/workflows/4a-verify-and-ship.md` | 1.5.0 | 1.6.0 | 1, 2, 3 |
 | `src/workflows/3z-afk-loop.md` | 1.7.0 | 1.8.0 | 1 (patch, raised to minor by 2), 2, 3 |
 | `src/workflows/3c-sprint-planning.md` | 2.4.1 | 2.5.0 | 3 |
+| `src/workflows/0a-start-session.md` | 1.1.2 | 1.1.3 | 1 (grader advisory: the flip also removes `status:done`) |
 | `src/workflows/0b-stop-session.md` | 1.4.1 | 1.5.0 | 1, 3 |
 | `src/references/terminal-sync-invariant.md` | 1.1.0 | 1.2.0 | 1, 2, 3 |
 | `src/references/ci-gate.md` | 1.0.0 | 1.0.1 | 1, 2 |

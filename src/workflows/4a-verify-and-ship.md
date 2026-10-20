@@ -6,13 +6,13 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-14
+version: "1.6.0"
+timestamp: 2026-10-20
 ---
 
 # Verify and Ship
 
-**Hand-off contract:** Final gate before pushing and opening or updating the PR. The PR stays draft until every sibling slice is `status:in review|done` (Spikes closed as `done` count). A standalone issue opens non-draft. On ship, set the slice to `status:in review` in BACKLOG_MAP and GitHub; merge closes it and sets `status:done`.
+**Hand-off contract:** Final gate before pushing and opening or updating the PR. The PR stays draft until every sibling slice is `status:in review|done` (Spikes closed as `done` count). A standalone issue opens non-draft. On ship, a child slice goes `status:done` and is closed (GitHub's progress bar counts closed issues); a standalone issue goes `status:in review` and its merge closes it. The epic stays open until the merge.
 
 ---
 
@@ -82,22 +82,24 @@ Halt. Await human approval. If approved, or if user response to gap report autho
    - **Body file:** pass `--body-file .tmp/4a-pr-body-BT-<padded>.md` on `gh pr create` / `gh pr edit`; once the call succeeds, `rm -f .tmp/4a-pr-body-BT-<padded>.md .tmp/4a-prior-body.md`. Never commit them.
    - **Risk label, then closing-link read-back:** per the reference, after the call.
 6. **PR-link comment (bi-directional trace):** `gh issue comment <n> --body "Shipped in PR #<pr> — <pr-url>"`, where `<pr-url>` is the full `https://github.com/<owner>/<repo>/pull/<pr>` link. The terminal gate (step 9) accepts only a comment containing that `/pull/` URL — a bare `#<pr>` fails it — so posting exactly this is what makes the check pass. Its own step on purpose: folded into the status write below, it is the clause that drops. Skip the post when the issue already carries a comment with that URL (a `ship-only` re-run after a CI fix).
-7. **Ship-status + backport:** Move the slice to `status:in review` (code complete + verified + pushed; awaiting merge): `gh issue edit <n> --remove-label "status:in progress" --add-label "status:in review"` and update BACKLOG Status. Do **not** set `status:done` on ship — `done` is marked when the PR merges and auto-closes the issue.
-   - **Clear blockers (single writer for this edge):** this slice is now `in review`, so remove its bare ID from every dependent's `Blocked by` in `.memory/BACKLOG_MAP.md` **and** the GitHub blocked-by relationship (`removeBlockedBy` mutation per `references/github-issue-relations.md`), so dependents become visibly unblocked and the map stays a faithful mirror. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
+7. **Ship-status + backport:** Move the slice to its shipped status (code complete + verified + pushed):
+   - **Child slice:** `gh issue edit <n> --remove-label "status:in progress" --add-label "status:done"`, update BACKLOG Status `done`, then `gh issue close <n> --reason completed` (if connected; skip if already closed). Never `not planned`: the board Action maps only completed closes to done.
+   - **Standalone issue:** `gh issue edit <n> --remove-label "status:in progress" --add-label "status:in review"` and update BACKLOG Status; the merge closes it and sets `done`.
+   - **Clear blockers (single writer for this edge):** this slice is now shipped (`done`; standalone `in review`), so remove its bare ID from every dependent's `Blocked by` in `.memory/BACKLOG_MAP.md` **and** the GitHub blocked-by relationship (`removeBlockedBy` mutation per `references/github-issue-relations.md`), so dependents become visibly unblocked and the map stays a faithful mirror. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
    - **Standalone issue (no parent):** same CI gate here (rules: `references/ci-gate.md` §2-§4): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]`; tool timeout `600000` or `--wait` below host limit. `[CI-RED]` leaves PR open, non-draft; halt text says so.
-8. **Epic Check:** If **every sibling sub-issue under parent is `status:in review` or `status:done`** (Spikes close as `done` without a PR; Build slices close only on merge; query `gh issue view <parent> --json subIssues`):
+8. **Epic Check:** If **every sibling sub-issue under parent is `status:in review` or `status:done`** (Spikes close as `done` without a PR; query `gh issue view <parent> --json subIssues`):
    - Run the **Feature Acceptance Audit** below (skip on a `ship-only` re-run after a CI fix).
    - **CI gate** (once per feature, after the audit, before the body rebuild, never per intermediate slice; spec `references/ci-gate.md`): `python .agents/scripts/ci_gate.py status --pr <n> --sha "$(git rev-parse HEAD)" --attempt 1 [--expect-checks]` (`--attempt 2` on a `ship-only` re-run after a CI fix; dispatch passes it); tool timeout `600000` or `--wait` below host limit (`ci-gate.md` §2). By result:
      - `green` | `pending` | `none` → continue (`pending`: `ci:pending` in ship line). `conflict` → report only.
      - `red`+`small` → fix per `ci-gate.md` §3, re-run once `--attempt 2`. Under 3z (dispatch carries `verdict`/`audit_rounds`): return `[CI-FIX]` + `log_tail`, 4a does not commit.
-     - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice stays `in review`, PR stays draft, epic stays `in progress`, step 9 for slice and dependents cleared in step 7 (parent not flipped), `/3b-create-issue` with `log_tail` as brief (`ci-gate.md` §4).
+     - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice keeps its shipped status, PR stays draft, epic stays `in progress`, step 9 for slice and dependents cleared in step 7 (parent not flipped), `/3b-create-issue` with `log_tail` as brief (`ci-gate.md` §4).
    - Rebuild the body: re-save the PR's current body to `.tmp/4a-prior-body.md` (step 5 deleted it; `gh pr view <n> --json body -q .body`), then run `pr_body.py build … --prior-body-file .tmp/4a-prior-body.md --close-parent` (adds `Closes #<parent>.`; without the prior body earlier slices become `PENDING` and lose their `Closes` lines).
    - `gh pr edit --body-file` it, `rm -f` both scratch files as in step 5, and re-run the `closingIssuesReferences` read-back for the parent.
-   - Mark the feature PR ready for review (`gh pr ready <n>`, if connected; no-op if it was opened non-draft) and state `"All slices for BT-<parent> in review! PR #<n> ready to merge."`.
+   - Mark the feature PR ready for review (`gh pr ready <n>`, if connected; no-op if it was opened non-draft) and state `"All slices for BT-<parent> shipped! PR #<n> ready to merge."`.
    - Move the parent epic to `status:in review` (`gh issue edit <parent> --remove-label "status:in progress" --add-label "status:in review"`), then clear `BT-<parent>` from every dependent's `Blocked by`, as in step 7 (map + `removeBlockedBy`).
-   - The epic and slices move to `status:done` on PR **merge** (auto-close), not here.
+   - The epic moves to `status:done` on PR **merge** (`--close-parent`), not here; its slices are already `done`.
    - **Feature Acceptance Audit** — once per feature, never per slice; an `audit-only` run never reaches this step. Spec: `references/feature-acceptance-audit.md`. Gaps ≥ 80 halt the ship: PR stays draft, epic stays `in progress`.
-9. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids BT-<slice>[,<each dependent cleared in Step 7 or 8>][,BT-<parent> when Step 8 flipped the epic] --pr-id BT-<slice> --fields status,blocked_by` per `references/terminal-sync-invariant.md` (covers the slice + epic `in review` and every dependent's `Blocked by` clear; PR-link checked on the slice only).
+9. **Terminal sync gate:** run `python .agents/scripts/reconcile.py --require-gh --ids BT-<slice>[,<each dependent cleared in Step 7 or 8>][,BT-<parent> when Step 8 flipped the epic] --pr-id BT-<slice> --fields status,blocked_by` per `references/terminal-sync-invariant.md` (covers the slice shipped status + epic `in review` and every dependent's `Blocked by` clear; PR-link checked on the slice only).
    - Non-zero → heal per the reference and re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded; do not emit the ship line until it passes.
    - **Draft rule** (skip for a standalone issue or `local-only`): if any BACKLOG row with `Parent = BT-<parent>` is not `in review`/`done`, the PR must be draft (`gh pr view <n> --json isDraft`). Not draft → heal once with `gh pr ready <n> --undo` and re-check; still not draft → halt `[DRAFT-RULE]`.
 10. **Cleanup:** `rm -f .tmp/3d-plan-BT-<padded>.md` (last step). Keep `.tmp/3d-suite-BT-<padded>.json`.

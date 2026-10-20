@@ -487,6 +487,64 @@ def heal_checks():
             rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
 
+DONEMAP = """\
+| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
+|----|-------|--------|--------|-----------|--------|------------|-----|-----|
+| BT-021 | Shipped slice | done | area:api, type:feature, tier:slice, size:small | v1.2.0 | BT-005 | BT-006 | ICE: 1.0 | — |
+| BT-022 | Slice in review | in review | area:api, type:feature, tier:slice, size:small | v1.2.0 | BT-005 | BT-006 | ICE: 1.0 | — |
+"""
+
+
+def ids_state_checks():
+    """BT-188: the --ids gate fetches `state` under --fields status, so a done row whose issue is still
+    OPEN (a dropped `gh issue close` at ship) and a CLOSED issue mapped short of done both fail the gate."""
+    done, review = {"status": "done"}, {"status": "in review"}
+    check("open_on_github: done + OPEN -> drift", rec.open_on_github(done, {"state": "OPEN"}) == "open on GitHub, map=done")
+    check("open_on_github: done + CLOSED -> ok", rec.open_on_github(done, {"state": "CLOSED"}) is None)
+    check("open_on_github: in review + OPEN -> ok", rec.open_on_github(review, {"state": "OPEN"}) is None)
+    check("open_on_github: in progress + OPEN -> ok",
+          rec.open_on_github({"status": "in progress"}, {"state": "OPEN"}) is None)
+    check("open_on_github: state absent -> not checked", rec.open_on_github(done, {}) is None)
+    check("drift_kind: open on GitHub -> closed", rec.drift_kind("open on GitHub, map=done") == "closed")
+
+    orig_avail, orig_fetch = rec.gh_available, rec.fetch_issue
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "BACKLOG_MAP.md"
+            p.write_text(DONEMAP, encoding="utf-8")
+            path = str(p)
+            rec.gh_available = lambda: True
+            asked = []
+
+            def serve(status, state):
+                def fetch(num, want_comments, want_state=False):
+                    asked.append(want_state)
+                    return dict(gh_issue(status=status), state=state)
+                return fetch
+
+            rec.fetch_issue = serve("done", "OPEN")
+            code, out = _run(["--ids", "BT-021", "--backlog", path, "--fields", "status,blocked_by"])
+            check("--ids --fields status: done + OPEN -> exit 1 with the drift line",
+                  code == 1 and "[MIRROR-DRIFT BT-021: open on GitHub, map=done]" in out)
+            check("--ids --fields status: state is requested", asked == [True])
+            rec.fetch_issue = serve("done", "CLOSED")
+            check("--ids --fields status: done + CLOSED -> exit 0",
+                  _run(["--ids", "BT-021", "--backlog", path, "--fields", "status,blocked_by"])[0] == 0)
+
+            asked.clear()
+            rec.fetch_issue = serve("done", "OPEN")
+            code, out = _run(["--ids", "BT-021", "--backlog", path, "--fields", "blocked_by"])
+            check("--ids --fields blocked_by: state not requested, done + OPEN passes",
+                  code == 0 and asked == [False] and "open on GitHub" not in out)
+
+            rec.fetch_issue = serve("in review", "CLOSED")
+            code, out = _run(["--ids", "BT-022", "--backlog", path, "--fields", "status"])
+            check("--ids --fields status: CLOSED + map in review -> exit 1",
+                  code == 1 and "[MIRROR-DRIFT BT-022: closed on GitHub, map=in review]" in out)
+    finally:
+        rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         path = write_backlog(td)
@@ -571,15 +629,16 @@ def main():
                   rec.main(["--ids", "BT-404", "--backlog", path]) == 1)
 
             rec.gh_available = lambda: True
-            rec.fetch_issue = lambda num, want_comments: gh_issue()
+            rec.fetch_issue = lambda num, want_comments, want_state=False: gh_issue()
             check("main online + agree -> exit 0",
                   rec.main(["--ids", "BT-007", "--backlog", path]) == 0)
-            rec.fetch_issue = lambda num, want_comments: gh_issue(status="in progress")
+            rec.fetch_issue = lambda num, want_comments, want_state=False: gh_issue(status="in progress")
             check("main online + drift -> exit 1",
                   rec.main(["--ids", "BT-007", "--backlog", path]) == 1)
     finally:
         rec.gh_available, rec.fetch_issue = orig_avail, orig_fetch
 
+    ids_state_checks()
     all_open_checks()
     summary_checks()
     heal_checks()

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.1"
-timestamp: 2026-10-16
+version: "1.5.0"
+timestamp: 2026-10-20
 ---
 
 # STOP SESSION
@@ -23,12 +23,13 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 
 1. Compare completed vs. planned:
     - Comment plan, completed, and open steps on active GitHub issues, and note which issues were updated/closed.
-    - **Done detection (no forcing):** a slice/epic is `done` only once its PR has **merged** and the issue auto-closed.
+    - **Done detection (no forcing):** an epic or standalone issue is `done` only once its PR has **merged** and the issue auto-closed. A child slice is already `done` + closed at 4a ship.
       - For each issue **closed/merged** this session: mark its BACKLOG Status `done` (or delete the row per retention) and **clear its bare ID from every dependent's `Blocked by`** in `.memory/BACKLOG_MAP.md` and GitHub (`removeBlockedBy` mutation per `references/github-issue-relations.md`; safety net for the 4a in-review clearing).
       - If any dependent was cleared, run `python .agents/scripts/reconcile.py --require-gh --ids <cleared dependents> --fields blocked_by`; non-zero → heal per `references/terminal-sync-invariant.md` and re-run, **at most 3 attempts**, then surface the drift; `[MIRROR-UNVERIFIED]` → surface it, no heal.
-      - Do **not** force `status:done` on a slice still at `status:in review` (code shipped but unmerged) — leave it for the human merge.
-      - If all sibling sub-issues under `#parent` are closed/merged, prompt to confirm the parent epic `done` and reconcile `BT-<parent>` in `BACKLOG_MAP.md`. When every epic in a `vX.Y.0` release is then `done`, suggest `/3a-version-planning` (it closes the release's milestones).
-    - **Post-merge follow-ups:** for each issue detected done this step, take the PR from its `Shipped in PR #<pr>` comment (4a step 6); dedupe PRs. Read each PR's `stratos-pr` block (`gh pr view <pr> --json body`; no block → skip). For each `post_merge` item, propose a follow-up issue (title + one-line body). On confirmation only, create it per BACKLOG Label Composition Rules and 3b atomic minting, label set pinned (no label dropped): `type:maintenance`, `mode:HITL`, `tier:slice`, `size:small`, `status:planned`; add its BACKLOG row in the same step.
+      - Do **not** force `status:done` on a standalone issue or epic still at `status:in review` (code shipped but unmerged) — leave it for the human merge.
+      - Prompt to confirm the parent epic `done` only once its feature PR has merged (closed siblings alone are the normal pre-merge state), then reconcile `BT-<parent>` in `BACKLOG_MAP.md`. When every epic in a `vX.Y.0` release is then `done`, suggest `/3a-version-planning` (it closes the release's milestones).
+      - **Abandoned feature PR:** an open epic whose feature PR (from a child's `Shipped in PR` comment) is CLOSED unmerged (`gh pr view <pr> --json state,mergedAt`) with no open PR on its head branch (`gh pr list --head <branch> --state open`) → prompt: (1) reopen the slices shipped in that PR (relabel `status:planned` first, update BACKLOG, then `gh issue reopen <n>`; epic → `planned`) or (2) drop the work: relabel the epic `status:done`, set its row `done`, then `gh issue close <epic> --reason "not planned"`. Act only on confirmation; Spikes stay closed. Then run `python .agents/scripts/reconcile.py --require-gh --ids <touched> --fields status`; non-zero → heal per `references/terminal-sync-invariant.md`, at most 3 attempts.
+    - **Post-merge follow-ups:** for each epic or standalone issue detected merged this step (never a child slice closed at ship), take the PR from its `Shipped in PR #<pr>` comment (4a step 6; for an epic, from any child slice's comment); dedupe PRs. Read each PR's `stratos-pr` block (`gh pr view <pr> --json body`; no block → skip). For each `post_merge` item, propose a follow-up issue (title + one-line body). On confirmation only, create it per BACKLOG Label Composition Rules and 3b atomic minting, label set pinned (no label dropped): `type:maintenance`, `mode:HITL`, `tier:slice`, `size:small`, `status:planned`; add its BACKLOG row in the same step.
 2. Update `.memory/STATUS.md` (last sync, current branch, active issue, current focus, completed, blockers, next step).
 3. **Friction gate:** run steps 3–4 only if this session hit friction: a failed approach, a costly wrong assumption, a defect fixed, or a reviewer/audit catch. Else skip silently. For each defect fixed, ask "what would have prevented it?". Route every candidate per `references/environment-fix-ladder.md`.
 4. If a candidate reaches the LEARNINGS rung and is a durable lesson:

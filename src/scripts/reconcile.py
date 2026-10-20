@@ -9,6 +9,7 @@ Each caller passes `--fields` = only the mirror fields it wrote, so a gate never
 false-blocks on drift in a field outside its concern. `--pr-id` scopes the PR-link
 check to the single issue that received the PR comment (e.g. the shipped slice),
 so co-passed ids (cleared dependents, a flipped epic) are not required to carry it.
+With `status` in `--fields` the gate also checks issue state: closed must match done (a done row still open, or a closed issue not done, is drift).
 
 Offline / no `gh` -> internal-consistency check only, exit 0 (`[local-only]`).
 Contract + heal protocol: .agents/skills/4a-verify-and-ship/references/terminal-sync-invariant.md
@@ -126,6 +127,14 @@ def closed_on_github(row, gh):
     return None
 
 
+def open_on_github(row, gh):
+    """Drift text when the issue is still OPEN on GitHub while its row is done (a dropped `gh issue close`
+    at ship), else None. Pure."""
+    if gh.get('state') == 'OPEN' and row['status'] == 'done':
+        return "open on GitHub, map=done"
+    return None
+
+
 def compare(row, gh, fields, check_pr):
     """Return a list of drift descriptions for one issue. Pure — unit-tested.
 
@@ -217,7 +226,7 @@ def gh_available():
 
 
 # Texts from compare()/closed_on_github(); stale/absent/not_found items are built with their kind directly.
-KIND_PREFIXES = (('closed on GitHub', 'closed'), ('status', 'status'),
+KIND_PREFIXES = (('closed on GitHub', 'closed'), ('open on GitHub', 'closed'), ('status', 'status'),
                  ('milestone', 'milestone'), ('labels', 'labels'), ('blocked_by', 'blocked_by'),
                  ('parent', 'parent'), ('pr-link', 'pr_link'))
 CHRONIC_NIGHTS = 3
@@ -542,13 +551,14 @@ def main(argv=None):
         elif args.all_open:
             gh = fetch_issue(num, want_comments=False, want_state=True)
         else:
-            gh = fetch_issue(num, want_comments=is_pr)
+            gh = fetch_issue(num, want_comments=is_pr, want_state='status' in fields)
         if gh is None:
             not_found += 1
             emit.append((bt, 'not_found', f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]"))
             exit_code = 1
             continue
-        closed = closed_on_github(rows[bt], gh) if args.all_open else None
+        closed = ((closed_on_github(rows[bt], gh) or open_on_github(rows[bt], gh))
+                  if (args.all_open or 'status' in fields) else None)
         # A closed issue's other fields are noise: the row itself is what needs healing.
         drift = [closed] if closed else compare(rows[bt], gh, fields, check_pr=is_pr)
         for d in drift:

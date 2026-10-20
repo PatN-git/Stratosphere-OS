@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.6.0"
-timestamp: 2026-10-14
+version: "2.7.0"
+timestamp: 2026-10-20
 ---
 
 # Implement issue
@@ -18,7 +18,7 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 **Hydrate first:** Run the `load-memory` skill to restore session context (read-only); the steps below own all side effects.
 0. **Spike guard (first, before any side effect):** if the slice is `status:needs_spec`, HALT: `[SPIKE] BT-<n> is not buildable. Close it on its Exit Criteria, or mint a Build slice with /3b-create-issue.`
 1. **Branch Isolation:** Resolve parent BT (`BT-<parentPadded>` = the slice's Parent: BACKLOG `Parent`, else `gh issue view <n> --json parent`; none → slice ID). feature branch: `<type>/BT-<parentPadded>-<slug>` (using parent `type:`). Checkout/pull if exists, else create from default. If parent ambiguous, prompt (if AFK, default to slice branch). Never work on `main`. Update `.memory/STATUS.md` `Current Branch`/`Active issue`. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
-2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --add-label "status:in progress"`. Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip: its slice stays `in review`.
+2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --remove-label "status:done" --add-label "status:in progress"`. Slice closed (rework of a shipped slice) → after the label edit and BACKLOG update, `gh issue reopen <n>` as the last write (relabel first: the board Action restores the column from the label at reopen). Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip and any reopen: its slice keeps its shipped status.
 3. **Conditional Read:** If a design path resolved, read the frozen blueprint at it; no PRD/design doc at that path (standalone slice) → skip the blueprint.
    - UI slices also read brand tokens `.memory/DESIGN.md` and design rules `.memory/DESIGN_RULES.md` §3 (a backend-only slice reads just the blueprint/contract).
    - UI slices must implement design *only* from these files via Fast-Track B; never access/re-read the live generator.
