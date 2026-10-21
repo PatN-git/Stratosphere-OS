@@ -1,0 +1,57 @@
+[
+ {
+  "id": "m-so142-delete_test",
+  "case": "so-BT-142",
+  "mutation": "delete_test"
+ },
+ {
+  "id": "m-so120-weaken",
+  "case": "so-BT-120",
+  "mutation": "weaken_assertion"
+ },
+ {
+  "id": "m-so143-delete_test",
+  "case": "so-BT-143",
+  "mutation": "delete_test"
+ },
+ {
+  "id": "m-so143-delete_step",
+  "case": "so-BT-143",
+  "mutation": "delete_step"
+ },
+ {
+  "id": "m-so187-delete_test",
+  "case": "so-BT-187",
+  "mutation": "delete_test"
+ },
+ {
+  "id": "m-ct185-delete_test",
+  "case": "ct-BT-185",
+  "mutation": "delete_test"
+ },
+ {
+  "id": "m-ct200-weaken",
+  "case": "ct-BT-200",
+  "mutation": "weaken_assertion"
+ },
+ {
+  "id": "m-ct239-delete_test",
+  "case": "ct-BT-239",
+  "mutation": "delete_test"
+ },
+ {
+  "id": "m-ct198-weaken",
+  "case": "ct-BT-198",
+  "mutation": "weaken_assertion"
+ },
+ {
+  "id": "m-so143-remove_literal",
+  "case": "so-BT-143",
+  "mutation": "remove_literal"
+ },
+ {
+  "id": "m-ct198-remove_literal",
+  "case": "ct-BT-198",
+  "mutation": "remove_literal"
+ }
+]
