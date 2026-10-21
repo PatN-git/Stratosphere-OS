@@ -1,0 +1,215 @@
+{
+ "repos": {
+  "so": {
+   "path": "C:/Users/patri/Dev/Stratosphere-OS",
+   "gh": "PatN-git/Stratosphere-OS"
+  },
+  "ct": {
+   "path": "C:/Users/patri/Dev/CleanTechHub",
+   "gh": "PatN-git/cleantech_jobs"
+  }
+ },
+ "cases": [
+  {
+   "id": "so-BT-118",
+   "repo": "so",
+   "slice": "BT-118",
+   "issue": 118,
+   "parent": "BT-108",
+   "pre": "5fa1e16",
+   "fix": [
+    "5e83873",
+    "375fe7a"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-119",
+   "repo": "so",
+   "slice": "BT-119",
+   "issue": 119,
+   "parent": "BT-108",
+   "pre": "439ee92",
+   "fix": [
+    "3a18a82"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-120",
+   "repo": "so",
+   "slice": "BT-120",
+   "issue": 120,
+   "parent": "BT-108",
+   "pre": "da0b40a",
+   "fix": [
+    "79d627c"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-122",
+   "repo": "so",
+   "slice": "BT-122",
+   "issue": 122,
+   "parent": "BT-108",
+   "pre": "7d05a88",
+   "fix": [
+    "e87c501",
+    "9212467"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-139",
+   "repo": "so",
+   "slice": "BT-139",
+   "issue": 139,
+   "parent": "BT-136",
+   "pre": "e1ed8d6",
+   "fix": [
+    "80f0de6"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-143",
+   "repo": "so",
+   "slice": "BT-143",
+   "issue": 143,
+   "parent": "BT-136",
+   "pre": "f06853c",
+   "fix": [
+    "686bd66"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-187",
+   "repo": "so",
+   "slice": "BT-187",
+   "issue": 187,
+   "parent": "BT-179",
+   "pre": "7091e37",
+   "fix": [
+    "4237cd0",
+    "7910b74"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-061",
+   "repo": "ct",
+   "slice": "BT-061",
+   "issue": 61,
+   "parent": "BT-059",
+   "pre": "646e55a",
+   "fix": [
+    "d7b1a59",
+    "774c137",
+    "8890bd8"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-170",
+   "repo": "ct",
+   "slice": "BT-170",
+   "issue": 170,
+   "parent": "BT-168",
+   "pre": "56baee5",
+   "fix": [
+    "386f492"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-198",
+   "repo": "ct",
+   "slice": "BT-198",
+   "issue": 198,
+   "parent": "BT-197",
+   "pre": "22416c1",
+   "fix": [
+    "bf7acb9"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-169",
+   "repo": "ct",
+   "slice": "BT-169",
+   "issue": 169,
+   "parent": "BT-168",
+   "pre": "5caa5f5",
+   "fix": [
+    "0f37dc5"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-171",
+   "repo": "ct",
+   "slice": "BT-171",
+   "issue": 171,
+   "parent": "BT-168",
+   "pre": "85b7506",
+   "fix": [
+    "b922bf5"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "ct-BT-006",
+   "repo": "ct",
+   "slice": "BT-006",
+   "issue": 6,
+   "parent": "BT-054",
+   "pre": "16c7c82",
+   "fix": [
+    "3a91948"
+   ],
+   "kind": "real"
+  },
+  {
+   "id": "so-BT-142",
+   "repo": "so",
+   "slice": "BT-142",
+   "issue": 142,
+   "parent": "BT-136",
+   "pre": "last",
+   "fix": [],
+   "kind": "control"
+  },
+  {
+   "id": "ct-BT-185",
+   "repo": "ct",
+   "slice": "BT-185",
+   "issue": 185,
+   "parent": "BT-180",
+   "pre": "last",
+   "fix": [],
+   "kind": "control"
+  },
+  {
+   "id": "ct-BT-200",
+   "repo": "ct",
+   "slice": "BT-200",
+   "issue": 200,
+   "parent": "BT-197",
+   "pre": "last",
+   "fix": [],
+   "kind": "control"
+  },
+  {
+   "id": "ct-BT-239",
+   "repo": "ct",
+   "slice": "BT-239",
+   "issue": 239,
+   "parent": "BT-234",
+   "pre": "last",
+   "fix": [],
+   "kind": "control"
+  }
+ ]
+}

@@ -12,6 +12,9 @@ version: "1.1.0"
 
 Follow-up to epic BT-201 ([plan](4a-audit-yield-plan.md), [replay evidence](../research/4a-audit-lean-replay.md)). **The Spec and Standards auditors stay as they are.** This plan only says how each new idea is tested offline; production behavior changes only when an idea clears its pass rule. Nothing here is implemented. Edit `src/` for anything shipped, never `.agents/` or `dist/`.
 
+## Status (2026-10-20)
+Run: the corpus (Test 4: 13 real slices, 43 labels, 4 controls), Test 1 (watch rows: passes as a list for the human; a second-agent triage fails on cost and on discrimination) and Test 2 (AC-literal lint: fails, drop). Not run: Test 3 (effort split), waiting on spend approval. Numbers and caveats: [results](../research/4a-audit-eval-results.md). The corpus tooling is `scripts/dev/audit_eval_*.py` (tested in `tests/scripts/test_audit_eval.py`).
+
 ## What the replays say (the reason for each test)
 - Lean and full find the same stable gaps and miss the same ones. On the seven slices with a recorded spec gap: BT-187 all of the highest-rated gaps (88-92), BT-061 one of two classes, BT-170 and BT-186 none, in every regime. The weak spot is the auditor's recall, not the packet.
 - Many misses were **seen and suppressed**: BT-061's second class of real gaps (offline fallback, fetch failure, redirect, landing) scored 70-75 and was withheld; `base_stale` scored 65; "dropped feature still built" was a side note.
