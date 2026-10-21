@@ -12,6 +12,6 @@ Only the Standards auditor is tiered; the Spec auditor always runs on the defaul
 |---|---|---|
 | Claude Code | pass `model: haiku` on the subagent dispatch, or `model: haiku` in the subagent's frontmatter | `inherit` |
 | Antigravity | a custom subagent whose frontmatter sets `model: flash` (tiers `inherit`, `flash`, `pro`) | `inherit` |
-| Codex | a custom agent file (`.codex/agents/<name>.toml`) whose `model` is the project's small model; Codex has no portable alias, so the default applies until the project defines one | omit `model` |
+| Codex | a custom agent file (`.codex/agents/<name>.toml`) with `model = "gpt-6-luna"` and `model_reasoning_effort = "high"`; an account without that model keeps the default | omit `model` |
 
-Provenance (read from each host's docs on 2026-10-20; re-verify when a host changes): Claude Code subagents (`model`: `sonnet`, `opus`, `haiku`, a full model ID or `inherit`); Antigravity custom subagents (`model`: `inherit`, `flash` or `pro`); Codex subagents (agent-file `model` takes precedence, else the `[agents]` default, else the parent's).
+Provenance (read from each host's docs on 2026-10-20; re-verify when a host changes): Claude Code subagents (`model`: `sonnet`, `opus`, `haiku`, a full model ID or `inherit`); Antigravity custom subagents (`model`: `inherit`, `flash` or `pro`); Codex subagents (agent-file `model` takes precedence, else the `[agents]` default, else the parent's; `gpt-6-luna` is the documented "faster, lower-cost option for lighter subagent work", start it at `high` effort; model names depend on the account and CLI version).

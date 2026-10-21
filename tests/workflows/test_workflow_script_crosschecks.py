@@ -188,6 +188,8 @@ def test_4a_and_3z_cite_the_auditor_tier_reference_with_one_row_per_host():
     ref = (SRC / "references" / "auditor-model-tiers.md").read_text(encoding="utf-8")
     for host in ("Claude Code", "Antigravity", "Codex"):
         assert re.search(rf"^\|\s*{host}\s*\|", ref, re.M), f"auditor-model-tiers.md has no table row for {host}"
+    codex_row = re.search(r"^\|\s*Codex\s*\|.*$", ref, re.M).group(0)
+    assert "gpt-6-luna" in codex_row, "the Codex row must name the documented small model, not say no alias exists"
     for skill in ("4a-verify-and-ship", "3z-afk-loop"):
         text = (WF / f"{skill}.md").read_text(encoding="utf-8")
         assert "references/auditor-model-tiers.md" in text and "auditor_model: small" in text, f"{skill} must dispatch the Standards auditor with its tier"
