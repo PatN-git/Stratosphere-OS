@@ -174,6 +174,15 @@ def test_red_flags_cite_code_smell_baseline_in_the_form_the_build_fans_out():
         assert (DIST / skill / "references" / "code-smell-baseline.md").is_file(), skill
 
 
+# md-crosscheck: 4a and 3z cite one audit-inputs reference, and the build fans it into both
+def test_4a_and_3z_share_one_audit_inputs_reference():
+    for skill in ("4a-verify-and-ship", "3z-afk-loop"):
+        text = (WF / f"{skill}.md").read_text(encoding="utf-8")
+        assert "references/audit-inputs.md" in text, f"{skill} must cite references/audit-inputs.md"
+        assert (DIST / skill / "references" / "audit-inputs.md").is_file(), f"build did not fan audit-inputs.md into {skill}"
+    assert "git diff <base>...HEAD" not in (WF / "3z-afk-loop.md").read_text(encoding="utf-8"), "3z must not restate the packet"
+
+
 def test_build_ships_the_ladder_into_0b():
     assert (DIST / "0b-stop-session" / "references" / "environment-fix-ladder.md").is_file()
 

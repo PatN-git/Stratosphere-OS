@@ -35,7 +35,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d-implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
-    1. **Strict Business-Logic Auditor** (independent subagent). Input (full files): the slice issue's `### Acceptance Criteria` (primary, `gh issue view <n>`); the resolved PRD §6/§7/§8, design doc and 3d `## Deviations`; resolved tests + implementation; `.memory/LEARNINGS.md`; `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit." Output: AC↔test gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
+    1. **Strict Business-Logic Auditor** (independent subagent). Input: the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (the slice issue's `### Acceptance Criteria` (primary, `gh issue view <n>`); the resolved PRD §6/§7/§8, design doc and 3d `## Deviations`; the scoped diff and named tests inline; full files only on demand); `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit." Output: AC↔test gaps ≥ 80 confidence (withhold implementation-only divergences < 70).
     2. **Standards Auditor** (a second, separate subagent — do not fold into the first): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`. Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix), plus `Dismissed` (cap 3): findings it considered and rejected, each `File · Rule · reason ≤ 8 words`.
 
 ### Clean Exit Rule
@@ -63,7 +63,7 @@ Advisory findings (does not block shipping):
 `Dismissed` (omit when empty): one line each; HITL shows them at the ship halt; 3z's `audit-only` return carries them (listed, plus counts).
 
 ## Phase 4: Handoff
-Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
+Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt, scoped by the delta rule of `.agents/skills/4a-verify-and-ship/references/audit-inputs.md`). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
 
 ## Phase 5: Isolated Ship Gate
 
