@@ -35,6 +35,13 @@ def test_a_finding_matches_a_label_when_enough_key_terms_appear_case_insensitive
     assert score.matches(LABEL, finding(90, "gap", ac="cannot_run and exit 2"))  # the AC column counts too
 
 
+def test_result_files_with_stray_backslashes_still_load():
+    text = '{"findings":[{"ac":"AC1","conf":82,"text":"path src\\\\a and a stray \\_ and a \\d regex"}],"files_read":2}'
+    data = score.loads_lenient(text)
+    assert data["findings"][0]["conf"] == 82 and "stray" in data["findings"][0]["text"] and data["files_read"] == 2
+    assert score.loads_lenient('{"a": "line\\nbreak"}')["a"] == "line\nbreak"  # valid escapes are untouched
+
+
 @pytest.mark.parametrize("conf,expected", [(95, "found"), (80, "found"), (79, "watch"), (60, "watch"), (59, "missed")])
 def test_the_confidence_bands_decide_found_watch_or_missed(conf, expected):
     assert score.classify(LABEL, [finding(conf, "exit 2 could not check")]) == expected

@@ -23,6 +23,14 @@ FOUND, WATCH_FLOOR = 80, 60
 RANK = {"low": 0, "medium": 1, "high": 2}
 
 
+def loads_lenient(text):
+    """json.loads that tolerates the stray backslashes (`\\_`, `\\d`) a model leaves in its own JSON; valid escapes are kept."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return json.loads(re.sub(r"\\(.)", lambda m: m.group(0) if m.group(1) in '"\\/bfnrtu' else "\\\\" + m.group(1), text, flags=re.S))
+
+
 def matches(label, f):
     text = f"{f.get('ac', '')} {f.get('text', '')}".lower()
     hits = sum(1 for t in label["key_terms"] if t.lower() in text)
@@ -148,7 +156,7 @@ def load(eval_dir, arms, min_conf):
         case, arm, k = f.stem.split("__")
         if arms and arm not in arms:
             continue
-        runs[(case, arm)].append(json.loads(f.read_text(encoding="utf-8")))
+        runs[(case, arm)].append(loads_lenient(f.read_text(encoding="utf-8")))
     tokens = defaultdict(list)
     tf = eval_dir / "results" / "tokens.csv"
     if tf.exists():

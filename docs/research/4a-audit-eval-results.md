@@ -46,6 +46,22 @@ Recall by label confidence (mean detection at 80+ over all runs; share seen at 6
 
 So the headline 23% is pessimistic by about a factor of two on the solid labels: the auditor finds about 45% of high-confidence gaps at the blocking threshold and sees 84% in some form. The classes stay in the same order (text absent and unpinned case weakest). Use the high and medium sets as the yardstick from here on.
 
+## Test 5: evidence rule prompt (arm P), first run (2026-10-21)
+**Change tested:** the lean+watch prompt plus one paragraph: "do not accept a test as proof because of its name; for every AC and each sub-requirement it names, find the exact assertion or text that would fail if the behavior regressed; partial, existence-only, wrong-input or missing assertion is a gap (80+ when the AC states it, 60-79 when inferred); grep the snapshot for required literals." Same packet, same model, same cases. One run per case; 9 real cases with labels plus 2 clean controls (BT-142, BT-185); medium and high labels only (n=33). Result files are `results/<case>__P__1.json`.
+
+| Measure | Baseline B | Arm P |
+|---|---|---|
+| Labels found at 80+ | 6 of 33 (18%) | 15 of 33 (45%) |
+| Labels seen at 60+ | 21 of 33 | 23 of 33 |
+| Findings at 80+ not matching a label (labeled cases) | 1 | 2 |
+| Watch items not matching a label (labeled cases) | 10 | 21 |
+| Controls: findings at 80+ / watch items | 0 / 4 | 0 / 5 |
+| Subagent tokens, 11 runs | 1.08M | 1.10M (+2%) |
+
+By class (found at 80+, n in brackets): missing test 1 to 6 [9], reasoning miss 1 to 3 [3], text absent 1 to 2 [6], unhandled error path 3 to 4 [7]; unpinned case 0 [4] and wiring omission 0 [4] did not move. Examples that crossed the threshold: BT-120 default target never exercised (64 to 82), BT-061 fallback and landing paths, BT-187 `base_stale` and the host-maximum-timeout line, BT-118 missing-reference test. Two labels went from watch to missed (BT-118 g2, BT-122 g1), so one run is noisy; it needs repeats.
+
+**Verdict, provisional:** meets the plan's rule for a quality raise (recall up well over 5 points at about 1.0x tokens), and no new false flags at 80 on the controls. Caveats: one run per case; the paragraph was written after the earlier replays, which showed these same weak-assertion misses, so these 11 cases are not a clean hold-out; watch noise roughly doubled (about 2 per slice more), which supports showing watch items as a short list, not acting on them. Next: repeat on the biggest-gain cases, then a held-out set (new slices or seeded defects).
+
 ## Test 1: watch rows
 - Of the 33 labels missed at 80+ in the first run, 17 (52%) appear in the watch band. Pass rule (recover at least a third): met.
 - Watch items per slice: 2.7 on average (maximum 9, BT-198); 46% match a label (33% on high-confidence labels; unmatched is not necessarily false, since labels cover only fixed gaps). Pass rule (precision at least 25%, no more than 6 per slice on average): met.
