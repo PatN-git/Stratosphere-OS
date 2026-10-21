@@ -123,13 +123,13 @@ def weaken_assertion(text, path, allow_line=None):
 
 
 def remove_literal(text, literal, allow=None):
-    """Swap the first occurrence of a literal an AC names for a near miss (brackets and case dropped)."""
+    """Swap every occurrence of a literal an AC names for a near miss (brackets and case dropped), so none survives in the file."""
     idx = text.find(literal)
     if idx < 0 or (allow is not None and not allow(literal)):
         return None
     near = re.sub(r"[\[\]`]", "", literal).lower()
     near = near if near != literal else literal + " (see docs)"
-    return text[:idx] + near + text[idx + len(literal):], {
+    return text.replace(literal, near), {
         "cls": "text-absent", "terms": [literal.lower()], "file": "",
         "desc": f"The literal `{literal}` named by an acceptance criterion no longer appears in the implementation (changed to `{near}`)."}
 

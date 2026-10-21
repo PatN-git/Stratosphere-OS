@@ -1,0 +1,8 @@
+{
+ "id": "m-so120-weaken",
+ "case": "so-BT-120",
+ "mutation": "weaken_assertion",
+ "file": "tests/scripts/test_install_antigravity_bridge.py",
+ "cls": "unpinned-case",
+ "desc": "In 'test_copies_every_skill_with_references' of tests/scripts/test_install_antigravity_bridge.py the assertion on `sorted(p.name for p in dest.iterdir())` was weakened to an existence check, so a wrong value would pass."
+}

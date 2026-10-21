@@ -63,9 +63,10 @@ def test_weaken_assertion_turns_the_first_pinned_value_into_an_existence_check()
     assert info_js["cls"] == "unpinned-case"
 
 
-def test_remove_literal_swaps_the_first_occurrence_for_a_plausible_near_miss_and_labels_it_text_absent():
+def test_remove_literal_swaps_every_occurrence_in_the_file_for_a_plausible_near_miss_and_labels_it_text_absent():
+    # a docstring mention alone must not hide the runtime literal, so all occurrences go
     new, info = mut.remove_literal("print('[CI-RED] could not check')\nx = '[CI-RED] could not check'\n", "[CI-RED] could not check")
-    assert new.count("[CI-RED] could not check") == 1 and "ci-red could not check" in new
+    assert new.count("[CI-RED] could not check") == 0 and new.count("ci-red could not check") == 2
     assert info["cls"] == "text-absent" and info["terms"] == ["[ci-red] could not check"]
     assert mut.remove_literal("nothing here", "[CI-RED]") is None
 

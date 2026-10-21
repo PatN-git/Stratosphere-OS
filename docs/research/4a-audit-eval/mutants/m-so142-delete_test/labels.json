@@ -1,0 +1,21 @@
+{
+ "case": "m-so142-delete_test",
+ "labels": [
+  {
+   "id": "g1",
+   "ac": "The test 'test_rebuild_indices_writes_listing_per_directory' in tests/scripts/test_okf_rebuild_indices.py was removed, s",
+   "desc": "The test 'test_rebuild_indices_writes_listing_per_directory' in tests/scripts/test_okf_rebuild_indices.py was removed, so the behavior it asserted is no longer proven by any test.",
+   "cls": "missing-test",
+   "key_terms": [
+    "rebuild",
+    "indices",
+    "writes",
+    "listing",
+    "directory"
+   ],
+   "min_terms": 2,
+   "evidence": "seeded m-so142-delete_test tests/scripts/test_okf_rebuild_indices.py",
+   "label_confidence": "high"
+  }
+ ]
+}

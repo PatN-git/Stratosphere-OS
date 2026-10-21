@@ -95,6 +95,22 @@ Three new cases not used when the evidence-rule paragraph was written (StratOS B
 
 **Verdict on arm P: not validated.** A gain on the learning set (0.24 to 0.38, held on a repeat) did not replicate on 8 fresh labels (4 found against 3), and 17 of the 33 learning-set labels were picked up before the paragraph was written with those misses in view. Per the owner's rule, nothing ships on this evidence. A better hold-out is seeded defects: one scripted mutation per clean slice, which gives a labeled gap by construction and covers the missing-test and text-absent classes the paragraph targets.
 
+## Seeded defects, batch one (2026-10-21)
+`scripts/dev/audit_eval_mutate.py` (tested) clones a clean slice's repo into a scratch folder, applies one scripted mutation as a commit restricted to lines the slice itself added (so the packet's net diff never shows the deletion), and labels the gap by construction. 11 mutants are listed in `mutants.json` (5 deleted tests, 3 weakened assertions, 1 deleted workflow step, 2 removed AC literals); batch one ran 4, one run of baseline B and arm P each. Data in `mutants/`.
+
+| Mutant | Class | B | P |
+|---|---|---|---|
+| so-BT-142 deleted test (`--rebuild-indices` listing) | missing test | watch, 72 | watch, 72 |
+| so-BT-120 weakened assertion (`sorted(...) is not None`) | unpinned case | watch, 66 | watch, 68 |
+| so-BT-143 removed literal `[CONTRACT-SKIP]` | text absent | watch, 60 | watch, 62 |
+| so-BT-143 deleted workflow step (2a runs `contract_check.py`) | wiring omission | found, 93 | found, 92 |
+
+**Arm P equals the baseline on all four** (1 of 4 found at 80+ each, 4 of 4 seen at 60+ each, same watch noise, about 92k against 97k tokens per run). This matches the real hold-out: no evidence that the evidence-rule paragraph helps. The literal mutant is weak (the first-occurrence replacement hit a docstring while the runtime message kept the literal; fixed to replace all occurrences, not rerun).
+
+What it does show: the auditor notices three of four deleted or weakened proofs and files them as 60-79 watch items, never as gaps. The threshold, not blindness, is what hides them. That is the supported argument for **watch rows as a list for the human at the ship halt**, and nothing here supports changing the prompt.
+
+Remaining mutants (7) not run: about 1.4M tokens for a result that is unlikely to change the verdict on arm P.
+
 ## Where this leaves the ideas (2026-10-21)
 | Idea | Verdict |
 |---|---|
