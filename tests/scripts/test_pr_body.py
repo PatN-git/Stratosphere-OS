@@ -912,11 +912,9 @@ def audit_of(body):
     return json.loads(field(body, "audit"))
 
 
-def audit_run(repo, payload, *extra, slice_id="BT-11"):
-    suite = write_suite(repo, f"3d-suite-{slice_id}.json")
-    return run(repo, "build", "--slice", slice_id, "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
-               "--base", "main", "--risk-paths", RISK_PATHS, "--suite-json", suite, "--parent", "BT-10",
-               "--audit-json", json.dumps(payload) if not isinstance(payload, str) else payload, *extra)
+def audit_run(repo, payload, *extra):
+    return build_raw(repo, "--audit-json", payload if isinstance(payload, str) else json.dumps(payload), *extra,
+                     suite=write_suite(repo))
 
 
 def test_audit_entry_is_written_as_a_top_level_line_keyed_by_slice_id(repo):

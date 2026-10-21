@@ -159,10 +159,10 @@ def parse_prior(text):
     refs = re.search(r"^refs: \[(.*)\]$", blk, re.M)
     lists["refs"] = [r.strip() for r in refs.group(1).split(",") if r.strip()] if refs else []
     lists["audit"] = {}
-    a = re.search(r"^audit: (\{.*)$", blk, re.M)
-    if a:
+    audit_line = re.search(r"^audit: (\{.*)$", blk, re.M)
+    if audit_line:
         try:
-            lists["audit"] = json.loads(a.group(1))
+            lists["audit"] = json.loads(audit_line.group(1))
         except json.JSONDecodeError:
             print("[PR-BODY-WARN] unparsed prior audit line: earlier audit findings are dropped from this body", file=sys.stderr)
     notes = re.search(r"^## Notes\n(.*)$", text, re.M | re.S)
