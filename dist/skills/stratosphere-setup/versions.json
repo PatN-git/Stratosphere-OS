@@ -321,12 +321,17 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "e67415a78d037ab5e1063e2db5ae1db5242a5f99174f8f1a731e5600bda391d7",
+      "sha256": "15d4ad93ca4f36108bd306e464ac2ea4428670523fc332f6ef79f20344bd622a",
       "timestamp": "2026-10-20",
       "version": "1.8.0"
     },
     "skills/3z-afk-loop/references/audit-inputs.md": {
-      "sha256": "efd652eaf372e803b322a7c3718a4192cfac1a504fab94bddaff1e9e38aa7c7f",
+      "sha256": "e0d87a72f2c841a7cdccce927e329e7d95bb34be64be7e8a371edb31ae815a65",
+      "timestamp": "2026-10-20",
+      "version": "1.0.0"
+    },
+    "skills/3z-afk-loop/references/auditor-model-tiers.md": {
+      "sha256": "df83822afeaafbd64b14c072663d22672ccdf3b83cf28fc46e501aacb2e1000d",
       "timestamp": "2026-10-20",
       "version": "1.0.0"
     },
@@ -346,12 +351,12 @@
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "0cc76b9b880dcabb92e2ab8c7b58b0f249a480ee3d8daa13fed7893b5877d0d7",
+      "sha256": "cbb0fc837278d6de21b3b661e6d2a8eef5fba17d514b9ca1562bedf06b7b494a",
       "timestamp": "2026-10-20",
       "version": "1.6.0"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
-      "sha256": "efd652eaf372e803b322a7c3718a4192cfac1a504fab94bddaff1e9e38aa7c7f",
+      "sha256": "e0d87a72f2c841a7cdccce927e329e7d95bb34be64be7e8a371edb31ae815a65",
       "timestamp": "2026-10-20",
       "version": "1.0.0"
     },
@@ -359,6 +364,11 @@
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
       "timestamp": "2026-09-24",
       "version": "1.0.1"
+    },
+    "skills/4a-verify-and-ship/references/auditor-model-tiers.md": {
+      "sha256": "df83822afeaafbd64b14c072663d22672ccdf3b83cf28fc46e501aacb2e1000d",
+      "timestamp": "2026-10-20",
+      "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
       "sha256": "d6385b71a8d8f45e947abfcfeef604bd76ccbbb244d118e44b2582cde54b213b",

@@ -183,6 +183,17 @@ def test_4a_and_3z_share_one_audit_inputs_reference():
     assert "git diff <base>...HEAD" not in (WF / "3z-afk-loop.md").read_text(encoding="utf-8"), "3z must not restate the packet"
 
 
+# md-crosscheck: 4a and 3z cite the auditor tier reference, which has one row per supported host, and the build fans it into both
+def test_4a_and_3z_cite_the_auditor_tier_reference_with_one_row_per_host():
+    ref = (SRC / "references" / "auditor-model-tiers.md").read_text(encoding="utf-8")
+    for host in ("Claude Code", "Antigravity", "Codex"):
+        assert re.search(rf"^\|\s*{host}\s*\|", ref, re.M), f"auditor-model-tiers.md has no table row for {host}"
+    for skill in ("4a-verify-and-ship", "3z-afk-loop"):
+        text = (WF / f"{skill}.md").read_text(encoding="utf-8")
+        assert "references/auditor-model-tiers.md" in text and "auditor_model: small" in text, f"{skill} must dispatch the Standards auditor with its tier"
+        assert (DIST / skill / "references" / "auditor-model-tiers.md").is_file(), f"build did not fan the tier reference into {skill}"
+
+
 def test_build_ships_the_ladder_into_0b():
     assert (DIST / "0b-stop-session" / "references" / "environment-fix-ladder.md").is_file()
 
