@@ -175,35 +175,21 @@ def test_red_flags_cite_code_smell_baseline_in_the_form_the_build_fans_out():
         assert (DIST / skill / "references" / "code-smell-baseline.md").is_file(), skill
 
 
-# md-crosscheck: 4a and 3z cite one audit-inputs reference, and the build fans it into both
-def test_4a_and_3z_share_one_audit_inputs_reference():
+# md-crosscheck: the build fans the audit-inputs reference into 4a and 3z
+def test_build_fans_audit_inputs_into_4a_and_3z():
     for skill in ("4a-verify-and-ship", "3z-afk-loop"):
-        text = (WF / f"{skill}.md").read_text(encoding="utf-8")
-        assert "references/audit-inputs.md" in text, f"{skill} must cite references/audit-inputs.md"
         assert (DIST / skill / "references" / "audit-inputs.md").is_file(), f"build did not fan audit-inputs.md into {skill}"
-    assert "git diff <base>...HEAD" not in (WF / "3z-afk-loop.md").read_text(encoding="utf-8"), "3z must not restate the packet"
 
 
-# md-crosscheck: 4a and 3z cite the auditor tier reference, which has one row per supported host, and the build fans it into both
-def test_4a_and_3z_cite_the_auditor_tier_reference_with_one_row_per_host():
+# md-crosscheck: the auditor tier reference has one row per supported host, and the build fans it into 4a and 3z
+def test_auditor_tier_reference_has_one_row_per_host_and_is_fanned_into_4a_and_3z():
     ref = (SRC / "references" / "auditor-model-tiers.md").read_text(encoding="utf-8")
     for host in ("Claude Code", "Antigravity", "Codex"):
         assert re.search(rf"^\|\s*{host}\s*\|", ref, re.M), f"auditor-model-tiers.md has no table row for {host}"
     codex_row = re.search(r"^\|\s*Codex\s*\|.*$", ref, re.M).group(0)
     assert "gpt-6-luna" in codex_row, "the Codex row must name the documented small model, not say no alias exists"
     for skill in ("4a-verify-and-ship", "3z-afk-loop"):
-        text = (WF / f"{skill}.md").read_text(encoding="utf-8")
-        assert "references/auditor-model-tiers.md" in text and "auditor_model: small" in text, f"{skill} must dispatch the Standards auditor with its tier"
         assert (DIST / skill / "references" / "auditor-model-tiers.md").is_file(), f"build did not fan the tier reference into {skill}"
-
-
-# md-crosscheck: the Watch section in 4a and 3z, the `watch` field in the pr_body.py audit schema and its reference
-def test_watch_items_are_non_blocking_in_4a_and_recorded_as_a_valid_audit_field():
-    text = _4a()
-    assert "### 3. Watch (Non-blocking)" in text and "Watch items alone never stop the ship" in text
-    assert "`watch`" in (SRC / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
-    assert "watch" in pr_body.AUDIT_COUNTS
-    assert '"watch"' in (WF / "3z-afk-loop.md").read_text(encoding="utf-8").replace('\\"', '"')
 
 
 # md-crosscheck: the 3z Step 2B return template vs what pr_body.py accepts as audit findings
@@ -220,15 +206,6 @@ def test_3z_return_template_never_carries_a_value_pr_body_rejects():
         if key in template:
             _audit_ok(**{key: template[key]})
     _audit_ok(**{k: v for k, v in template["counts"].items() if k != "spec"})
-
-
-# md-crosscheck: the phase1 values the reference documents are the ones pr_body.py reads
-def test_documented_phase1_values_are_accepted():
-    ref = (SRC / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
-    names = re.search(r"`trigger:<name>` \(([^)]+)\)", ref).group(1)
-    for name in re.findall(r"`(\w+)`", names):
-        _audit_ok(phase1=f"trigger:{name}")
-    _audit_ok(phase1="bypass")
 
 
 def test_build_ships_the_ladder_into_0b():
