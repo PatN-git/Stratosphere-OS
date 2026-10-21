@@ -1,0 +1,17 @@
+{"case":"so-BT-160","labels":[
+{"id":"g1","ac":"3d and 3z refuse to run a Spike (status:needs_spec never buildable)","desc":"Jules dispatch preflight (--slice path) did not refuse status:needs_spec Spikes, leaving a runnable path that bypasses the 3d/3z refusal.","cls":"wiring-omission","key_terms":["preflight","jules","status:needs_spec","spike","dispatch"],"min_terms":2,"evidence":"bab7543 src/experimental/jules-dispatch/preflight.py","label_confidence":"medium"},
+{"id":"g2","ac":"3d and 3z refuse to run a Spike","desc":"Jules select_eligible had no test case pinning that a mode:AFK Spike (status:needs_spec) is excluded from dispatch.","cls":"unpinned-case","key_terms":["select_eligible","needs_spec","spike","jules","dispatch"],"min_terms":2,"evidence":"c3f4069 tests/jules/test_jules_dispatch.py","label_confidence":"low"},
+{"id":"g3","ac":"3b births Spikes at vX.Y.0 (Change: Spikes sized size:medium)","desc":"3b did not state that Spikes are always size:medium on GitHub and in BACKLOG_MAP, and the ICE/priority text was not scoped to Build slices only.","cls":"text-absent","key_terms":["3b","size:medium","spike","backlog_map","ice"],"min_terms":2,"evidence":"c3f4069 src/workflows/3b-create-issue.md","label_confidence":"medium"},
+{"id":"g4","ac":"Closure: a Spike is closed on its Exit Criteria, never promoted or built","desc":"Spike template close checklist did not say to set status:done on GitHub and in BACKLOG_MAP, so closure state was not recorded.","cls":"text-absent","key_terms":["status:done","backlog_map","exit criteria","spike","issue-templates"],"min_terms":2,"evidence":"bab7543 src/references/issue-templates.md","label_confidence":"medium"},
+{"id":"g5","ac":"Closure: a Spike is closed on its Exit Criteria (no PR); 4a epic/draft logic must handle closed Spikes","desc":"4a Epic Check wording contradicted the closed-Spike rule (Spikes close as done without a PR vs Build slices closing on merge); sibling check must accept status:in review or status:done.","cls":"reasoning-miss","key_terms":["4a","epic check","sibling","status:done","spike"],"min_terms":2,"evidence":"c3f4069 src/workflows/4a-verify-and-ship.md","label_confidence":"medium"},
+{"id":"g6","ac":"3c candidates are planned slices plus all Spikes; Spikes share the 80h budget; planned work sorts before Spikes","desc":"3c sort ignored blocker-before-dependent ordering when a Spike is a blocker, milestone assignment ordering (create sprint milestone before assigning) was unclear, and budget weights/Spike output did not use the real size for all leaves.","cls":"reasoning-miss","key_terms":["3c","blocker","dependents","milestone","weights"],"min_terms":2,"evidence":"c3f4069 src/workflows/3c-sprint-planning.md","label_confidence":"low"}
+],
+"not_labeled":[
+"bab7543 3c 'spec work' phrase clarified to 'Spikes' - wording only",
+"bab7543 3z dead --remove-label status:needs_spec dropped - dead-code cleanup (3z skip behavior unchanged)",
+"bab7543 dispatch.py select_eligible docstring update - docs only",
+"c3f4069 [NEEDS_SPEC] renamed to [MISSING-LABELS] tag, 'Verify labels' duplicate line removed - naming/cleanup",
+"c3f4069 4a 'Hand-off' label restored to 'Hand-off contract' - naming",
+"c3f4069 Template text: throwaway prototype wording, follow-up Build slices plural - wording polish",
+"dist/ rebuilds, versions.json, playbook 2.1.2 and Jules SKILL 0.1.4 version bumps - build outputs / version policy"
+]}

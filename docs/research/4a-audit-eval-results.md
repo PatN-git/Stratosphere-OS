@@ -83,6 +83,16 @@ Per-dispatch `effort: high` (Claude Code subagent parameter) on the 5 cases wher
 
 PE found 3 of 12 at 80+ (BT-169 g1, g2, g5) against 1.5 for P, but lost BT-118 g1 (P found it) and never found BT-170's `if: always()` step in any arm. On paper that meets the rule (up more than 5 points at about 1.0x subagent tokens; the harness token total may not include thinking tokens, so true cost is unmeasured), but with 12 labels and one run a single flip is 8 points, the size of the effect. **Inconclusive; do not adopt effort as a default on this evidence.** It needs repeats on more cases, and the 0.40 unmatched findings per run at 80+ need a look (true unlabeled gaps or noise).
 
+## Hold-out for arm P, first half (2026-10-21)
+Three new cases not used when the evidence-rule paragraph was written (StratOS BT-160 and BT-144, CleanTech BT-240), labeled from their audit-fix commits before any run, one run of B and of P each (labels incl. 2 low, n=8; results `__B__1` and `__P__1`).
+
+| Arm | Found at 80+ | Seen at 60+ | Findings at 80+ not matching a label per run | Watch items per run | Tokens per run |
+|---|---|---|---|---|---|
+| B | 4 of 8 | 4 of 8 | 0.33 | 2.0 | 95k |
+| P | 3 of 8 | 5 of 8 | 0.67 | 3.0 | 98k |
+
+**No gain replicated on these cases**: P found one label fewer at 80+ (BT-160 g4 dropped to watch) and lifted one to watch (BT-144 g1); both arms found the same BT-160 and BT-240 labels. The labels here are mostly wording and test-pin tightening, a class the first set also barely moved (text absent 1 to 2 of 6), and few are the missing-test class where P gained most (1 to 6 of 9). Eight labels is far too few to call it either way; the learning-set gain may be partly leakage, since the paragraph was written after seeing those cases' weak-assertion misses. A second half (BT-141, BT-138, BT-147) follows before any decision.
+
 ## Where this leaves the ideas (2026-10-21)
 | Idea | Verdict |
 |---|---|

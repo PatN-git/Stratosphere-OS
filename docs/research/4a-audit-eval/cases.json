@@ -210,6 +210,85 @@
    "pre": "last",
    "fix": [],
    "kind": "control"
+  },
+  {
+   "id": "so-BT-160",
+   "repo": "so",
+   "slice": "BT-160",
+   "issue": 160,
+   "parent": "BT-116",
+   "pre": "f9e6914",
+   "fix": [
+    "bab7543",
+    "c3f4069"
+   ],
+   "kind": "real",
+   "set": "holdout"
+  },
+  {
+   "id": "so-BT-144",
+   "repo": "so",
+   "slice": "BT-144",
+   "issue": 144,
+   "parent": "BT-136",
+   "pre": "6c6d478",
+   "fix": [
+    "85ae25a"
+   ],
+   "kind": "real",
+   "set": "holdout"
+  },
+  {
+   "id": "so-BT-141",
+   "repo": "so",
+   "slice": "BT-141",
+   "issue": 141,
+   "parent": "BT-136",
+   "pre": "a460b02",
+   "fix": [
+    "a581d83"
+   ],
+   "kind": "real",
+   "set": "holdout"
+  },
+  {
+   "id": "so-BT-138",
+   "repo": "so",
+   "slice": "BT-138",
+   "issue": 138,
+   "parent": "BT-136",
+   "pre": "0008d6b",
+   "fix": [
+    "90b9427"
+   ],
+   "kind": "real",
+   "set": "holdout"
+  },
+  {
+   "id": "ct-BT-240",
+   "repo": "ct",
+   "slice": "BT-240",
+   "issue": 240,
+   "parent": "BT-234",
+   "pre": "c57fb24",
+   "fix": [
+    "4f66813"
+   ],
+   "kind": "real",
+   "set": "holdout"
+  },
+  {
+   "id": "ct-BT-147",
+   "repo": "ct",
+   "slice": "BT-147",
+   "issue": 147,
+   "parent": "BT-119",
+   "pre": "543658a",
+   "fix": [
+    "a1bb1f1"
+   ],
+   "kind": "real",
+   "set": "holdout"
   }
  ]
 }
