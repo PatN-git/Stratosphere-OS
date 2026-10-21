@@ -56,7 +56,7 @@ EXT_RULE_RE = re.compile(r"^[-*\s]*`?([^`\s→]+)`?\s*(?:→|->)\s*`?([\w-]+)`?\
 STR = r'"(?:[^"\\]|\\.)*"'
 SLICE_RE = re.compile(rf"\{{id: (BT-\d+), (?:parent: (BT-\d+), )?summary: ({STR}|[^,}}]*), verdict: (\w+), audit_rounds: (\d+)\}}")
 VERDICTS = ("PASS", "WAIVED", "SKIP")
-AUDIT_COUNTS = ("spec_r1", "spec_final", "std_hard", "std_judg")
+AUDIT_COUNTS = ("spec_r1", "spec_final", "std_hard", "std_judg", "watch")
 AUDIT_TEXT = ("phase1", "std_tier")
 AUDIT_INPUTS = ("lean", "full")
 PARENT_RE = re.compile(r"BT-\d+")
@@ -406,7 +406,7 @@ def render_body(rows, features, closing, rec, tags, lists, notes):
 def read_audit(args):
     """The shipped slice's findings from --audit-json / --audit-file as a dict; None when neither is given.
 
-    Raises ValueError on anything but `{spec_r1, spec_final, std_hard, std_judg: int>=0, phase1, std_tier: str, input: lean|full}`;
+    Raises ValueError on anything but `{spec_r1, spec_final, std_hard, std_judg, watch: int>=0, phase1, std_tier: str, input: lean|full}`;
     a field left out stays out of the entry (absent is unknown, never 0).
     """
     if args.audit_json is not None and args.audit_file is not None:

@@ -38,6 +38,7 @@ refs: [<only IDs that constrained the change>]
 `audit:` is a top-level JSON line keyed by slice id, spelled as its slice row spells it. The slice row never changes: an in-row field would make an older `pr_body.py` (a vendored copy) fail the row and revert it to `PENDING`; older readers ignore the new line. Every field is omitted when unknown, never `0`:
 - `spec_r1` / `spec_final`: Spec gaps ≥ 80 confidence in the first and the last audit round.
 - `std_hard` / `std_judg`: Standards Hard breach and Judgment findings of the last round (`Dismissed` not counted).
+- `watch`: Spec findings scored 60-79 that remain after the lead's check (4a Phase 3 §3); non-blocking, never a retry.
 - `phase1`: the Phase 1 decision, `bypass` or `trigger:<name>`; a bypassed slice records only this field.
 - `std_tier`: the `auditor_model` tier the Standards auditor was dispatched with, absent when none was set; a tier name, never a vendor model ID.
 - `input`: `lean` when the Spec auditor got the inline packet (diff, ACs, named tests, deviations), `full` when it read full files.

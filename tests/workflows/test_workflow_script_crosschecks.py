@@ -196,6 +196,15 @@ def test_4a_and_3z_cite_the_auditor_tier_reference_with_one_row_per_host():
         assert (DIST / skill / "references" / "auditor-model-tiers.md").is_file(), f"build did not fan the tier reference into {skill}"
 
 
+# md-crosscheck: the Watch section in 4a and 3z, the `watch` field in the pr_body.py audit schema and its reference
+def test_watch_items_are_non_blocking_in_4a_and_recorded_as_a_valid_audit_field():
+    text = _4a()
+    assert "### 3. Watch (Non-blocking)" in text and "Watch items alone never stop the ship" in text
+    assert "`watch`" in (SRC / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
+    assert "watch" in pr_body.AUDIT_COUNTS
+    assert '"watch"' in (WF / "3z-afk-loop.md").read_text(encoding="utf-8").replace('\\"', '"')
+
+
 def test_build_ships_the_ladder_into_0b():
     assert (DIST / "0b-stop-session" / "references" / "environment-fix-ladder.md").is_file()
 

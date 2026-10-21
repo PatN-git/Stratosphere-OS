@@ -924,6 +924,14 @@ def test_audit_entry_is_written_as_a_top_level_line_keyed_by_slice_id(repo):
     assert [s[0] for s in slices(body)] == ["BT-11"] and slices(body)[0][3] == "1"
 
 
+def test_the_watch_count_round_trips_next_to_the_other_findings(repo):
+    commit(repo, "feat(BT-11): one")
+    first = repo / ".tmp" / "p1.md"
+    first.write_text(build(repo, "BT-11", "--audit-json", json.dumps({**AUDIT, "watch": 3})), encoding="utf-8")
+    assert audit_of(first.read_text(encoding="utf-8")) == {"BT-11": {**AUDIT, "watch": 3}}
+    assert build(repo, "BT-11", prior=first) == first.read_text(encoding="utf-8")  # a rebuild without the flag keeps it
+
+
 def test_a_missing_audit_field_stays_absent_never_zero(repo):
     commit(repo, "feat(BT-11): one")
     assert audit_of(build(repo, "BT-11", "--audit-json", json.dumps({"spec_r1": 1}))) == {"BT-11": {"spec_r1": 1}}
@@ -967,7 +975,7 @@ def test_audit_file_equals_audit_json(repo):
 
 
 @pytest.mark.parametrize("payload", [
-    "not json", "[1]", '{"spec_r1": "2"}', '{"spec_r1": -1}', '{"spec_r1": true}', '{"surprise": 1}',
+    "not json", "[1]", '{"spec_r1": "2"}', '{"spec_r1": -1}', '{"spec_r1": true}', '{"surprise": 1}', '{"watch": -1}', '{"watch": "3"}',
     '{"input": "medium"}', '{"phase1": 3}', '{"std_tier": ""}',
 ])
 def test_a_bad_audit_payload_is_a_clean_exit_2(repo, payload):
