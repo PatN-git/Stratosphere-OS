@@ -41,6 +41,12 @@ Read this first. Evidence: [replays](../research/4a-audit-lean-replay.md), [firs
 4. **Effort repeats**: inconclusive at n=12 (0.12 to 0.25); only worth more spend if the human wants a stronger default. Claude Code takes `effort` per subagent dispatch; Codex uses `model_reasoning_effort`.
 4. Standards half of the effort split needs seeded smells (not built). Telemetry `cfg` field and runner automation are later.
 
+## Parked ideas (not lost; revisit from BT-208's production data)
+- **Epic-level audit test (was BT-206, closed as not planned 2026-10-21):** does one Spec audit per epic lose gaps that per-slice audits catch? Only worth running if BT-208's data makes per-unit audits attractive. Cheap to revive: pool each epic's slice labels from `docs/research/4a-audit-eval/labels/`, build a union-of-diffs packet (the only new tool), run lean audits per epic and per slice, score with `scripts/dev/audit_eval_score.py`. Both issues (#206, #208) carry the recipe.
+- **Pattern log:** a project-specific list of things the auditor should check, a section of `LEARNINGS.md`, fed by confirmed watch items and post-ship fixes, capped (about 15 entries, each with its evidence), pruned when unused or covered by a lint or test. Must be handed to the auditor (the lean packet reads `LEARNINGS.md` only on demand) and measured on the seeded-defect bench before enabling.
+- **Effort split / evidence-rule prompt:** not validated (see the results doc); revisit only if production escape data shows the auditor missing a class these target.
+- **Seeded defects:** 7 of 11 mutants in `mutants.json` were never run (about 1.4M tokens).
+
 ## Rebuilding the working data
 The snapshots and packets lived in a temp folder and are gone; rebuild with `python scripts/dev/audit_eval_build.py --out <dir>` (needs both repos checked out at the paths in `docs/research/4a-audit-eval/cases.json`). Labels, results, triage verdicts and token counts are committed under `docs/research/4a-audit-eval/`. To run more audits, give each auditor subagent `<dir>/<case>/packet.md` and `<dir>/<case>/snapshot`, and have it write `{"findings":[{"ac","conf","text"}],"files_read":n}` to `<dir>/results/<case>__<arm>__<k>.json` (the prompt used is described in the results doc); add the subagent token total to `results/tokens.csv`.
 
