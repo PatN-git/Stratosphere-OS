@@ -62,6 +62,38 @@ By class (found at 80+, n in brackets): missing test 1 to 6 [9], reasoning miss 
 
 **Verdict, provisional:** meets the plan's rule for a quality raise (recall up well over 5 points at about 1.0x tokens), and no new false flags at 80 on the controls. Caveats: one run per case; the paragraph was written after the earlier replays, which showed these same weak-assertion misses, so these 11 cases are not a clean hold-out; watch noise roughly doubled (about 2 per slice more), which supports showing watch items as a short list, not acting on them. Next: repeat on the biggest-gain cases, then a held-out set (new slices or seeded defects).
 
+### Test 5, repeat (arm P, second run on 5 cases) and the same labels over all runs
+Repeated BT-061, BT-120, BT-139, BT-118 and BT-187 (results `__P__2.json`). Over all 11 cases, with the repeats (medium and high labels, n=33, mean detection per label across the runs of an arm):
+
+| Arm | Mean detection at 80+ | Mean seen at 60+ | Labels found in every run | Findings at 80+ not matching a label, per run | Watch items per run | Controls at 80+ | Tokens per run |
+|---|---|---|---|---|---|---|---|
+| B baseline | 0.24 | 0.65 | 6 | 0.13 | 0.87 | 0 | 101.7k |
+| P evidence rule | 0.38 | 0.74 | 10 | 0.25 | 1.62 | 0 | 99.3k |
+
+The gain held on the repeat (BT-120's default-target gap at 82 in both P runs; BT-187 found 6 labels in both). It is noisy per label: BT-061 g2 and g4, BT-118 g1, BT-139 g4 and BT-187 g10 were found in one P run and watch-only in the other. Watch noise nearly doubled. Unpinned-case and wiring-omission labels did not move.
+
+## Test 3: effort split, Spec auditor at `high` effort (arm PE = arm P at high effort), first run
+Per-dispatch `effort: high` (Claude Code subagent parameter) on the 5 cases where P still misses most (BT-169, BT-170, BT-118, BT-119, BT-122; 12 medium and high labels), one run each. Results `__PE__1.json`.
+
+| Arm (same 5 cases, 12 labels) | Mean detection at 80+ | Mean seen at 60+ | Findings at 80+ not matching a label per run | Tokens per run |
+|---|---|---|---|---|
+| B | 0.00 | 0.54 | 0.14 | 114.7k |
+| P | 0.12 | 0.62 | 0.00 | 115.3k |
+| PE | 0.25 | 0.67 | 0.40 | 110.2k |
+
+PE found 3 of 12 at 80+ (BT-169 g1, g2, g5) against 1.5 for P, but lost BT-118 g1 (P found it) and never found BT-170's `if: always()` step in any arm. On paper that meets the rule (up more than 5 points at about 1.0x subagent tokens; the harness token total may not include thinking tokens, so true cost is unmeasured), but with 12 labels and one run a single flip is 8 points, the size of the effect. **Inconclusive; do not adopt effort as a default on this evidence.** It needs repeats on more cases, and the 0.40 unmatched findings per run at 80+ need a look (true unlabeled gaps or noise).
+
+## Where this leaves the ideas (2026-10-21)
+| Idea | Verdict |
+|---|---|
+| Lean packet (whole issue body) | Adopted already; same gaps as full at about 28% fewer tokens |
+| Watch rows as a list for the human at the ship halt | Supported; no automated triage |
+| AC-literal lint | Drop |
+| Second-agent triage | Drop |
+| Evidence-rule paragraph (arm P) | Best candidate: mean detection 0.24 to 0.38, 6 to 10 stable labels, controls clean, same tokens. **Not yet shippable**: not a clean hold-out, noisy per label, watch noise doubled |
+| Effort high | Inconclusive; needs repeats |
+| Still unmoved by any arm | Unpinned-case and wiring-omission labels; BT-170's CI step; the 13 labels never seen at 60 |
+
 ## Test 1: watch rows
 - Of the 33 labels missed at 80+ in the first run, 17 (52%) appear in the watch band. Pass rule (recover at least a third): met.
 - Watch items per slice: 2.7 on average (maximum 9, BT-198); 46% match a label (33% on high-confidence labels; unmatched is not necessarily false, since labels cover only fixed gaps). Pass rule (precision at least 25%, no more than 6 per slice on average): met.

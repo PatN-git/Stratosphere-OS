@@ -1,0 +1,7 @@
+{"findings":[
+{"ac":"AC1/AC2 default target ~/.gemini/config/skills/","conf":82,"text":"Every test passes --target tmp_path/skills, so the AC-stated default destination (TARGET=\"$HOME/.gemini/config/skills\" in the .sh, Join-Path $baseHome \".gemini\\config\\skills\" in the .ps1) is never asserted; changing the default to ~/.gemini/antigravity/skills (the bug being bridged) would leave all tests green."},
+{"ac":"AC3 Antigravity IDE discovers all copied skills","conf":80,"text":"No test, doc text or recorded manual check covers discovery via the Antigravity skill listing; the tests only check files exist under --target (SKILL.md and references/) and never run against ~/.gemini/config or an Antigravity listing."},
+{"ac":"AC1/AC2 'all 26 skills'","conf":62,"text":"test_copies_every_skill_with_references compares dest to whatever dist/skills currently contains (_bundle_skills) rather than asserting 26, and skips if dist/skills is unbuilt, so a build that drops skills still passes."},
+{"ac":"AC4 zero symlinks","conf":65,"text":"test_creates_no_symlinks only checks the output of a bundle that contains no symlinks (find dist/skills -type l is empty); no source symlink/junction is planted, so cp -r / Copy-Item preserving a link would not be exercised."},
+{"ac":"Overview / design Track D optional plugin manifest","conf":60,"text":"Issue Mental Model and design Track D mention an optional plugin manifest to ~/.gemini/config/plugins/stratosphere-os; neither script implements it and no test or text states it was deliberately dropped."}
+],"files_read":5}
