@@ -5,7 +5,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
 
   build  --slice BT-n --summary "..." --verdict PASS|WAIVED|SKIP --audit-rounds N
          [--manual-qa] [--post-merge S]... [--deviation S]... [--ref ID]... [--notes TEXT]
-         [--prior-body-file F] [--base REF] [--risk-paths F] [--suite-json F]
+         [--audit-json J | --audit-file F] [--prior-body-file F] [--base REF] [--risk-paths F] [--suite-json F]
          [--parent BT-n] [--epic BT-n]... [--close BT-n]... [--close-parent] [--out F]
     Prints the PR body: `Closes #n.` lines, one ```stratos-pr block, optional `## Notes`.
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
@@ -21,6 +21,9 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     (else exit 2). The block's `features: [BT-n, ...]` lists every epic in the PR (prior block + --parent + the
     parent of each slice row; rows carry `parent: BT-n`); a legacy single `feature:` prior block upgrades on
     rebuild. `Closes #n.` follows the slice lines for each --close epic (--close-parent = close --parent).
+    `audit: {"BT-n": {...}}` (a top-level line, only when non-empty) holds each slice's auditor findings: spec_r1,
+    spec_final, std_hard, std_judg (counts), phase1, std_tier (text), input (lean|full). --audit-json/--audit-file
+    replaces the shipped slice's entry; a rebuild without either keeps every prior entry. Old readers ignore the line.
   suite  [--dir .tmp]
     Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1 with
     `[NO-SUITE] <none|head moved|dirty tree|scoped>` on stderr. Reusable = head_sha is HEAD, or an ancestor with only
@@ -53,6 +56,9 @@ EXT_RULE_RE = re.compile(r"^[-*\s]*`?([^`\s→]+)`?\s*(?:→|->)\s*`?([\w-]+)`?\
 STR = r'"(?:[^"\\]|\\.)*"'
 SLICE_RE = re.compile(rf"\{{id: (BT-\d+), (?:parent: (BT-\d+), )?summary: ({STR}|[^,}}]*), verdict: (\w+), audit_rounds: (\d+)\}}")
 VERDICTS = ("PASS", "WAIVED", "SKIP")
+AUDIT_COUNTS = ("spec_r1", "spec_final", "std_hard", "std_judg")
+AUDIT_TEXT = ("phase1", "std_tier")
+AUDIT_INPUTS = ("lean", "full")
 PARENT_RE = re.compile(r"BT-\d+")
 MILESTONE_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)")
 TYPE_RE = re.compile(r"[a-z]+")
@@ -152,6 +158,13 @@ def parse_prior(text):
             lists[name] = []
     refs = re.search(r"^refs: \[(.*)\]$", blk, re.M)
     lists["refs"] = [r.strip() for r in refs.group(1).split(",") if r.strip()] if refs else []
+    lists["audit"] = {}
+    a = re.search(r"^audit: (\{.*)$", blk, re.M)
+    if a:
+        try:
+            lists["audit"] = json.loads(a.group(1))
+        except json.JSONDecodeError:
+            print("[PR-BODY-WARN] unparsed prior audit line: earlier audit findings are dropped from this body", file=sys.stderr)
     notes = re.search(r"^## Notes\n(.*)$", text, re.M | re.S)
     return features, prior, lists, (notes.group(1).strip() if notes else "")
 
@@ -383,13 +396,55 @@ def render_body(rows, features, closing, rec, tags, lists, notes):
     out += [f'test: {{cmd: {dumps(rec["cmd"])}, observed: {dumps(rec["observed"])}, at: {rec["head_sha"]}}}',
             f"risk: [{', '.join(tags) if tags else 'none'}]",
             f"post_merge: {dumps(lists['post_merge'])}", f"deviations: {dumps(lists['deviations'])}",
+            *([f"audit: {dumps(lists['audit'])}"] if lists["audit"] else []),
             f"refs: [{', '.join(lists['refs'])}]", "```"]
     if notes:
         out += ["## Notes", notes]
     return "\n".join(out) + "\n"
 
 
+def read_audit(args):
+    """The shipped slice's findings from --audit-json / --audit-file as a dict; None when neither is given.
+
+    Raises ValueError on anything but `{spec_r1, spec_final, std_hard, std_judg: int>=0, phase1, std_tier: str, input: lean|full}`;
+    a field left out stays out of the entry (absent is unknown, never 0).
+    """
+    if args.audit_json is not None and args.audit_file is not None:
+        raise ValueError("give --audit-json or --audit-file, not both")
+    raw = args.audit_json
+    if args.audit_file is not None:
+        try:
+            raw = Path(args.audit_file).read_text(encoding="utf-8-sig")
+        except (OSError, ValueError) as e:
+            raise ValueError(f"cannot read --audit-file: {e}")
+    if raw is None:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"audit findings are not JSON: {e}")
+    if not isinstance(data, dict):
+        raise ValueError("audit findings must be a JSON object")
+    for key, value in data.items():
+        if key in AUDIT_COUNTS:
+            ok = isinstance(value, int) and not isinstance(value, bool) and value >= 0
+        elif key in AUDIT_TEXT:
+            ok = isinstance(value, str) and value != ""
+        elif key == "input":
+            ok = value in AUDIT_INPUTS
+        else:
+            raise ValueError(f"unknown audit field {key!r}")
+        if not ok:
+            raise ValueError(f"audit field {key!r} has a bad value {value!r}")
+    return data
+
+
 def cmd_build(args):
+    try:
+        audit = read_audit(args)
+    except ValueError as e:
+        print(f"[PR-BODY-ERROR] {e}", file=sys.stderr)
+        return 2
     if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
         print(f"[PR-BODY-ERROR] --parent must look like BT-<n>, got {args.parent!r}", file=sys.stderr)
         return 2
@@ -437,10 +492,12 @@ def cmd_build(args):
     closing = union([canon(c) for c in args.close],
                     [canon(args.parent or (prior_features[0] if prior_features else args.slice))] if args.close_parent else [])
 
+    ship_id = next(r[0] for r in rows if int(r[0][3:]) == int(args.slice[3:]))  # the audit key spells the id as the row does
     qa = [f"manual-QA: {args.slice}"] if args.manual_qa else []
     lists = {"post_merge": union(prior_lists["post_merge"], args.post_merge, qa),
              "deviations": union(prior_lists["deviations"], args.deviation),
-             "refs": union(prior_lists["refs"], args.ref)}
+             "refs": union(prior_lists["refs"], args.ref),
+             "audit": {**prior_lists["audit"], **({ship_id: audit} if audit else {})}}
     notes = args.notes if args.notes is not None else prior_notes
     tags = changed_risk_tags(base, args.risk_paths)
     body = render_body(rows, features, closing, rec, tags, lists, notes)
@@ -523,6 +580,8 @@ def build_parser():
     b.add_argument("--post-merge", action="append", default=[])
     b.add_argument("--deviation", action="append", default=[])
     b.add_argument("--ref", action="append", default=[])
+    b.add_argument("--audit-json", help="the shipped slice's auditor findings as one JSON object (see the module doc)")
+    b.add_argument("--audit-file", help="the same JSON read from a file (PowerShell strips inner quotes from an argument)")
     b.add_argument("--notes")
     b.add_argument("--prior-body-file")
     b.add_argument("--base", help="base ref; default: merge-base with origin/HEAD's branch, then origin/main|master, "

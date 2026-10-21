@@ -120,6 +120,7 @@ def test_workflow_pr_body_unit_and_build_calls_use_only_real_flags():
     assert {"--slice", "--milestone", "--parent", "--parent-milestone"} <= seen["unit"]
     assert "--branch" in seen["unit"], "4a step 1 must check the branch with `pr_body.py unit --branch`"
     assert "--close" in seen["build"], "4a step 8 must rebuild the body with `pr_body.py build --close`"
+    assert "--audit-file" in seen["build"], "4a step 5 must pass the auditor findings with `pr_body.py build --audit-file`"
 
 
 # md-crosscheck: workflow reconcile --edges literals vs reconcile.py's real argparse

@@ -64,7 +64,7 @@ _Done when:_ subagent returns valid JSON and git status is clean. Then the Orche
    > "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<parentPadded>-interface.md` (no PRD/design doc at that path (standalone slice) → omit the path).
    > Keep the auditor independent (fresh context), but for a clearly small slice pass the slice diff + ACs + named test files inline and skip broad re-reads.
    > Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate.
-   > Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80)."
+   > Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false, \"counts\": {\"spec\": 0, \"std_hard\": 0, \"std_judg\": 0}, \"standards\": {\"hard\": [], \"judgment\": [], \"dismissed\": []}, \"phase1\": \"\", \"std_tier\": \"\", \"input\": \"\"}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80; `counts.spec` = Spec gaps ≥ 80 this round; `phase1`, `std_tier`, `input` and the other findings fields per `references/pr-body-and-ship.md` § Audit findings, left empty when unknown)."
 
 _Done when:_ auditor returns valid JSON verdict.
 
@@ -73,6 +73,7 @@ Evaluate subagent response:
 - Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): mark slice `status:blocked` in BACKLOG_MAP, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), post the reason and both options (`gh issue comment <n> --body "[STUCK] <reason> — options: 1) <a> 2) <b>"`), log to `.tmp/3z-loop.work.md`, continue.
 - Floor guard failed (`[FLOOR]`, Step 2A) → not passing: same retry and `status:blocked` path as `[UNCOVERED]` below, the guard's findings as the gap report (comment the `[FLOOR]` rows when blocking). The retry fixes the code; a new `## Floor exceptions` row never counts.
 - `tests_added` non-empty and `red_confirmed` empty (Step 2A) → `[NO-RED]`: not passing, same retry and `status:blocked` path as `[UNCOVERED]` below; gap report: record the observed RED per micro-tdd (a characterization test names the wrong value it fails on).
+- Findings (every Step 2B return): keep per slice `spec_r1` = `counts.spec` of attempt 1 (absent when Step 2A skipped 2B that attempt), `spec_final` = `counts.spec` of the latest, and the latest `std_hard`/`std_judg`, `phase1`, `std_tier`, `input`. Standards findings never trigger a retry here; they are recorded only.
 - Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md`; next slice.
 - Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → mark slice `status:blocked` in BACKLOG_MAP, comment `[UNCOVERED]` rows on GitHub issue, set status label to blocked (`gh issue edit <n> --remove-label "status:in progress" --add-label "status:blocked"`), log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, `SKIP-DEP`, or `status:blocked`).
@@ -84,7 +85,7 @@ For each ship unit whose queued slices are all `VERIFIED`:
 1. **Branch checkout:** Run `git checkout <branch>` (the `branch` from the unit's slices' Step 2A JSON).
 2. **Execute Ship (once per slice):** For **each** `VERIFIED` slice in the unit, run `/4a-verify-and-ship` gate **`ship-only`** passing that slice's `BT-<padded>`: branch-safety + design-drift gate, push, open/update unit PR, ship-status the slice (child `done` + closed; standalone `in review`), comment PR link on its issue.
    - The `ship-only` gate is single-slice — its Epic Check flips each epic `status:in review` when that epic's last slice is shipped and the PR ready when every epic in it is complete, so every VERIFIED slice must get its own Phase-5 pass.
-   - Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them.
+   - Pass each dispatch the slice's audit result — `verdict` (Step 2C), `audit_rounds` (the final `attempt`), the Step 2C findings (written to `.tmp/4a-audit-BT-<padded>.json`; `ship-only` passes it as `--audit-file`) and `needs_manual_qa` (becomes a `post_merge` item in the PR body); `ship-only` never audited, so it cannot derive them.
    - Any `ship-only` halt (`[UNCOMMITTED]`, `[FLOOR]`, `[DRAFT-RULE]`, `[MIRROR-UNVERIFIED]`, `[CI-RED]`, terminal-gate failure, Feature Acceptance Audit gaps, branch-safety, design drift) → flag `[BLOCKED-ship] <the halt message>`, continue the frontier; slice stays local, except `[CI-RED]`: slice pushed, unit PR held draft.
    - **CI gate** (last `ship-only` of a unit, never per intermediate slice; `references/ci-gate.md`):
      - `ship-only` returns `[CI-FIX]` + `log_tail`, commits nothing.
@@ -106,6 +107,7 @@ Read `.tmp/3z-loop.work.md` and output summary per ship unit:
 - PR # (or `local`).
 - Status (`VERIFIED`/`VERIFIED-LOCAL`/`BLOCKED`/`SKIP-DEP` — list each `[SKIP-DEP]` slice with the blocker it waits on and "re-run /3z after BT-<blocker> ships (same-unit) or merges (cross-unit)").
 - Commit shas, test/cosmetic `[SKIP]`, coverage maps, conflict flags.
+- Per slice audit findings: Spec gaps round 1 / final, Standards hard / judgment counts, `phase1`, `input`.
 - **The reference docs each slice read (`docs_read` — PRD/design/etc.) so the user can confirm the right artifacts were used (and spot a skipped frozen design doc).**
 - **Each slice's plan deviations (recorded at Step 2C; `none` when none, `n/a` for `status:blocked`/stuck slices, which never reach it) next to `docs_read`.**
 - Manual-test checklist for slices with `needs_manual_qa` set to true.

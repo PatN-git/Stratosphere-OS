@@ -875,3 +875,139 @@ def test_epic_ids_are_padded_and_padding_variants_collapse(repo):
     assert r.returncode == 0, r.stderr
     assert field(r.stdout, "features") == "[BT-010]" and slice_parents(r.stdout) == {"BT-11": "BT-010"}
     assert r.stdout.splitlines()[:3] == ["Closes #11.", "Closes #10.", ""]
+
+
+# --- BT-202: the `audit:` findings line ---------------------------------------------------------
+
+AUDIT = {"spec_r1": 2, "spec_final": 0, "std_hard": 1, "std_judg": 3, "phase1": "trigger:size", "std_tier": "small", "input": "lean"}
+
+# Frozen copy of the pre-BT-202 reader (SLICE_RE and parse_prior): old vendored pr_body.py copies must keep reading new bodies.
+OLD_STR = r'"(?:[^"\\]|\\.)*"'
+OLD_SLICE_RE = re.compile(rf"\{{id: (BT-\d+), (?:parent: (BT-\d+), )?summary: ({OLD_STR}|[^,}}]*), verdict: (\w+), audit_rounds: (\d+)\}}")
+
+
+def old_parse_prior(pb, text):
+    m = re.search(r"```stratos-pr\n(.*?)\n```", text, re.S)
+    blk = m.group(1) if m else ""
+    legacy = re.search(r"^feature: (BT-\d+)", blk, re.M)
+    feats = re.search(r"^features: \[(.*)\]$", blk, re.M)
+    features = ([f for f in re.split(r"\s*,\s*", feats.group(1).strip()) if pb.PARENT_RE.fullmatch(f)] if feats
+                else [legacy.group(1)] if legacy else [])
+    row_default = legacy.group(1) if legacy and not feats else pb.NO_PARENT
+    prior, unparsed = {}, []
+    for s in OLD_SLICE_RE.findall(blk):
+        row_parent = s[1] or row_default
+        prior[int(s[0][3:])] = (s[0], pb.NO_PARENT if row_parent == pb.NO_PARENT else pb.canon(row_parent), *s[2:])
+    for line in blk.splitlines():
+        if line.startswith("  - {id:") and not OLD_SLICE_RE.search(line):
+            unparsed.append(line)
+    lists = {}
+    for name in ("post_merge", "deviations"):
+        f = re.search(rf"^{name}: (\[.*\])$", blk, re.M)
+        lists[name] = json.loads(f.group(1)) if f else []
+    return features, prior, lists, unparsed
+
+
+def audit_of(body):
+    return json.loads(field(body, "audit"))
+
+
+def audit_run(repo, payload, *extra, slice_id="BT-11"):
+    suite = write_suite(repo, f"3d-suite-{slice_id}.json")
+    return run(repo, "build", "--slice", slice_id, "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
+               "--base", "main", "--risk-paths", RISK_PATHS, "--suite-json", suite, "--parent", "BT-10",
+               "--audit-json", json.dumps(payload) if not isinstance(payload, str) else payload, *extra)
+
+
+def test_audit_entry_is_written_as_a_top_level_line_keyed_by_slice_id(repo):
+    commit(repo, "feat(BT-11): one")
+    body = build(repo, "BT-11", "--audit-json", json.dumps(AUDIT))
+    assert audit_of(body) == {"BT-11": AUDIT}
+    assert [s[0] for s in slices(body)] == ["BT-11"] and slices(body)[0][3] == "1"
+
+
+def test_a_missing_audit_field_stays_absent_never_zero(repo):
+    commit(repo, "feat(BT-11): one")
+    assert audit_of(build(repo, "BT-11", "--audit-json", json.dumps({"spec_r1": 1}))) == {"BT-11": {"spec_r1": 1}}
+
+
+def test_a_body_without_audit_data_has_no_audit_line(repo):
+    commit(repo, "feat(BT-11): one")
+    assert "audit:" not in build(repo, "BT-11")
+
+
+def test_audit_entries_union_across_slices_and_survive_a_rebuild_without_the_flag(repo):
+    commit(repo, "feat(BT-11): one")
+    p1 = repo / ".tmp" / "p1.md"
+    p1.write_text(build(repo, "BT-11", "--audit-json", json.dumps(AUDIT)), encoding="utf-8")
+    commit(repo, "feat(BT-12): two")
+    p2 = repo / ".tmp" / "p2.md"
+    second = {"spec_r1": 0, "std_hard": 4}
+    p2.write_text(build(repo, "BT-12", "--audit-json", json.dumps(second), prior=p1), encoding="utf-8")
+    assert audit_of(p2.read_text(encoding="utf-8")) == {"BT-11": AUDIT, "BT-12": second}
+    # 4a step 8 rebuilds the body with no audit flag: the entries and the whole body stay identical
+    assert build(repo, "BT-12", prior=p2) == p2.read_text(encoding="utf-8")
+
+
+def test_the_fresh_audit_flag_replaces_that_slices_prior_entry_only(repo):
+    commit(repo, "feat(BT-11): one")
+    commit(repo, "feat(BT-12): two")
+    p1 = repo / ".tmp" / "p1.md"
+    p1.write_text(build(repo, "BT-11", "--audit-json", json.dumps(AUDIT)), encoding="utf-8")
+    body = build(repo, "BT-12", "--audit-json", json.dumps({"std_hard": 9}), prior=p1)
+    again = repo / ".tmp" / "again.md"
+    again.write_text(body, encoding="utf-8")
+    body = build(repo, "BT-11", "--audit-json", json.dumps({"spec_r1": 5}), prior=again)
+    assert audit_of(body) == {"BT-11": {"spec_r1": 5}, "BT-12": {"std_hard": 9}}
+
+
+def test_audit_file_equals_audit_json(repo):
+    commit(repo, "feat(BT-11): one")
+    f = repo / ".tmp" / "audit.json"
+    f.write_text(json.dumps(AUDIT), encoding="utf-8")
+    assert audit_of(build(repo, "BT-11", "--audit-file", f)) == {"BT-11": AUDIT}
+
+
+@pytest.mark.parametrize("payload", [
+    "not json", "[1]", '{"spec_r1": "2"}', '{"spec_r1": -1}', '{"spec_r1": true}', '{"surprise": 1}',
+    '{"input": "medium"}', '{"phase1": 3}', '{"std_tier": ""}',
+])
+def test_a_bad_audit_payload_is_a_clean_exit_2(repo, payload):
+    commit(repo, "feat(BT-11): one")
+    assert_clean_error(audit_run(repo, payload))
+
+
+def test_audit_json_and_audit_file_together_or_a_missing_file_are_a_clean_exit_2(repo):
+    commit(repo, "feat(BT-11): one")
+    f = repo / ".tmp" / "audit.json"
+    f.write_text(json.dumps(AUDIT), encoding="utf-8")
+    assert_clean_error(audit_run(repo, AUDIT, "--audit-file", f))
+    suite = write_suite(repo)
+    r = build_raw(repo, "--audit-file", repo / ".tmp" / "missing.json", suite=suite)
+    assert_clean_error(r)
+
+
+def test_pre_bt_202_readers_still_read_a_body_with_an_audit_line(repo, capsys):
+    pb = load_pr_body()
+    commit(repo, "feat(BT-11): one")
+    commit(repo, "feat(BT-12): two")
+    p1 = repo / ".tmp" / "p1.md"
+    p1.write_text(build(repo, "BT-11", "--post-merge", "step", "--audit-json", json.dumps(AUDIT)), encoding="utf-8")
+    body = build(repo, "BT-12", "--audit-json", json.dumps({"std_hard": 1}), prior=p1)
+    assert field(body, "audit")
+    rows = [ln for ln in block(body).splitlines() if ln.startswith("  - {id:")]
+    assert rows and all(OLD_SLICE_RE.search(ln) for ln in rows)  # no PENDING reversion by an old reader
+    features, prior, lists, unparsed = old_parse_prior(pb, body)
+    assert unparsed == [] and sorted(prior) == [11, 12] and prior[11][3] == "PASS"
+    assert lists["post_merge"] == ["step"]
+    assert features == pb.parse_prior(body)[0] and prior == pb.parse_prior(body)[1]
+
+
+def test_a_malformed_prior_audit_line_warns_and_keeps_the_rest(repo):
+    commit(repo, "feat(BT-11): one")
+    prior = repo / ".tmp" / "prior.md"
+    prior.write_text("```stratos-pr\nfeatures: [BT-010]\nslices:\n  - {id: BT-11, parent: BT-010, summary: \"x\", "
+                     "verdict: PASS, audit_rounds: 1}\npost_merge: [\"keep\"]\naudit: {oops\n```\n", encoding="utf-8")
+    r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-10", suite=write_suite(repo))
+    assert r.returncode == 0 and "[PR-BODY-WARN]" in r.stderr and "audit" in r.stderr
+    assert json.loads(field(r.stdout, "post_merge")) == ["keep"] and "audit:" not in r.stdout
