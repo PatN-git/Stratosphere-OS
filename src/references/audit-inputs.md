@@ -10,7 +10,7 @@ Same guardrails, same confidence scale (`confidence-scale.md`), same ≥ 80 thre
 
 ## Lean packet (default)
 The lead resolves the targets and passes them inline:
-- The slice issue's `### Acceptance Criteria` (primary), the PRD §6/§7/§8 and design doc where they exist (never dropped), and the 3d `## Deviations`.
+- The slice issue's `### Acceptance Criteria` (primary) within the whole issue body (Overview and Notes carry scope lines such as "Not building"), the PRD §6/§7/§8 and design doc where they exist (never dropped), and the 3d `## Deviations`.
 - The scoped diff (`git diff <base>...HEAD -- <changed paths>`, run by the lead, passed as text) and the names of the test files and tests the slice adds or changes.
 - Nothing else up front. The auditor reads a full file (implementation, a test body, `LEARNINGS.md`) only when a finding needs it, and never runs repo-wide discovery.
 
