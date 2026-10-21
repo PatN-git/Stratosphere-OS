@@ -34,6 +34,18 @@ Runs of [the plan](../plans/4a-audit-eval-strategy.md) on the [corpus](4a-audit-
 
 By case: BT-198 and BT-006 found every label; BT-187 four of ten stably; BT-061 two of five with the rest flaky; nine cases (BT-118, 119, 120, 122, 139, 143, 169, 170, 171) found none at 80+. The earlier replays said lean and full miss the same gaps; this confirms the gap is the auditor's recall, not the packet.
 
+## Yardstick check (2026-10-21)
+I read the 6 low-confidence labels against their ACs and fix commits, and skimmed the 18 medium ones. Three low labels are not spec gaps by the AC (BT-118 g3 stale pointer in a sync-skills doc, BT-139 g5 a skip-clause wording fix, BT-143 g1 BOM handling beyond the AC) and the other three are thin (BT-169 g4, BT-171 g1, BT-143 g2: deep reasoning about data or an output kind). The medium labels are mostly real test-coverage gaps; a few are robustness cases outside the AC (BT-120 g2, BT-122 g2, BT-169 g3, BT-119 g3).
+
+Recall by label confidence (mean detection at 80+ over all runs; share seen at 60+ in some run):
+| Labels used | n | Found at 80+ | Seen at 60+ |
+|---|---|---|---|
+| all | 43 | 0.28 | 0.70 |
+| medium and high | 37 | 0.32 | 0.73 |
+| high only | 19 | 0.45 | 0.84 |
+
+So the headline 23% is pessimistic by about a factor of two on the solid labels: the auditor finds about 45% of high-confidence gaps at the blocking threshold and sees 84% in some form. The classes stay in the same order (text absent and unpinned case weakest). Use the high and medium sets as the yardstick from here on.
+
 ## Test 1: watch rows
 - Of the 33 labels missed at 80+ in the first run, 17 (52%) appear in the watch band. Pass rule (recover at least a third): met.
 - Watch items per slice: 2.7 on average (maximum 9, BT-198); 46% match a label (33% on high-confidence labels; unmatched is not necessarily false, since labels cover only fixed gaps). Pass rule (precision at least 25%, no more than 6 per slice on average): met.
