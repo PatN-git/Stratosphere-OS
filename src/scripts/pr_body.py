@@ -22,7 +22,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     parent of each slice row; rows carry `parent: BT-n`); a legacy single `feature:` prior block upgrades on
     rebuild. `Closes #n.` follows the slice lines for each --close epic (--close-parent = close --parent).
     `audit: {"BT-n": {...}}` (a top-level line, only when non-empty) holds each slice's auditor findings: spec_r1,
-    spec_final, std_hard, std_judg (counts), phase1, std_tier (text), input (lean|full). --audit-json/--audit-file
+    spec_final, std_hard, std_judg, watch (counts), phase1, std_tier (text), input (lean|full). --audit-json/--audit-file
     replaces the shipped slice's entry; a rebuild without either keeps every prior entry. Old readers ignore the line.
   suite  [--dir .tmp]
     Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1 with

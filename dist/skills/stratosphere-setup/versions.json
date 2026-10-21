@@ -321,7 +321,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "248e7d5a54dc842b562c9d9f468ad8bdb15958ab00aafcf7df2a86829aedffad",
+      "sha256": "0d5fb8f731adae0bfcf30afbf41610975e475f816ec228c246db60209498b006",
       "timestamp": "2026-10-20",
       "version": "1.8.0"
     },
@@ -346,12 +346,12 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/pr-body-and-ship.md": {
-      "sha256": "82bca2125f9456c29be43db58dcd436814bbaa7eeb4e90427b109cd548e94653",
+      "sha256": "7e24e50fa4900dc99a7a893d1db7e18d0869632f245f67b8ea7cc6e8096bd667",
       "timestamp": "2026-10-20",
       "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "ec6c7273454f23919a90c10bae59f5e1b69d1acbf93556dcb61a2ada5cc1124e",
+      "sha256": "20c83853af4424c4197f553eb71362544e21ba2eb6de21c992c5450efe15bf95",
       "timestamp": "2026-10-20",
       "version": "1.6.0"
     },
@@ -406,7 +406,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "82bca2125f9456c29be43db58dcd436814bbaa7eeb4e90427b109cd548e94653",
+      "sha256": "7e24e50fa4900dc99a7a893d1db7e18d0869632f245f67b8ea7cc6e8096bd667",
       "timestamp": "2026-10-20",
       "version": "1.1.0"
     },

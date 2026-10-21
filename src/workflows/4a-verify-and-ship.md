@@ -22,6 +22,7 @@ Run the `load-memory` skill to restore session context (read-only).
 ## Phase 1: Value-Add Gate
 *Input:* slice issue + parent PRD §8 (`BT-<parentPadded>` resolved as in Phase 2).
 0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue (a loosening needs a human-merged Floor exceptions row)`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below.
+   Record the decision below as `phase1` per `references/pr-body-and-ship.md` § Audit findings: `bypass` for steps 1 and 3, `trigger:<name>` for step 2.
 1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
 2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, covers a PRD §8 Definition of Done item, or is `[size:large]` / `[mode:AFK]` → proceed to Phase 2: Execution (Context Isolation).
 3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.

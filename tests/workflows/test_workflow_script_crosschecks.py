@@ -6,6 +6,7 @@ Kept from the per-workflow wording suites: each test here fails when markdown an
 Phrase-presence pins live nowhere; load-bearing rules belong in build/validate.py or check_suite.
 """
 import importlib.util
+import json
 import re
 import subprocess
 import sys
@@ -203,6 +204,31 @@ def test_watch_items_are_non_blocking_in_4a_and_recorded_as_a_valid_audit_field(
     assert "`watch`" in (SRC / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
     assert "watch" in pr_body.AUDIT_COUNTS
     assert '"watch"' in (WF / "3z-afk-loop.md").read_text(encoding="utf-8").replace('\\"', '"')
+
+
+# md-crosscheck: the 3z Step 2B return template vs what pr_body.py accepts as audit findings
+def _audit_ok(**fields):
+    ns = type("A", (), {"audit_json": json.dumps(fields), "audit_file": None})()
+    pr_body.read_audit(ns)
+
+
+def test_3z_return_template_never_carries_a_value_pr_body_rejects():
+    line = next(l for l in (WF / "3z-afk-loop.md").read_text(encoding="utf-8").splitlines() if "Return JSON:" in l and "counts" in l)
+    line = re.sub(r'\\"verdict\\": [^,]+,', "", line).replace('\\"', '"')
+    template, _ = json.JSONDecoder().raw_decode(line[line.index("{"):])
+    for key in ("phase1", "std_tier", "input"):
+        if key in template:
+            _audit_ok(**{key: template[key]})
+    _audit_ok(**{k: v for k, v in template["counts"].items() if k != "spec"})
+
+
+# md-crosscheck: the phase1 values the reference documents are the ones pr_body.py reads
+def test_documented_phase1_values_are_accepted():
+    ref = (SRC / "references" / "pr-body-and-ship.md").read_text(encoding="utf-8")
+    names = re.search(r"`trigger:<name>` \(([^)]+)\)", ref).group(1)
+    for name in re.findall(r"`(\w+)`", names):
+        _audit_ok(phase1=f"trigger:{name}")
+    _audit_ok(phase1="bypass")
 
 
 def test_build_ships_the_ladder_into_0b():
