@@ -11,7 +11,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
     PENDING (no Closes line). A prior row a human set to `DROPPED` (never a `--verdict`) is kept verbatim and
-    gets no Closes line. Commits scoped to an epic (`tier:epic` row in .memory/BACKLOG_MAP.md, plus any
+    gets no Closes line. Commits scoped to an epic (`tier:epic` per the tracker backend: a row in .memory/BACKLOG_MAP.md, or GitHub labels when `tracker: github`, plus any
     `--epic BT-n`; none when the file is absent and no flag is given) are not slices, except the shipped one. post_merge/deviations/refs are unioned
     (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
@@ -359,6 +359,9 @@ def tracker_facts(nums):
         rec = _reconcile()
     except ImportError:
         return epic_ids(), backlog_parents()
+    key = rec.read_tracker(rec.ARCH_DEFAULT)
+    if key not in (None, "github", "local"):  # a typo is never read as local; no key and no GitHub still fails open
+        raise rec.GhError(f"`tracker: {key}` in ARCHITECTURE.md is not github or local")
     if rec.resolve_backend() != "github":
         return epic_ids(), backlog_parents()
     nodes = {n: node for n, node in rec.fetch_nodes(sorted(nums)).items() if node}
@@ -368,7 +371,7 @@ def tracker_facts(nums):
 
 def slice_rows(args, prior, features, base):
     """(id, parent, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
-    Fresh values for the shipped slice, prior-block values for others, PENDING when new (parent from BACKLOG_MAP).
+    Fresh values for the shipped slice, prior-block values for others, PENDING when new (parent from the tracker backend).
     None if --slice is malformed. Commits scoped to an epic in `features` or to any other epic are not slices
     (an epic closes only via --close / --close-parent)."""
     log = git("log", "--no-merges", "--format=%s", f"{base}..HEAD") or ""
@@ -506,7 +509,7 @@ def cmd_build(args):
     try:
         rows = slice_rows(args, prior, features, base)
     except _reconcile().GhError as e:
-        print(f"[PR-BODY-ERROR] `tracker: github` needs GitHub to tell epics from slices and failed closed: {e}", file=sys.stderr)
+        print(f"[PR-BODY-ERROR] the tracker backend could not tell epics from slices, so the build failed closed: {e}", file=sys.stderr)
         return 2
     if rows is None:
         print(f"[PR-BODY-ERROR] --slice must look like BT-<n>, got {args.slice!r}", file=sys.stderr)

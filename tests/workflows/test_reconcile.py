@@ -1029,6 +1029,9 @@ def github_checks():
             rec._github_remote = lambda: False
             code, out = _run(["--arch", _arch(td, None), "--backlog", str(Path(td) / "NO_MAP.md"), "--ids", "BT-007"])
             check("unresolved backend: halt with a clear message, exit 3", code == 3 and "[TRACKER-UNRESOLVED" in out)
+            code, out = _run(["--arch", _arch(td, "gitlab"), "--backlog", lp, "--ids", "BT-007"])
+            check("unknown tracker value: halt names the value, not a missing key",
+                  code == 3 and "[TRACKER-UNRESOLVED" in out and "`tracker: gitlab`" in out and "no `tracker:` key" not in out)
     finally:
         (rec.gh_available, rec.fetch_nodes, rec._gh_run, rec.RETRY_DELAYS, rec._sleep, rec.pr_merge_state,
          rec.fetch_issue, rec._github_remote) = orig

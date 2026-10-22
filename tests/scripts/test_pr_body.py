@@ -1115,3 +1115,13 @@ def test_github_mode_still_honors_the_epic_flag(repo, monkeypatch, capsys):
         7: _node(7, ["tier:slice"]), 11: _node(11, ["tier:slice"])})
     code, out, err = _build_in_process(mod, repo, capsys, "BT-11", "--epic", "BT-7")
     assert code == 0 and [s[0] for s in slices(out)] == ["BT-11"]
+
+
+def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "gitlab")
+    monkeypatch.chdir(repo)
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err

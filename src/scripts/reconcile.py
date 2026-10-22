@@ -863,8 +863,10 @@ def main(argv=None):
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
     backend = resolve_backend(args.arch, args.backlog)
     if backend is None:
-        print("[TRACKER-UNRESOLVED: no `tracker:` key in ARCHITECTURE.md, no BACKLOG_MAP.md and no ready GitHub "
-              "connection; nothing checked. Run /stratosphere-setup to record the tracker backend]")
+        key = read_tracker(args.arch)
+        why = (f"`tracker: {key}` in ARCHITECTURE.md is not github or local" if key else
+               "no `tracker:` key in ARCHITECTURE.md, no BACKLOG_MAP.md and no ready GitHub connection")
+        print(f"[TRACKER-UNRESOLVED: {why}; nothing checked. Run /stratosphere-setup to record the tracker backend]")
         return 3
     github = backend == 'github'
     if github and (args.all_open or args.heal or args.summary):
