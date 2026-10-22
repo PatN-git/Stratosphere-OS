@@ -35,6 +35,7 @@ refs: [<only IDs that constrained the change>]
 - **Optional flags:** `--manual-qa` (`needs_manual_qa` true: 3z Step 3A dispatch, or a manual-only AC the Phase 2 table marks `[NONE]`), `--post-merge "<step>"` (also `noticed: <line>` per the 3d plan's `Noticed, not touched`; `none` → omit), `--deviation "<decision>"` (one per line of the 3d plan's `## Deviations`; `none` → omit), `--ref <ID>`.
 
 ## Audit findings
+Purpose: data for tuning the 4a audit itself (yield, cost per audit, audit frequency; epic BT-201). Recorded only; no gate reads it.
 `audit:` is a top-level JSON line keyed by slice id, spelled as its slice row spells it. The slice row never changes: an in-row field would make an older `pr_body.py` (a vendored copy) fail the row and revert it to `PENDING`; older readers ignore the new line. Every field is omitted when unknown, never `0`:
 - `spec_r1` / `spec_final`: Spec gaps ≥ 80 confidence in the first and the last audit round.
 - `std_hard` / `std_judg`: Standards Hard breach and Judgment findings of the last round (`Dismissed` not counted).

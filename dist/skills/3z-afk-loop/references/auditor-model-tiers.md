@@ -6,12 +6,12 @@ timestamp: 2026-10-20
 
 # Auditor model tiers
 
-Only the Standards auditor is tiered; the Spec auditor always runs on the default model. A tier is a name, never a model ID, so workflows stay host-neutral. A host with no model setting, or a tier with no mapping below, runs the auditor on the default model, silently. Record the tier used as `std_tier` in the audit findings (`references/pr-body-and-ship.md` § Audit findings); none set → omit it.
+Only the Standards auditor is tiered; the Spec auditor runs on the default model. A tier is a name, never a model ID (host-neutral). No host model setting, or no mapping below → default model, silently. Record the tier used as `std_tier` (`references/pr-body-and-ship.md` § Audit findings); none → omit.
 
 | Host | `small` | default (no tier) |
 |---|---|---|
 | Claude Code | pass `model: haiku` on the subagent dispatch, or `model: haiku` in the subagent's frontmatter | `inherit` |
-| Antigravity | a custom subagent whose frontmatter sets `model: flash` (tiers `inherit`, `flash`, `pro`) | `inherit` |
+| Antigravity | a custom subagent whose frontmatter sets `model: flash` | `inherit` |
 | Codex | a custom agent file (`.codex/agents/<name>.toml`) with `model = "gpt-6-luna"` and `model_reasoning_effort = "high"`; an account without that model keeps the default | omit `model` |
 
-Provenance (read from each host's docs on 2026-10-20; re-verify when a host changes): Claude Code subagents (`model`: `sonnet`, `opus`, `haiku`, a full model ID or `inherit`); Antigravity custom subagents (`model`: `inherit`, `flash` or `pro`); Codex subagents (agent-file `model` takes precedence, else the `[agents]` default, else the parent's; `gpt-6-luna` is the documented "faster, lower-cost option for lighter subagent work", start it at `high` effort; model names depend on the account and CLI version).
+Provenance: each host's docs, read 2026-10-20; re-verify when a host changes. Codex: agent-file `model` beats the `[agents]` default beats the parent's; `gpt-6-luna` is the documented lower-cost option for lighter subagent work, start at `high` effort; model names depend on account and CLI version.
