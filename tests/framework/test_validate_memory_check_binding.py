@@ -62,7 +62,7 @@ def test_an_untracked_or_missing_check_path_is_an_error(tmp_path):
 
 
 def test_a_file_on_disk_but_not_tracked_is_an_error(tmp_path):
-    code, out = _run(tmp_path, _arch(_rule(1, " Check: tests/standards/new.test.js")))
+    _run(tmp_path, _arch(_rule(1, " Check: tests/standards/new.test.js")))
     (tmp_path / "tests/standards/new.test.js").write_text("// untracked\n", encoding="utf-8")
     r = subprocess.run([sys.executable, str(SCRIPT), "--path", ".memory"], cwd=tmp_path, capture_output=True)
     assert r.returncode == 1, r.stdout.decode("utf-8", "replace")
