@@ -130,10 +130,14 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
     backlog = tmp_path / "BACKLOG_MAP.md"
     backlog.write_text("", encoding="utf-8")
     call = re.compile(r"python \.agents/scripts/reconcile\.py ([^`]*--edges[^`]*)`")
-    seen = 0
-    for name in ("4a-verify-and-ship.md", "3d-implement-issue.md", "3z-afk-loop.md", "3c-sprint-planning.md", "0b-stop-session.md"):
-        for args in call.findall((WF / name).read_text(encoding="utf-8")):
+    seen, from_reference = 0, 0
+    paths = [WF / n for n in ("4a-verify-and-ship.md", "3d-implement-issue.md", "3z-afk-loop.md", "3c-sprint-planning.md", "0b-stop-session.md")]
+    paths.append(SRC / "references" / "post-merge-sync.md")
+    for path in paths:
+        name = path.name
+        for args in call.findall(path.read_text(encoding="utf-8")):
             seen += 1
+            from_reference += name == "post-merge-sync.md"
             argv = re.sub(r"<[^>]*>", "001", args).split()
             mode = argv[argv.index("--edges") + 1]
             assert mode in {"blockers", "dependents"}, f"{name}: --edges {mode}"
@@ -142,6 +146,7 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
             except SystemExit as e:
                 assert e.code != 2, f"{name}: `{args}` rejected by reconcile.py argparse"
     assert seen >= 5
+    assert from_reference, "the --edges dependents call moved to post-merge-sync.md and is no longer found there"
 
 
 # --- contract_check.py ------------------------------------------------------------------------
@@ -165,6 +170,11 @@ def test_every_workflow_call_uses_only_real_contract_check_flags():
 def test_build_ships_merge_risk_paths_into_4a():
     assert "merge-risk-paths.md" in build.closure_for(_4a(), SRC / "references"), \
         "4a must cite references/merge-risk-paths.md so the build fans it into 4a's references/"
+
+
+def test_build_ships_post_merge_sync_into_0b_with_its_references():
+    shipped = build.closure_for((WF / "0b-stop-session.md").read_text(encoding="utf-8"), SRC / "references")
+    assert {"post-merge-sync.md", "terminal-sync-invariant.md", "github-issue-relations.md"} <= shipped,         "0b must cite references/post-merge-sync.md, which cites the two references it needs"
 
 
 def test_red_flags_cite_code_smell_baseline_in_the_form_the_build_fans_out():

@@ -76,7 +76,7 @@
       "version": "1.1.3"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "4009c763c565c70b21a47f88780fa814ae741f1ad6654d45eb37ef957cff7d10",
+      "sha256": "2d327601a11f0ca2c6fd6c47691775ed562223aa7229979620f009c6f42eb8bd",
       "timestamp": "2026-10-20",
       "version": "1.5.0"
     },
@@ -89,6 +89,11 @@
       "sha256": "536c512f50a991bc9799ec861f5065bb5818208d104b01514dfd41246ab6839c",
       "timestamp": "2026-10-13",
       "version": "1.0.2"
+    },
+    "skills/0b-stop-session/references/post-merge-sync.md": {
+      "sha256": "89749432f4b0bfc7bf25b237b4ba6d1e0eb0fb353f2889ee4a505c176ed04893",
+      "timestamp": "2026-10-21",
+      "version": "1.0.0"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
       "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
