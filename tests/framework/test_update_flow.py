@@ -2894,6 +2894,7 @@ def test_fresh_scaffold_tracker_flag():
         arch = (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         assert re.search(rf"^tracker: {answer}$", arch.split("---")[1], re.M)
         assert (tmp / ".agents" / "scripts" / "tracker_switch.py").is_file()
+        assert (tmp / ".agents" / "scripts" / "ice_read.py").is_file()  # BT-198: 3c's ICE on read
 
 
 def test_architecture_template_declares_the_tracker():

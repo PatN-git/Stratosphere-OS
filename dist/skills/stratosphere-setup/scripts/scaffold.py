@@ -640,7 +640,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name

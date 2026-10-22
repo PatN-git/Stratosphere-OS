@@ -1,0 +1,14 @@
+{
+  "source": "cleantech_jobs#241",
+  "labels": [
+    "area:BE-api",
+    "type:feature",
+    "mode:AFK",
+    "priority:high",
+    "size:medium",
+    "scope:baseline",
+    "tier:slice",
+    "status:in review"
+  ],
+  "body": "### Overview\n(cut)\n\n### ICE Priorities\n- **Impact:** 2.0\n- **Confidence:** 100%\n- **ICE Score:** 1.0\n\n"
+}
