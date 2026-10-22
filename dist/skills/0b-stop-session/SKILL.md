@@ -23,7 +23,7 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 
 1. Compare completed vs. planned:
     - Comment plan, completed, and open steps on active GitHub issues, and note which issues were updated/closed.
-    - **Merge-time sync:** if any epic or standalone row in `BACKLOG_MAP.md` is `in review`, or an epic row is `in progress` with a `done` child row, read `references/post-merge-sync.md` and run it; else skip silently. Use its results for the handoff `Blockers` and `Follow-ups proposed`.
+    - **Merge-time sync:** run `gh pr list --state closed --search "closed:>=<Last Sync date>" --json number,mergedAt,closingIssuesReferences,headRefName` (`Last Sync` from `.memory/STATUS.md`); any PR back (merged, or closed unmerged) → read `references/post-merge-sync.md` and run it; none → skip silently. `Last Sync` missing or not a date → run it anyway; `gh` unavailable → skip and say so in the handoff `Blockers` line. Use its results for the handoff `Blockers` and `Follow-ups proposed`.
 2. Update `.memory/STATUS.md` (last sync, current branch, active issue, current focus, completed, blockers, next step).
 3. **Friction gate:** run steps 3–4 only if this session hit friction: a failed approach, a costly wrong assumption, a defect fixed, or a reviewer/audit catch. Else skip silently. For each defect fixed, ask "what would have prevented it?". Route every candidate per `references/environment-fix-ladder.md`.
 4. If a candidate reaches the LEARNINGS rung and is a durable lesson:
