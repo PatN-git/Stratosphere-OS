@@ -1,7 +1,7 @@
 ---
 description: Destination ladder for candidate lessons. Routes each lesson to the cheapest durable fix, with LEARNINGS last. Cited by 0b and 0d.
-version: "1.2.0"
-timestamp: 2026-10-14
+version: "1.2.1"
+timestamp: 2026-10-22
 ---
 
 # Environment-Fix Ladder
@@ -10,7 +10,7 @@ A lesson written to `LEARNINGS.md` does not change behaviour on its own. Route e
 
 ## Rungs
 
-1. **Deterministic check:** lint, test, setup file, CI, hook, or `validate_memory.py`. Wire an existing check before inventing one. Host or tooling behaviour (shell quoting, missing browser, scheduler limits, tool misuse, re-reads) lands here as a local hook, setup check, or project rule. A new lint, test, hook or CI check is accepted only once shown failing on the motivating instance; name that instance as its acceptance test when routing.
+1. **Deterministic check:** lint, test, setup file, CI, hook, or `validate_memory.py`. Wire an existing check before inventing one. Host or tooling behaviour (shell quoting, missing browser, scheduler limits, tool misuse, re-reads) lands here as a local hook, setup check, or project rule. A new lint, test, hook or CI check is accepted only once shown failing on the motivating instance; name that instance as its acceptance test when routing. A check that enforces an existing `[LAW]` is bound to it by `Check: <path>` on that entry (a human adds it), and the 4a Standards auditor then stops judging the rule.
 2. **Reviewer standard:** a rule read by the 4a Standards Auditor (`CODING_STANDARDS.md` → `[[A-xxx]]` → `code-smell-baseline.md`), not loaded into implementers. Name the file bare, with no directory prefix.
 3. **Existing law covers it, first miss only:** a `[LAW]` entry or core rule. Cite it and write nothing. A `[PATTERN]` or `[ASSUMED]` LEARNINGS id is not law.
 4. **Framework feedback:** a defect in an installed StratOS skill (stale path, missing guard, wrong contract). Record it as skill (`.agents/skills/<name>`) · installed `version:` · defect · evidence · suggested fix, where the citing workflow records findings (0d `## Framework feedback`, 0b handoff note). Never file it, name a repo, or edit the installed skill.
