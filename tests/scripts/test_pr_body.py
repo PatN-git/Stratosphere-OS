@@ -798,6 +798,15 @@ def test_unit_epic_flag_uses_its_own_milestone_else_its_own_id(repo):
     assert bare["unit"] == "BT-051" and bare["kind"] == "epic" and bare["unit"] == child["unit"]
 
 
+def test_unit_flags_only_an_epic_slice_with_no_release_milestone(repo):
+    assert unit_ok(repo, "--slice", "BT-70", "--milestone", NONE, "--parent", "BT-51")["needs_milestone"] is True
+    for args in (["--milestone", "v1.2.5", "--parent", "BT-51"],
+                 ["--milestone", NONE, "--parent", "BT-51", "--parent-milestone", "v1.2.0"],
+                 ["--milestone", NONE]):
+        assert "needs_milestone" not in unit_ok(repo, "--slice", "BT-70", *args)
+    assert "needs_milestone" not in unit_ok(repo, "--slice", "BT-51", "--epic", "--milestone", NONE)
+
+
 def test_epics_of_one_release_share_a_unit_and_v1_2_is_not_v1_20(repo):
     a = unit_ok(repo, "--slice", "BT-51", "--epic", "--milestone", "v1.2.5")
     b = unit_ok(repo, "--slice", "BT-204", "--epic", "--milestone", "v1.2.6")

@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "96eafc916c4b1db36dcc57991d8767e4e650a9f15df3e2f9f8af12913389b65a",
+      "sha256": "d8044334d4c5ef209411816a9cfdc1dfb12bf6cbc1fea8b824170a81c09d159a",
       "timestamp": "2026-10-20",
       "version": "3.5.0"
     },
@@ -296,7 +296,7 @@
       "version": "1.2.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "f5ad80c24d556b1c6cda7a29e6699527c6d1722ae8b9d516690ac72a0449f33b",
+      "sha256": "4937a981fc59c7e3490e563890504be10106633738f4360ee76a1e32fc09e837",
       "timestamp": "2026-10-20",
       "version": "2.7.0"
     },
@@ -321,7 +321,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "0d5fb8f731adae0bfcf30afbf41610975e475f816ec228c246db60209498b006",
+      "sha256": "6ef6630e8e8fb264c1966317fa5446f4b5eadeed10220245f7af957dd6c7936e",
       "timestamp": "2026-10-20",
       "version": "1.8.0"
     },

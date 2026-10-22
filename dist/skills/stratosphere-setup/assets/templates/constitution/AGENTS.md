@@ -30,8 +30,8 @@ timestamp: 2026-10-20
 
 ## 4. Version Control
 - **Granularity:** one branch + one PR per SHIP UNIT: the slice's release `vX.Y` (milestone `vX.Y.Z`), else its parent epic, else itself (standalone). Every slice of the unit commits onto that branch; its one PR accumulates them (several epics and sprints per release). Resolve with `pr_body.py unit`.
-- **Isolation:** plain git branches (single working dir). Worktrees are allowed but not required; the workflows assume branches.
-- **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid.
+- **Isolation:** plain git branches (single working dir); worktrees allowed, not required.
+- **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. An epic's slice needs a release milestone (3d halts without one).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label.
 - **main/master:** never a work target for code. It is only a base to branch from and a merge target.
 - **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single unit PR; it never creates the first commit and never merges.

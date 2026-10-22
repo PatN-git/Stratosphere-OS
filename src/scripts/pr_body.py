@@ -31,11 +31,12 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     .tmp/ (4a's clean-tree guard), and `cmd` is a whole-suite command (`is_scoped`: unknown shapes count as scoped).
     Write the record with `test_gate.py record --suite BT-n -- <cmd>`, never by hand.
   unit   --slice BT-n [--milestone M] [--parent BT-n] [--parent-milestone M] [--epic] [--type T] [--slug S] [--branch B]
-    Prints one JSON object `{unit, kind, globs, branch?, branch_ok?}`: the ship unit of the slice (`--epic`: of an
+    Prints one JSON object `{unit, kind, globs, needs_milestone?, branch?, branch_ok?}`: the ship unit of the slice (`--epic`: of an
     epic row). unit = release `vX.Y` (own milestone `vX.Y.Z`, else the parent epic's), else the parent epic
     `BT-<n:03d>`, else the standalone issue `BT-<n:03d>`; "same ship unit" = equal `unit`. `globs` = branch-name
     patterns of the unit (legacy own-epic glob first); `branch` = `<T>/<unit>-<slug>` (T default feat) with --slug;
-    `branch_ok` = --branch matches a glob. M = `v<X>.<Y>.<Z>` or none (empty, `-`, `—`). Bad input -> exit 2
+    `needs_milestone` (true only) = a slice of an epic with no release milestone, own or parent's, so its unit would
+    be the epic; 3d halts on it unless a branch of the unit is already active. `branch_ok` = --branch matches a glob. M = `v<X>.<Y>.<Z>` or none (empty, `-`, `—`). Bad input -> exit 2
     [SHIP-UNIT-ERROR]. `resolve_unit` is the only implementation of this rule; import it, never restate it.
 """
 import argparse
@@ -545,7 +546,7 @@ def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
     release = own or inherited
     if release:
         return {"unit": f"v{release[0]}.{release[1]}", "kind": "release", "globs": [parent_glob, f"*/v{release[0]}.{release[1]}-*"]}
-    return {"unit": f"BT-{int(parent[3:]):03d}", "kind": "epic", "globs": [parent_glob]}
+    return {"unit": f"BT-{int(parent[3:]):03d}", "kind": "epic", "globs": [parent_glob], "needs_milestone": True}
 
 
 def cmd_unit(args):
