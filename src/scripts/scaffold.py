@@ -368,7 +368,10 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.work.md", "*.stratosphere-new"]
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
-TRACKER_MAP = ".memory/BACKLOG_MAP.md"  # the local tracker's store; absent under `tracker: github`
+
+def skips_map(proj_path, tracker):
+    """True for the local tracker's store (`BACKLOG_MAP.md`) under `tracker: github`: it is never placed, merged or locked."""
+    return tracker == "github" and proj_path == tracker_switch.MAP
 
 
 def resolve_tracker(project, flag=None):
@@ -747,7 +750,7 @@ def main():
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
-            if proj_path.startswith(".github/workflows/") or (tracker == "github" and proj_path == TRACKER_MAP):
+            if proj_path.startswith(".github/workflows/") or skips_map(proj_path, tracker):
                 continue
             
             p = project / proj_path
@@ -863,7 +866,7 @@ def main():
         
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
-            if not proj_path or (tracker == "github" and proj_path == TRACKER_MAP):
+            if not proj_path or skips_map(proj_path, tracker):
                 continue
                 
             p = project / proj_path
@@ -1506,7 +1509,7 @@ def main():
 
     # 3. Memory templates -> .memory/
     for src in sorted((ASSETS / "memory").glob("*.md")):
-        if tracker == "github" and f".memory/{src.name}" == TRACKER_MAP:
+        if skips_map(f".memory/{src.name}", tracker):
             continue
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
     arch = project / ".memory" / "ARCHITECTURE.md"

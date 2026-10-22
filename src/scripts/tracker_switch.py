@@ -69,10 +69,10 @@ def read_rows(path):
         hit = reconcile._row_cells(line)
         if not hit:
             continue
-        c = [p.strip() for p in hit[1]]
-        rows.append({'id': hit[0], 'title': c[2], 'status': c[3], 'milestone': c[5], 'parent': c[6], 'ice': c[8], 'ref': c[9],
-                     'labels': [l.strip() for l in c[4].split(',') if l.strip() not in NONE],
-                     'blocked': [b.strip() for b in c[7].split(',') if b.strip() not in NONE]})
+        _, bt, title, status, labels, milestone, parent, blocked, ice, ref, _ = [p.strip() for p in hit[1]][:11]  # 9 columns between the outer pipes
+        rows.append({'id': bt, 'title': title, 'status': status, 'milestone': milestone, 'parent': parent, 'ice': ice, 'ref': ref,
+                     'labels': [l.strip() for l in labels.split(',') if l.strip() not in NONE],
+                     'blocked': [b.strip() for b in blocked.split(',') if b.strip() not in NONE]})
     return rows
 
 
@@ -114,19 +114,26 @@ def create_issue(row):
     return int(out.strip().rsplit('/', 1)[-1])
 
 
-def link(child, other, kind):
-    """`child` under parent `other` (kind 'parent') or blocked by `other` (kind 'blockedBy'); skipped when present."""
-    seen = json.loads(gh('issue', 'view', str(child), '--json', kind))[kind]
-    seen = ([seen] if seen else []) if kind == 'parent' else seen['nodes']  # `parent` is an object or null, `blockedBy` a connection
-    if any(n['number'] == other for n in seen):
+def node_id(number):
+    return json.loads(gh('issue', 'view', str(number), '--json', 'id'))['id']
+
+
+def link_parent(child, parent):
+    """Put `child` under `parent`; skipped when it already is (`parent` reads as an object or null)."""
+    current = json.loads(gh('issue', 'view', str(child), '--json', 'parent'))['parent']
+    if current and current['number'] == parent:
         return
-    ids = {n: json.loads(gh('issue', 'view', str(n), '--json', 'id'))['id'] for n in (child, other)}
-    if kind == 'parent':
-        q = 'mutation($p:ID!,$c:ID!){addSubIssue(input:{issueId:$p,subIssueId:$c}){issue{number}}}'
-        gh('api', 'graphql', '-f', f'query={q}', '-f', f'p={ids[other]}', '-f', f'c={ids[child]}')
-    else:
-        q = 'mutation($i:ID!,$b:ID!){addBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{number}}}'
-        gh('api', 'graphql', '-f', f'query={q}', '-f', f'i={ids[child]}', '-f', f'b={ids[other]}')
+    q = 'mutation($p:ID!,$c:ID!){addSubIssue(input:{issueId:$p,subIssueId:$c}){issue{number}}}'
+    gh('api', 'graphql', '-f', f'query={q}', '-f', f'p={node_id(parent)}', '-f', f'c={node_id(child)}')
+
+
+def link_blocked_by(issue, blocker):
+    """Mark `issue` blocked by `blocker`; skipped when it already is (`blockedBy` reads as a connection)."""
+    current = json.loads(gh('issue', 'view', str(issue), '--json', 'blockedBy'))['blockedBy']['nodes']
+    if any(n['number'] == blocker for n in current):
+        return
+    q = 'mutation($i:ID!,$b:ID!){addBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{number}}}'
+    gh('api', 'graphql', '-f', f'query={q}', '-f', f'i={node_id(issue)}', '-f', f'b={node_id(blocker)}')
 
 
 def text_files(root, skip_roots=()):
@@ -139,19 +146,23 @@ def text_files(root, skip_roots=()):
                 continue
 
 
-def rewrite(numbers, apply):
-    """Replace mapped ids under REWRITE_ROOTS (the map excluded); returns the count of files changed."""
-    changed = 0
+def pending_rewrites(numbers):
+    """(path, new text) for every file under REWRITE_ROOTS (the map and the archive excluded) that holds a mapped id."""
     for top in REWRITE_ROOTS:
         for p, text in text_files(top) if Path(top).is_dir() else ():
             if p.as_posix() == MAP or p.as_posix().startswith('.memory/archive/'):
                 continue
             new = LOCAL_ID.sub(lambda m: padded(numbers[m.group(0)]) if numbers.get(m.group(0)) else m.group(0), text)
             if new != text:
-                changed += 1
-                if apply:
-                    p.write_bytes(new.encode('utf-8'))
-    return changed
+                yield p, new
+
+
+def apply_rewrites(numbers):
+    """Write every pending rewrite; returns the count of files changed."""
+    changed = list(pending_rewrites(numbers))
+    for p, new in changed:
+        p.write_bytes(new.encode('utf-8'))
+    return len(changed)
 
 
 def report_other_hits(numbers):
@@ -171,15 +182,14 @@ def sync_row(row, numbers, bodies):
         gh('issue', 'edit', str(n), '--body-file', body_file(body))
     if row['status'] == 'done' and not is_existing:
         gh('issue', 'close', str(n))
-    links = [(b, 'blockedBy') for b in row['blocked']]
-    if row['parent'] not in NONE:
-        links.insert(0, (row['parent'], 'parent'))
-    for other, kind in links:
+    related = [(row['parent'], link_parent)] if row['parent'] not in NONE else []
+    related += [(b, link_blocked_by) for b in row['blocked']]
+    for other, link in related:
         target = numbers.get(other) or real_number(other)
         if target is None:
             print(f"[LINK-SKIP {row['id']}: {other} is not in the map]")
         else:
-            link(n, target, kind)
+            link(n, target)
 
 
 def archive_map():
@@ -218,7 +228,7 @@ def main(argv=None):
             elif real_number(r['id']) is None:
                 print(f"[PLAN reuse {r['id']} -> {padded(numbers[r['id']])}: found by its marker]")
         if not args.apply:
-            print(f"[PLAN rewrite ids in {rewrite(numbers, False)} file(s) under .memory/ and docs/ that already match; new ids are rewritten after creation]")
+            print(f"[PLAN rewrite ids in {len(list(pending_rewrites(numbers)))} file(s) under .memory/ and docs/ that already match; new ids are rewritten after creation]")
             report_other_hits(numbers)
             print(f"[SWITCH: dry run, {sum(n is None for n in numbers.values())} issue(s) to create; nothing written; re-run with --apply]")
             return 0
@@ -236,7 +246,7 @@ def main(argv=None):
     except GhFail as e:
         print(f"[SWITCH-FAIL: {e}; no local file was rewritten, the map and key are unchanged. Fix the cause and re-run: created issues are found again by their marker]")
         return 1
-    files = rewrite(numbers, True)
+    files = apply_rewrites(numbers)
     report_other_hits(numbers)
     archived = archive_map() if has_map else None
     write_tracker(ARCH, 'github')

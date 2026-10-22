@@ -14,6 +14,7 @@ from conftest import REPO_ROOT
 
 SCRIPTS = REPO_ROOT / "src" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+import reconcile
 import tracker_switch as ts
 
 
@@ -77,7 +78,7 @@ def project(tmp_path, monkeypatch):
     def shim(args):
         r = subprocess.run([sys.executable, str(SHIM), *args], capture_output=True, text=True, encoding="utf-8")
         return r.returncode, r.stdout, r.stderr
-    monkeypatch.setattr(ts.reconcile, "_gh_run", shim)
+    monkeypatch.setattr(reconcile, "_gh_run", shim)
 
     root = tmp_path / "proj"
     (root / ".memory").mkdir(parents=True)
@@ -87,6 +88,7 @@ def project(tmp_path, monkeypatch):
     (root / ".memory" / "BACKLOG_MAP.md").write_text(MAP, encoding="utf-8")
     (root / "docs" / "prds" / "auth.md").write_text("Build BT-LOCAL-login after BT-LOCAL-db; epic BT-LOCAL-auth.\n", encoding="utf-8")
     (root / "src" / "app.py").write_text("# see BT-LOCAL-db\n", encoding="utf-8")
+    (root / ".memory" / "LEARNINGS.md").write_text("Lesson from BT-LOCAL-auth.\n", encoding="utf-8")
     for n in (1, 2, 3):
         shim(["issue", "create", "--title", f"filler {n}", "--body", f"body {n}"])
     monkeypatch.chdir(root)
@@ -138,12 +140,13 @@ def test_apply_creates_issues_rewrites_ids_archives_map_sets_key(project, capsys
     num = {k: f"BT-{v['number']:03d}" for k, v in (("login", login), ("db", db), ("auth", auth))}
     assert (root / "docs" / "prds" / "auth.md").read_text(encoding="utf-8") == (
         f"Build {num['login']} after {num['db']}; epic {num['auth']}.\n")
+    assert (root / ".memory" / "LEARNINGS.md").read_text(encoding="utf-8") == f"Lesson from {num['auth']}.\n"
     assert (root / "src" / "app.py").read_text(encoding="utf-8") == "# see BT-LOCAL-db\n"
     assert "src" in out and "BT-LOCAL-db" in out and "not edited" in out
     # the map is archived whole, the key flips last
     assert not (root / ".memory" / "BACKLOG_MAP.md").exists()
     assert (root / ".memory" / "archive" / "BACKLOG_MAP.md").read_text(encoding="utf-8") == MAP
-    assert ts.reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "github"
+    assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "github"
 
 
 def test_rerun_is_idempotent(project, capsys):
@@ -166,24 +169,24 @@ def test_resume_after_an_interrupted_run_creates_nothing_twice(project):
     ts.write_tracker(root / ".memory" / "ARCHITECTURE.md", "local")
     assert ts.main(["--apply"]) == 0
     assert gh_state(store)["issues"] == snapshot
-    assert ts.reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "github"
+    assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "github"
 
 
 def test_a_failed_create_stops_the_run_before_any_rewrite(project, monkeypatch, capsys):
     root, store = project
-    real = ts.reconcile._gh_run
-    monkeypatch.setattr(ts.reconcile, "_gh_run",
+    real = reconcile._gh_run
+    monkeypatch.setattr(reconcile, "_gh_run",
                         lambda a: (1, "", "milestone not found") if a[:2] == ["issue", "create"] and "Login page" in a else real(a))
     assert ts.main(["--apply"]) == 1
     assert "BT-LOCAL-login" in capsys.readouterr().out
     assert (root / ".memory" / "BACKLOG_MAP.md").exists()
     assert (root / "docs" / "prds" / "auth.md").read_text(encoding="utf-8").startswith("Build BT-LOCAL-login")
-    assert ts.reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "local"
+    assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "local"
 
 
 def test_gh_unavailable_halts_without_touching_anything(project, monkeypatch, capsys):
     root, _ = project
-    monkeypatch.setattr(ts.reconcile, "_gh_run", lambda a: (1, "", "not logged in"))
+    monkeypatch.setattr(reconcile, "_gh_run", lambda a: (1, "", "not logged in"))
     assert ts.main(["--apply"]) == 2
     assert "gh" in capsys.readouterr().out.lower()
     assert (root / ".memory" / "BACKLOG_MAP.md").exists()

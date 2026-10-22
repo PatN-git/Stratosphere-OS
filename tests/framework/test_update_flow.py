@@ -2893,6 +2893,14 @@ def test_fresh_scaffold_tracker_flag():
         assert (tmp / ".memory" / "BACKLOG_MAP.md").exists() is has_map
         arch = (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         assert re.search(rf"^tracker: {answer}$", arch.split("---")[1], re.M)
+        assert (tmp / ".agents" / "scripts" / "tracker_switch.py").is_file()
+
+
+def test_architecture_template_declares_the_tracker():
+    """BT-197: the template ships the `tracker:` key (local = the legacy default) and the [LAW] placeholder."""
+    text = (REPO_ROOT / "src" / "memory-templates" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    assert re.search(r"^tracker: local$", text.split("---")[1], re.M)
+    assert "**[[A-XXX]] [LAW]** Issue tracker backend:" in text
 
 
 if __name__ == "__main__":
@@ -2903,6 +2911,7 @@ if __name__ == "__main__":
     test_update_without_key_keeps_local_map()
     test_resolve_tracker_prefers_the_key()
     test_fresh_scaffold_tracker_flag()
+    test_architecture_template_declares_the_tracker()
     test_pristine_update()
     test_conflict_update()
     test_invariant_trips()
