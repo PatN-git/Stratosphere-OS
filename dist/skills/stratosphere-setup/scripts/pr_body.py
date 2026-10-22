@@ -319,12 +319,16 @@ def canon(bt):
     return f"BT-{int(bt[3:]):03d}"
 
 
+def _reconcile():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import reconcile
+    return reconcile
+
+
 def backlog_rows(path=".memory/BACKLOG_MAP.md"):
     """BACKLOG_MAP rows via `reconcile.parse_backlog`; {} when the map is absent or unreadable (fails open)."""
     try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        import reconcile
-        return reconcile.parse_backlog(path)
+        return _reconcile().parse_backlog(path)
     except (ImportError, OSError, ValueError):
         return {}
 
@@ -348,6 +352,20 @@ def backlog_parents(path=".memory/BACKLOG_MAP.md"):
     return out
 
 
+def tracker_facts(nums):
+    """(epic ids, {id: 'BT-nnn' parent}) from the tracker backend. Local: the map, failing open (empty when absent).
+    GitHub (`tracker: github`): one batched fetch of `nums`, failing closed: GhError propagates, never `{}`."""
+    try:
+        rec = _reconcile()
+    except ImportError:
+        return epic_ids(), backlog_parents()
+    if rec.resolve_backend() != "github":
+        return epic_ids(), backlog_parents()
+    nodes = {n: node for n, node in rec.fetch_nodes(sorted(nums)).items() if node}
+    epics = {n for n, node in nodes.items() if "tier:epic" in rec.node_row(node)["labels"]}
+    return epics, {n: f"BT-{node['parent']['number']:03d}" for n, node in nodes.items() if node.get("parent")}
+
+
 def slice_rows(args, prior, features, base):
     """(id, parent, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new (parent from BACKLOG_MAP).
@@ -364,10 +382,10 @@ def slice_rows(args, prior, features, base):
         return None
     ship_n = int(ship.group(1))
     first_subject.setdefault(ship_n, (ship.group(1), args.summary))
-    for epic_n in (epic_ids() | {int(e[3:]) for e in args.epic} | {int(f[3:]) for f in features}) - {ship_n}:
+    epics, parents = tracker_facts(set(first_subject))
+    for epic_n in (epics | {int(e[3:]) for e in args.epic} | {int(f[3:]) for f in features}) - {ship_n}:
         first_subject.pop(epic_n, None)
 
-    parents = backlog_parents()
     rows = []
     for n in sorted(first_subject):
         digits, subject_summary = first_subject[n]
@@ -485,7 +503,11 @@ def cmd_build(args):
         return 2
 
     features = union([canon(f) for f in prior_features], [canon(args.parent)] if args.parent else [])
-    rows = slice_rows(args, prior, features, base)
+    try:
+        rows = slice_rows(args, prior, features, base)
+    except _reconcile().GhError as e:
+        print(f"[PR-BODY-ERROR] `tracker: github` needs GitHub to tell epics from slices and failed closed: {e}", file=sys.stderr)
+        return 2
     if rows is None:
         print(f"[PR-BODY-ERROR] --slice must look like BT-<n>, got {args.slice!r}", file=sys.stderr)
         return 2

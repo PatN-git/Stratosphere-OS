@@ -61,9 +61,9 @@
       "version": "2.1.1"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "ed6b4669b264cc130642574c365384cfe136849e4f9ac97ded4e068017ae6b5e",
-      "timestamp": "2026-10-14",
-      "version": "2.0.3"
+      "sha256": "be52aaf483f66080bbf0eddef3e8f540d1cdee0be7b8a8a38a310683e6b21355",
+      "timestamp": "2026-10-22",
+      "version": "2.0.4"
     },
     "assets/templates/rules/output-mode.md": {
       "sha256": "26f131434fa078b1022f731925cd24c9b7efa65925212113463969989ffcc302",
