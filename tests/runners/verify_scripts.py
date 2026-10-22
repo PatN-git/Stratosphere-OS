@@ -290,6 +290,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/validate_memory.py"
             elif rel_str == "scripts/reconcile.py":
                 proj_rel_path = ".agents/scripts/reconcile.py"
+            elif rel_str == "scripts/tracker_switch.py":
+                proj_rel_path = ".agents/scripts/tracker_switch.py"
             elif rel_str == "scripts/okf_view.py":
                 proj_rel_path = ".agents/scripts/okf_view.py"
             elif rel_str == "scripts/contract_check.py":

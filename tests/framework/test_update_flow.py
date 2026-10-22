@@ -2832,10 +2832,77 @@ def test_sandboxes_are_unique_and_cleanup_is_scoped():
         shutil.rmtree(foreign, ignore_errors=True)
 
 
+def _tracker_env(name, arch_text=None, map_text=None):
+    """A project next to the real bundled plugin (its true versions.json), with optional
+    ARCHITECTURE.md / BACKLOG_MAP.md already present. Returns (project, scaffold script)."""
+    tmp = _sandbox(name)
+    plugin = tmp / ".agents" / "plugins" / "stratosphere-os"
+    shutil.copytree(REPO_ROOT / "dist" / "skills", plugin)
+    for fname in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+        src = plugin / "stratosphere-setup" / "assets" / "templates" / "constitution" / fname
+        (tmp / fname).write_bytes(src.read_bytes())
+    (tmp / ".memory").mkdir()
+    if arch_text is not None:
+        (tmp / ".memory" / "ARCHITECTURE.md").write_text(arch_text, encoding="utf-8", newline="\n")
+    if map_text is not None:
+        (tmp / ".memory" / "BACKLOG_MAP.md").write_text(map_text, encoding="utf-8", newline="\n")
+    return tmp, plugin / "stratosphere-setup" / "scripts" / "scaffold.py"
+
+
+def test_update_github_tracker_creates_no_map():
+    """BT-197 AC1: `tracker: github` and no map -> an update neither creates, proposes nor locks one."""
+    tmp, script = _tracker_env("test_update_github_tracker",
+                               arch_text="---\ntype: architecture\ntracker: github\n---\n# ARCHITECTURE\n")
+    run_cmd([sys.executable, str(script), "--update"], cwd=tmp)
+    mem = tmp / ".memory"
+    assert not (mem / "BACKLOG_MAP.md").exists()
+    assert not (mem / "BACKLOG_MAP.md.stratosphere-new").exists()
+    worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+    assert ".memory/BACKLOG_MAP.md" not in worklist["preserved_files"]
+    lock = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
+    assert ".memory/BACKLOG_MAP.md" not in lock["artifacts"]
+
+
+def test_update_without_key_keeps_local_map():
+    """BT-197 AC2: a map and no `tracker:` key resolves to `local`; the update leaves the map alone."""
+    map_text = "# BACKLOG MAP\n\n| ID | Title |\n|:---|:---|\n| BT-LOCAL-a | kept |\n"
+    arch_text = "---\ntype: architecture\n---\n# ARCHITECTURE\n"
+    tmp, script = _tracker_env("test_update_no_key", arch_text=arch_text, map_text=map_text)
+    assert scaffold.resolve_tracker(tmp) == "local"
+    run_cmd([sys.executable, str(script), "--update"], cwd=tmp)
+    assert (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8") == map_text
+    assert (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8") == arch_text
+
+
+def test_resolve_tracker_prefers_the_key():
+    tmp = _sandbox("test_resolve_tracker")
+    (tmp / ".memory").mkdir()
+    assert scaffold.resolve_tracker(tmp) == "local"  # nothing recorded: legacy behaviour
+    (tmp / ".memory" / "BACKLOG_MAP.md").write_text("x", encoding="utf-8")
+    (tmp / ".memory" / "ARCHITECTURE.md").write_text("---\ntracker: github\n---\n", encoding="utf-8")
+    assert scaffold.resolve_tracker(tmp) == "github"  # the key wins over a leftover map
+    assert scaffold.resolve_tracker(tmp, "local") == "local"  # an explicit flag wins over both
+
+
+def test_fresh_scaffold_tracker_flag():
+    """BT-197: setup passes the answer as `--tracker`; github places no map, both record the key."""
+    for answer, has_map in (("github", False), ("local", True)):
+        tmp, script = _tracker_env(f"test_fresh_tracker_{answer}")
+        shutil.rmtree(tmp / ".memory")
+        run_cmd([sys.executable, str(script), "--tracker", answer], cwd=tmp)
+        assert (tmp / ".memory" / "BACKLOG_MAP.md").exists() is has_map
+        arch = (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        assert re.search(rf"^tracker: {answer}$", arch.split("---")[1], re.M)
+
+
 if __name__ == "__main__":
     # verify_scripts.py runs this file standalone, where the pytest fixture does not apply.
     atexit.register(_remove_sandboxes)
     test_sandboxes_are_unique_and_cleanup_is_scoped()
+    test_update_github_tracker_creates_no_map()
+    test_update_without_key_keeps_local_map()
+    test_resolve_tracker_prefers_the_key()
+    test_fresh_scaffold_tracker_flag()
     test_pristine_update()
     test_conflict_update()
     test_invariant_trips()
