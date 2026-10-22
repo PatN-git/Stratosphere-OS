@@ -47,6 +47,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 STATE_DEFAULT = 'docs/nightly/.last-run.json'  # nightly_state.STATE; imported lazily so the gate never depends on it
@@ -575,6 +576,224 @@ def edges_cmd(args, rows, ids, merged_of):
     return code
 
 
+# --- GitHub mode (`tracker: github`): no map. GitHub is the only store; --expect states the intended state. ---------
+ARCH_DEFAULT = '.memory/ARCHITECTURE.md'
+RETRY_DELAYS = (1, 2, 4)  # seconds before each retry: one try, then 3 retries, then GhError
+CHUNK = 50  # issues per GraphQL call; more ids paginate into several calls
+EXPECT_FIELDS = ALL_FIELDS
+_sleep = time.sleep
+
+
+class GhError(RuntimeError):
+    """GitHub unreachable or answering with errors after every retry. Never a reason to fall back to a local copy."""
+
+
+def read_tracker(path):
+    """`tracker:` value in the frontmatter of ARCHITECTURE.md, None when the file or the key is absent."""
+    try:
+        text = Path(path).read_text(encoding='utf-8-sig')
+    except OSError:
+        return None
+    m = re.search(r'^tracker:\s*(\S+)\s*$', text.split('---', 2)[1] if text.startswith('---') else '', re.M)
+    return m.group(1).strip('"\'') if m else None
+
+
+def _github_remote():
+    try:
+        r = subprocess.run(['git', 'remote', 'get-url', 'origin'], capture_output=True, text=True)
+    except FileNotFoundError:
+        return False
+    return r.returncode == 0 and 'github.com' in r.stdout
+
+
+def _retry(ok):
+    """True when `ok()` succeeds within one try plus len(RETRY_DELAYS) retries."""
+    for i in range(len(RETRY_DELAYS) + 1):
+        if i:
+            _sleep(RETRY_DELAYS[i - 1])
+        if ok():
+            return True
+    return False
+
+
+def resolve_backend(arch=ARCH_DEFAULT, backlog='.memory/BACKLOG_MAP.md'):
+    """'github' | 'local' | None (halt). 1 key present -> use it (an unknown value halts); 2 no key + a map -> local;
+    3 no key, no map, a GitHub remote and gh ready -> github; 4 otherwise halt. A transient gh failure is
+    retried and then halts: it is never read as `local`."""
+    key = read_tracker(arch)
+    if key:
+        return key if key in ('github', 'local') else None
+    if Path(backlog).exists():
+        return 'local'
+    return 'github' if _github_remote() and _retry(gh_available) else None
+
+
+def _gh_run(args):
+    try:
+        r = subprocess.run(['gh', *args], capture_output=True, text=True, encoding='utf-8', errors='replace')
+    except FileNotFoundError:
+        return 127, '', 'gh not found'
+    return r.returncode, r.stdout, r.stderr
+
+
+def gh_query(query):
+    """The `repository` object of one GraphQL call. Retried; a response whose only errors are NOT_FOUND is data
+    (the missing issue is a null alias). Raises GhError once the retries are spent."""
+    args = ['api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-f', 'query=' + query]
+    why = ''
+    for i in range(len(RETRY_DELAYS) + 1):
+        if i:
+            _sleep(RETRY_DELAYS[i - 1])
+        rc, out, err = _gh_run(args)
+        try:
+            body = json.loads(out)
+        except json.JSONDecodeError:
+            body = None
+        body = body if isinstance(body, dict) else {}
+        errors = body.get('errors') or []
+        repo = (body.get('data') or {}).get('repository')
+        if repo is not None and all(e.get('type') == 'NOT_FOUND' for e in errors):
+            return repo
+        why = next((s for s in (err.strip(), *(e.get('message') or e.get('type') or '' for e in errors), f"exit {rc}") if s),
+                   '').splitlines()[0]
+    raise GhError(f"gh api graphql failed after {len(RETRY_DELAYS) + 1} attempts: {why}")
+
+
+_NODE = ("number state milestone{title} labels(first:50){nodes{name}} "
+         "parent{number state milestone{title} labels(first:50){nodes{name}}}")
+
+
+def build_query(nums, comments, edges):
+    sel = "...F blockedBy(first:100){nodes{...F}}"
+    if comments:
+        sel += " comments(last:100){nodes{body}}"
+    if edges:  # dependents, and the parent epic's blockers (effective_blockers)
+        sel += " blocking(first:100){nodes{...F}} parent{blockedBy(first:100){nodes{...F}}}"
+    items = ' '.join(f"i_{n}: issue(number:{n}){{{sel}}}" for n in nums)
+    return ("query($owner:String!,$name:String!){repository(owner:$owner,name:$name){" + items
+            + "}} fragment F on Issue {" + _NODE + "}")
+
+
+def fetch_nodes(nums, comments=False, edges=False):
+    """{issue number: GraphQL node, or None when the issue does not exist}, CHUNK issues per call."""
+    out = {}
+    for i in range(0, len(nums), CHUNK):
+        part = nums[i:i + CHUNK]
+        repo = gh_query(build_query(part, comments, edges))
+        out.update({n: repo.get(f"i_{n}") for n in part})
+    return out
+
+
+def _conn(node, key):
+    return (node.get(key) or {}).get('nodes') or []
+
+
+def _names(node):
+    return [l['name'] for l in _conn(node, 'labels')]
+
+
+def node_gh(node):
+    """A node in the shape `gh issue view --json` gives compare(). Pure."""
+    return {'number': node['number'], 'state': node['state'], 'labels': [{'name': n} for n in _names(node)],
+            'milestone': node.get('milestone'), 'blockedBy': {'nodes': _conn(node, 'blockedBy')},
+            'parent': node.get('parent'), 'comments': _conn(node, 'comments')}
+
+
+def node_row(node):
+    """A node as a parse_backlog row. A closed issue without a status label counts as done (closed = done). Pure."""
+    names = _names(node)
+    status = next((m.group(1) for n in names if (m := STATUS_RE.match(n))), '') or ('done' if node['state'] == 'CLOSED' else '')
+    parent = node.get('parent')
+    return {'status': status, 'labels': set(names), 'milestone': (node.get('milestone') or {}).get('title') or '—',
+            'parent': _bt(parent['number']) if parent else '—',
+            'blocked_by': {_bt(b['number']) for b in _conn(node, 'blockedBy')}}
+
+
+def rows_from_nodes(nodes):
+    """{BT-id: row} of the fetched nodes and every issue they reference (blockers, dependents, parents), so edges_cmd
+    and edge_verdict run unchanged. Referenced issues are stubs; a fetched node overrides its stub. Pure."""
+    rows = {}
+    for node in filter(None, nodes.values()):
+        parent = node.get('parent')
+        if parent:
+            rows[_bt(parent['number'])] = node_row(parent)
+            rows[_bt(parent['number'])]['blocked_by'] = {_bt(b['number']) for b in _conn(parent, 'blockedBy')}
+            rows.update({_bt(b['number']): node_row(b) for b in _conn(parent, 'blockedBy')})
+        rows.update({_bt(b['number']): node_row(b) for key in ('blockedBy', 'blocking') for b in _conn(node, key)})
+    for node in filter(None, nodes.values()):
+        rows[_bt(node['number'])] = node_row(node)
+    for node in filter(None, nodes.values()):
+        for dep in _conn(node, 'blocking'):
+            rows[_bt(dep['number'])]['blocked_by'].add(_bt(node['number']))
+    return rows
+
+
+def _padded(token):
+    m = re.fullmatch(r'BT-0*(\d+)', token.strip())
+    return _bt(m.group(1)) if m else token.strip()
+
+
+def parse_expect(text):
+    """`BT-n:field=value` items split on `;` or newlines (`#` lines ignored) -> {BT-nnn: {field: value}}. labels and
+    blocked_by take comma lists (sets), a none token means empty. ValueError on a malformed item. Pure."""
+    out = {}
+    for item in (i.strip() for i in re.split(r'[;\n]', text)):
+        if not item or item.startswith('#'):
+            continue
+        head, eq, value = item.partition('=')
+        ident, colon, field = head.partition(':')
+        field, value = field.strip(), value.strip()
+        if not (eq and colon and re.fullmatch(r'BT-\d+', ident.strip())) or field not in EXPECT_FIELDS:
+            raise ValueError(f"bad expectation {item!r}: want BT-<n>:<field>=<value> with field one of {', '.join(EXPECT_FIELDS)}")
+        if field in ('labels', 'blocked_by'):
+            vals = {v.strip() for v in value.split(',') if v.strip() not in NONE_TOKENS}
+            value = {_padded(v) for v in vals} if field == 'blocked_by' else vals
+        elif field == 'parent':
+            value = _padded(value)
+        out.setdefault(_padded(ident), {})[field] = value
+    return out
+
+
+def github_gate(ids, nodes, expect, fields, pr_id):
+    """The post-condition gate from GitHub alone: each id's expected fields (and the PR link on `pr_id`) against its
+    node. Same lines as the map gate, `expect=` for `map=`. Returns (exit code, lines). Pure."""
+    lines, drifted = [], []
+    for bt in ids:
+        num = issue_number(bt)
+        if not num:
+            lines.append(f"[local-only {bt} — no GitHub issue to check]")
+            continue
+        node = nodes.get(int(num))
+        if node is None:
+            drifted.append(f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]")
+            continue
+        want = {k: v for k, v in expect.get(_bt(num), {}).items() if k in fields}
+        gh = node_gh(node)
+        closed = (closed_on_github(want, gh) or open_on_github(want, gh)) if 'status' in want else None
+        drift = [closed] if closed else compare(want, gh, set(want), check_pr=(bt == pr_id))
+        drifted += [f"[MIRROR-DRIFT {bt}: {d.replace('map=', 'expect=')}]" for d in drift]
+    if not drifted:
+        lines.append(f"[MIRROR-OK {','.join(ids)}]")
+    return (1 if drifted else 0), lines + drifted
+
+
+def github_main(args, ids, expect, fields, gate):
+    """--ids against GitHub: one batched fetch feeds the gate and, with --edges, the blocker verdicts (combined mode)."""
+    nums = sorted({int(issue_number(i)) for i in ids if issue_number(i)})
+    try:
+        nodes = fetch_nodes(nums, comments=bool(args.pr_id), edges=bool(args.edges))
+    except GhError as e:
+        print(f"[GH-UNAVAILABLE: {e}; GitHub mode never falls back to a local copy, nothing written]")
+        return 3
+    code = 0
+    if gate:
+        code, lines = github_gate(ids, nodes, expect, fields, args.pr_id)
+        print("\n".join(lines))
+    if args.edges:
+        code = max(code, edges_cmd(args, rows_from_nodes(nodes), ids, make_merged_of()))
+    return code
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Terminal Sync Invariant gate.")
     scope = ap.add_mutually_exclusive_group(required=True)
@@ -608,9 +827,16 @@ def main(argv=None):
     ap.add_argument('--edges', choices=('blockers', 'dependents'),
                     help="D3 blocker verdicts for the --ids / --all-open scope, read-only: blockers = each effective "
                          "blocker of the ids; dependents = each stored edge naming the ids (CLEAR or KEEP)")
+    ap.add_argument('--arch', default=ARCH_DEFAULT,
+                    help="ARCHITECTURE.md whose `tracker: github|local` frontmatter key picks the backend")
+    ap.add_argument('--expect', help="tracker: github only. The intended state, replacing the map: "
+                                     "`BT-7:status=in review;BT-7:blocked_by=BT-6,BT-8` (fields: " + ', '.join(ALL_FIELDS) + ")")
+    ap.add_argument('--with-edges', choices=('blockers', 'dependents'),
+                    help="tracker: github only. Combined mode: the --ids gate plus the --edges verdicts from ONE fetch")
+    ap.add_argument('--expect-file', help="--expect read from a file (`;` or one item per line, `#` comments)")
     args = ap.parse_args(argv)
     if args.edges and (args.heal or args.summary or args.pr_id or args.fields is not None):
-        ap.error("--edges is a separate run: not with --heal/--summary/--pr-id/--fields")
+        ap.error("--edges is a separate run: not with --heal/--summary/--pr-id/--fields (the gate plus edges: --with-edges)")
     args.fields = args.fields or ','.join(ALL_FIELDS)
     if args.heal:
         if not (args.kind and args.source):
@@ -628,6 +854,25 @@ def main(argv=None):
             ap.error(f"--date: {e}")
 
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
+    backend = resolve_backend(args.arch, args.backlog)
+    if backend is None:
+        print("[TRACKER-UNRESOLVED: no `tracker:` key in ARCHITECTURE.md, no BACKLOG_MAP.md and no ready GitHub "
+              "connection; nothing checked. Run /stratosphere-setup to record the tracker backend]")
+        return 3
+    github = backend == 'github'
+    if github and (args.all_open or args.heal or args.summary):
+        ap.error("--all-open/--heal/--summary are map-only runs: not with `tracker: github`")
+    if not github and (args.expect or args.expect_file or args.with_edges):
+        ap.error("--expect/--expect-file/--with-edges need `tracker: github`; the local backend's map is the intended state")
+    if github:
+        gate = not args.edges
+        args.edges = args.edges or args.with_edges
+        try:
+            text = (args.expect or '') + ';' + (Path(args.expect_file).read_text(encoding='utf-8') if args.expect_file else '')
+            expect = parse_expect(text)
+        except (OSError, ValueError) as e:
+            ap.error(f"--expect/--expect-file: {e}")
+        return github_main(args, [_padded(i) for i in args.ids.split(',') if i.strip()], expect, fields, gate)
     rows = parse_backlog(args.backlog)
     ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
     merged_of = make_merged_of()

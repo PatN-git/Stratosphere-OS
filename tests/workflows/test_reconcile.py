@@ -814,6 +814,232 @@ def edge_checks():
     check("--edges takes blockers|dependents only", _arg_error(["--edges", "both", "--ids", "BT-007"]))
 
 
+def gh_node(num, status="in review", state="OPEN", milestone=None, parent=None, parent_ms=None,
+            blocked=(), blocking=(), comments=None, labels=("type:improvement", "tier:slice")):
+    """A GraphQL issue node as `fetch_nodes` returns it (connections are {"nodes": [...]})."""
+    names = ([f"status:{status}"] if status else []) + list(labels)
+
+    def ref(n, st="OPEN", ms=None, tags=("tier:slice",)):
+        return {"number": n, "state": st, "milestone": {"title": ms} if ms else None,
+                "labels": {"nodes": [{"name": t} for t in tags]}}
+    node = ref(num, state, milestone, names)
+    node["labels"] = {"nodes": [{"name": n} for n in names]}
+    node["parent"] = ref(parent, ms=parent_ms, tags=("tier:epic", "status:in progress")) if parent else None
+    node["blockedBy"] = {"nodes": [ref(b) for b in blocked]}
+    node["blocking"] = {"nodes": [dict(ref(n, tags=("tier:slice", "status:planned")),
+                                       parent=ref(p, tags=("tier:epic",)) if p else None) for n, p in blocking]}
+    node["comments"] = {"nodes": [{"body": c} for c in (comments or [])]}
+    return node
+
+
+def _arch(td, tracker, name="ARCHITECTURE.md"):
+    p = Path(td) / name
+    p.write_text("---\ntype: architecture\n" + (f"tracker: {tracker}\n" if tracker else "") + "version: \"1.0.0\"\n---\n# A\n",
+                 encoding="utf-8")
+    return str(p)
+
+
+def backend_checks():
+    """BT-195: the 4-step backend resolution; a transient gh failure never resolves to local."""
+    orig = (rec.gh_available, rec._github_remote, rec.RETRY_DELAYS, rec._sleep)
+    try:
+        rec.RETRY_DELAYS, rec._sleep = (0, 0, 0), lambda s: None
+        with tempfile.TemporaryDirectory() as td:
+            m = write_backlog(td)
+            gone = str(Path(td) / "NO_MAP.md")
+            missing_arch = str(Path(td) / "NO_ARCH.md")
+            rec.gh_available, rec._github_remote = lambda: True, lambda: True
+            check("backend: key github wins even with a map", rec.resolve_backend(_arch(td, "github"), m) == "github")
+            check("backend: key local wins", rec.resolve_backend(_arch(td, "local"), gone) == "local")
+            check("backend: no key + map -> local", rec.resolve_backend(_arch(td, None), m) == "local")
+            check("backend: no ARCHITECTURE file + map -> local", rec.resolve_backend(missing_arch, m) == "local")
+            check("backend: no key, no map, gh ready + remote -> github", rec.resolve_backend(_arch(td, None), gone) == "github")
+            rec._github_remote = lambda: False
+            check("backend: no key, no map, no GitHub remote -> halt (None)", rec.resolve_backend(_arch(td, None), gone) is None)
+            rec._github_remote = lambda: True
+            calls = []
+            rec.gh_available = lambda: calls.append(1) or False
+            check("backend: no key, no map, gh not ready -> halt, never local",
+                  rec.resolve_backend(_arch(td, None), gone) is None)
+            check("backend: gh readiness retried 3 times after the first try", len(calls) == 4)
+            flaky = iter([False, False, True])
+            rec.gh_available = lambda: next(flaky)
+            check("backend: a transient gh failure then success -> github",
+                  rec.resolve_backend(_arch(td, None), gone) == "github")
+            check("backend: a bad key value is a halt, not a guess",
+                  rec.resolve_backend(_arch(td, "gitlab"), m) is None)
+    finally:
+        rec.gh_available, rec._github_remote, rec.RETRY_DELAYS, rec._sleep = orig
+
+
+def expect_checks():
+    exp = rec.parse_expect("BT-7:status=in review;BT-7:blocked_by=BT-6, BT-008;BT-9:milestone=—\n# note\nBT-9:labels=a,b")
+    check("expect: ids are padded, scalar fields kept", exp["BT-007"]["status"] == "in review"
+          and exp["BT-009"]["milestone"] == "—")
+    check("expect: set fields are padded id / label sets", exp["BT-007"]["blocked_by"] == {"BT-006", "BT-008"}
+          and exp["BT-009"]["labels"] == {"a", "b"})
+    check("expect: none tokens make an empty set", rec.parse_expect("BT-7:blocked_by=—")["BT-007"]["blocked_by"] == set())
+    for bad in ("BT-7", "BT-7:status", "BT-7:colour=red", "X-7:status=done"):
+        try:
+            rec.parse_expect(bad)
+            check(f"expect: {bad!r} rejected", False)
+        except ValueError:
+            check(f"expect: {bad!r} rejected", True)
+    with tempfile.TemporaryDirectory() as td:
+        f = Path(td) / "expect.txt"
+        f.write_text("BT-7:status=done\nBT-8:status=planned\n", encoding="utf-8")
+        check("expect: --expect-file reads one item per line",
+              rec.parse_expect(f.read_text(encoding="utf-8")) == {"BT-007": {"status": "done"}, "BT-008": {"status": "planned"}})
+
+
+def github_checks():
+    """BT-195: GitHub mode (`tracker: github`, no map): one batched fetch, --expect as the intended state."""
+    backend_checks()
+    expect_checks()
+    orig = (rec.gh_available, rec.fetch_nodes, rec._gh_run, rec.RETRY_DELAYS, rec._sleep, rec.pr_merge_state,
+            rec.fetch_issue, rec._github_remote)
+    try:
+        rec.RETRY_DELAYS, rec._sleep = (0, 0, 0), lambda s: None
+        rec.gh_available = lambda: True
+        with tempfile.TemporaryDirectory() as td:
+            arch, nomap = _arch(td, "github"), str(Path(td) / "BACKLOG_MAP.md")
+            base = ["--arch", arch, "--backlog", nomap]
+            calls = []
+
+            def serve(table):
+                def fetch(nums, comments=False, edges=False):
+                    calls.append((list(nums), comments, edges))
+                    return {n: table.get(n) for n in nums}
+                rec.fetch_nodes = fetch
+
+            serve({7: gh_node(7, comments=["Shipped in https://github.com/o/r/pull/42"], parent=5, blocked=(6,))})
+            code, out = _run(base + ["--ids", "BT-007", "--pr-id", "BT-007",
+                                     "--expect", "BT-7:status=in review;BT-7:blocked_by=BT-6;BT-7:parent=BT-5"])
+            check("github: matching expectation -> OK, exit 0", code == 0 and "[MIRROR-OK BT-007]" in out)
+            check("github: one batched fetch, comments only when a PR link is checked", calls == [([7], True, False)])
+            check("github: nothing written next to the absent map", not Path(nomap).exists()
+                  and sorted(p.name for p in Path(td).iterdir()) == ["ARCHITECTURE.md"])
+
+            serve({7: gh_node(7, status=None)})
+            code, out = _run(base + ["--ids", "BT-007", "--expect", "BT-7:status=in review"])
+            check("github: missing status label -> drift", code == 1 and "[MIRROR-DRIFT BT-007: status expect=in review gh=None]" in out)
+
+            serve({7: gh_node(7, comments=["unrelated"])})
+            code, out = _run(base + ["--ids", "BT-007", "--pr-id", "BT-007", "--expect", "BT-7:status=in review"])
+            check("github: missing PR-link comment -> drift", code == 1 and "pr-link absent" in out)
+
+            serve({7: gh_node(7, status="done", state="OPEN")})
+            code, out = _run(base + ["--ids", "BT-007", "--expect", "BT-7:status=done"])
+            check("github: open-but-done -> drift", code == 1 and "[MIRROR-DRIFT BT-007: open on GitHub, expect=done]" in out)
+            serve({7: gh_node(7, status="in review", state="CLOSED")})
+            code, out = _run(base + ["--ids", "BT-007", "--expect", "BT-7:status=in review"])
+            check("github: closed-but-not-done -> drift", code == 1 and "closed on GitHub, expect=in review" in out)
+
+            serve({7: None})
+            code, out = _run(base + ["--ids", "BT-007", "--expect", "BT-7:status=done"])
+            check("github: issue absent -> not found", code == 1 and "[MIRROR-DRIFT BT-007: gh issue #7 not found]" in out)
+
+            serve({n: gh_node(n) for n in (1, 2, 3, 4)})
+            calls.clear()
+            code, out = _run(base + ["--ids", "BT-001,BT-002,BT-003,BT-004", "--expect", "BT-1:status=in review;BT-4:status=in review"])
+            check("github: 4 ids -> one fetch, ids without an expectation are only checked to exist",
+                  code == 0 and len(calls) == 1 and "[MIRROR-OK BT-001,BT-002,BT-003,BT-004]" in out)
+
+            check("github: --fields narrows the expected fields",
+                  _run(base + ["--ids", "BT-001", "--fields", "milestone", "--expect", "BT-1:status=done"])[0] == 0)
+            check("github: --expect-file works like --expect", _run(base + ["--ids", "BT-001", "--expect-file",
+                  str(_expect_file(td, "BT-1:status=in review\n"))])[0] == 0)
+            with tempfile.TemporaryDirectory() as td2:
+                check("local: --with-edges / --expect need tracker github", _arg_error(
+                    ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007", "--with-edges", "dependents"]))
+            check("github: --edges stays a separate run", _arg_error(base + ["--ids", "BT-007", "--edges", "dependents", "--pr-id", "BT-007"]))
+            check("github: map-only runs are refused", all(_arg_error(base + a) for a in (
+                ["--all-open"], ["--ids", "BT-001", "--heal", "--kind", "status", "--source", "gh"])))
+            check("github: a malformed --expect is an argument error", _arg_error(base + ["--ids", "BT-001", "--expect", "BT-1"]))
+
+            # combined mode: gate + dependents from ONE fetch
+            serve({7: gh_node(7, parent=5, blocking=((8, 5), (10, None)))})
+            rec.gh_available = lambda: True
+            rec.pr_merge_state = lambda bt, cache=None: "open"
+            calls.clear()
+            code, out = _run(base + ["--ids", "BT-007", "--pr-id", "BT-007", "--with-edges", "dependents",
+                                     "--expect", "BT-7:status=in review"])
+            drift = "pr-link absent" in out
+            check("combined: gate result and [CLEAR]/[KEEP] in one invocation",
+                  "[CLEAR BT-008 <- BT-007] same-unit" in out and "[KEEP BT-010 <- BT-007] cross-unit" in out and drift)
+            check("combined: one fetch with comments and edges", calls == [([7], True, True)])
+            check("combined: exit follows the gate", code == 1)
+            code, out = _run(base + ["--ids", "BT-007", "--with-edges", "dependents", "--expect", "BT-7:status=in review"])
+            check("combined: clean gate + edges -> exit 0 and both outputs", code == 0 and "[MIRROR-OK BT-007]" in out and "[CLEAR BT-008" in out)
+
+            serve({10: gh_node(10, blocked=(7,), parent=None)})
+            code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
+            check("github: --edges blockers reads the blockers from GitHub", "[BLOCKER-UNMET BT-010 <- BT-007]" in out and code == 1)
+
+            # failure handling: retried, then a clear halt; never a local fallback
+            rec.fetch_nodes = orig[1]
+            attempts = []
+            rec._gh_run = lambda args: attempts.append(args) or (1, "", "HTTP 502: bad gateway")
+            code, out = _run(base + ["--ids", "BT-007", "--expect", "BT-7:status=done"])
+            check("github: gh failure retried 3 times after the first try, then exit 3",
+                  len(attempts) == 4 and code == 3 and "[GH-UNAVAILABLE" in out and "HTTP 502" in out)
+            check("github: a failed run still writes nothing", sorted(p.name for p in Path(td).iterdir()) == ["ARCHITECTURE.md", "expect.txt"])
+
+            import json
+            attempts.clear()
+            rec._gh_run = lambda args: attempts.append(args) or (1, json.dumps({"data": {"repository": {"i_7": None}}, "errors": [
+                {"type": "NOT_FOUND", "path": ["repository", "i_7"]}]}), "")
+            check("github: a NOT_FOUND-only partial response is data, not a failure",
+                  rec.fetch_nodes([7]) == {7: None} and len(attempts) == 1)
+            rec._gh_run = lambda args: (0, json.dumps({"errors": [{"type": "RATE_LIMITED"}]}), "")
+            try:
+                rec.fetch_nodes([7])
+                check("github: a non-NOT_FOUND GraphQL error is a failure", False)
+            except rec.GhError:
+                check("github: a non-NOT_FOUND GraphQL error is a failure", True)
+
+            # pagination: ids are fetched 50 per call, every row comes back
+            queries = []
+
+            def fake(args):
+                q = next(a for a in args if a.startswith("query="))
+                queries.append(q)
+                nums = [int(n) for n in __import__("re").findall(r"i_(\d+): issue", q)]
+                return 0, json.dumps({"data": {"repository": {f"i_{n}": gh_node(n) for n in nums}}}), ""
+            rec._gh_run = fake
+            got = rec.fetch_nodes(list(range(1, 102)))
+            check("github: 101 ids -> 3 calls, all rows returned", len(queries) == 3 and sorted(got) == list(range(1, 102))
+                  and all(got[n]["number"] == n for n in got))
+            rec._gh_run = lambda args: (127, "", "gh: command not found")
+            try:
+                rec.fetch_nodes([1])
+                check("github: gh missing is a GhError", False)
+            except rec.GhError:
+                check("github: gh missing is a GhError", True)
+
+            # the local path is untouched by an explicit `tracker: local`
+            seen = []
+            rec.fetch_nodes = lambda *a, **k: seen.append(1)
+            lp = write_backlog(td)
+            rec.fetch_issue = lambda num, want_comments, want_state=False: gh_issue()
+            code, out = _run(["--arch", _arch(td, "local"), "--backlog", lp, "--ids", "BT-007"])
+            check("local: tracker local uses the map and never the batched fetch", code == 0 and not seen and "[MIRROR-OK BT-007]" in out)
+            code, out = _run(["--arch", _arch(td, None), "--backlog", lp, "--ids", "BT-007"])
+            check("local: no key + a map resolves to local", code == 0 and not seen)
+            rec._github_remote = lambda: False
+            code, out = _run(["--arch", _arch(td, None), "--backlog", str(Path(td) / "NO_MAP.md"), "--ids", "BT-007"])
+            check("unresolved backend: halt with a clear message, exit 3", code == 3 and "[TRACKER-UNRESOLVED" in out)
+    finally:
+        (rec.gh_available, rec.fetch_nodes, rec._gh_run, rec.RETRY_DELAYS, rec._sleep, rec.pr_merge_state,
+         rec.fetch_issue, rec._github_remote) = orig
+
+
+def _expect_file(td, text):
+    p = Path(td) / "expect.txt"
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         path = write_backlog(td)
@@ -912,6 +1138,7 @@ def main():
     summary_checks()
     heal_checks()
     edge_checks()
+    github_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
