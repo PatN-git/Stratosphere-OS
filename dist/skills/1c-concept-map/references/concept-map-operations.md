@@ -1,8 +1,8 @@
 ---
 name: concept-map-operations
 description: CLI verbs and local fallbacks for executing concept map tracker operations.
-timestamp: 2026-09-29
-version: "1.0.2"
+timestamp: 2026-10-22
+version: "1.1.0"
 ---
 
 # Concept Map Tracker Operations
@@ -23,8 +23,8 @@ Create the root tracking issue for the concept map.
   ```
   Write `.tmp/1c-concept-map-body.md` first from the template's **Artifact body** section only — never pipe the template file itself, whose frontmatter and instantiation instructions are not issue content.
 
-  And append a row for the map to `.memory/BACKLOG_MAP.md` (milestone-exempt, `status:in progress`, carrying the `concept:map` label).
-- **BT-LOCAL Fallback:**
+  Carry the `concept:map` and `status:in progress` labels, no milestone. Nothing is written to a local copy.
+- **BT-LOCAL Fallback (local backend):**
   Create a local map file at `docs/discovery/<slug>.map.md` copying the template body, and add a `BT-LOCAL-<n>` row to `.memory/BACKLOG_MAP.md`.
 
 ---

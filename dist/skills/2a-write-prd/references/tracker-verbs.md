@@ -47,5 +47,7 @@ These have no clean equal on the other backend; each is a named, accepted gap, n
 GitHub reads are scoped `--json` queries; the local backend scans the table.
 - `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body`
 - `list`: `gh issue list --label … --state … --json number,title,labels,milestone`
+- `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens; the local backend scans the table for that status)
+- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label
 - `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
 - Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` (GitHub mode) per `references/terminal-sync-invariant.md`.

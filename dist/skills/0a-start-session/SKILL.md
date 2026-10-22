@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.3"
-timestamp: 2026-10-20
+version: "1.2.0"
+timestamp: 2026-10-22
 ---
 
 # START SESSION
@@ -20,13 +20,13 @@ Restore session context (read-only), then activate: restore the branch and trans
 **Pre-check:** if `.memory/` is absent → output exactly `Repository uninitialized. Please run /stratosphere-setup first.` and HALT. This presence check is the only validation here — no skill or suite checks.
 
 ## Phase A — Hydrate (read-only)
-1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues in `.memory/BACKLOG_MAP.md`/GitHub: exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task. (`.memory/STATUS.md` may hint the last focus but is not authoritative.)
+1. **Resolve the task to resume** from the authoritative active set — the `status:in progress` issues (`wip` read, `references/tracker-verbs.md`; the local backend's set is the rows in `.memory/BACKLOG_MAP.md`): exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task. (`.memory/STATUS.md` may hint the last focus but is not authoritative.)
 2. Run the `load-memory` skill for that task.
 
 ## Phase B — Activate (side effects)
 1. If no task resolved (`Session Status: no-active-task`) → output next-step guidance (`/1a-research` or `/1b-concept-framing`) and HALT before any side effect.
 2. **Branch restore:** read STATUS `Current Branch`. If active/unmerged feature branch and repo not on it → check it out; if merged/unset → checkout default and pull. **NEVER create a branch** — `3d` owns branch creation; `0a` only restores an existing one.
-3. **State transition (first-slice rule):** set the target slice (`BT-XXX`) to `status:in progress` in `.memory/BACKLOG_MAP.md` and GitHub:
+3. **State transition (first-slice rule):** set the target slice (`BT-XXX`) to `status:in progress` with `set_status` (`references/tracker-verbs.md`; its local form edits the Status cell of `.memory/BACKLOG_MAP.md`); the GitHub form:
    `gh issue edit <n> --remove-label "status:planned" --remove-label "status:needs_spec" --remove-label "status:blocked" --remove-label "status:in review" --remove-label "status:done" --add-label "status:in progress"` (a closed slice is reopened by `/3d-implement-issue`).
    If it is a sub-issue, promote the parent epic (`BT-<parent>`) `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). Update `.memory/STATUS.md` as this session's resume hint (not the authoritative active set).
 

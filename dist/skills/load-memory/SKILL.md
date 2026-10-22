@@ -3,8 +3,8 @@ name: load-memory
 description: Read-only session-context reconstruction from the `.memory/` layer. Invoked inline by lifecycle workflows and /0a to restore context without re-reading the repo. Do not fire autonomously or on general requests; never mutates state.
 metadata:
   stratos.layer: execution
-version: "1.1.0"
-timestamp: 2026-07-17
+version: "1.2.0"
+timestamp: 2026-10-22
 ---
 
 # SKILL: Load Memory
@@ -18,7 +18,7 @@ Reconstruct read-only session context from the memory layer. Side-effect-free: n
 3. Read `.memory/LEARNINGS.md` (Active only; skip `## Superseded`).
 4. PRD / discovery / domain feature → `.memory/GLOSSARY.md` (Active only).
 5. Structure / state / boundary / cross-feature task → `.memory/ARCHITECTURE.md`.
-6. Read `.memory/BACKLOG_MAP.md` (WIP conflicts).
+6. WIP conflicts, by backend (`tracker:` in the `.memory/ARCHITECTURE.md` frontmatter; absent → local if `.memory/BACKLOG_MAP.md` exists, else github): github → `gh issue list --state open --label "status:in progress" --json number,title,labels`, never a whole-backlog read; local → read `.memory/BACKLOG_MAP.md`.
 7. DB / schema / migration / RLS task → `.memory/DATABASE_SCHEMA.md`.
 8. `.tsx` / UI / layout / styling task → `.memory/DESIGN.md` + `.memory/DESIGN_RULES.md`.
 9. Read the code files relevant to the active task, if any — never the whole codebase.
