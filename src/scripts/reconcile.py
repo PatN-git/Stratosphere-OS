@@ -663,7 +663,7 @@ _NODE = ("number state milestone{title} labels(first:50){nodes{name}} "
          "parent{number state milestone{title} labels(first:50){nodes{name}}}")
 
 
-def build_query(nums, comments, edges):
+def build_query(nums, comments=False, edges=False):
     sel = "...F blockedBy(first:100){nodes{...F}}"
     if comments:
         sel += " comments(last:100){nodes{body}}"
