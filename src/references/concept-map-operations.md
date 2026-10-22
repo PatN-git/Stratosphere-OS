@@ -19,11 +19,11 @@ Create the root tracking issue for the concept map.
 
 - **GitHub CLI:**
   ```bash
-  gh issue create --title "Concept Map: <Destination>" --label "concept:map" --body-file ".tmp/1c-concept-map-body.md"
+  gh issue create --title "Concept Map: <Destination>" --label "concept:map" --label "status:in progress" --body-file ".tmp/1c-concept-map-body.md"
   ```
   Write `.tmp/1c-concept-map-body.md` first from the template's **Artifact body** section only — never pipe the template file itself, whose frontmatter and instantiation instructions are not issue content.
 
-  Carry the `concept:map` and `status:in progress` labels, no milestone. Nothing is written to a local copy.
+  No milestone. Nothing is written to a local copy.
 - **BT-LOCAL Fallback (local backend):**
   Create a local map file at `docs/discovery/<slug>.map.md` copying the template body, and add a `BT-LOCAL-<n>` row to `.memory/BACKLOG_MAP.md`.
 

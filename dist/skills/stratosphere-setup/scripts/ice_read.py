@@ -23,6 +23,7 @@ EFFORT = {'small': 1, 'medium': 2, 'large': 3}
 CANDIDATE_STATUS = ('planned', 'needs_spec')
 REQUIRED = ('type:', 'mode:', 'tier:slice', 'size:')
 LIST_FIELDS = 'number,title,labels,milestone,body'
+LIST_LIMIT = 500  # gh issue list --limit; a result this long may have dropped issues
 
 
 def _number(text):
@@ -84,7 +85,7 @@ def fetch_open_issues():
     for i in range(len(reconcile.RETRY_DELAYS) + 1):
         if i:
             reconcile._sleep(reconcile.RETRY_DELAYS[i - 1])
-        rc, out, err = reconcile._gh_run(['issue', 'list', '--state', 'open', '--limit', '500', '--json', LIST_FIELDS])
+        rc, out, err = reconcile._gh_run(['issue', 'list', '--state', 'open', '--limit', str(LIST_LIMIT), '--json', LIST_FIELDS])
         try:
             return json.loads(out)
         except json.JSONDecodeError:
@@ -102,6 +103,8 @@ def main(argv=None):
         print(f"[GH-UNAVAILABLE: {e}; GitHub mode never falls back to a local copy]")
         return 3
     lines, missing = candidates(issues)
+    if len(issues) >= LIST_LIMIT:
+        missing.append(f"[TRUNCATED: {len(issues)} open issues is the read cap; candidates may be missing]")
     print("\n".join(lines + missing))
     return 0
 

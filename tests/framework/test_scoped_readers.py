@@ -86,3 +86,23 @@ def test_post_merge_sync_in_github_mode_queries_dependents_by_id_not_all_open():
     text = read_src("references/post-merge-sync.md")
     assert re.search(r"reconcile\.py --ids <[^`]*--edges dependents", text), "no `--ids ... --edges dependents` form"
     assert "--edges dependents --all-open" in text, "the local `--all-open` form must stay"
+
+
+def test_3c_gate_expects_needs_spec_for_a_spike_not_planned():
+    """Audit watch: step 2 keeps Spikes at `needs_spec`, so the expect lines must not say `planned` for every item."""
+    gate = read_src("workflows/3c-sprint-planning.md").split("**Terminal sync gate**", 1)[1]
+    expect_line = next(l for l in gate.splitlines() if ".tmp/3c-expect.txt" in l)
+    assert "status=needs_spec" in expect_line and "Spike" in expect_line
+
+
+def test_the_concept_map_is_created_with_its_status_label():
+    """Audit watch: GitHub is the only record, so the create command itself carries `status:in progress`."""
+    text = read_src("references/concept-map-operations.md")
+    create = next(l for l in text.splitlines() if "gh issue create" in l and "concept:map" in l)
+    assert 'status:in progress' in create
+
+
+def test_0b_gate_says_how_to_read_a_dependents_other_blockers():
+    """Audit watch: `--edges dependents` lists only the edges to the merged ids; the other blockers come from the issue."""
+    gate = next(l for l in read_src("references/post-merge-sync.md").splitlines() if ".tmp/0b-expect.txt" in l and "blocked_by" in l)
+    assert "gh issue view" in gate and "blockedBy" in gate

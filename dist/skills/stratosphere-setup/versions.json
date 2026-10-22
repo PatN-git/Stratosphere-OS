@@ -116,7 +116,7 @@
       "version": "1.0.0"
     },
     "skills/0b-stop-session/references/post-merge-sync.md": {
-      "sha256": "bb62c35830c183106464670cf4cdecf502024904721181f5181f2fe2782c8288",
+      "sha256": "35c24af9812771ea2aa71b9617f4b3e0413513b54cb45980dd45f9b43635515a",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
@@ -196,7 +196,7 @@
       "version": "1.4.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
-      "sha256": "6440ce1ba2436ce4070a9346242a9d35185f795db37c26a7b912a2034881fd83",
+      "sha256": "2ff9835c4587c96d9b9ba8e8484718306ea576d8e7e3383b40a6dfd0a2e8a6c7",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
@@ -386,7 +386,7 @@
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "cb5068bd97e6ec6bf9518a6ed44c11a5ab10d405864ef3f2b56481257296d1dd",
+      "sha256": "140628c034d96974da4dd174cb4117c1635bb87cd4d877abe1c0bf9e871a9d7f",
       "timestamp": "2026-10-22",
       "version": "2.6.0"
     },

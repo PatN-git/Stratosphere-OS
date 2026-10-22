@@ -110,3 +110,17 @@ def test_main_halts_on_a_gh_failure_and_never_falls_back_to_a_map(monkeypatch, c
     out = capsys.readouterr().out
     assert "GH-UNAVAILABLE" in out and "BACKLOG" not in out
     assert len(calls) == len(reconcile.RETRY_DELAYS) + 1
+
+
+def test_main_warns_when_the_open_issue_list_hits_the_cap(monkeypatch, capsys):
+    """Audit watch: `gh issue list --limit` silently drops issues past the cap; the output says so."""
+    issues = [_issue(n, LEAF + ["status:planned"], _body("2.0", "100%")) for n in range(1, ice_read.LIST_LIMIT + 1)]
+    monkeypatch.setattr(reconcile, "_gh_run", lambda args: (0, json.dumps(issues), ""))
+    assert ice_read.main(["candidates"]) == 0
+    assert "[TRUNCATED" in capsys.readouterr().out.splitlines()[-1]
+
+
+def test_main_does_not_warn_below_the_cap(monkeypatch, capsys):
+    monkeypatch.setattr(reconcile, "_gh_run", lambda args: (0, json.dumps([_issue(1, LEAF + ["status:planned"])]), ""))
+    assert ice_read.main(["candidates"]) == 0
+    assert "TRUNCATED" not in capsys.readouterr().out
