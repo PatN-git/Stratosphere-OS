@@ -654,8 +654,8 @@ def gh_query(query):
         repo = (body.get('data') or {}).get('repository')
         if repo is not None and all(e.get('type') == 'NOT_FOUND' for e in errors):
             return repo
-        why = next((s for s in (err.strip(), *(e.get('message') or e.get('type') or '' for e in errors), f"exit {rc}") if s),
-                   '').splitlines()[0]
+        reasons = [err.strip(), *(e.get('message') or e.get('type') or '' for e in errors), f"exit {rc}"]
+        why = next(r for r in reasons if r).splitlines()[0]
     raise GhError(f"gh api graphql failed after {len(RETRY_DELAYS) + 1} attempts: {why}")
 
 
@@ -712,17 +712,24 @@ def node_row(node):
 def rows_from_nodes(nodes):
     """{BT-id: row} of the fetched nodes and every issue they reference (blockers, dependents, parents), so edges_cmd
     and edge_verdict run unchanged. Referenced issues are stubs; a fetched node overrides its stub. Pure."""
+    found = [n for n in nodes.values() if n]
     rows = {}
-    for node in filter(None, nodes.values()):
+
+    def put(node):
+        rows[_bt(node['number'])] = node_row(node)
+
+    for node in found:
         parent = node.get('parent')
         if parent:
-            rows[_bt(parent['number'])] = node_row(parent)
+            put(parent)
             rows[_bt(parent['number'])]['blocked_by'] = {_bt(b['number']) for b in _conn(parent, 'blockedBy')}
-            rows.update({_bt(b['number']): node_row(b) for b in _conn(parent, 'blockedBy')})
-        rows.update({_bt(b['number']): node_row(b) for key in ('blockedBy', 'blocking') for b in _conn(node, key)})
-    for node in filter(None, nodes.values()):
-        rows[_bt(node['number'])] = node_row(node)
-    for node in filter(None, nodes.values()):
+            for blocker in _conn(parent, 'blockedBy'):
+                put(blocker)
+        for ref in _conn(node, 'blockedBy') + _conn(node, 'blocking'):
+            put(ref)
+    for node in found:  # fetched nodes last: they carry the full row
+        put(node)
+    for node in found:  # a blocking edge is a stored `blocked_by` on the dependent
         for dep in _conn(node, 'blocking'):
             rows[_bt(dep['number'])]['blocked_by'].add(_bt(node['number']))
     return rows
