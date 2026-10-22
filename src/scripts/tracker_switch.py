@@ -162,6 +162,38 @@ def report_other_hits(numbers):
                 print(f"[OTHER-HIT {p.as_posix()}:{n} {m.group(0)} -> {padded(num) if num else 'a new BT id'} (not edited)]")
 
 
+def sync_row(row, numbers, bodies):
+    """Bring one row's issue up to date: Refs/ICE lines on an existing issue, closed when done, Parent and Blocked by linked."""
+    n = numbers[row['id']]
+    is_existing = real_number(row['id']) is not None
+    if is_existing and (lines := extra_lines(row, bodies.get(n, ''))):
+        body = bodies.get(n, '').rstrip('\n') + '\n\n' + '\n'.join(lines) + '\n'
+        gh('issue', 'edit', str(n), '--body-file', body_file(body))
+    if row['status'] == 'done' and not is_existing:
+        gh('issue', 'close', str(n))
+    links = [(b, 'blockedBy') for b in row['blocked']]
+    if row['parent'] not in NONE:
+        links.insert(0, (row['parent'], 'parent'))
+    for other, kind in links:
+        target = numbers.get(other) or real_number(other)
+        if target is None:
+            print(f"[LINK-SKIP {row['id']}: {other} is not in the map]")
+        else:
+            link(n, target, kind)
+
+
+def archive_map():
+    """Move the map to `.memory/archive/`, under a fresh name when an earlier run archived one."""
+    dst = Path('.memory/archive/BACKLOG_MAP.md')
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    n = 0
+    while dst.exists():
+        n += 1
+        dst = dst.with_name(f"BACKLOG_MAP.{n}.md")
+    shutil.move(MAP, dst)
+    return dst
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Move a local-tracker project to GitHub (dry run unless --apply).")
     ap.add_argument('--apply', action='store_true', help="write: create the issues, rewrite ids, archive the map, set tracker: github")
@@ -200,29 +232,16 @@ def main(argv=None):
                 created += 1
                 print(f"[CREATED {r['id']} -> {padded(numbers[r['id']])}]")
         for r in rows:
-            n = numbers[r['id']]
-            if real_number(r['id']) and (lines := extra_lines(r, bodies.get(n, ''))):
-                gh('issue', 'edit', str(n), '--body-file', body_file(bodies.get(n, '').rstrip('\n') + '\n\n' + '\n'.join(lines) + '\n'))
-            if r['status'] == 'done' and not real_number(r['id']):
-                gh('issue', 'close', str(n))
-            for other, kind in [(r['parent'], 'parent')] * (r['parent'] not in NONE) + [(b, 'blockedBy') for b in r['blocked']]:
-                if numbers.get(other) is None and real_number(other) is None:
-                    print(f"[LINK-SKIP {r['id']}: {other} is not in the map]")
-                else:
-                    link(n, numbers.get(other) or real_number(other), kind)
+            sync_row(r, numbers, bodies)
     except GhFail as e:
         print(f"[SWITCH-FAIL: {e}; no local file was rewritten, the map and key are unchanged. Fix the cause and re-run: created issues are found again by their marker]")
         return 1
     files = rewrite(numbers, True)
     report_other_hits(numbers)
-    dst = Path('.memory/archive/BACKLOG_MAP.md')
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    while dst.exists():
-        dst = dst.with_name(f"BACKLOG_MAP.{len(list(dst.parent.glob('BACKLOG_MAP*.md')))}.md")
-    if has_map:
-        shutil.move(MAP, dst)
+    archived = archive_map() if has_map else None
     write_tracker(ARCH, 'github')
-    print(f"[SWITCHED: {created} issue(s) created, {files} file(s) rewritten, map archived to {dst.as_posix()}, tracker: github]")
+    print(f"[SWITCHED: {created} issue(s) created, {files} file(s) rewritten, "
+          f"map archived to {archived.as_posix() if archived else 'nowhere (none existed)'}, tracker: github]")
     return 0
 
 
