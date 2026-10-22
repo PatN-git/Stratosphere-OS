@@ -195,3 +195,64 @@ def test_guard_source_and_tests_are_clean_under_itself(tmp_path):
         shutil.copy2(src, tmp_path / rel)
     out = run_guard(tmp_path)
     assert out.returncode == 0, out.stdout + out.stderr
+
+
+ARCH_TIP = (
+    "# Architecture\n\n## Structural Rules\n"
+    "- **[[A-003]] [LAW]** Keep files under 400 lines. Check: tests/standards/size.test.js (tolerance 10%)\n"
+    "- **[[A-004]] [LAW]** A rule with no binding.\n\n"
+    "## Floor exceptions\n- A-003 **/*.test.* — tests exempt\n"
+)
+
+
+def _tip_repo(tmp_path, arch=ARCH_TIP):
+    git(tmp_path, "init", "-b", "main")
+    write(tmp_path, ".memory/ARCHITECTURE.md", arch)
+    write(tmp_path, "app.py", "x = 1\n")
+    git(tmp_path, "add", "-A")
+    git(tmp_path, "commit", "-m", "chore: base")
+    git(tmp_path, "checkout", "-b", "feat/x")
+    return tmp_path
+
+
+def test_a_rule_id_row_added_on_the_branch_is_a_violation_and_prints_no_info(tmp_path):
+    repo = _tip_repo(tmp_path, "# Architecture\n")
+    write(repo, ".memory/ARCHITECTURE.md", "# Architecture\n\n## Floor exceptions\n- A-003 src/big.js — legacy, split later\n")
+    out = run_guard(repo)
+    assert out.returncode == 1 and "[exception-added]" in out.stdout and "A-003 src/big.js" in out.stdout
+    assert "info:" not in out.stdout
+
+
+def test_default_tip_rule_id_rows_and_bound_rules_are_printed_on_a_clean_run(tmp_path):
+    repo = _tip_repo(tmp_path)
+    write(repo, "app.py", "x = 2\n")
+    out = run_guard(repo)
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert "info: exception A-003 **/*.test.*" in out.stdout
+    assert "info: bound A-003 tests/standards/size.test.js" in out.stdout
+    assert "A-004" not in out.stdout  # an unbound rule is not listed
+
+
+def test_removing_a_row_on_the_branch_is_silent_and_the_tip_still_governs(tmp_path):
+    repo = _tip_repo(tmp_path)
+    write(repo, ".memory/ARCHITECTURE.md", ARCH_TIP.replace("- A-003 **/*.test.* — tests exempt\n", ""))
+    out = run_guard(repo)
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert "info: exception A-003 **/*.test.*" in out.stdout  # the human-merged tip, not the branch copy
+
+
+def test_a_check_marker_added_only_on_the_branch_is_not_honoured(tmp_path):
+    repo = _tip_repo(tmp_path)
+    write(repo, ".memory/ARCHITECTURE.md",
+          ARCH_TIP.replace("A rule with no binding.", "A rule with no binding. Check: tests/standards/x.test.js"))
+    out = run_guard(repo)
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert "bound A-004" not in out.stdout and "bound A-003" in out.stdout
+
+
+def test_only_memory_rule_ids_are_exception_rows(tmp_path):
+    repo = _tip_repo(tmp_path, "# Architecture\n")
+    write(repo, ".memory/ARCHITECTURE.md",
+          "# Architecture\n\n## Floor exceptions\n- BT-214 src/x.js — a backlog id is not a rule\n- a-003 src/y.js — lower case\n- A-03 src/z.js — two digits\n")
+    out = run_guard(repo)
+    assert out.returncode == 0, out.stdout + out.stderr
