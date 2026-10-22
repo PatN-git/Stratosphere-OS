@@ -1,0 +1,10 @@
+{"case":"so-BT-118","labels":[
+{"id":"g1","ac":"Stress Cases: Missing transitive reference causes build.py to exit with status 1 (fatal error)","desc":"The stress-case test only called closure_for() directly and asserted a non-zero code; no test ran build.py end-to-end to prove exit status exactly 1 for direct and transitive missing references.","cls":"missing-test","key_terms":["transitive","closure_for","exit","status","subprocess","build.py"],"min_terms":2,"evidence":"5e83873 tests/framework/test_dist_bundle.py","label_confidence":"high"},
+{"id":"g2","ac":"All 26 skills preserve relative references/ (and missing reference is a fatal build error)","desc":"build.py enforced cited-reference self-containment only for lifecycle skills; execution skills citing a reference they do not ship did not fail the build.","cls":"unhandled-error-path","key_terms":["execution","skills","cited_refs","references","micro-tdd","self-containment"],"min_terms":2,"evidence":"5e83873 build/build.py","label_confidence":"high"},
+{"id":"g3","ac":"Update scripts/check.sh and tests/install-harness for new structure (single dist/skills bundle)","desc":"sync-skills SKILL.md still pointed agents at the retired plugin directory instead of the stratosphere-setup skill payload where sync_skills.py now ships, with no test pinning it.","cls":"wiring-omission","key_terms":["sync-skills","sync_skills","stratosphere-setup","plugins"],"min_terms":2,"evidence":"5e83873 src/commands/sync-skills/SKILL.md","label_confidence":"low"}
+],"not_labeled":[
+"5e83873 sync_skills.py host detection treating .claude/worktrees as Claude install: behavior bug outside the slice ACs (no AC on host detection)",
+"5e83873 scaffold.py warning on unreadable versions.json manifest: error-handling hygiene, not an AC",
+"5e83873 version bump to 4.2.1, README badge, removed unused subprocess import: housekeeping/Standards",
+"375fe7a marketplace metadata.description and removing stale installer wording: validator warning/doc wording, not in ACs"
+]}

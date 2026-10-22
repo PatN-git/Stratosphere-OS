@@ -1,0 +1,8 @@
+{
+ "id": "m-so142-delete_test",
+ "case": "so-BT-142",
+ "mutation": "delete_test",
+ "file": "tests/scripts/test_okf_rebuild_indices.py",
+ "cls": "missing-test",
+ "desc": "The test 'test_rebuild_indices_writes_listing_per_directory' in tests/scripts/test_okf_rebuild_indices.py was removed, so the behavior it asserted is no longer proven by any test."
+}

@@ -136,6 +136,101 @@ def test_select_eligible_dep_exclusion():
     print("PASS"); return True
 
 
+def _gh_list_stub(monkeypatch_target, issues):
+    """Fake `gh issue list` output for _sprint_candidates (no network)."""
+    class _R:
+        returncode, stderr = 0, ""
+        stdout = json.dumps(issues)
+    monkeypatch_target.run = lambda *a, **k: _R()
+
+
+def _blocked_pair(blocker_state="CLOSED"):
+    blocker = {"number": 43, "title": "t", "body": "x", "state": blocker_state,
+               "labels": [{"name": "mode:AFK"}, {"name": "tier:slice"}]}
+    dep = {"number": 42, "title": "t", "body": "Blocked-by: 43", "state": "OPEN",
+           "labels": [{"name": "mode:AFK"}, {"name": "tier:slice"}]}
+    return [dep, blocker]
+
+
+def _eligible_ids(pr_state, blocker_state="CLOSED", looked_up=None):
+    """Run _sprint_candidates -> select_eligible with reconcile.pr_merge_state stubbed to `pr_state`."""
+    import subprocess
+
+    class _Rec:
+        @staticmethod
+        def pr_merge_state(bt, cache=None):
+            if looked_up is not None:
+                looked_up.append((bt, cache is not None))
+            return pr_state
+
+    orig_run, orig_load = subprocess.run, dispatch._load_reconcile
+    try:
+        _gh_list_stub(subprocess, _blocked_pair(blocker_state))
+        dispatch._load_reconcile = lambda: _Rec
+        return {s["slice_id"] for s in dispatch.select_eligible(dispatch._sprint_candidates())}
+    finally:
+        subprocess.run, dispatch._load_reconcile = orig_run, orig_load
+
+
+def test_closed_blocker_gated_on_pr_merge_state():
+    print("--- test_closed_blocker_gated_on_pr_merge_state ---")
+    assert "42" not in _eligible_ids("open"), "closed blocker with an unmerged PR must keep dependent ineligible"
+    assert "42" in _eligible_ids("merged")
+    assert "42" in _eligible_ids("none"), "closed with no PR comment (spike/manual close) is satisfied"
+    assert "42" not in _eligible_ids(None), "gh failure -> not done"
+    print("PASS"); return True
+
+
+def test_closed_unmerged_blocker_never_redispatched():
+    print("--- test_closed_unmerged_blocker_never_redispatched ---")
+    got = _eligible_ids("open")
+    assert "43" not in got, f"a closed issue must never be dispatch-eligible: {got}"
+    print("PASS"); return True
+
+
+def test_open_blocker_unchanged_and_no_lookup():
+    print("--- test_open_blocker_unchanged_and_no_lookup ---")
+    seen = []
+    got = _eligible_ids("merged", blocker_state="OPEN", looked_up=seen)
+    assert "42" not in got and "43" in got, got
+    assert seen == [], f"open blockers need no PR lookup: {seen}"
+    print("PASS"); return True
+
+
+def test_lookup_only_for_blockers_with_shared_cache():
+    print("--- test_lookup_only_for_blockers_with_shared_cache ---")
+    import subprocess
+    calls = []
+    issues = _blocked_pair() + [
+        {"number": 99, "title": "t", "body": "y", "state": "CLOSED", "labels": [{"name": "mode:AFK"}]},  # closed, not a blocker
+        {"number": 44, "title": "t", "body": "Blocked-by: 43", "state": "OPEN", "labels": [{"name": "mode:AFK"}]},
+    ]
+
+    class _Rec:
+        @staticmethod
+        def pr_merge_state(bt, cache=None):
+            calls.append((bt, id(cache)))
+            return "merged"
+
+    orig_run, orig_load = subprocess.run, dispatch._load_reconcile
+    try:
+        _gh_list_stub(subprocess, issues)
+        dispatch._load_reconcile = lambda: _Rec
+        dispatch._sprint_candidates()
+    finally:
+        subprocess.run, dispatch._load_reconcile = orig_run, orig_load
+    assert [c[0] for c in calls] == ["BT-43"], calls
+    assert calls[0][1] != id(None), "a cache dict must be passed"
+    print("PASS"); return True
+
+
+def test_load_reconcile_resolves_sibling_scripts_dir():
+    print("--- test_load_reconcile_resolves_sibling_scripts_dir ---")
+    rec = dispatch._load_reconcile()
+    assert callable(rec.pr_merge_state), "reconcile.py must be reachable from the pack (../../scripts)"
+    print("PASS"); return True
+
+
 # ---- P2: secret hygiene / log-scan ----
 def test_secret_never_logged():
     print("--- test_secret_never_logged ---")
@@ -157,12 +252,44 @@ def test_secret_never_logged():
     print("PASS"); return True
 
 
+def test_merge_state_reads_the_named_repo_and_restores_gh_repo():
+    """--repo X: the PR lookup runs with GH_REPO=X (gh reads it), and the caller's GH_REPO is restored."""
+    import os
+    seen = []
+
+    class Rec:
+        @staticmethod
+        def pr_merge_state(bt, cache):
+            seen.append((bt, os.environ.get("GH_REPO")))
+            return "merged"
+
+    prev = os.environ.pop("GH_REPO", None)
+    try:
+        assert dispatch._merge_state(Rec, 70, {}, "owner/other") == "merged"
+        assert seen[-1] == ("BT-70", "owner/other")
+        assert "GH_REPO" not in os.environ
+        os.environ["GH_REPO"] = "owner/mine"
+        dispatch._merge_state(Rec, 71, {}, "owner/other")
+        assert os.environ["GH_REPO"] == "owner/mine"
+        dispatch._merge_state(Rec, 72, {})
+        assert seen[-1] == ("BT-72", "owner/mine")
+    finally:
+        os.environ.pop("GH_REPO", None)
+        if prev is not None:
+            os.environ["GH_REPO"] = prev
+    print("PASS"); return True
+
+
 TESTS = [
+    test_merge_state_reads_the_named_repo_and_restores_gh_repo,
     test_config_missing_key_fails_closed, test_config_reads_dotenv, test_env_beats_dotenv,
     test_preflight_eligible_and_ineligible,
     test_dispatch_one_writes_ledger, test_dispatch_idempotent,
     test_dispatch_many_partial_failure_and_cap, test_select_eligible_dep_exclusion,
     test_secret_never_logged,
+    test_closed_blocker_gated_on_pr_merge_state, test_closed_unmerged_blocker_never_redispatched,
+    test_open_blocker_unchanged_and_no_lookup, test_lookup_only_for_blockers_with_shared_cache,
+    test_load_reconcile_resolves_sibling_scripts_dir,
 ]
 
 if __name__ == "__main__":

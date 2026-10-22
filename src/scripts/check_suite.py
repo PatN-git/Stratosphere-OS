@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic integrity checks run by stratosphere-setup and stratosphere-update.
 
-  check_suite.py suite       [--skills-dir DIR]   all 23 lifecycle skills present + uncorrupted
+  check_suite.py suite       [--skills-dir DIR]   all 24 lifecycle skills present + uncorrupted
   check_suite.py visibility  [--project P] [--host claude|agents|auto]   system pack visible to the host
   check_suite.py legacy      [--project P] [--apply]   stale pre-canonical-bundle paths (incl. skills.sh globals
                                                        in ~/.gemini/antigravity/skills and old-layout plugin roots,
@@ -21,9 +21,9 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent  # <skills dir>/stratosphere-setup
 
-# The 23 Layer 1 skills (`stratos.layer: lifecycle`). A test guards this against the bundle.
+# The 24 Layer 1 skills (`stratos.layer: lifecycle`). A test guards this against the bundle.
 LIFECYCLE_SKILLS = [
-    "0a-start-session", "0b-stop-session", "0c-handoff", "0d-nightly-consolidation",
+    "0a-start-session", "0b-stop-session", "0c-handoff", "0d-nightly-consolidation", "0e-plain-english",
     "1a-research", "1b-concept-framing", "1c-concept-map",
     "2a-write-prd", "2b-interface-design", "2c-reconcile-specs", "2z-write-spec",
     "3a-version-planning", "3b-create-issue", "3c-sprint-planning", "3d-implement-issue",

@@ -1,0 +1,8 @@
+{
+ "id": "m-so143-delete_step",
+ "case": "so-BT-143",
+ "mutation": "delete_step",
+ "file": "src/workflows/2a-write-prd.md",
+ "cls": "wiring-omission",
+ "desc": "The step in src/workflows/2a-write-prd.md that runs or halts on `contract_check` was deleted, so the workflow no longer wires it in."
+}

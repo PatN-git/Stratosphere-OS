@@ -1,0 +1,9 @@
+case,arm,k,tokens
+m-so120-weaken,B,1,75541
+m-so120-weaken,P,1,75970
+m-so143-delete_step,B,1,88806
+m-so143-delete_step,P,1,98381
+m-so143-remove_literal,B,1,107414
+m-so143-remove_literal,P,1,115960
+m-so142-delete_test,B,1,95149
+m-so142-delete_test,P,1,99908

@@ -1,7 +1,7 @@
 ---
-description: Feature-level acceptance audit run once per feature at 4a Phase 5 Step 8, immediately before `gh pr ready`. Closes the gap where N slice-scoped audits never ask whether the assembled feature satisfies the parent PRD.
-version: "1.1.0"
-timestamp: 2026-10-13
+description: Feature-level acceptance audit run once per epic, when it completes, at 4a Phase 5 Step 8, immediately before `gh pr ready`. Closes the gap where N slice-scoped audits never ask whether the assembled feature satisfies the parent PRD.
+version: "1.1.1"
+timestamp: 2026-10-20
 ---
 
 # Feature Acceptance Audit
@@ -11,7 +11,7 @@ Slice audits resolve their inputs per slice: slice diff, slice AC. A PRD cut int
 Regression is already covered — the repo-wide suite runs on the full feature branch at every ship. This gate covers **conformance**.
 
 ## When
-`4a` Phase 5 Step 8 only, once the Epic Check is already true, before `gh pr ready`. Once per feature, never per slice — an `audit-only` run never reaches it.
+`4a` Phase 5 Step 8 only, once the Epic Check is already true, before `gh pr ready`. Once per epic when it becomes complete (several may complete in one release PR), never per slice — an `audit-only` run never reaches it.
 
 ## Run
 One **Strict Business-Logic Auditor** subagent under the Phase 2 guardrail: audit and format the table only; no edits, commits, or pushes.

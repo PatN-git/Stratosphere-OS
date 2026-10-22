@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.4.0"
-timestamp: 2026-10-16
+version: "3.5.0"
+timestamp: 2026-10-20
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -29,17 +29,17 @@ timestamp: 2026-10-16
 - **Intermediates:** Store all temporary files, scratch logs, scraped data, and scratch scripts in `.tmp/` (ephemeral, regeneratable). Never inline multi-line or quote-heavy code or file content in a shell command (`python -c`, heredocs): write it with the file-write tool, code to `.tmp/`.
 
 ## 4. Version Control
-- **Granularity:** one branch + one PR per FEATURE (the parent BT / PRD). Each implementable slice (child BT issue) is committed onto that feature branch; the single feature PR accumulates them. A standalone issue with no parent feature degenerates to its own branch+PR.
-- **Isolation:** plain git branches (single working dir). Worktrees are allowed but not required; the workflows assume branches.
-- **Branch name:** `<type>/BT-<parentPadded>-<slug>`, `<type>` from the PARENT feature's `type:` label (normally `feat`).
-- **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label. (Branch is keyed to the feature; each commit is traceable to its slice.)
+- **Granularity:** one branch + one PR per SHIP UNIT: the slice's release `vX.Y` (milestone `vX.Y.Z`), else its parent epic, else itself (standalone). Every slice of the unit commits onto that branch; its one PR accumulates them (several epics and sprints per release). Resolve with `pr_body.py unit`.
+- **Isolation:** plain git branches (single working dir); worktrees allowed, not required.
+- **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. An epic's slice needs a release milestone (3d halts without one).
+- **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label.
 - **main/master:** never a work target for code. It is only a base to branch from and a merge target.
-- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single feature PR; it never creates the first commit and never merges.
-- **Merge:** a human merges the feature PR after review (HITL outward action). Workflows never merge.
+- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single unit PR; it never creates the first commit and never merges.
+- **Merge:** a human merges the unit PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
 - **CI-fix exception:** after ship confirmation, 4a may commit/push at most 2 `fix(BT-n): ci` commits for a small `ci_gate.py` failure; a 3z-dispatched 3d implementer only commits, `ship-only` pushes; never `main`/merge. See `.agents/skills/4a-verify-and-ship/references/ci-gate.md`.
-- **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected — the artifact must be readable by whoever picks the work up next, not stranded in one working copy. Exactly one document per run, **never code**, never swept drift; nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
+- **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected. Exactly one document per run, **never code**, never swept drift; nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
  
 ## 5. Operating Principles
 - **Think Before Coding:** For non-trivial tasks, state assumptions, tradeoffs, and a short plan before coding.

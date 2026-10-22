@@ -1,0 +1,17 @@
+{
+ "case": "m-so143-delete_step",
+ "labels": [
+  {
+   "id": "g1",
+   "ac": "The step in src/workflows/2a-write-prd.md that runs or halts on `contract_check` was deleted, so the workflow no longer ",
+   "desc": "The step in src/workflows/2a-write-prd.md that runs or halts on `contract_check` was deleted, so the workflow no longer wires it in.",
+   "cls": "wiring-omission",
+   "key_terms": [
+    "contract_check"
+   ],
+   "min_terms": 1,
+   "evidence": "seeded m-so143-delete_step src/workflows/2a-write-prd.md",
+   "label_confidence": "high"
+  }
+ ]
+}

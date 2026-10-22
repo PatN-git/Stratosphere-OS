@@ -1,0 +1,8 @@
+{
+ "id": "m-so143-remove_literal",
+ "case": "so-BT-143",
+ "mutation": "remove_literal",
+ "file": "src/scripts/contract_check.py",
+ "cls": "text-absent",
+ "desc": "The literal `[CONTRACT-SKIP]` named by an acceptance criterion no longer appears in the implementation (changed to `contract-skip`)."
+}

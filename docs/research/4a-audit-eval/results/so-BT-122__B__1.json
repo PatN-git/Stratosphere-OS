@@ -1,0 +1,5 @@
+{"findings":[
+{"ac":"AC5 Stress Cases: corrupted/missing references/ detected","conf":62,"text":"skill_problems() in check_suite.py only tests references/<name> existence (is_file); a present-but-empty or truncated reference file, or a truncated SKILL.md body, passes. Tests (test_suite_detects_missing_reference_file) cover only a deleted file, so 'corrupted' is unproven."},
+{"ac":"AC3 /stratosphere-update refreshes skills from dist/skills/","conf":60,"text":"Phase 0.6 in stratosphere-update only asserts that Phase 1's scaffold.py --update 'places' the skills. No new text or test proves a refresh of installed skills from the dist/skills bundle; the tests cover legacy cleanup and wiring order only."},
+{"ac":"AC1 remediation command","conf":60,"text":"SUITE_REMEDIATION prints the literal 'npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y' with an unfilled <agent> placeholder, while the issue and design cite 'npx skills add PatN-git/Stratosphere-OS/dist/skills --copy -y'. test_suite_halts_listing_7_missing_with_remediation pins the placeholder form."}
+],"files_read":8}

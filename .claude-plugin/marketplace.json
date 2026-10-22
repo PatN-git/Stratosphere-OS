@@ -11,7 +11,7 @@
       "name": "stratosphere-os",
       "source": "./",
       "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
-      "version": "4.8.0",
+      "version": "4.9.0",
       "author": {
         "name": "Gravity Technologies"
       },
@@ -21,6 +21,7 @@
         "./dist/skills/0b-stop-session",
         "./dist/skills/0c-handoff",
         "./dist/skills/0d-nightly-consolidation",
+        "./dist/skills/0e-plain-english",
         "./dist/skills/1a-research",
         "./dist/skills/1b-concept-framing",
         "./dist/skills/1c-concept-map",

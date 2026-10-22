@@ -9,6 +9,7 @@ Each caller passes `--fields` = only the mirror fields it wrote, so a gate never
 false-blocks on drift in a field outside its concern. `--pr-id` scopes the PR-link
 check to the single issue that received the PR comment (e.g. the shipped slice),
 so co-passed ids (cleared dependents, a flipped epic) are not required to carry it.
+With `status` in `--fields` the gate also checks issue state: closed must match done (a done row still open, or a closed issue not done, is drift).
 
 Offline / no `gh` -> internal-consistency check only, exit 0 (`[local-only]`).
 Contract + heal protocol: .agents/skills/4a-verify-and-ship/references/terminal-sync-invariant.md
@@ -19,6 +20,7 @@ Usage:
   python .agents/scripts/reconcile.py --all-open --summary [--out .tmp/nightly-drift.txt] \
       [--keys-out .tmp/nightly-drift-keys.txt] [--state docs/nightly/.last-run.json]
   python .agents/scripts/reconcile.py --heal --kind labels --source gh|map (--ids BT-007[,…] | --all-open)
+  python .agents/scripts/reconcile.py --edges blockers|dependents (--ids BT-007[,…] | --all-open)
 
 --heal (0d, approved heals): one drift kind per run. `--source gh` upserts that kind's BACKLOG_MAP cell
 from GitHub, keyed by BT row (never appends a row, touches no other cell), atomic write, prints each
@@ -26,8 +28,13 @@ from GitHub, keyed by BT row (never appends a row, touches no other cell), atomi
 `gh` / GraphQL commands (references/github-issue-relations.md) for the agent to run after the user approves.
 Kinds: status, milestone, labels, parent, blocked_by. Not healable here: stale_blocker (both sides, a
 workflow decision), closed (flips a row to done: a lifecycle call), pr_link (a GitHub comment, no map cell),
-absent / not_found (a row would have to be appended or deleted). Re-run `--ids <healed> --fields <kind>` once. A blocked_by edge whose blocker's row is in review/done is
+absent / not_found (a row would have to be appended or deleted). Re-run `--ids <healed> --fields <kind>` once. A blocked_by edge that `--edges` marks CLEAR is
 skipped (`[HEAL-SKIP … stale on GitHub]`, use --source map): the map already cleared it.
+
+--edges (read-only decision list; D3 blocker predicate): `blockers` prints each effective blocker (own + parent epic's)
+of the ids as `[BLOCKER-OK|BLOCKER-UNMET|BLOCKER-UNKNOWN D <- B] same-unit|cross-unit: reason` (exit 1 unless all OK);
+`dependents` prints each stored edge naming the ids as `[CLEAR D <- B]` + its `removeBlockedBy` cmd, or `[KEEP D <- B]`.
+Same ship unit (pr_body.resolve_unit) -> blocker shipped; else its code must be on the default branch (PR merged).
 
 --summary (0d): counts per drift kind, new items verbatim, carried items one line per kind with ages
 (`[CHRONIC n]` from night 3). Ages come from nightly_state.py's drift map, read-only here. The only
@@ -54,7 +61,7 @@ def _nightly_state():
 STATUS_RE = re.compile(r'^status:(.+)$')
 NONE_TOKENS = {'', '-', '—'}
 ALL_FIELDS = ('status', 'milestone', 'labels', 'parent', 'blocked_by')
-STALE_STATUSES = ('in review', 'done')  # a blocker in one of these should already be cleared
+SHIPPED = ('in review', 'done')  # a same-ship-unit blocker in one of these satisfies its edge (D3)
 
 
 def _bt(n):
@@ -107,13 +114,75 @@ def open_ids(rows):
     return [bt for bt, r in rows.items() if r['status'] != 'done']
 
 
-def stale_blockers(rows):
-    """`BT-x: stale blocker BT-y should be cleared` for each open row blocked by a row that is
-    already in review/done (4a/merge should have removed it). BACKLOG-only. Pure."""
+def _pr_body():
+    """Lazy import: only the D3 edge verdict needs pr_body.py (the single D1 ship-unit implementation)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import pr_body
+    return pr_body
+
+
+def ship_unit(bt, rows):
+    """D1 ship-unit key (`vX.Y` or `BT-<padded>`) of row `bt`, or None when the row is absent or its
+    id/milestone/parent is unparseable (the edge is then UNKNOWN, never a crash). Pure."""
+    r = rows.get(bt)
+    if r is None:
+        return None
+    parent = _norm(r.get('parent', '—'))
+    prow = rows.get(parent) if parent else None
+    try:
+        return _pr_body().resolve_unit(bt, r.get('milestone'), parent, prow.get('milestone') if prow else None,
+                                       epic='tier:epic' in r.get('labels', ()))['unit']
+    except ValueError:
+        return None
+
+
+def effective_blockers(dep, rows):
+    """Own `Blocked by` plus the parent epic's, never the dependent itself. Pure."""
+    r = rows[dep]
+    parent = _norm(r.get('parent', '—'))
+    prow = rows.get(parent) if parent else None
+    return (set(r.get('blocked_by', ())) | set(prow.get('blocked_by', ()) if prow else ())) - {dep}
+
+
+def _no_pr_state(bt):
+    return None
+
+
+def edge_verdict(dep, blk, rows, merged_of=_no_pr_state):
+    """D3: (OK|UNMET|UNKNOWN, 'same-unit'|'cross-unit', reason) for the edge dep <- blk.
+    Same ship unit -> OK once the blocker is shipped. Cross unit -> its code must be on the default branch:
+    an epic/standalone blocker is merged <=> done; a child-slice blocker needs `merged_of(blk)`
+    ('merged'|'open'|'none'|None) for its `Shipped in PR` PR. Pure given `merged_of`."""
+    b = rows.get(blk)
+    if b is None:
+        return 'UNKNOWN', 'cross-unit', 'blocker row absent from BACKLOG_MAP'
+    du, bu = ship_unit(dep, rows), ship_unit(blk, rows)
+    if du is None or bu is None:
+        return 'UNKNOWN', 'cross-unit', 'ship unit unknown (bad id or milestone)'
+    status, shipped = b['status'], b['status'] in SHIPPED
+    if du == bu:
+        return ('OK' if shipped else 'UNMET'), 'same-unit', f"{du}, blocker {status}"
+    if not _norm(b.get('parent', '—')):  # epic or standalone: closed <=> merged <=> done; `in review` = PR still open
+        return ('OK' if status == 'done' else 'UNMET'), 'cross-unit', f"{blk} is {status}, merged only when done"
+    if not shipped:
+        return 'UNMET', 'cross-unit', f"{blk} not shipped ({status})"
+    m = merged_of(blk)
+    if m == 'merged':
+        return 'OK', 'cross-unit', f"{blk} PR merged"
+    if m == 'none':
+        return 'OK', 'cross-unit', f"{blk} has no PR (spike or manual close), no code to merge"
+    if m == 'open':
+        return 'UNMET', 'cross-unit', f"{blk} PR not merged"
+    return 'UNKNOWN', 'cross-unit', f"{blk} PR state unknown (gh unavailable)"
+
+
+def stale_blockers(rows, merged_of=_no_pr_state):
+    """`BT-x: stale blocker BT-y should be cleared` for each open row with a stored edge the D3 predicate
+    marks OK (4a/merge should have removed it); a kept or unverifiable edge is never flagged. BACKLOG-only. Pure."""
     out = []
     for bt in open_ids(rows):
         for blocker in sorted(rows[bt]['blocked_by']):
-            if blocker in rows and rows[blocker]['status'] in STALE_STATUSES:
+            if edge_verdict(bt, blocker, rows, merged_of)[0] == 'OK':
                 out.append(f"{bt}: stale blocker {blocker} should be cleared")
     return out
 
@@ -123,6 +192,14 @@ def closed_on_github(row, gh):
     Per-field compare cannot see this (the labels still say `in review`). Pure."""
     if gh.get('state') == 'CLOSED' and row['status'] != 'done':
         return f"closed on GitHub, map={row['status']}"
+    return None
+
+
+def open_on_github(row, gh):
+    """Drift text when the issue is still OPEN on GitHub while its row is done (a dropped `gh issue close`
+    at ship), else None. Pure."""
+    if gh.get('state') == 'OPEN' and row['status'] == 'done':
+        return "open on GitHub, map=done"
     return None
 
 
@@ -216,8 +293,50 @@ def gh_available():
         return False
 
 
+def _pr_state(k):
+    """`gh pr view <k>` state (MERGED|OPEN|CLOSED), None on any gh failure."""
+    try:
+        r = subprocess.run(['gh', 'pr', 'view', k, '--json', 'state'], capture_output=True, text=True)
+        return json.loads(r.stdout).get('state') if r.returncode == 0 else None
+    except (FileNotFoundError, json.JSONDecodeError, AttributeError):
+        return None
+
+
+def pr_merge_state(bt, cache=None):
+    """'merged' | 'open' | 'none' | None for a child slice's `Shipped in PR` PR: the last `/pull/<k>` comment wins
+    (a re-shipped slice has the newest PR last); OPEN and unmerged CLOSED -> 'open'; no such comment -> 'none';
+    gh failure, no gh or no GitHub issue -> None. `cache` (a dict) memoizes per run."""
+    if cache is not None and bt in cache:
+        return cache[bt]
+    num, out = issue_number(bt), None
+    data = _gh_json(num, ['comments']) if num else None
+    if data is not None:
+        links = [m.group(1) for c in data.get('comments') or [] if (m := re.search(r'/pull/(\d+)', c.get('body') or ''))]
+        if not links:
+            out = 'none'
+        else:
+            out = {'MERGED': 'merged', 'OPEN': 'open', 'CLOSED': 'open'}.get(_pr_state(links[-1]))
+    if cache is not None:
+        cache[bt] = out
+    return out
+
+
+def make_merged_of():
+    """A per-run `merged_of(bt)` over pr_merge_state: gh_available is probed (and a PR looked up) only when an
+    edge needs it, once per blocker; offline -> None (unknown)."""
+    cache, online = {}, []
+
+    def merged_of(bt):
+        if bt not in cache:
+            if not online:
+                online.append(gh_available())
+            cache[bt] = pr_merge_state(bt) if online[0] else None
+        return cache[bt]
+    return merged_of
+
+
 # Texts from compare()/closed_on_github(); stale/absent/not_found items are built with their kind directly.
-KIND_PREFIXES = (('closed on GitHub', 'closed'), ('status', 'status'),
+KIND_PREFIXES = (('closed on GitHub', 'closed'), ('open on GitHub', 'closed'), ('status', 'status'),
                  ('milestone', 'milestone'), ('labels', 'labels'), ('blocked_by', 'blocked_by'),
                  ('parent', 'parent'), ('pr-link', 'pr_link'))
 CHRONIC_NIGHTS = 3
@@ -364,7 +483,7 @@ def upsert_cells(text, edits):
     return ''.join(out)
 
 
-def heal(args, rows, ids):
+def heal(args, rows, ids, merged_of=_no_pr_state):
     """--heal: upsert one kind's map cells from GitHub (--source gh), or print the gh fix commands
     (--source map). Writes BACKLOG_MAP only, never GitHub. Returns the exit code (1 = some id skipped)."""
     kind, plan, cmds = args.kind, {}, []
@@ -395,7 +514,7 @@ def heal(args, rows, ids):
             skipped += 1
             continue
         if kind == 'blocked_by':
-            stale = {b for b in value - rows[bt]['blocked_by'] if b in rows and rows[b]['status'] in STALE_STATUSES}
+            stale = {b for b in value - rows[bt]['blocked_by'] if edge_verdict(bt, b, rows, merged_of)[0] == 'OK'}
             if stale:  # a blocker the map already cleared: healing from GitHub would undo that
                 print(f"[HEAL-SKIP {bt} blocked_by: stale on GitHub; use --source map]")
                 skipped += 1
@@ -424,6 +543,38 @@ def heal(args, rows, ids):
     return 1 if skipped else 0
 
 
+def edges_cmd(args, rows, ids, merged_of):
+    """--edges: print one D3 verdict line per edge. Decides only, never writes. Returns the exit code."""
+    code = 0
+    for bt in (i for i in ids if i not in rows):
+        print(f"[EDGES-ABSENT {bt}: absent from BACKLOG_MAP]")
+        code = 1
+    ids = [i for i in ids if i in rows]
+    if args.edges == 'blockers':
+        for dep in ids:
+            blockers = sorted(effective_blockers(dep, rows))
+            if not blockers:
+                print(f"[BLOCKERS-NONE {dep}]")
+            for blk in blockers:
+                verdict, scope, why = edge_verdict(dep, blk, rows, merged_of)
+                print(f"[BLOCKER-{verdict} {dep} <- {blk}] {scope}: {why}")
+                if verdict != 'OK':
+                    code = 1
+        return code
+    # dependents: stored edges on open rows, either all of them (--all-open) or those naming one of the ids
+    for dep in open_ids(rows):
+        for blk in sorted(rows[dep]['blocked_by']):
+            if not args.all_open and blk not in ids:
+                continue
+            verdict, scope, why = edge_verdict(dep, blk, rows, merged_of)
+            if verdict == 'OK':
+                print(f"[CLEAR {dep} <- {blk}] {scope}: {why}")
+                print(f"  cmd: {_edge('removeBlockedBy', 'blockingIssueId', dep, blk)}")
+            else:
+                print(f"[KEEP {dep} <- {blk}] {scope}: {why}")
+    return code
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Terminal Sync Invariant gate.")
     scope = ap.add_mutually_exclusive_group(required=True)
@@ -432,7 +583,7 @@ def main(argv=None):
                        help="advisory sweep of every row whose status is not done, plus the "
                             "stale-blocker and closed-on-GitHub checks (0d; ~3 gh calls per row)")
     ap.add_argument('--pr-id', help="the id that must carry a PR-link comment (e.g. the shipped slice)")
-    ap.add_argument('--fields', default=','.join(ALL_FIELDS),
+    ap.add_argument('--fields', default=None,
                     help="mirror fields to check (default: all). Pass only the fields this phase wrote.")
     ap.add_argument('--backlog', default='.memory/BACKLOG_MAP.md')
     ap.add_argument('--require-gh', action='store_true',
@@ -454,7 +605,13 @@ def main(argv=None):
     ap.add_argument('--source', choices=('gh', 'map'),
                     help="with --heal: gh = upsert the map cell from GitHub; map = print the gh/GraphQL "
                          "commands that make GitHub match the map (nothing is run)")
+    ap.add_argument('--edges', choices=('blockers', 'dependents'),
+                    help="D3 blocker verdicts for the --ids / --all-open scope, read-only: blockers = each effective "
+                         "blocker of the ids; dependents = each stored edge naming the ids (CLEAR or KEEP)")
     args = ap.parse_args(argv)
+    if args.edges and (args.heal or args.summary or args.pr_id or args.fields is not None):
+        ap.error("--edges is a separate run: not with --heal/--summary/--pr-id/--fields")
+    args.fields = args.fields or ','.join(ALL_FIELDS)
     if args.heal:
         if not (args.kind and args.source):
             ap.error("--heal needs --kind and --source (one drift kind per run) plus --ids or --all-open")
@@ -473,14 +630,17 @@ def main(argv=None):
     fields = {f.strip() for f in args.fields.split(',') if f.strip()}
     rows = parse_backlog(args.backlog)
     ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
+    merged_of = make_merged_of()
+    if args.edges:
+        return edges_cmd(args, rows, ids, merged_of)
     if args.heal:
         if not gh_available():
             print("[HEAL-UNAVAILABLE: gh unavailable, nothing to heal from; nothing written]")
             return 3
-        return heal(args, rows, ids)
+        return heal(args, rows, ids, merged_of)
     # (bt, kind, text); bt None = informational note. Non-summary prints them in order; summary groups the items.
     emit = [(d.split(':')[0], 'stale_blocker', f"[MIRROR-DRIFT {d}]")
-            for d in (stale_blockers(rows) if args.all_open else [])]
+            for d in (stale_blockers(rows, merged_of) if args.all_open else [])]
 
     def finish(code, gh_checked, ok_line=None):
         items = [(bt, k, t) for bt, k, t in emit if bt]
@@ -542,13 +702,14 @@ def main(argv=None):
         elif args.all_open:
             gh = fetch_issue(num, want_comments=False, want_state=True)
         else:
-            gh = fetch_issue(num, want_comments=is_pr)
+            gh = fetch_issue(num, want_comments=is_pr, want_state='status' in fields)
         if gh is None:
             not_found += 1
             emit.append((bt, 'not_found', f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]"))
             exit_code = 1
             continue
-        closed = closed_on_github(rows[bt], gh) if args.all_open else None
+        closed = ((closed_on_github(rows[bt], gh) or open_on_github(rows[bt], gh))
+                  if (args.all_open or 'status' in fields) else None)
         # A closed issue's other fields are noise: the row itself is what needs healing.
         drift = [closed] if closed else compare(rows[bt], gh, fields, check_pr=is_pr)
         for d in drift:

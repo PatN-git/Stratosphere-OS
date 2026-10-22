@@ -31,8 +31,8 @@ if (-not (Test-Path (Join-Path $repo "dist\skills"))) {
 $realBefore = Get-RealHomeSnapshot
 
 function Assert-BundleTree([string]$base, [string]$t) {
-    Assert "${t}: 27 skills" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count -eq 27)
-    Assert "${t}: 23 HITL sidecars" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "agents\openai.yaml") }).Count -eq 23)
+    Assert "${t}: 28 skills" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count -eq 28)
+    Assert "${t}: 24 HITL sidecars" ((Get-ChildItem -Path $base -Directory | Where-Object { Test-Path (Join-Path $_.FullName "agents\openai.yaml") }).Count -eq 24)
     AssertPathExists "${t}: skills/micro-tdd" (Join-Path $base "micro-tdd\SKILL.md")
     Assert "${t}: no legacy commands/workflows dir" (-not ((Test-Path (Join-Path $base "commands")) -or (Test-Path (Join-Path $base "workflows"))))
     AssertPathExists "${t}: setup carries scaffold.py" (Join-Path $base "stratosphere-setup\scripts\scaffold.py")
@@ -46,7 +46,7 @@ function Assert-ScaffoldTree([string]$proj) {
     }
     AssertFileCount "scaffold: .memory/*.md == 9" (Join-Path $proj ".memory") "*.md" 9
     AssertFileCount "scaffold: .agents/rules/*.md == 3" (Join-Path $proj ".agents\rules") "*.md" 3
-    Assert "scaffold: .agents/skills 27 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 27)
+    Assert "scaffold: .agents/skills 27 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 28)
     Assert "scaffold: no legacy .agents/workflows" (-not (Test-Path (Join-Path $proj ".agents\workflows")))
     Assert "scaffold: no .github/copilot/skills twin" (-not (Test-Path (Join-Path $proj ".github\copilot\skills")))
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
@@ -179,7 +179,7 @@ function Run-TrackDCell {
         $bridge = Join-Path $repo "scripts\install-antigravity-bridge.ps1"
         $r = Invoke-Bridge $bridge $tgt
         Assert "trackD: bridge exit 0" ($r.Code -eq 0)
-        Assert "trackD: bridge reports 27 copied" ($r.Out -match 'Copied 27 skills')
+        Assert "trackD: bridge reports 27 copied" ($r.Out -match 'Copied 28 skills')
         Assert-BundleTree $tgt "trackD"
         New-Item -ItemType Directory -Force -Path (Join-Path $tgt "foreign-skill") | Out-Null
         Set-Content -Path (Join-Path $tgt "foreign-skill\SKILL.md") -Value "x"
