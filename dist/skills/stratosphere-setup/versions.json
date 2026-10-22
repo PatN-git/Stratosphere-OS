@@ -16,9 +16,9 @@
       "version": "1.2.0"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "320ee6bd8aa8dce955eb1bc1fd5f3ca4180473bc337baf92115b830f6e3ff28c",
+      "sha256": "fc5d763235b8f60b2c80e7654aeaeca031b45c76f887c6b8b960861e867bceab",
       "timestamp": "2026-09-29",
-      "version": "1.0.6"
+      "version": "1.0.7"
     },
     "assets/templates/memory/BACKLOG_MAP.md": {
       "sha256": "74c3dd35dbd109d8ce43e7e05edb1614af913483769b37712d2a9fd97a7c0983",
@@ -671,19 +671,39 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "bcbf4e037c9069061df58d016b5fe461372960ffd29676397f7b26056d27294b",
-      "timestamp": "2026-10-20",
-      "version": "1.5.0"
+      "sha256": "c93d87caa633f1765c49274e94fb0078894e1ed9c8da766343b4d240f7e21a17",
+      "timestamp": "2026-10-22",
+      "version": "1.6.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
       "timestamp": "2026-06-17",
       "version": "1.0.2"
     },
+    "skills/stratosphere-setup/references/github-issue-relations.md": {
+      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "timestamp": "2026-10-13",
+      "version": "1.0.3"
+    },
+    "skills/stratosphere-setup/references/label-taxonomy.md": {
+      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "timestamp": "2026-10-22",
+      "version": "1.0.0"
+    },
+    "skills/stratosphere-setup/references/terminal-sync-invariant.md": {
+      "sha256": "6fff25954e8e037a2f1f1f5cb0ae689fe758794b13254d81453e42c50abcb19f",
+      "timestamp": "2026-10-20",
+      "version": "1.2.0"
+    },
+    "skills/stratosphere-setup/references/tracker-verbs.md": {
+      "sha256": "78d488cafee7ff677336d5d69d7c7c29491a5a7b10f220571796b39679a67a11",
+      "timestamp": "2026-10-22",
+      "version": "1.0.0"
+    },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "7bea218e735b8fd8759eb22237bd81e3476284bc0794c4089d38b296e752ad9d",
-      "timestamp": "2026-10-08",
-      "version": "1.7.0"
+      "sha256": "67db1fdfae47d1fa514e5feb20055c9b2b7000efc1acec12c7645f32cdaa27d2",
+      "timestamp": "2026-10-22",
+      "version": "1.7.1"
     },
     "skills/stratosphere-update/references/update-antigravity-plugin.md": {
       "sha256": "a7c2a0cfbf8ddf1be6298267ed6608b12e97fa6c68e75530b640018a84f58991",

@@ -5,7 +5,8 @@ description: Tech stack, structure, data flow, and architectural laws.
 generated:
   by: stratosphere-setup
   at: 2026-09-29
-version: "1.0.6"
+version: "1.0.7"
+tracker: local
 ---
 # ARCHITECTURE
 
@@ -63,6 +64,11 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 - Where queries should live:
 - Any RLS / auth assumptions:
 
+## Tracker Registry
+<!-- `tracker: github` only: the project-specific lines a local BACKLOG_MAP.md would hold. Setup fills them; under `tracker: local` leave them empty (the map holds them). -->
+- Area labels (`area:xxx`):
+- GitHub Project ID:
+
 ## Structural Rules
 - **[[A-001]] [EXAMPLE (UI-tier)] [LAW]** Keep page/app files focused on top-level state coordination, data flow, and visual composition.
 - **[[A-002]] [EXAMPLE (UI-tier)] [LAW]** Extract non-trivial state/effect and complex UI logic into hooks. Keep constants, static mock data, and helpers out of component files.
@@ -71,6 +77,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 ## Known Architectural Constraints
 - **[[A-XXX]] [LAW]** Example placeholder. Source: BT-XXX.
+- **[[A-XXX]] [LAW]** Issue tracker backend: `<github|local>` (frontmatter `tracker:`). `github`: GitHub issues are the only store, there is no `.memory/BACKLOG_MAP.md`, and nothing writes a local copy. `local`: the map is the store (`/stratosphere-setup` records the choice; `tracker_switch.py` moves a local project to GitHub). Source: BT-197.
 
 ## Floor exceptions
 <!-- Rows a human merges to the default branch, `<rule> <glob> — <reason>`, e.g. `A-003 src/legacy.js — legacy, split in BT-nnn`. The rule is a floor rule or a rule ID above. -->
