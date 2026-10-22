@@ -64,3 +64,22 @@ An independent Opus 5.5 review (2026-10-22) split the follow-ups differently: th
 1. **R, rule bindings (StratOS, epic BT-212):** a `[LAW]` entry may name its check (`Check: <path>`), exceptions reuse `## Floor exceptions` with rule IDs, and the Standards auditor skips bound rules, honours exception rows and uses the corrected label (`Hard breach` only for a cited rule ID or an objective defect; baseline smells always `Judgment`). Checked on 8 replayed slices before the auditor wording ships.
 2. **L, CleanTechHub-local checks** (vitest tests run by `npm test`, a minimal ESLint because unused or undefined imports are 8 of the 27 mechanical rows, markers, human-merged exception rows), minted in CleanTechHub's own backlog after R is released and vendored.
 3. **BT-207, the auto-fix round, becomes conditional:** after R and L, replay this sample and count Hard rows a Direct or Visual fix can still reach; under 0.2 per audited slice, drop it.
+
+## BT-214 E2: Standards auditor wording (2026-10-22)
+**Test.** The drafted "4a Standards auditor: severity and skips" block (Hard only for a cited rule ID or an objective defect; every baseline smell is Judgment; skip rules on `info: bound` lines; drop findings on `info: exception` lines) was run on 8 replayed CleanTechHub slices, one isolated subagent each on the `small` tier (`model: haiku`), with the diff, changed-file line counts, CleanTechHub's `[LAW]` rule lines and the seeded `info:` lines inline. Expected labels and the pass rule were written before any run (`.tmp/e2-labels.json`: no baseline smell labelled Hard; both defect slices keep a Hard row on the named defect; no finding on a seeded rule; fail on any of these in 2 of 8 runs or a lost real defect). BT-185 was swapped for BT-114 before running (BT-185's head file is 397 lines, so A-003 was not visible). Diffs are rebuilt from the slice's build commits, not the original audit's exact range.
+
+| Slice | Class | Result |
+|---|---|---|
+| BT-173, 172, 189, 193 | baseline smells | Pass: every Mysterious Name, Duplicated Code, Middle Man, Data Clumps, Divergent Change row came back `Judgment`; Hard rows were A-003 or objective defects |
+| BT-114 | bound A-003 | Pass: no A-003 finding on `adapters.js` (617 lines); the auditor listed it under Dismissed as bound |
+| BT-159 | excepted A-008 | Pass but weak: no A-008 finding, yet the manifest breach may not have been visible in the rebuilt range |
+| BT-187 | real defect | **Fail**: the missing `fetchAndExtractHtml` import and the unawaited async calls were not reported |
+| BT-222 | real defect | **Fail**: the prototype-key collision (`'toString'`) TypeError was not reported |
+
+**Control.** The old wording, same packets, same tier, on the two defect slices: BT-187 and BT-222 lost the same defects. So the loss is not caused by the new wording: a small-tier audit of a 70k-character diff does not find these cross-file or runtime-key defects either way. The old wording also labelled most smells `Judgment` on BT-187, so this test does not show that the new label wording improves on it (the old-wording baseline was not run on the four smell slices).
+
+**Outcome by the rule fixed in advance: not passed** (a real defect lost in 2 of 2 defect slices). Read against the control: no regression attributable to the wording, no measured gain either.
+
+**Second control (label wording).** The old wording on the four smell slices (BT-173, 172, 189, 193), same packets and tier: 0 baseline smells labelled Hard in 4 of 4 runs, the same as the new wording (0 of 4). On this tier and these inputs the strengthened label sentences show no measured gain; the old intro already makes the small-tier auditor label smells `Judgment`. The BT-205 mislabels came from audits run before BT-204's `small` tier and on other hosts and models, so they cannot be reproduced here.
+
+**Decision (2026-10-22).** BT-214 ships the skip and drop mechanism only (rules on `info: bound` lines are skipped, findings matching `info: exception` lines are dropped; supported by BT-114 and, weakly, BT-159). The severity-label sentences are not shipped: no measured gain, and the handoff rule says no auditor prompt change without an experiment that passes. The label question moves to production data (the `audit:` line records `std_hard` counts per slice); revisit it at BT-208. The "defect stays Hard" criterion is recorded as not passed and unattributable to the wording (the old wording lost the same two defects).
