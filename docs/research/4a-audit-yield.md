@@ -31,9 +31,36 @@ One extraction script per repo (gh issues/PRs, `git log`, agent session logs) fo
 StratOS: BT-118, 119, 120, 122, 139, 143, 162, 163, 165, 166, 167, 168, 187 (BT-162..168 were batch audits). CleanTechHub: BT-061, BT-170, BT-186 (+ BT-094 `[UNCOVERED]` in transcript). Clean controls: pick 4 audited slices with no gap and no rework.
 
 ## Decisions
-- AFK Standards: consume the findings; hard and medium issues are fixed automatically within the retry cap.
+- Standards (revised 2026-10-22): consume the findings in HITL and AFK; Hard breaches are fixed automatically in one bounded round when the fix is behavior-preserving (micro-tdd Direct or Visual route); Judgment findings are never auto-fixed. Replaces "hard and medium issues are fixed automatically within the retry cap" (AFK only).
 - One framework-wide audit policy now; a per-repo override only if instrumented data shows a material difference at the decision checkpoint.
 - A cheaper model tier for the Standards auditor, mapped per host.
 - A one-off blind replay on cheap subagents instead of a shadow PR-level audit (which would add ship-path time and see only residual misses).
 
 Plan: [4a-audit-yield-plan.md](../plans/4a-audit-yield-plan.md).
+
+## BT-205: CleanTechHub Standards hard breaches (2026-10-22)
+**Method.** Read the Standards Auditor subagent reports from two stores: Antigravity (`~/.gemini/antigravity/conversations/*.db`, the `send_message` payloads; 38 reports, 36 slices) and Claude Code subagent logs (`~/.claude/projects/*CleanTech*`, BT-168 to BT-176; 11 reports, 8 slices). Together 44 slices, 40 of them among the scan's 78 audited slices (51%): v1.x 0 of 2, v2.x 2 of 7, v3.x 19 of 26, v4.0-4.5 13 of 23, v4.6+ 6 of 20 (BT-003, 101, 168 and 240 are outside the scan's audited set). Each `Hard breach` row was classed by one test: **mechanical** = a script or standard linter decides it without reading intent; **semi** = lintable with an added rule set (jsx-a11y) but the choice needs a read; **judgment** = needs intent, is a defect, or is a baseline smell.
+
+**Round check.** The Standards auditor normally runs once per slice (one report in 40 of 44 slices; two only for BT-168, 169, 173, 187). The scan's `audit_rounds` counts Spec re-audits. So each table is the audit a fix round would have seen, not a residue after fixes. Fix commits that match the rows exist for only 9 of the 22 Antigravity slices with hard rows; the rest shipped with them unfixed, as 3z discards the list.
+
+**Finding 1: the scan's 335 is overstated.** On the 33 slices present in both sources the scan reports 192 hard breaches, the transcripts 48. Spot checks: BT-154 scan 10, transcript "0 hard breaches"; BT-191 scan 12, transcript 0; BT-185 scan 18, transcript 1 (A-003, fixed, re-audit PASS); BT-159 scan 14, transcript 1. Read the real rate as about 1.6 per audited slice, with 14 of those 33 slices at 0.
+
+**Finding 2: share of 70 hard rows** (a row is one file and rule; empty rows dropped).
+
+| Class | Rows | Share | Rule IDs |
+|---|---:|---:|---|
+| Mechanical | 27 | 39% | A-003 file over 400 lines (6), A-008 `index.md` manifest (6), unused import or dead code (6), DR-002/023/005 raw colour, border opacity, arbitrary Tailwind value (4), missing import (2), React array-index key (1), `.env.example` parity (1), commit-message convention (1) |
+| Semi-mechanical | 3 | 4% | `span`/`div` with `onClick`, focusable card (a11y rules) |
+| Judgment | 40 | 57% | 21 baseline smells labelled Hard (Duplicated Code, Mysterious Name, Middle Man, Data Clumps, Speculative Generality, Repeated Switches, Divergent Change, style); 19 real defects or judgment on a documented rule (unawaited or unhandled promises 4, schema or routing mismatch and false-positive tests 6, prototype-key collision 2, input validation 1, A-009 snapshot pins 2, A-011 1, other 3) |
+
+All shares are for this sample (70 rows, 28 slices with at least one hard row); any extension to the 78 audited slices is an extrapolation. Of the 38 unobserved audited slices, 14 are v4.6+ (the newest) and 7 are v2.x or older, so the newest audits are the least covered.
+
+**Finding 3: where the rules live.** A-003, A-008, A-009, A-011, DR-002/005/023 are CleanTechHub's own `[LAW]` rows in its `.memory/`; none is in `src/references/code-smell-baseline.md`. A-008 is 6 of 70 rows (9%), not "most". A-008 also fails at commit level (BT-170: the index must change in the same commit as the file), which a final-state test cannot see.
+
+**Finding 4: the severity label is unreliable.** 21 of 70 hard rows (30%) are baseline heuristic smells, which the baseline defines as judgment calls. About 19 rows (27%) are real defects or documented-rule judgment, including runtime bugs the Spec audit did not catch.
+
+**Follow-ups.**
+An independent Opus 5.5 review (2026-10-22) split the follow-ups differently: the checks stay project-local, the governance becomes a framework feature. Design in the plan, "Rule bindings (R)".
+1. **R, rule bindings (StratOS, epic BT-212):** a `[LAW]` entry may name its check (`Check: <path>`), exceptions reuse `## Floor exceptions` with rule IDs, and the Standards auditor skips bound rules, honours exception rows and uses the corrected label (`Hard breach` only for a cited rule ID or an objective defect; baseline smells always `Judgment`). Checked on 8 replayed slices before the auditor wording ships.
+2. **L, CleanTechHub-local checks** (vitest tests run by `npm test`, a minimal ESLint because unused or undefined imports are 8 of the 27 mechanical rows, markers, human-merged exception rows), minted in CleanTechHub's own backlog after R is released and vendored.
+3. **BT-207, the auto-fix round, becomes conditional:** after R and L, replay this sample and count Hard rows a Direct or Visual fix can still reach; under 0.2 per audited slice, drop it.
