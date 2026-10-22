@@ -40,7 +40,7 @@ Lifecycle order: `needs_spec → planned → in progress → in review → done`
 
 ## Changing the vocabulary
 
-1. Update the vocabulary in `src/memory-templates/BACKLOG_MAP.md`, this table, and the board's `Status` options together.
+1. Update the vocabulary in `src/references/label-taxonomy.md` (and the local map template, `src/memory-templates/BACKLOG_MAP.md`, until it is trimmed), this table, and the board's `Status` options together.
 2. `tests/framework/test_status_label_contract.py` fails until the template and this table agree.
 3. Rebuild `dist/` and bump versions per the normal release rules.
 

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.0"
-timestamp: 2026-10-14
+version: "1.6.1"
+timestamp: 2026-10-22
 ---
 
 # Interface Design
@@ -23,7 +23,7 @@ Run the `load-memory` skill to restore session context (read-only).
 *Resume check: if docs/design/BT-<padded>-interface.md exists with status: draft, recover path/branch (from surface/body) and resume: Path B/C at Phase 4 (or 2.5); Path A at Phase 4 if "## Design Brief" exists, else Phase 3 (or 2.5).*
 
 1. Load PRD from `docs/prds/BT-<padded>-<feature>.md`.
-2. If no external surface/code change → skip (no design doc produced); **promote parent epic `needs_spec → planned`** (`gh issue edit <n> --remove-label "status:needs_spec" --add-label "status:planned"`; update BACKLOG Status) since the spec is complete with no design step; then handoff to `/3b-create-issue`.
+2. If no external surface/code change → skip (no design doc produced); **promote parent epic `needs_spec → planned`** (`set_status(<n>, planned)`, `references/tracker-verbs.md`) since the spec is complete with no design step; then handoff to `/3b-create-issue`.
 3. If feature has no UI surface → Path C.
 4. If UI surface, read "Design Source" from `.memory/DESIGN_RULES.md` §2 and branch:
    - `stitch` or `claude-design` → Path A (generator-assisted). A1 = Whole-page; A2 = Feature-on-existing. (If generator tools absent: A1 stays Path A; A2 prompts user, or defaults to Path B if AFK).
@@ -100,14 +100,14 @@ Run the `load-memory` skill to restore session context (read-only).
 Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc, or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
 
 ## Phase 5: Publish & Sync
-1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `gh issue edit <n> --remove-label "status:needs_spec" --add-label "status:planned"`; set BACKLOG Status = `planned`. (2b never touches the PRD's editorial status — 2a owns that.)
+1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`references/tracker-verbs.md`). (2b never touches the PRD's editorial status — 2a owns that.)
 2. **Commit & Push Doc:** `git add docs/design/BT-<padded>-interface.md && git commit -m "docs(BT-<padded>): interface design"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). Never sweep unrelated drift into this commit.
-3. Append design doc link to parent GitHub Issue body.
-4. Append memory IDs to Ref column in `BACKLOG_MAP.md` (never put design doc path in Ref column).
+3. `set_body`: append the design doc link to the parent issue body.
+4. `set_refs(BT-<padded>, <memory IDs>)`, never the design doc path (GitHub: the body's `Refs:` line; local backend: the Ref cell of `BACKLOG_MAP.md`).
 5. Handoff — route to `/3a-version-planning` only when 3a would act on this feature:
-   - (its `MAJOR.MINOR` is undecided — parent has no GitHub milestone (`gh issue view <n> --json milestone` → `null`; offline: `BT-<padded>` absent from `docs/ROADMAP.md`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first."
+   - (its `MAJOR.MINOR` is undecided — parent has no milestone (`get(<n>)` shows `null`; local backend: `BT-<padded>` absent from `docs/ROADMAP.md`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first."
    - Otherwise → "Interface design complete. Run `/3b-create-issue` to slice."
-   - A lone unassigned feature takes the default `v1.0.0` without a roadmap pass; 3a is the only writer of an epic's GitHub milestone, and the BACKLOG milestone 2a writes is provisional. A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.
+   - A lone unassigned feature goes to slicing without a roadmap pass: in GitHub mode it has no milestone until 3a assigns one (3a is the only writer of an epic's milestone); on the local backend its map row keeps the provisional `v1.0.0` 2a wrote. A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.
 
 ---
 

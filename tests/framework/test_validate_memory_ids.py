@@ -68,3 +68,32 @@ def test_placeholder_ids_do_not_count_as_gaps(tmp_path):
     placeholder = "- **[[L-XXX]] [ASSUMED] [YYYY-MM-DD]** Example placeholder. Source: BT-XXX.\n"
     code, out = _lint(tmp_path, placeholder + _entry(1) + _entry(2))
     assert code == 0, out
+
+
+# --- BT-196: the map's Ref lint belongs to the local backend only ---------------------------------------------
+
+def _lint_map(tmp_path, tracker):
+    mem = tmp_path / ".memory"
+    mem.mkdir()
+    key = f"tracker: {tracker}\n" if tracker else ""
+    (mem / "ARCHITECTURE.md").write_text(
+        "---\ntype: architecture\ntitle: Architecture\ndescription: Test fixture.\n" + key
+        + "generated:\n  by: test\n  at: 2026-10-05\nversion: \"1.0.0\"\n---\n# ARCHITECTURE\n", encoding="utf-8")
+    (mem / "BACKLOG_MAP.md").write_text(
+        "---\ntype: backlog\ntitle: Backlog\ndescription: Test fixture.\ngenerated:\n  by: test\n  at: 2026-10-05\nversion: \"1.0.0\"\n---\n"
+        "# BACKLOG\n| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |\n|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n"
+        "| BT-007 | t | planned | type:feature | — | — | — | ICE: - | [[L-099]] |\n", encoding="utf-8")
+    r = subprocess.run([sys.executable, str(SCRIPT), "--path", ".memory"], cwd=tmp_path, capture_output=True)
+    return r.stdout.decode("utf-8", "replace")
+
+
+def test_a_dangling_map_ref_is_linted_with_no_key_or_a_local_tracker(tmp_path):
+    assert "Dangling reference: 'L-099'" in _lint_map(tmp_path, None)
+
+
+def test_a_local_tracker_lints_the_map_too(tmp_path):
+    assert "Dangling reference: 'L-099'" in _lint_map(tmp_path, "local")
+
+
+def test_a_github_tracker_does_not_lint_a_leftover_map(tmp_path):
+    assert "L-099" not in _lint_map(tmp_path, "github")

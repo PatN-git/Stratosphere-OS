@@ -163,6 +163,14 @@ def main():
         'DESIGN_RULES.md',
         'BACKLOG_MAP.md'
     ]
+    # The map's ID and Ref lint belongs to the local backend; with `tracker: github` a leftover map is not linted.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from reconcile import read_tracker
+        if read_tracker(memory_dir / 'ARCHITECTURE.md') == 'github':
+            target_files.remove('BACKLOG_MAP.md')
+    except ImportError:
+        pass
     
     definitions = {}
     references = []
