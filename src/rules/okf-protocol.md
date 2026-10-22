@@ -6,8 +6,8 @@ paths:
   - "docs/**/*"
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
-version: "2.0.3"
-timestamp: 2026-10-14
+version: "2.0.4"
+timestamp: 2026-10-22
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -97,7 +97,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `backlog` | `BACKLOG_MAP.md` | — |
 | `learnings` | `LEARNINGS.md` | — |
 | `glossary` | `GLOSSARY.md` | — |
-| `architecture` | `ARCHITECTURE.md` | — |
+| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a `BACKLOG_MAP.md` present means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`) |
 | `database-schema` | `DATABASE_SCHEMA.md` | — |
 | `design-rules` | `DESIGN_RULES.md` | — |
 | `design` | `DESIGN.md` | conforming (tolerated by the `@google/design.md` linter) |
