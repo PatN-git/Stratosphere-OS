@@ -14,7 +14,7 @@ from conftest import REPO_ROOT
 
 SCRIPTS = REPO_ROOT / "src" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
-import tracker_switch as ts  # noqa: E402
+import tracker_switch as ts
 
 
 # --- write_tracker: the `tracker:` frontmatter key --------------------------------------------------
