@@ -50,6 +50,8 @@ class Context:
     # therefore unreachable in this mode, and a checker that failed on it would be
     # reporting the mode rather than the lifecycle.
     handoff: bool = False
+    # `github`: no BACKLOG_MAP.md exists and GitHub (the shim's store) is the only record.
+    tracker: str = "local"
 
 
 # --- small readers -----------------------------------------------------------
@@ -313,6 +315,8 @@ def check_3b(ctx: Context):
     issues = [i for i in state["issues"].values() if not i.get("isPR")]
     if not issues:
         return ["3b minted no issues in the fixture store"], notes
+    if ctx.tracker == "github":
+        return check_3b_github(ctx, issues), notes
     backlog = ctx.project / ".memory" / "BACKLOG_MAP.md"
     if not backlog.exists():
         return ["BACKLOG_MAP.md does not exist"], notes
@@ -336,17 +340,52 @@ def check_3b(ctx: Context):
     return problems, notes
 
 
-def mirror_ok(ctx: Context, ids: str):
+REQUIRED_SLICE_LABELS = ("type:", "tier:slice", "mode:", "size:")
+
+
+def label_names(issue: dict) -> set:
+    return {l["name"] for l in issue["labels"]}
+
+
+def check_3b_github(ctx: Context, issues: list) -> list:
+    """GitHub mode: no map may exist; every slice carries the required labels and a parent; the gate (run here) reaches
+    `[MIRROR-OK]` against the state the phase must have left (slices `planned`, under the epic)."""
+    problems = []
+    if (ctx.project / ".memory" / "BACKLOG_MAP.md").exists():
+        problems.append("BACKLOG_MAP.md exists, but `tracker: github` keeps no map")
+    epics = [i for i in issues if "tier:epic" in label_names(i)]
+    slices = [i for i in issues if "tier:epic" not in label_names(i)]
+    expect = []
+    for i in slices:
+        bt, names = f"BT-{i['number']:03d}", label_names(i)
+        missing = [p for p in REQUIRED_SLICE_LABELS if not any(n.startswith(p) for n in names)]
+        if missing:
+            problems.append(f"{bt} lacks required label(s) {missing}")
+        if epics and not i.get("parent"):
+            problems.append(f"{bt} has no parent: 3b must link every slice under its epic")
+        expect.append(f"{bt}:status=planned")
+        if epics and i.get("parent"):
+            expect.append(f"{bt}:parent=BT-{i['parent']['number']:03d}")
+    ids = ",".join(f"BT-{i['number']:03d}" for i in issues)
+    ok, out = mirror_ok(ctx, ids, expect)
+    if not ok:
+        problems.append(f"the terminal sync gate did not reach [MIRROR-OK]: {out.strip()[:300]}")
+    return problems
+
+
+def mirror_ok(ctx: Context, ids: str, expect: list | None = None):
     """Run the real gate ourselves rather than believing the transcript.
 
     `--require-gh` is what the terminal gates pass: without a reachable GitHub it
     exits 3 with `[MIRROR-UNVERIFIED]` instead of the fail-open `[local-only]`, so
-    reaching `[MIRROR-OK]` proves the shim was found AND believed.
+    reaching `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no
+    map to diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
     """
     script = ctx.project / ".agents" / "scripts" / "reconcile.py"
     if not script.exists():
         return False, f"no reconcile.py at {script}"
-    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids],
+    args = ["--expect", ";".join(expect)] if expect else []
+    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids, *args],
                        cwd=str(ctx.project), env=ctx.child_env,
                        capture_output=True, text=True)
     return "[MIRROR-OK" in r.stdout, r.stdout + r.stderr

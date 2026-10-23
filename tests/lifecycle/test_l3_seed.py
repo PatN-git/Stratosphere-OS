@@ -162,3 +162,24 @@ def test_a_seeded_run_says_what_it_did_not_test(tmp_path, capsys):
     r = _load("l3_run_seed", HARNESS / "run-L3.py")
     assert r.parse_args(["--seed"]).seed is True
     assert r.parse_args([]).seed is False
+
+
+# --- GitHub mode: the epic is the whole record ---------------------------------
+
+def test_a_github_seed_mints_the_epic_but_writes_no_backlog_row(tmp_path):
+    project = tmp_path / "project"
+    (project / ".memory").mkdir(parents=True)
+    subprocess.run(["git", "init", str(project)], capture_output=True, check=True)
+    child = {"PATH": os.environ.get("PATH", ""), "GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@harness.invalid",
+             "GIT_COMMITTER_NAME": "L3", "GIT_COMMITTER_EMAIL": "l3@harness.invalid"}
+    shim_dir = e.install_shims(tmp_path, child)
+    e.seed_upstream(project, child, shim_dir, tracker="github")
+    assert not (project / ".memory" / "BACKLOG_MAP.md").exists()
+    epic = store(child)["issues"]["1"]
+    assert {"tier:epic", "status:planned"} <= {l["name"] for l in epic["labels"]}
+
+
+def test_the_runner_threads_the_tracker_choice():
+    r = _load("l3_run_tracker", HARNESS / "run-L3.py")
+    assert r.parse_args([]).tracker == "local"
+    assert r.parse_args(["--tracker", "github"]).tracker == "github"

@@ -214,8 +214,11 @@ def diff_manifest(before: dict, after: dict) -> list[str]:
 
 @contextlib.contextmanager
 def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
-                  vendor: bool = False, seed: bool = False):
-    """Build an isolated project with StratOS installed, and tear it down."""
+                  vendor: bool = False, seed: bool = False, tracker: str = "local"):
+    """Build an isolated project with StratOS installed, and tear it down.
+
+    `tracker="github"` installs with `--tracker github`: no `BACKLOG_MAP.md` is placed, and the seed writes no row.
+    """
     repo_root = Path(repo_root).resolve()
     real_home = Path(os.path.expanduser("~"))
     before = watched_manifest(real_home, repo_root)
@@ -265,11 +268,11 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
         _seed_credentials(real_home, home)
         seeded_credential = digest(home / ".claude" / ".credentials.json")
         if scaffold:
-            _install_stratos(repo_root, home, project, child)
+            _install_stratos(repo_root, home, project, child, tracker)
         if vendor:
             vendor_skills(repo_root, project, child)
         if seed:
-            seeded = seed_upstream(project, child, shim_dir)
+            seeded = seed_upstream(project, child, shim_dir, tracker)
             print(f"[seed]  {len(seeded)} upstream artifact(s) installed; "
                   f"the phases that would have produced them were NOT driven")
 
@@ -364,7 +367,7 @@ def vendor_skills(repo_root: Path, project: Path, child: dict,
 UPSTREAM = Path(__file__).parent / "fixture" / "upstream"
 
 
-def seed_upstream(project: Path, child: dict, shim_dir: Path) -> list[str]:
+def seed_upstream(project: Path, child: dict, shim_dir: Path, tracker: str = "local") -> list[str]:
     """Install what `0a`-`2b` would have produced, so `3b` onward can be driven alone.
 
     Driving the late chain otherwise costs the early chain every time - four phases
@@ -384,7 +387,8 @@ def seed_upstream(project: Path, child: dict, shim_dir: Path) -> list[str]:
     """
     shutil.copytree(UPSTREAM, project, dirs_exist_ok=True)
     epic = _mint_epic(child, shim_dir)
-    _seed_backlog_row(project, epic)
+    if tracker != "github":  # GitHub is the only store there: the minted epic is the whole record
+        _seed_backlog_row(project, epic)
     subprocess.run(["git", "-C", str(project), "add", "-A"], capture_output=True)
     subprocess.run(["git", "-C", str(project), "commit", "-m",
                     "docs(BT-001): seeded upstream artifacts (L3 fixture)"],
@@ -633,8 +637,8 @@ def _built_dist(repo_root: Path) -> Path:
     return root / "dist" / "skills"
 
 
-def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) -> None:
-    """Build the bundle and scaffold it into the project (Slice 1's core)."""
+def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict, tracker: str = "local") -> None:
+    """Build the bundle and scaffold it into the project (Slice 1's core). `tracker="github"` adds `--tracker github`."""
     dist = _built_dist(repo_root)
     claude_dir = home / ".claude"
     # The canonical bundle is what a skills installer places: skill folders, with the
@@ -645,13 +649,16 @@ def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict) ->
     # capture_output with no check swallowed that completely: the first real
     # full-depth run drove 1b against a project with no .agents/ and no .memory/
     # at all, and nothing said so. Fail loudly instead.
-    r = subprocess.run(["python", str(claude_dir / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py")],
+    scaffold = ["python", str(claude_dir / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py")]
+    r = subprocess.run(scaffold + (["--tracker", "github"] if tracker == "github" else []),
                        cwd=str(project), env=child, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(
             f"scaffold.py failed (exit {r.returncode}):\n"
             f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-800:]}")
     assert_scaffolded(project)
+    if tracker == "github" and (project / ".memory" / "BACKLOG_MAP.md").exists():
+        raise RuntimeError("scaffold --tracker github placed a BACKLOG_MAP.md; GitHub mode keeps no map")
     assert_memory_valid(project, child)
 
 
