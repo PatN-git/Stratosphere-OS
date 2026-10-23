@@ -9,7 +9,7 @@ Scans the transcripts of BOTH hosts for sessions with activity since a watermark
                 with every non-alphanumeric character replaced by `-`; worktree folders `<slug>--claude-worktrees-*` count)
   Antigravity  <agy-root>/*/.system_generated/logs/transcript.jsonl   (default ~/.gemini/antigravity/brain;
                 sessions are not keyed by project: one belongs here when a tool call's Cwd / AbsolutePath /
-                TargetFile is under --project)
+                TargetFile / Path is under --project; string args may be JSON-quoted, those keys are unquoted)
 --since defaults to `last_run` in --state (default <project>/docs/nightly/.last-run.json, loaded read-only through
 nightly_state.py), else 24 hours ago. A session is listed when it has records at or after the watermark; only
 those records are counted. Its start is its first such record.
@@ -21,7 +21,8 @@ Prints, per host, sessions / tool calls / errors; per session id, start, calls, 
 which is 0d's sampling order; `repeats` = calls whose tool and command/target already appeared in the same session,
 the redundant-call signal); per failing call the tool name and its command/target, whitespace-collapsed, secret-looking
 values masked, cut at 120 chars. Claude: the tool_use whose tool_result has is_error. Antigravity: each call of a
-step whose status is ERROR/INVALID or that carries `error` (a failing step counts once, however many calls it has).
+step whose status is ERROR/INVALID or that carries `error` (a failing step counts once, however many calls it has);
+a GENERIC step that fails without tool_calls is the error of the step just before it and lists that step's calls.
 Closes with `skipped: N unparsable/unknown records`. The transcript formats are undocumented host internals, so an
 unreadable record is counted, never fatal.
 
@@ -42,8 +43,8 @@ import nightly_state  # noqa: E402  (read-only `load` for the watermark)
 LIMIT = 120
 MAX_SHOWN = 8  # failing calls listed per session in text mode (--json has all)
 CLAUDE_TARGET_KEYS = ('command', 'file_path', 'path', 'notebook_path', 'pattern', 'url')
-AGY_SCOPE_KEYS = ('Cwd', 'AbsolutePath', 'TargetFile')
-AGY_TARGET_KEYS = ('CommandLine', 'TargetFile', 'AbsolutePath')
+AGY_SCOPE_KEYS = ('Cwd', 'AbsolutePath', 'TargetFile', 'Path')
+AGY_TARGET_KEYS = ('CommandLine', 'TargetFile', 'AbsolutePath', 'Path')
 NAME_RE = re.compile(r'^[\w.:\-]{1,60}$')
 MASKS = ((re.compile(r'\beyJ[\w-]+\.[\w-]+\.[\w-]+'), '***'),
          (re.compile(r'(?i)\bbearer\s+\S+'), 'Bearer ***'),
@@ -171,6 +172,17 @@ def scan_claude(path, since):
     return (s if s.seen else None), skipped
 
 
+def unquote(v):
+    """Antigravity stores string args JSON-quoted (`"c:\\\\Users\\\\x"`): decode those, leave anything else as is."""
+    if isinstance(v, str) and len(v) >= 2 and v[0] == v[-1] == '"':
+        try:
+            d = json.loads(v)
+            return d if isinstance(d, str) else v
+        except ValueError:
+            return v[1:-1]
+    return v
+
+
 def under(path, root):
     if not isinstance(path, str) or not path:
         return False
@@ -179,8 +191,10 @@ def under(path, root):
 
 
 def scan_agy(path, since, root):
-    """(Session | None, skipped). Scoped to the project by the paths its tool calls touch (any step, any time)."""
-    s, skipped, last, mine = Session(path.parents[2].name), 0, None, False
+    """(Session | None, skipped). Scoped to the project by the paths its tool calls touch (any step, any time).
+    A step that fails without tool_calls (type GENERIC: the error of the call before it) takes the calls of the step
+    just before it."""
+    s, skipped, last, mine, pending = Session(path.parents[2].name), 0, None, False, None
     for rec in records(path):
         if not isinstance(rec, dict) or not ({'type', 'status', 'tool_calls'} & rec.keys()):
             skipped += 1
@@ -198,7 +212,9 @@ def scan_agy(path, since, root):
                     a = json.loads(a)
                 except ValueError:
                     a = None
-            argv.append((tool_name(c.get('name')), a if isinstance(a, dict) else {}))
+            a = a if isinstance(a, dict) else {}
+            argv.append((tool_name(c.get('name')), {k: unquote(a[k]) for k in AGY_SCOPE_KEYS + AGY_TARGET_KEYS if k in a}))
+        before, pending = pending, argv
         mine = mine or any(under(a.get(k), root) for _, a in argv for k in AGY_SCOPE_KEYS)
         for name, a in argv:
             s.call(name, first_str(a, AGY_TARGET_KEYS), live)
@@ -208,6 +224,8 @@ def scan_agy(path, since, root):
         status = rec.get('status')
         if (isinstance(status, str) and status.upper() in ('ERROR', 'INVALID')) or rec.get('error'):
             s.errors += 1
+            if not argv and rec.get('type') == 'GENERIC':
+                argv = before
             for name, a in argv or [(tool_name(rec.get('type')), {})]:
                 s.failing.append({'tool': name, 'target': trim(first_str(a, AGY_TARGET_KEYS))})
     return (s if mine and s.seen else None), skipped

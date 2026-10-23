@@ -155,6 +155,49 @@ def test_agy_session_outside_the_project_is_ignored_and_a_prefix_sibling_does_no
     assert [x["id"] for x in s] == ["inside"]
 
 
+def test_agy_json_quoted_string_args_scope_the_session_and_show_unquoted_targets(env):
+    """BT-219: Antigravity stores string args JSON-quoted (`"c:\\\\Users\\\\x"`); the quotes must not hide the project."""
+    here, q = str(env["project"]), json.dumps
+    other, sibling = str(env["tmp"] / "elsewhere"), str(env["project"]) + "-other"
+    agy_session(env, "quoted", [step(iso(13), [("run_command", {"CommandLine": q("npm test"), "Cwd": q(here)})], status="ERROR")])
+    agy_session(env, "quoted-out", [step(iso(13), [("run_command", {"Cwd": q(other)})], status="ERROR")])
+    agy_session(env, "quoted-sibling", [step(iso(13), [("run_command", {"Cwd": q(sibling)})], status="ERROR")])
+    s = as_json(env)["hosts"]["agy"]["sessions"]
+    assert [x["id"] for x in s] == ["quoted"]
+    assert s[0]["failing"] == [{"tool": "run_command", "target": "npm test"}]
+
+
+def test_agy_file_tools_Path_key_scopes_the_session_and_is_the_target(env):
+    """BT-219: read_file / write_file / edit_file carry their file in `Path`, not AbsolutePath / TargetFile."""
+    inside, other = str(env["project"] / "sub" / "f.md"), str(env["tmp"] / "elsewhere" / "f.md")
+    sibling = str(env["project"]) + "-other" + os.sep + "f.md"
+    agy_session(env, "read", [step(iso(13), [("read_file", {"Path": json.dumps(inside)})])])
+    agy_session(env, "edit", [step(iso(13), [("edit_file", {"Path": inside, "CodeContent": "SENTINEL_BLOB"})], status="ERROR")])
+    agy_session(env, "out", [step(iso(13), [("edit_file", {"Path": other})], status="ERROR")])
+    agy_session(env, "sibling", [step(iso(13), [("edit_file", {"Path": sibling})], status="ERROR")])
+    s = {x["id"]: x for x in as_json(env)["hosts"]["agy"]["sessions"]}
+    assert set(s) == {"read", "edit"}
+    assert s["edit"]["failing"] == [{"tool": "edit_file", "target": inside}]
+    assert "SENTINEL" not in run(env)
+
+
+def test_agy_call_less_generic_error_step_is_attributed_to_the_planner_step_calls_once(env):
+    """BT-219: a tool's error arrives in the next GENERIC/ERROR step, which has no tool_calls and no call id."""
+    here = str(env["project"])
+    edit = str(env["project"] / "a.py")
+    agy_session(env, "g", [
+        step(iso(13, 0), [("edit_file", {"Path": json.dumps(edit)})]),
+        step(iso(13, 1), [], status="ERROR", kind="GENERIC", error="SENTINEL_ERR"),
+        step(iso(13, 2), [("run_command", {"CommandLine": "a", "Cwd": here}), ("view_file", {"AbsolutePath": edit})]),
+        step(iso(13, 3), [], status="ERROR", kind="GENERIC"),
+        step(iso(13, 4), [], status="ERROR", kind="GENERIC")])  # nothing left to attribute it to
+    s = as_json(env)["hosts"]["agy"]["sessions"][0]
+    assert s["tool_calls"] == 3 and s["errors"] == 3
+    assert s["failing"] == [{"tool": "edit_file", "target": edit}, {"tool": "run_command", "target": "a"},
+                            {"tool": "view_file", "target": edit}, {"tool": "GENERIC", "target": ""}]
+    assert "SENTINEL" not in run(env)
+
+
 def test_agy_scope_is_judged_over_the_whole_session_but_counts_only_since_the_watermark(env):
     here = str(env["project"])
     agy_session(env, "long", [
