@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("reconcile", ROOT / "src" / "scripts" / "reconcile.py")
 rec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rec)
+# The map-mode checks below pass no --arch: pin the default to an absent file so the repo's own (gitignored)
+# .memory/ARCHITECTURE.md, which says `tracker: github` once StratOS dogfoods it, never changes the backend under test.
+rec.ARCH_DEFAULT = str(ROOT / "tests" / "workflows" / "_absent-architecture.md")
 
 ALL = set(rec.ALL_FIELDS)
 FAILS = []
