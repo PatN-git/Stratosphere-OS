@@ -10,6 +10,9 @@ Exit 0 clean, 1 violation (block), 2 could not run (never a pass). Output is rul
 never the source line (a suppressed line is often a secret's own line).
 Exceptions: rows `<rule> <glob> — <reason>` under `## Floor exceptions` in .memory/ARCHITECTURE.md, read from the
 default-branch tip only. A row added anywhere else is itself a violation, so no agent can approve its own loosening.
+`<rule>` is a floor rule (skip, suppress, ...) or a memory rule ID (`A-003`), the latter read by the 4a Standards auditor.
+On a clean run the tip's rule-ID rows and rules bound to a check (`[[A-003]] [LAW] ... Check: <path>` in ARCHITECTURE.md
+or DESIGN_RULES.md) are printed as `info:` lines for the auditor; a row or marker added on a branch counts only once merged.
 Stdlib only; base and glob helpers come from pr_body.py (shipped beside it).
 """
 import argparse
@@ -50,8 +53,11 @@ THRESHOLDS = (
     (re.compile(rf"(?P<k>--max-warnings|maxWarnings)[=\s\"':]+(?P<v>\d+)"), CONFIG, "max"),
 )
 EXC_RULES = ("skip", "suppress", "tests-removed", "threshold")
-EXC_RE = re.compile(rf"^[-*\s]*`?({'|'.join(EXC_RULES)})`?\s+`?(\S+?)`?\s+[—–-]{{1,2}}\s+\S")
+RULE_ID = r"(?!BT-)[A-Z]{1,3}-\d{3,}"
+EXC_RE = re.compile(rf"^[-*\s]*`?({'|'.join(EXC_RULES)}|{RULE_ID})`?\s+`?(\S+?)`?\s+[—–-]{{1,2}}\s+\S")
+BOUND_RE = re.compile(rf"^\s*[-*+]\s+\**\s*\[\[({RULE_ID})\]\][^\n]*\[LAW\][^\n]*?\bCheck:\s*`?([^\s`]+)", re.M)
 ARCH = ".memory/ARCHITECTURE.md"
+DESIGN_RULES = ".memory/DESIGN_RULES.md"
 HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)")
 
 
@@ -109,6 +115,11 @@ def exception_rows(text):
     section = re.split(r"^## Floor exceptions\s*$", text or "", maxsplit=1, flags=re.M)
     rows = (EXC_RE.match(l.strip()) for l in (section[1].split("\n## ")[0].splitlines() if len(section) > 1 else []))
     return {(m.group(1), m.group(2)) for m in rows if m}
+
+
+def bound_rules(text):
+    """{(rule ID, check path)} for active [LAW] entries that name their check (single-line entries)."""
+    return {(m.group(1), m.group(2)) for m in BOUND_RE.finditer(text or "")}
 
 
 def threshold_changes(files):
@@ -183,6 +194,11 @@ def main(argv):
               f"(a `## Floor exceptions` row in {ARCH}, merged to {default}).")
         return 1
     print("floor-guard: clean")
+    for rule, glob in sorted(r for r in tip if re.fullmatch(RULE_ID, r[0])):
+        print(f"info: exception {rule} {glob}")
+    memory = "\n".join((run("show", f"{default}:{p}") or "") if default else "" for p in (ARCH, DESIGN_RULES))
+    for rule, path in sorted(bound_rules(memory)):
+        print(f"info: bound {rule} {path}")
     return 0
 
 

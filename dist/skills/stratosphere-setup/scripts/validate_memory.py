@@ -17,6 +17,7 @@ import os
 import re
 import argparse
 import json
+import subprocess
 from pathlib import Path
 
 # Common Secret Signatures
@@ -42,6 +43,30 @@ def scan_file_for_secrets(file_path):
 
 def is_placeholder(cid):
     return not cid.rsplit('-', 1)[-1].isdigit()
+
+def tracked_files(start):
+    """Repo-relative tracked paths (forward slashes), or None without git or outside a repository."""
+    try:
+        top = subprocess.run(['git', '-C', str(start), 'rev-parse', '--show-toplevel'], capture_output=True, text=True)
+        if top.returncode != 0:
+            return None
+        ls = subprocess.run(['git', '-C', top.stdout.strip(), 'ls-files', '-z'], capture_output=True, text=True, encoding='utf-8')
+    except OSError:
+        return None
+    return set(filter(None, ls.stdout.split('\0'))) if ls.returncode == 0 else None
+
+
+def check_binding_error(raw, tracked):
+    """None when a `Check: <path>` binding names a tracked file (or, with a trailing `/`, a tracked directory)."""
+    path = raw.replace('\\', '/')
+    while path.startswith('./'):
+        path = path[2:]
+    if path.startswith('/') or '..' in path.split('/'):
+        return "must stay inside the repository"
+    if path in tracked or (path.endswith('/') and any(t.startswith(path) for t in tracked)):
+        return None
+    return "which git does not track"
+
 
 def find_id_gaps(definitions):
     """Warnings for missing numbers inside each L-/G-/A-/DR- ID sequence."""
@@ -331,7 +356,9 @@ def main():
                     sup_match = re.search(r'\[SUPERSEDED BY\s+(?:\[\[)?([A-Za-z0-9_-]+)(?:\]\])?\]', line, re.IGNORECASE)
                     superseded_by = sup_match.group(1) if sup_match else None
                     removed = '[REMOVED]' in line
-                    
+                    # A [LAW] entry may end with `Check: <repo path>` naming the test or lint that enforces it (single line)
+                    check_match = re.search(r'\bCheck:\s*`?([^\s`]+)', line) if tag == 'LAW' else None
+
                     # Register definition
                     if def_id in definitions:
                         prev = definitions[def_id]
@@ -344,6 +371,7 @@ def main():
                             'tag': tag,
                             'superseded_by': superseded_by,
                             'removed': removed,
+                            'check': check_match.group(1) if check_match else None,
                             'in_superseded': in_superseded,
                             'content': stripped
                         }
@@ -510,6 +538,19 @@ def main():
             elif fname == 'GLOSSARY.md':
                 if tag == 'LAW':
                     errors.append(f"Purity error: Glossary term '{def_id}' in {fname}:{info['line_num']} has trust tag '[LAW]'. Glossary entries cannot be '[LAW]'.")
+
+    # 2.4 Check bindings: a [LAW] naming its check must name a file git tracks, so a stale binding cannot
+    # silently switch the 4a Standards auditor off for that rule. No git: one warning, only when a binding exists.
+    bindings = [(i, info) for i, info in definitions.items() if info.get('check') and not info['in_superseded']]
+    if bindings:
+        tracked = tracked_files(memory_dir)
+        if tracked is None:
+            warnings.append("Check bindings: could not verify Check bindings (not a git repository, or git is unavailable).")
+        else:
+            for def_id, info in bindings:
+                problem = check_binding_error(info['check'], tracked)
+                if problem:
+                    errors.append(f"Check binding: '{def_id}' in {info['file']}:{info['line_num']} names '{info['check']}', {problem}.")
 
     # 2.5 ID gaps: a hard-deleted entry frees its ID for reuse. Warning only, because
     # existing projects carry gaps from past deletes; a [REMOVED] tombstone closes one.

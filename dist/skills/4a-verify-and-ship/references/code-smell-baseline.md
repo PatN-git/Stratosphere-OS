@@ -1,8 +1,8 @@
 ---
 name: Code Smell Baseline
 description: Universal code-smell checklist for slice-level review
-version: "1.0.0"
-timestamp: 2026-07-09
+version: "1.1.0"
+timestamp: 2026-10-22
 ---
 
 # Code Smell Baseline
@@ -19,3 +19,6 @@ A universal code-smell checklist for slice-level review. Each applies unless a r
 8. **Speculative Generality** — abstraction/params/hooks added for imagined future needs.
 9. **Message Chains** — `a.b().c().d()` coupling the caller to a deep object graph.
 10. **Middle Man** — a unit that only delegates and adds nothing.
+
+## 4a Standards auditor: skips
+The lead passes the `info:` lines the floor guard printed. Skip a rule named on an `info: bound <rule> <path>` line (a test or lint already enforces it): skip the rule, not the file, so other defects there still count. Drop a finding whose rule ID and path match an `info: exception <rule> <glob>` line. No `info:` lines: judge as usual.

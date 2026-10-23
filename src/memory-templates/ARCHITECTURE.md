@@ -5,7 +5,7 @@ description: Tech stack, structure, data flow, and architectural laws.
 generated:
   by: stratosphere-setup
   at: 2026-09-29
-version: "1.0.5"
+version: "1.0.6"
 ---
 # ARCHITECTURE
 
@@ -71,6 +71,9 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 ## Known Architectural Constraints
 - **[[A-XXX]] [LAW]** Example placeholder. Source: BT-XXX.
+
+## Floor exceptions
+<!-- Rows a human merges to the default branch, `<rule> <glob> — <reason>`, e.g. `A-003 src/legacy.js — legacy, split in BT-nnn`. The rule is a floor rule or a rule ID above. -->
 
 ## Superseded
 > Read only when explicitly asked.
