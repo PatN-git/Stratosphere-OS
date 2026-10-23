@@ -3,6 +3,7 @@ import itertools
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 
@@ -53,6 +54,21 @@ def read_src(rel):
 def read_repo(rel):
     """Text of `<rel>` relative to the repo root."""
     return (REPO_ROOT / rel).read_text(encoding="utf-8")
+
+
+_COMBINED_GATE = re.compile(r"python \.agents/scripts/reconcile\.py ([^`]*--with-edges dependents[^`]*)`")
+
+
+def combined_gate_calls():
+    """The `reconcile.py ... --with-edges dependents` argument strings 4a's text carries (one per call)."""
+    return _COMBINED_GATE.findall(read_src("workflows/4a-verify-and-ship.md"))
+
+
+def combined_gate_argv(slice_id, epic_id):
+    """argv of 4a's github ship gate read out of the workflow text: optional groups kept, placeholders filled."""
+    text = re.sub(r"\[([^\]]*)\]", r"\1", combined_gate_calls()[0])
+    text = text.replace("BT-<slice>", slice_id).replace("BT-<epic flipped>", epic_id).replace("BT-<epic>", epic_id)
+    return shlex.split(text)
 
 
 def update_skill_text():

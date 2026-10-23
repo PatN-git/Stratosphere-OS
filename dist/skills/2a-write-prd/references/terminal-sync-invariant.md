@@ -1,12 +1,15 @@
 ---
 description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
-version: "1.2.0"
-timestamp: 2026-10-20
+version: "1.3.0"
+timestamp: 2026-10-22
 ---
 
 # Terminal Sync Invariant
 
 A workflow that writes **both** GitHub and `.memory/BACKLOG_MAP.md` in its terminal phase must leave them in agreement. Completion bias makes the trailing mirror write drop silently after the GitHub call succeeds; the corruption then propagates to every downstream reader. The gate below is **deterministic** — a script exit code, not a self-attested checkbox (the same bias that skips the write skips a prose check).
+
+## GitHub mode (`tracker: github`)
+No map exists, so the gate compares GitHub with the intended state the phase states itself: `--expect "BT-<n>:<field>=<value>;..."` inline or `--expect-file <F>` (one item per line), fields as `--fields`. One batched fetch serves the gate; `--with-edges blockers|dependents` adds the edge verdicts to the same fetch (4a's ship gate: slice, flipped epics and dependents in one call). Heal is the missing write itself (a verb of `references/tracker-verbs.md`), then a re-run; `--heal` and `--all-open` are map-only. A `gh` failure is retried, then exits 3 with `[GH-UNAVAILABLE]` and nothing written. The rest of this file describes the local backend's gate.
 
 ## Gate
 At the end of the sync phase, over the ids this phase touched:

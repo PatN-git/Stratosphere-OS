@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.7.0"
-timestamp: 2026-10-20
+version: "2.8.0"
+timestamp: 2026-10-22
 ---
 
 # Implement issue
@@ -19,11 +19,11 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 0. **Spike guard (first, before any side effect):** if the slice is `status:needs_spec`, HALT: `[SPIKE] BT-<n> is not buildable. Close it on its Exit Criteria, or mint a Build slice with /3b-create-issue.`
    **Blocker guard:** `python .agents/scripts/reconcile.py --edges blockers --ids BT-<n>`; any `[BLOCKER-UNMET]`/`[BLOCKER-UNKNOWN]` → HALT `[BLOCKED-BY] BT-<n> waits on BT-<b> (<scope>: <reason>)`. HITL may override in chat (log it in the Phase 0.5 plan). Skip under 3z (its frontier ran it), for a CI-fix dispatch and for rework of a shipped slice.
 1. **Branch Isolation:** `python .agents/scripts/pr_body.py unit --slice BT-<padded> --milestone <Milestone> --parent <Parent> --parent-milestone <parent's Milestone> --type <type> --slug "<parent epic name>"` → `{unit, globs, branch}`.
-   - Inputs: Milestone, Parent from the BACKLOG row, else `gh issue view <n> --json milestone,parent`; parent's Milestone likewise (`gh issue view <parent> --json milestone`); `—` for none. `<type>` = the parent's `type:` label (the slice's if standalone); standalone → slice title as slug.
+   - Inputs, by backend (`references/tracker-verbs.md`): github → `gh issue view <n> --json milestone,parent`, and the parent's Milestone with `gh issue view <parent> --json milestone` (one issue each, never a list); local backend → the Milestone and Parent of its `BACKLOG_MAP.md` row. `—` for none. `<type>` = the parent's `type:` label (the slice's if standalone); standalone → slice title as slug.
    - Find an active branch matching the first `globs` entry, in order, among local + `origin/` branches (`git for-each-ref --format='%(refname:short)' refs/heads refs/remotes/origin`); active = no merged PR (`gh pr list --head <b> --state merged --json number`; no `gh` → not in `git branch --no-merged <default>`). Found → checkout/pull. None → `needs_milestone` true: HALT `[NO-RELEASE] BT-<n>: epic BT-<p> has no release milestone — assign one via /3c or /3a` (HITL may override in chat → epic branch); else create `branch` from default (name taken by a merged branch → append `-2`).
    - Prompt (AFK: first match, else own-issue unit, never adopt) on several active matches for one glob, unreadable or ambiguous Parent/Milestone, or a checked-out unmerged feature branch outside `globs`. Never work on `main`.
    - Update `.memory/STATUS.md` `Current Branch`/`Active issue`; refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
-2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --remove-label "status:done" --add-label "status:in progress"`. Slice closed (rework of a shipped slice) → after the label edit and BACKLOG update, `gh issue reopen <n>` as the last write (relabel first: the board Action restores the column from the label at reopen). Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip and any reopen: its slice keeps its shipped status.
+2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** `set_status` the slice `in progress` (`references/tracker-verbs.md`; it clears whichever of `planned`, `blocked`, `in review`, `done` the slice carries; local backend: also its `BACKLOG_MAP.md` Status cell). Slice closed (rework of a shipped slice) → after `set_status`, `reopen` as the last write (relabel first: the board Action restores the column from the label at reopen). `set_status` the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip and any reopen: its slice keeps its shipped status.
 3. **Conditional Read:** If a design path resolved, read the frozen blueprint at it; no PRD/design doc at that path (standalone slice) → skip the blueprint.
    - UI slices also read brand tokens `.memory/DESIGN.md` and design rules `.memory/DESIGN_RULES.md` §3 (a backend-only slice reads just the blueprint/contract).
    - UI slices must implement design *only* from these files via Fast-Track B; never access/re-read the live generator.
@@ -48,7 +48,7 @@ Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, o
 - micro-tdd returns `stuck` → halt the slice; commit nothing half-done. Stash uncommitted edits so the tree stays clean: `git stash push -u -m "BT-<padded> stuck"`.
 - Then HITL presents its two options; AFK returns it as `stuck` in the 3z JSON.
 1. **CLI/Subprocess:** assert on stdout/stderr, not just exit code.
-2. **Requirements:** link test to requirement bare IDs from BACKLOG_MAP.md/issue (not STATUS.md) (e.g., `BT-101`).
+2. **Requirements:** link test to requirement bare IDs from the issue (local backend: or `BACKLOG_MAP.md`; never STATUS.md) (e.g., `BT-101`).
 3. **Fallbacks:** prefer native libraries (e.g. sqlite3, argparse) over third-party in mock/simple utility environments.
 
 ## Phase 2: Refactoring & Architecture Checks
