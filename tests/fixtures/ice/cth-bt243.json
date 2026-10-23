@@ -1,0 +1,15 @@
+{
+  "source": "cleantech_jobs#243",
+  "labels": [
+    "status:in progress",
+    "area:BE-api",
+    "area:BE-data",
+    "type:feature",
+    "mode:AFK",
+    "priority:high",
+    "size:medium",
+    "scope:baseline",
+    "tier:slice"
+  ],
+  "body": "### Overview\n(cut)\n\n### ICE Priorities\n- **Impact:** 2.0 (Directly populates and unblocks dozens of real cleantech companies in Supabase for directory publication)\n- **Confidence:** 100% (High confidence; pattern established in `scripts/enrich-stuttgart-llm.js` and `scripts/backfill-company-opportunity-areas.js`)\n- **Effort Weight:** 2 (`size:medium`)\n- **ICE Score:** 1.0 (`(2.0 * 1.0) / 2 = 1.0` -> `priority:high`)\n\n"
+}

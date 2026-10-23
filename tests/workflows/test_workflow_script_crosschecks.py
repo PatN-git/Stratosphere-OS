@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from conftest import assert_argv_accepted, write_architecture
+
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 WF = SRC / "workflows"
@@ -129,6 +131,8 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
     monkeypatch.setattr(rec, "gh_available", lambda: False)
     backlog = tmp_path / "BACKLOG_MAP.md"
     backlog.write_text("", encoding="utf-8")
+    arch = tmp_path / "ARCHITECTURE.md"  # pinned local: the repo's own (gitignored) ARCHITECTURE.md may say github
+    write_architecture(arch, "local")
     call = re.compile(r"python \.agents/scripts/reconcile\.py ([^`]*--edges[^`]*)`")
     seen, from_reference = 0, 0
     paths = [WF / n for n in ("4a-verify-and-ship.md", "3d-implement-issue.md", "3z-afk-loop.md", "3c-sprint-planning.md", "0b-stop-session.md")]
@@ -141,10 +145,7 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
             argv = re.sub(r"<[^>]*>", "001", args).split()
             mode = argv[argv.index("--edges") + 1]
             assert mode in {"blockers", "dependents"}, f"{name}: --edges {mode}"
-            try:
-                rec.main(argv + ["--backlog", str(backlog)])
-            except SystemExit as e:
-                assert e.code != 2, f"{name}: `{args}` rejected by reconcile.py argparse"
+            assert_argv_accepted(rec.main, argv + ["--backlog", str(backlog), "--arch", str(arch)])
     assert seen >= 5
     assert from_reference, "the --edges dependents call moved to post-merge-sync.md and is no longer found there"
 

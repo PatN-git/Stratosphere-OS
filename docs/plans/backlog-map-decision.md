@@ -4,7 +4,7 @@ title: BT-189 Decision Record — BACKLOG_MAP in GitHub mode
 generated:
   by: claude-code session (PatN-git)
   at: 2026-10-20
-version: "1.2.0"
+version: "1.2.1"
 ---
 
 # Decision record: BT-189, BACKLOG_MAP as a generated read-only cache of GitHub
@@ -173,7 +173,7 @@ The order is **S1 → (S2 ∥ S3) → (S4 ∥ S5) → S6**. Slices are numbered 
 
 **Exempt:** `tests/fixtures/legacy/validate_memory.v4.0.0.py` is a frozen legacy fixture and is never edited.
 
-**Release:** S6 changes behavior for GitHub-mode projects, so `release.py` should land a **MAJOR** bump (v5.0.0). The branch currently carries "release: prepare v4.9.0", so re-run `release.py` at ship.
+**Release:** S6 changes behavior for GitHub-mode projects, so `release.py` should land a **MAJOR** bump (v5.0.0). BT-194 ships as its own unit from `main` after v4.10.0 (PR #215), so re-run `release.py` at ship and expect v5.0.0.
 
 ## Post-merge one-off: CleanTechHub switch (throwaway, not in `src/`)
 Run after CleanTechHub installs the release (`/stratosphere-update`), on its own branch from an up-to-date `main`, so it does not run on the long-lived `feat/BT-051` branch. It uses a throwaway script under `.tmp/`:

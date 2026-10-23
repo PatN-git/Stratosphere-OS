@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-14
+version: "1.4.0"
+timestamp: 2026-10-22
 ---
 
 # Concept Map Workflow
@@ -34,7 +34,7 @@ timestamp: 2026-10-14
 1. **Destination:** Define destination and scope.
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
 3. **Register Map:**
-   - **GitHub CLI:** Create `concept:map` issue using `references/concept-map-template.md`. Add map row to `.memory/BACKLOG_MAP.md` (status: `in progress`, milestone-exempt).
+   - **GitHub CLI:** Create the `concept:map` issue using `references/concept-map-template.md` (`create`, `status:in progress`, milestone-exempt; `references/tracker-verbs.md`). GitHub is the only record.
    - **BT-LOCAL Fallback:** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
@@ -87,5 +87,5 @@ timestamp: 2026-10-14
    - RAT + cheapest test documented with status.
    - No unfiled Open Questions.
 5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`, each with its `Avoid:` list (rejected synonyms from the map's resolutions).
-6. **Archive Lifecycle:** Close `concept:map` issue. Set map row status in `BACKLOG_MAP.md` to `status:done`.
+6. **Archive Lifecycle:** `close` the `concept:map` issue and `set_status` it `done` (local backend: set the row's status in `BACKLOG_MAP.md` to `done`).
 7. **Hand-off:** Expose brief. Trigger `/2a-write-prd` or exit ramps.

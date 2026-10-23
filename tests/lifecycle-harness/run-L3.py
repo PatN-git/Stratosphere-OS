@@ -82,6 +82,7 @@ def parse_args(argv=None):
                     help="install the artifacts 0a-2b would have produced, so the "
                          "late chain can be driven without paying for the early one. "
                          "A seeded run does NOT test the hand-off into its first phase")
+    ap.add_argument("--tracker", choices=("local", "github"), default="local", help="tracker backend (github: no map)")
     ap.add_argument("--handoff", action="store_true",
                     help="test the CHAIN, not the depth of each phase: fewer turns, "
                          "one round, a per-phase wall-clock budget, and 1b's "
@@ -195,7 +196,7 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     ctx = assertions_mod.Context(
         project=env.project, child_env=env.child_env,
         store=Path(env.child_env["L3_GH_STORE"]), bare=env.bare,
-        tool_uses=tool_uses, before=before, handoff=args.handoff,
+        tool_uses=tool_uses, before=before, handoff=args.handoff, tracker=args.tracker,
         final_text=run.last.text if run.last else "",
         phase_text="\n".join(t.text for t in run.turns))
     problems, notes = assertions_mod.check(phase, ctx)
@@ -330,7 +331,7 @@ def main(argv=None) -> int:
         # it runs when that phase is in the run and not otherwise.
         with env_mod.lifecycle_env(repo_root, keep=args.keep,
                                    vendor="3d" in phases,
-                                   seed=args.seed) as env:
+                                   seed=args.seed, tracker=args.tracker) as env:
             print(f"[env]  root    {env.root}")
             print(f"[env]  project {env.project}")
             print(f"[env]  origin  {env.bare}")

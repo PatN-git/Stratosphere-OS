@@ -323,6 +323,8 @@ try:
     import _versioning
 except ImportError:
     _versioning = None
+import reconcile
+import tracker_switch
 
 
 
@@ -366,6 +368,19 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.work.md", "*.stratosphere-new"]
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
+
+def skips_map(proj_path, tracker):
+    """True for the local tracker's store (`BACKLOG_MAP.md`) under `tracker: github`: it is never placed, merged or locked."""
+    return tracker == "github" and proj_path == tracker_switch.MAP
+
+
+def resolve_tracker(project, flag=None):
+    """'github' | 'local': the explicit flag, else the `tracker:` key in the project's ARCHITECTURE.md, else the
+    legacy default `local` (every install before the key existed holds a map)."""
+    if flag:
+        return flag
+    key = reconcile.read_tracker(Path(project) / ".memory" / "ARCHITECTURE.md")
+    return key if key in ("github", "local") else "local"
 
 def map_bundled_to_project(rel_path: str):
     parts = rel_path.split("/")
@@ -625,7 +640,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name
@@ -695,9 +710,11 @@ def main():
     ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")
+    ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend (github places no BACKLOG_MAP.md); recorded as `tracker:` in ARCHITECTURE.md")
     args = ap.parse_args()
 
     project = Path.cwd()
+    tracker = resolve_tracker(project, args.tracker)
     dry = args.dry_run or args.verify
     update = args.update or args.verify
     res = {
@@ -733,7 +750,7 @@ def main():
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
-            if proj_path.startswith(".github/workflows/"):
+            if proj_path.startswith(".github/workflows/") or skips_map(proj_path, tracker):
                 continue
             
             p = project / proj_path
@@ -849,7 +866,7 @@ def main():
         
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
-            if not proj_path:
+            if not proj_path or skips_map(proj_path, tracker):
                 continue
                 
             p = project / proj_path
@@ -1492,7 +1509,12 @@ def main():
 
     # 3. Memory templates -> .memory/
     for src in sorted((ASSETS / "memory").glob("*.md")):
+        if skips_map(f".memory/{src.name}", tracker):
+            continue
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
+    arch = project / ".memory" / "ARCHITECTURE.md"
+    if args.tracker and not dry and arch in res["created"]:
+        tracker_switch.write_tracker(arch, args.tracker)
 
     # 4. Rules -> .agents/rules/ (Antigravity-native: reads trigger/globs here).
     #    glob-triggered rules ALSO -> .claude/rules/ so Claude Code activates them

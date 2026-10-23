@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-10-08
+version: "1.7.1"
+timestamp: 2026-10-22
 ---
 
 # StratosphereOS Update Flow
@@ -116,7 +116,7 @@ For each block in `preserved_files` flagged with `status: "conflict"`, you must 
 - **User Block Content:** Read the current block content in the workspace file.
 - **New Block Content:** Read the block content in the new template file under `<plugin>/assets/templates/memory/`.
 - **Merge action:** Merge the framework improvements into the block while preserving the user's custom edits. Do **NOT** touch any content outside the block.
-- **Write back:** Write the fully merged file to its path suffix: `<filepath>.stratosphere-new` (e.g. `.memory/BACKLOG_MAP.md.stratosphere-new`).
+- **Write back:** Write the fully merged file to its path suffix: `<filepath>.stratosphere-new` (e.g. `.memory/BACKLOG_MAP.md.stratosphere-new`). A project with `tracker: github` has no `BACKLOG_MAP.md`: the scaffolder neither creates nor merges one.
 - **Frontmatter:** copy the project file's frontmatter verbatim; never adopt the template's (a changed frontmatter, e.g. `timestamp:` → `generated:`, aborts the update).
 
 ### 2. Constitution Files (`needs_review_constitution`)
@@ -149,7 +149,7 @@ For each constitution file that has changed:
    - Run Level-3 invariants:
      1. **Out-of-block byte-identity:** Compare raw bytes outside changed blocks against the original file, asserting they are identical.
      2. **Marker integrity:** Validate exactly one ordered START/END pair per block ID, and check for unknown block IDs.
-     3. **Cheap corroborating checks:** Assert BT-xxx ID sets, Backlog row count, and §3 Immortal Component DR-xxx ID sets are unchanged.
+     3. **Cheap corroborating checks:** Assert BT-xxx ID sets, Backlog row count (when a `BACKLOG_MAP.md` exists), and §3 Immortal Component DR-xxx ID sets are unchanged.
 
 2. **Apply changes:**
    If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.

@@ -1,6 +1,6 @@
 /3d-implement-issue
 
-Implement the first slice in .memory/BACKLOG_MAP.md.
+Implement the first planned slice of the feature that 3b minted (the lowest issue number).
 
 When the slice is implemented, its tests pass and the work is committed to the feature
 branch, print exactly L3-3D-COMPLETE on its own final line.

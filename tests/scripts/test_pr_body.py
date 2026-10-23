@@ -1026,3 +1026,102 @@ def test_a_malformed_prior_audit_line_warns_and_keeps_the_rest(repo):
     r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-10", suite=write_suite(repo))
     assert r.returncode == 0 and "[PR-BODY-WARN]" in r.stderr and "audit" in r.stderr
     assert json.loads(field(r.stdout, "post_merge")) == ["keep"] and "audit:" not in r.stdout
+
+
+# --- tracker: github: epic detection and parents come from GitHub, and fail closed (BT-195) -----------------
+
+def _load_pr_body():
+    sys.path.insert(0, str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location("pr_body_gh_mode", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _node(num, tags, parent=None):
+    return {"number": num, "state": "OPEN", "milestone": None, "labels": {"nodes": [{"name": t} for t in tags]},
+            "parent": {"number": parent, "state": "OPEN", "milestone": None, "labels": {"nodes": []}} if parent else None,
+            "blockedBy": {"nodes": []}}
+
+
+def _tracker(repo, key):
+    (repo / ".memory").mkdir(exist_ok=True)
+    (repo / ".memory" / "ARCHITECTURE.md").write_text(f"---\ntype: architecture\ntracker: {key}\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+
+
+def _build_in_process(mod, repo, capsys, slice_id, *extra):
+    suite = write_suite(repo, f"3d-suite-{slice_id}.json")
+    code = mod.main(["build", "--slice", slice_id, "--summary", "did a thing", "--verdict", "PASS", "--audit-rounds", "1",
+                     "--base", "main", "--risk-paths", str(RISK_PATHS), "--suite-json", str(suite), "--parent", "BT-10", *extra])
+    out = capsys.readouterr()
+    return code, out.out, out.err
+
+
+def test_github_mode_reads_epics_and_parents_from_github_with_no_map(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    commit(repo, "feat(BT-12): pending sibling")
+    _tracker(repo, "github")
+    asked = []
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda nums, comments=False, edges=False: asked.append(sorted(nums)) or {
+        7: _node(7, ["tier:epic", "status:in progress"]), 11: _node(11, ["tier:slice"], parent=7),
+        12: _node(12, ["tier:slice"], parent=9)})
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 0, err
+    assert [s[0] for s in slices(out)] == ["BT-11", "BT-12"] and "Closes #7." not in out
+    assert slice_parents(out)["BT-12"] == "BT-009"
+    assert asked == [[7, 11, 12]], "one batched fetch for every commit-scoped id"
+    assert not (repo / ".memory" / "BACKLOG_MAP.md").exists()
+
+
+def test_github_mode_fails_closed_when_github_is_unreachable(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    _tracker(repo, "github")
+    monkeypatch.chdir(repo)
+
+    def down(nums, comments=False, edges=False):
+        raise reconcile.GhError("gh api graphql failed after 4 attempts: HTTP 502")
+    monkeypatch.setattr(reconcile, "fetch_nodes", down)
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "HTTP 502" in err
+
+
+def test_local_tracker_still_fails_open_and_never_asks_github(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "local")
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda *a, **k: pytest.fail("local mode must not ask GitHub"))
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 0 and {s[0]: s[2] for s in slices(out)}["BT-7"] == "PENDING"
+
+
+def test_github_mode_still_honors_the_epic_flag(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "github")
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda nums, comments=False, edges=False: {
+        7: _node(7, ["tier:slice"]), 11: _node(11, ["tier:slice"])})
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11", "--epic", "BT-7")
+    assert code == 0 and [s[0] for s in slices(out)] == ["BT-11"]
+
+
+def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "gitlab")
+    monkeypatch.chdir(repo)
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err

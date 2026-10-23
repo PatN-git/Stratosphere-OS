@@ -286,6 +286,10 @@ generated:
 """
 
 
+MAP = Path(".memory") / "BACKLOG_MAP.md"  # relative to a project root
+ARCH = Path(".memory") / "ARCHITECTURE.md"
+
+
 def _shimmed(tmp_path, monkeypatch):
     child = {"PATH": os.environ.get("PATH", "")}
     e.install_shims(tmp_path, child)

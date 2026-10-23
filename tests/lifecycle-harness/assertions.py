@@ -15,6 +15,7 @@ surprising is a harness people stop running.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
@@ -50,6 +51,8 @@ class Context:
     # therefore unreachable in this mode, and a checker that failed on it would be
     # reporting the mode rather than the lifecycle.
     handoff: bool = False
+    # `github`: no BACKLOG_MAP.md exists and GitHub (the shim's store) is the only record.
+    tracker: str = "local"
 
 
 # --- small readers -----------------------------------------------------------
@@ -313,6 +316,8 @@ def check_3b(ctx: Context):
     issues = [i for i in state["issues"].values() if not i.get("isPR")]
     if not issues:
         return ["3b minted no issues in the fixture store"], notes
+    if ctx.tracker == "github":
+        return check_3b_github(ctx, issues), notes
     backlog = ctx.project / ".memory" / "BACKLOG_MAP.md"
     if not backlog.exists():
         return ["BACKLOG_MAP.md does not exist"], notes
@@ -336,17 +341,27 @@ def check_3b(ctx: Context):
     return problems, notes
 
 
-def mirror_ok(ctx: Context, ids: str):
+def check_3b_github(ctx: Context, issues: list) -> list:
+    """GitHub mode: the checks live in `github_3b.py`; they run the gate through `mirror_ok` below."""
+    spec = importlib.util.spec_from_file_location("l3_github_3b", Path(__file__).with_name("github_3b.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.check(ctx, issues, mirror_ok)
+
+
+def mirror_ok(ctx: Context, ids: str, expect: list | None = None):
     """Run the real gate ourselves rather than believing the transcript.
 
     `--require-gh` is what the terminal gates pass: without a reachable GitHub it
     exits 3 with `[MIRROR-UNVERIFIED]` instead of the fail-open `[local-only]`, so
-    reaching `[MIRROR-OK]` proves the shim was found AND believed.
+    reaching `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no
+    map to diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
     """
     script = ctx.project / ".agents" / "scripts" / "reconcile.py"
     if not script.exists():
         return False, f"no reconcile.py at {script}"
-    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids],
+    args = ["--expect", ";".join(expect)] if expect else []
+    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids, *args],
                        cwd=str(ctx.project), env=ctx.child_env,
                        capture_output=True, text=True)
     return "[MIRROR-OK" in r.stdout, r.stdout + r.stderr

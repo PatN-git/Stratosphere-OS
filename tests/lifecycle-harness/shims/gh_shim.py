@@ -67,6 +67,14 @@ class Failure(Exception):
         self.code = code
 
 
+class Partial(Exception):
+    """A GraphQL answer with data AND errors: real `gh api graphql` prints the body and exits 1."""
+
+    def __init__(self, out: str):
+        super().__init__("graphql errors")
+        self.out = out
+
+
 def load() -> dict:
     path = store_path()
     if path.exists():
@@ -343,6 +351,7 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
 
 
 _MUTATION = re.compile(r"\b(addSubIssue|addBlockedBy|removeBlockedBy)\b")
+_ALIAS = re.compile(r"\b(\w+):\s*issue\(number:\s*(\d+)\)")
 
 
 def cmd_api(state: dict, argv: list[str]) -> str:
@@ -367,6 +376,52 @@ def _fields(argv: list[str]) -> dict:
     return out
 
 
+def _ref(state: dict, number: int) -> dict:
+    i = get(state, number)
+    return {"number": i["number"], "state": i["state"], "milestone": i["milestone"],
+            "labels": {"nodes": i["labels"]}}
+
+
+def _parent(state: dict, number: int) -> dict | None:
+    """The parent as a GraphQL node: the shim answers with a superset of what any query selects."""
+    p = get(state, number)["parent"]
+    if p is None:
+        return None
+    return dict(_ref(state, p["number"]),
+                blockedBy={"nodes": [_ref(state, b["number"]) for b in get(state, p["number"])["blockedBy"]]})
+
+
+def _with_parent(state: dict, number: int) -> dict:
+    return dict(_ref(state, number), parent=_parent(state, number))
+
+
+def _read(state: dict, query: str) -> str:
+    """The batched read `reconcile.py` makes: `i_<n>: issue(number: <n>) {...}` aliases under `repository`.
+
+    The shim does not run GraphQL. It recognises the alias shape and returns every connection the gate can select;
+    selecting less is the real server's job. A missing number is a null alias plus a NOT_FOUND error and exit 1,
+    which is what real `gh` does for a partial answer.
+    """
+    repo, errors = {}, []
+    for alias, number in _ALIAS.findall(query):
+        issue = state["issues"].get(number)
+        if issue is None or issue["isPR"]:
+            repo[alias] = None
+            errors.append({"type": "NOT_FOUND", "path": ["repository", alias],
+                           "message": f"Could not resolve to an Issue with the number of {number}."})
+            continue
+        repo[alias] = dict(
+            _with_parent(state, issue["number"]),
+            blockedBy={"nodes": [_with_parent(state, b["number"]) for b in issue["blockedBy"]]},
+            blocking={"nodes": [_with_parent(state, o["number"]) for o in state["issues"].values()
+                                if any(b["number"] == issue["number"] for b in o["blockedBy"])]},
+            comments={"nodes": issue["comments"]})
+    out = json.dumps({"data": {"repository": repo}, **({"errors": errors} if errors else {})})
+    if errors:
+        raise Partial(out)
+    return out
+
+
 def _graphql(state: dict, argv: list[str]) -> str:
     """The three mutations `3b` and `4a` use, per github-issue-relations.md.
 
@@ -377,6 +432,8 @@ def _graphql(state: dict, argv: list[str]) -> str:
     """
     args = _fields(argv)
     query = args.get("query", "")
+    if _ALIAS.search(query):
+        return _read(state, query)
     m = _MUTATION.search(query)
     if not m:
         raise Failure(EXIT_UNKNOWN,
@@ -467,6 +524,10 @@ def main(argv=None) -> int:
     state["invocations"].append(argv)
     try:
         out, err = dispatch(state, argv)
+    except Partial as exc:
+        save(state)
+        print(exc.out)
+        return EXIT_UNKNOWN
     except Failure as exc:
         state["unknown"].append(argv)
         save(state)

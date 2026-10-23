@@ -1,10 +1,12 @@
 ---
 description: Canonical templates for StratOS backlog issues (Spike for parked, high-uncertainty, or discovery items, Build slice for normal vertical slices).
-version: "1.1.0"
+version: "1.1.1"
 timestamp: 2026-10-13
 ---
 
 # Issue Templates
+
+Writes use the tracker verbs (`references/tracker-verbs.md`); labels, statuses and milestones follow `references/label-taxonomy.md`.
 
 ## SPIKE (Template A)
 *Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice`, `size:medium`. Sprintable at the medium weight (3h), not buildable. Close on Exit Criteria; mint follow-up Build slices via `/3b-create-issue`.*
@@ -21,7 +23,7 @@ timestamp: 2026-10-13
 
 ### Exit Criteria & Deliverables
 - *Specify the exact proof, throwaway prototype (not merged), or memory artifact required to answer the question and unblock downstream Build slices.*
-- [ ] Close this issue when the criteria above are met; set `status:done` on GitHub and in BACKLOG_MAP; mint follow-up work with `/3b-create-issue`.
+- [ ] Close this issue when the criteria above are met; `set_status(<n>, done)`; mint follow-up work with `/3b-create-issue`.
 
 ### Blockers
 - What must be resolved before the follow-up Build slice can be minted?
@@ -56,8 +58,8 @@ Must cite the governing design/architectural laws violated (e.g. violates `[[A-x
 - [ ] **Stress Cases:** Implements the handling for relevant adverse conditions in the Stress Matrix (from design doc).
 
 ### Dependencies
-- **Parent:** `BT-<padded>` — the epic this slice belongs to (bare ID; `—` if standalone). Mirrors the GitHub sub-issue parent and the BACKLOG `Parent` column.
-- **Blocked by:** `BT-<padded>, …` — slices that must land first (bare IDs; `—` if none). Mirrors GitHub blocked-by and the BACKLOG `Blocked by` column.
+- **Parent:** `BT-<padded>` — the epic this slice belongs to (bare ID; `—` if standalone). Written once with `set_parent`.
+- **Blocked by:** `BT-<padded>, …` — slices that must land first (bare IDs; `—` if none). Written once with `add_blocker`.
 - **Design:** `docs/design/BT-<parentPadded>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
 
 ### Notes
