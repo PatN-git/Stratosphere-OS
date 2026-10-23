@@ -48,7 +48,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 
 ### Step 2A: Implement
 0. **Frontier check (Orchestrator):** run `python .agents/scripts/reconcile.py --edges blockers --ids BT-<padded>`. Every `[BLOCKER-OK]` passes, and so does a `[BLOCKER-UNMET] same-unit` blocker that is `VERIFIED`/`VERIFIED-LOCAL` in this run. Any cross-unit unmet/unknown, or a same-unit blocker not verified, → emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
-1. **Activate Slice (Orchestrator):** `set_status` the target slice `BT-<padded>` `in progress` (`references/tracker-verbs.md`; it clears `planned`, `blocked`, `in review`; local backend: also its `BACKLOG_MAP.md` Status cell, no remote).
+1. **Activate Slice (Orchestrator):** `set_status` the target slice `BT-<padded>` `in progress` (`references/tracker-verbs.md`; it clears `planned`, `blocked`, `in review`).
    `set_status` the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
@@ -70,12 +70,12 @@ _Done when:_ auditor returns valid JSON verdict.
 
 ### Step 2C: Decision Gate (Orchestrator)
 Evaluate subagent response:
-- Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): `set_status` the slice `blocked` (local backend: also its `BACKLOG_MAP.md` Status cell), `comment` the reason and both options (`[STUCK] <reason> — options: 1) <a> 2) <b>`), log to `.tmp/3z-loop.work.md`, continue.
+- Implementer returned `stuck` (Step 2A) → no retry (needs a human design call): `set_status` the slice `blocked`, `comment` the reason and both options (`[STUCK] <reason> — options: 1) <a> 2) <b>`), log to `.tmp/3z-loop.work.md`, continue.
 - Floor guard failed (`[FLOOR]`, Step 2A) → not passing: same retry and `status:blocked` path as `[UNCOVERED]` below, the guard's findings as the gap report (comment the `[FLOOR]` rows when blocking). The retry fixes the code; a new `## Floor exceptions` row never counts.
 - `tests_added` non-empty and `red_confirmed` empty (Step 2A) → `[NO-RED]`: not passing, same retry and `status:blocked` path as `[UNCOVERED]` below; gap report: record the observed RED per micro-tdd (a characterization test names the wrong value it fails on).
 - Findings (every Step 2B return): keep per slice `spec_r1` = `counts.spec` of attempt 1 (absent when Step 2A skipped 2B that attempt), `spec_final` = `counts.spec` of the latest, and the latest `std_hard`/`std_judg`, `watch`, `phase1`, `std_tier`, `input`. Verdict `[SKIP]`: record only `phase1: bypass` (`counts` are template defaults, not findings). Standards findings never trigger a retry here; they are recorded only.
 - Verdict `[PASS]` or `[SKIP]` (cosmetic bypass) → mark slice `VERIFIED` (or `VERIFIED-LOCAL` if local-only) and record details, including the `## Deviations` lines read now from the implementer's `plan_path` (4a's ship step deletes the plan; empty `plan_path` or `none` → none); log to `.tmp/3z-loop.work.md`; next slice.
-- Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → `set_status` the slice `blocked` (local backend: also its `BACKLOG_MAP.md` Status cell), `comment` the `[UNCOVERED]` rows, log to `.tmp/3z-loop.work.md`, continue.
+- Verdict `[UNCOVERED]` with confidence ≥ 80 → `attempt += 1`: if `≤ 3` → Step 2A with coverage map; if `> 3` → `set_status` the slice `blocked`, `comment` the `[UNCOVERED]` rows, log to `.tmp/3z-loop.work.md`, continue.
 _Loop done when (exhaustive):_ every queued slice reached a terminal state (`VERIFIED`, `VERIFIED-LOCAL`, `SKIP-DEP`, or `status:blocked`).
 
 ## Phase 3: Ship & Conflict Scan

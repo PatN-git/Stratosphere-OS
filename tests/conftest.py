@@ -71,6 +71,19 @@ def combined_gate_argv(slice_id, epic_id):
     return shlex.split(text)
 
 
+def write_architecture(path, tracker):
+    """Write a minimal ARCHITECTURE.md whose frontmatter carries `tracker: <tracker>` (the backend `reconcile.py` reads)."""
+    Path(path).write_text(f"---\ntype: architecture\ntracker: {tracker}\n---\n# A\n", encoding="utf-8")
+
+
+def assert_argv_accepted(main, argv):
+    """`main(argv)` may fail or exit non-zero, but argparse must not reject the argument list (exit 2)."""
+    try:
+        main(argv)
+    except SystemExit as e:
+        assert e.code != 2, f"`{' '.join(argv)}` rejected by argparse"
+
+
 def update_skill_text():
     """stratosphere-update SKILL.md + the `references/update-*.md` it routes to, in citation order.
 

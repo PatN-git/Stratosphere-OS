@@ -15,6 +15,7 @@ surprising is a harness people stop running.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
@@ -340,37 +341,12 @@ def check_3b(ctx: Context):
     return problems, notes
 
 
-REQUIRED_SLICE_LABELS = ("type:", "tier:slice", "mode:", "size:")
-
-
-def label_names(issue: dict) -> set:
-    return {l["name"] for l in issue["labels"]}
-
-
 def check_3b_github(ctx: Context, issues: list) -> list:
-    """GitHub mode: no map may exist; every slice carries the required labels and a parent; the gate (run here) reaches
-    `[MIRROR-OK]` against the state the phase must have left (slices `planned`, under the epic)."""
-    problems = []
-    if (ctx.project / ".memory" / "BACKLOG_MAP.md").exists():
-        problems.append("BACKLOG_MAP.md exists, but `tracker: github` keeps no map")
-    epics = [i for i in issues if "tier:epic" in label_names(i)]
-    slices = [i for i in issues if "tier:epic" not in label_names(i)]
-    expect = []
-    for i in slices:
-        bt, names = f"BT-{i['number']:03d}", label_names(i)
-        missing = [p for p in REQUIRED_SLICE_LABELS if not any(n.startswith(p) for n in names)]
-        if missing:
-            problems.append(f"{bt} lacks required label(s) {missing}")
-        if epics and not i.get("parent"):
-            problems.append(f"{bt} has no parent: 3b must link every slice under its epic")
-        expect.append(f"{bt}:status=planned")
-        if epics and i.get("parent"):
-            expect.append(f"{bt}:parent=BT-{i['parent']['number']:03d}")
-    ids = ",".join(f"BT-{i['number']:03d}" for i in issues)
-    ok, out = mirror_ok(ctx, ids, expect)
-    if not ok:
-        problems.append(f"the terminal sync gate did not reach [MIRROR-OK]: {out.strip()[:300]}")
-    return problems
+    """GitHub mode: the checks live in `github_3b.py`; they run the gate through `mirror_ok` below."""
+    spec = importlib.util.spec_from_file_location("l3_github_3b", Path(__file__).with_name("github_3b.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.check(ctx, issues, mirror_ok)
 
 
 def mirror_ok(ctx: Context, ids: str, expect: list | None = None):

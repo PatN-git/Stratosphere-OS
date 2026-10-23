@@ -82,9 +82,7 @@ def parse_args(argv=None):
                     help="install the artifacts 0a-2b would have produced, so the "
                          "late chain can be driven without paying for the early one. "
                          "A seeded run does NOT test the hand-off into its first phase")
-    ap.add_argument("--tracker", choices=("local", "github"), default="local",
-                    help="the issue-tracker backend the throwaway is installed with; github places no "
-                         "BACKLOG_MAP.md and the phases are asserted against the shim's store alone")
+    ap.add_argument("--tracker", choices=("local", "github"), default="local", help="tracker backend (github: no map)")
     ap.add_argument("--handoff", action="store_true",
                     help="test the CHAIN, not the depth of each phase: fewer turns, "
                          "one round, a per-phase wall-clock budget, and 1b's "

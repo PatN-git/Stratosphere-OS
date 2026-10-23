@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from conftest import SRC, combined_gate_argv, combined_gate_calls, read_src
+from conftest import SRC, assert_argv_accepted, combined_gate_argv, combined_gate_calls, read_src, write_architecture
 
 LOOP = ["workflows/3d-implement-issue.md", "workflows/3z-afk-loop.md", "workflows/4a-verify-and-ship.md",
         "references/pr-body-and-ship.md", "references/ci-gate.md"]
@@ -68,14 +68,10 @@ def test_4a_ship_gate_is_one_combined_call():
 
 
 def test_4a_combined_call_parses_under_the_real_argparse(tmp_path, monkeypatch):
-    arch = tmp_path / "ARCHITECTURE.md"
-    arch.write_text("---\ntype: architecture\ntracker: github\n---\n# A\n", encoding="utf-8")
+    write_architecture(tmp_path / "ARCHITECTURE.md", "github")
     monkeypatch.setattr(rec, "fetch_nodes", lambda nums, comments=False, edges=False: {n: None for n in nums})
-    argv = combined_gate_argv("BT-001", "BT-002")
-    try:
-        rec.main(argv + ["--arch", str(arch), "--backlog", str(tmp_path / "BACKLOG_MAP.md")])
-    except SystemExit as e:
-        assert e.code != 2, f"`{' '.join(argv)}` rejected by reconcile.py argparse"
+    assert_argv_accepted(rec.main, combined_gate_argv("BT-001", "BT-002") +
+                         ["--arch", str(tmp_path / "ARCHITECTURE.md"), "--backlog", str(tmp_path / "BACKLOG_MAP.md")])
 
 
 def test_4a_clears_dependents_through_the_verb_and_rechecks_once():

@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from conftest import combined_gate_argv
+from conftest import combined_gate_argv, write_architecture
 
 ROOT = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("reconcile_gh_calls", ROOT / "src" / "scripts" / "reconcile.py")
@@ -21,15 +21,15 @@ _spec.loader.exec_module(rec)
 BUDGET = 10  # gh calls per 3z slice run (epic BT-194, slice BT-199 AC)
 
 
-def _ref(n, state="OPEN", tags=("tier:slice",), parent=None, blocked=(), blocking=(), comments=()):
+def _issue_node(n, state="OPEN", tags=("tier:slice",), parent=None, blocked=(), blocking=(), comments=()):
     node = {"number": n, "state": state, "milestone": None,
             "labels": {"nodes": [{"name": t} for t in tags]},
-            "parent": None, "blockedBy": {"nodes": [_ref(b) for b in blocked]},
-            "blocking": {"nodes": [dict(_ref(d, tags=("tier:slice", "status:planned")), parent=_ref(5, tags=("tier:epic",)))
+            "parent": None, "blockedBy": {"nodes": [_issue_node(b) for b in blocked]},
+            "blocking": {"nodes": [dict(_issue_node(d, tags=("tier:slice", "status:planned")), parent=_issue_node(5, tags=("tier:epic",)))
                                    for d in blocking]},
             "comments": {"nodes": [{"body": c} for c in comments]}}
     if parent:
-        node["parent"] = dict(_ref(parent, tags=("tier:epic", "status:in review")), blockedBy={"nodes": []})
+        node["parent"] = dict(_issue_node(parent, tags=("tier:epic", "status:in review")), blockedBy={"nodes": []})
     return node
 
 
@@ -42,10 +42,10 @@ class Repo:
 
     def nodes(self):
         return {
-            5: _ref(5, tags=("tier:epic", "status:in review")),
-            7: _ref(7, "CLOSED", ("tier:slice", "status:done"), parent=5, blocking=() if self.cleared else (8,),
+            5: _issue_node(5, tags=("tier:epic", "status:in review")),
+            7: _issue_node(7, "CLOSED", ("tier:slice", "status:done"), parent=5, blocking=() if self.cleared else (8,),
                     comments=("Shipped in https://github.com/o/r/pull/42",)),
-            8: _ref(8, tags=("tier:slice", "status:planned"), parent=5, blocked=() if self.cleared else (7,)),
+            8: _issue_node(8, tags=("tier:slice", "status:planned"), parent=5, blocked=() if self.cleared else (7,)),
         }
 
     def run(self, args):
@@ -58,7 +58,7 @@ class Repo:
 
 def _run(tmp_path, argv):
     arch = tmp_path / "ARCHITECTURE.md"
-    arch.write_text("---\ntype: architecture\ntracker: github\n---\n# A\n", encoding="utf-8")
+    write_architecture(arch, "github")
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         code = rec.main(argv + ["--arch", str(arch), "--backlog", str(tmp_path / "BACKLOG_MAP.md")])
