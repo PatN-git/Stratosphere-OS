@@ -87,6 +87,11 @@ def agy_session(env, sid, steps, **kw):
     return write(env["agy"] / sid / ".system_generated" / "logs" / "transcript.jsonl", steps, **kw)
 
 
+def cut(text):
+    """What the scanner prints for a long target: cut at 120 chars (a pytest-xdist tmp path can be that long)."""
+    return text if len(text) <= 120 else text[:119] + "…"
+
+
 def as_json(env, *args, **kw):
     return json.loads(run(env, "--json", *args, **kw))
 
@@ -177,7 +182,7 @@ def test_agy_file_tools_Path_key_scopes_the_session_and_is_the_target(env):
     agy_session(env, "sibling", [step(iso(13), [("edit_file", {"Path": sibling})], status="ERROR")])
     s = {x["id"]: x for x in as_json(env)["hosts"]["agy"]["sessions"]}
     assert set(s) == {"read", "edit"}
-    assert s["edit"]["failing"] == [{"tool": "edit_file", "target": inside}]
+    assert s["edit"]["failing"] == [{"tool": "edit_file", "target": cut(inside)}]
     assert "SENTINEL" not in run(env)
 
 
@@ -193,8 +198,8 @@ def test_agy_call_less_generic_error_step_is_attributed_to_the_planner_step_call
         step(iso(13, 4), [], status="ERROR", kind="GENERIC")])  # nothing left to attribute it to
     s = as_json(env)["hosts"]["agy"]["sessions"][0]
     assert s["tool_calls"] == 3 and s["errors"] == 3
-    assert s["failing"] == [{"tool": "edit_file", "target": edit}, {"tool": "run_command", "target": "a"},
-                            {"tool": "view_file", "target": edit}, {"tool": "GENERIC", "target": ""}]
+    assert s["failing"] == [{"tool": "edit_file", "target": cut(edit)}, {"tool": "run_command", "target": "a"},
+                            {"tool": "view_file", "target": cut(edit)}, {"tool": "GENERIC", "target": ""}]
     assert "SENTINEL" not in run(env)
 
 
