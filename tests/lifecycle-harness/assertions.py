@@ -346,11 +346,6 @@ def check_3b(ctx: Context):
         now_at = re.search(r"at:\s*(\S+)", text)
         if before_at and now_at and before_at.group(1) == now_at.group(1):
             problems.append("BACKLOG_MAP generated.at was not refreshed (3b:69)")
-    ids = ",".join(f"BT-{i['number']:03d}" for i in issues)
-    ok, out = mirror_ok(ctx, ids)
-    if not ok:
-        problems.append(f"the terminal sync gate did not reach [MIRROR-OK]: "
-                        f"{out.strip()[:300]}")
     return problems, notes
 
 
@@ -365,16 +360,16 @@ def check_3b_github(ctx: Context, issues: list) -> list:
 def mirror_ok(ctx: Context, ids: str, expect: list | None = None):
     """Run the real gate ourselves rather than believing the transcript.
 
-    `--require-gh` is what the terminal gates pass: without a reachable GitHub it
-    exits 3 with `[MIRROR-UNVERIFIED]` instead of the fail-open `[local-only]`, so
-    reaching `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no
-    map to diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
+    Without a reachable GitHub the gate exits 3 with `[GH-UNAVAILABLE]`, so reaching
+    `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no map to
+    diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
+    The local backend has no gate: its map rows are the store.
     """
     script = ctx.project / ".agents" / "scripts" / "reconcile.py"
     if not script.exists():
         return False, f"no reconcile.py at {script}"
     args = ["--expect", ";".join(expect)] if expect else []
-    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids, *args],
+    r = subprocess.run(["python", str(script), "--ids", ids, *args],
                        cwd=str(ctx.project), env=ctx.child_env,
                        capture_output=True, text=True)
     return "[MIRROR-OK" in r.stdout, r.stdout + r.stderr

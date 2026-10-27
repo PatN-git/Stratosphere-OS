@@ -264,20 +264,13 @@ def _seed_two_slices(capsys):
 
 
 def test_reconcile_reaches_mirror_ok_against_the_shim(tmp_path, monkeypatch, capsys):
-    """Slice 2's real DONE WHEN. `--require-gh` is what the terminal gates pass,
-    and it exits 3 with [MIRROR-UNVERIFIED] the moment `gh auth status` fails - so
-    reaching [MIRROR-OK] proves the shim was both found and believed."""
+    """Slice 2's real DONE WHEN. The GitHub-mode gate exits 3 with [GH-UNAVAILABLE] the moment `gh auth
+    status` fails - so reaching [MIRROR-OK] proves the shim was both found and believed."""
     _shimmed_env(tmp_path, monkeypatch)
     _seed_two_slices(capsys)
 
-    project = tmp_path / "project" / ".memory"
-    project.mkdir(parents=True)
-    (project / "BACKLOG_MAP.md").write_text(BACKLOG, encoding="utf-8")
-
-    r = subprocess.run(
-        [sys.executable, str(REPO / "src" / "scripts" / "reconcile.py"),
-         "--require-gh", "--ids", "BT-001,BT-002"],
-        cwd=str(tmp_path / "project"), capture_output=True, text=True)
+    r = _reconcile(_github_project(tmp_path), "--ids", "BT-001,BT-002",
+                   "--expect", "BT-1:status=planned;BT-2:status=planned")
     assert "[MIRROR-OK BT-001,BT-002]" in r.stdout, r.stdout + r.stderr
     assert r.returncode == 0
 
@@ -289,15 +282,8 @@ def test_reconcile_still_sees_drift_through_the_shim(tmp_path, monkeypatch, caps
     run(["issue", "edit", "2", "--remove-label", "status:planned",
          "--add-label", "status:done"], capsys)
 
-    project = tmp_path / "project" / ".memory"
-    project.mkdir(parents=True)
-    (project / "BACKLOG_MAP.md").write_text(BACKLOG, encoding="utf-8")
-
-    r = subprocess.run(
-        [sys.executable, str(REPO / "src" / "scripts" / "reconcile.py"),
-         "--require-gh", "--ids", "BT-002"],
-        cwd=str(tmp_path / "project"), capture_output=True, text=True)
-    assert "[MIRROR-DRIFT BT-002" in r.stdout
+    r = _reconcile(_github_project(tmp_path), "--ids", "BT-002", "--expect", "BT-2:status=planned")
+    assert "[MIRROR-DRIFT BT-002" in r.stdout, r.stdout + r.stderr
     assert r.returncode == 1
 
 

@@ -3,10 +3,9 @@
 Driving `3b` onward otherwise costs four phases of live agent work to reach the one
 under test. These artifacts stand in for that work.
 
-The fixture has to be **self-consistent**, not merely present: `3b`'s first terminal
-gate runs `reconcile.py --require-gh`, which compares `BACKLOG_MAP.md` against the gh
-store. A fixture that disagreed with itself would fail that gate on my fixture rather
-than on the lifecycle, which is the worst possible finding to produce.
+The fixture has to be **self-consistent**, not merely present: the map rows must agree
+with the gh store, or 3b's local check would fail on my fixture rather than on the
+lifecycle, which is the worst possible finding to produce.
 """
 import importlib.util
 import json
@@ -132,19 +131,6 @@ def test_the_backlog_row_agrees_with_the_store(seeded):
     assert cells[3] == "planned"
     assert "status:" not in cells[4]
     assert cells[5] == "v1.0.0"
-
-
-def test_reconcile_reaches_mirror_ok_on_the_seeded_world(seeded, monkeypatch):
-    """The gate `3b` hits first. If this fails, the run would blame the lifecycle
-    for a fixture that never agreed with itself."""
-    project, child = seeded
-    for key in ("PATH", "PYTHONPATH", "L3_GH_STORE"):
-        monkeypatch.setenv(key, child[key])
-    r = subprocess.run(
-        [sys.executable, str(project / ".agents" / "scripts" / "reconcile.py"),
-         "--require-gh", "--ids", "BT-001"],
-        cwd=str(project), capture_output=True, text=True)
-    assert "[MIRROR-OK BT-001]" in r.stdout, r.stdout + r.stderr
 
 
 def test_the_seed_is_committed_so_3d_starts_from_a_clean_tree(seeded):

@@ -317,7 +317,7 @@ def _project_with_reconcile(tmp_path, backlog):
     return proj
 
 
-def test_3b_passes_when_the_mirror_matches_the_store(tmp_path, monkeypatch):
+def test_3b_passes_when_every_issue_has_a_backlog_row(tmp_path, monkeypatch):
     child = _shimmed(tmp_path, monkeypatch)
     gh.main(["issue", "create", "--title", "Ruleset parsing", "--label",
              "status:planned,type:feature", "--milestone", "v1.0.0"])
@@ -330,21 +330,6 @@ def test_3b_passes_when_the_mirror_matches_the_store(tmp_path, monkeypatch):
                   store=Path(child["L3_GH_STORE"]), before=before)
     problems, _ = a.check("3b", c)
     assert problems == [], problems
-
-
-def test_3b_fails_when_the_mirror_and_the_store_disagree(tmp_path, monkeypatch):
-    child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing", "--label",
-             "status:done,type:feature", "--milestone", "v1.0.0"])
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
-    before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md",
-          BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16"))
-
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert any("MIRROR-OK" in p for p in problems)
 
 
 def test_3b_fails_when_an_issue_has_no_backlog_row(tmp_path, monkeypatch):
