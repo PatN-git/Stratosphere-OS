@@ -561,8 +561,11 @@ def main():
             elif fname == 'GLOSSARY.md':
                 if tag == 'LAW':
                     errors.append(f"Purity error: Glossary term '{def_id}' in {fname}:{info['line_num']} has trust tag '[LAW]'. Glossary entries cannot be '[LAW]'.")
-                # An entry carries only Avoid:/Source:; promotion evidence is derived from Ref, never stored
-                for field in re.findall(r'\.\s+([A-Z][a-z]+):\s', info['content']):
+                # An entry carries only Avoid:/Source:; promotion evidence is derived from Ref, never stored.
+                # Fields start at the first Avoid:/Source:, so a prose label in the definition is not one.
+                first = re.search(r'\.\s+(?:Avoid|Source):\s', info['content'])
+                tail = info['content'][first.start():] if first else ''
+                for field in re.findall(r'\.\s+([A-Z][a-z]+):\s', tail):
                     if field not in ('Avoid', 'Source'):
                         warnings.append(f"Glossary field: unknown field `{field}:` in {def_id} ({fname}:{info['line_num']}); glossary entries carry only Avoid:/Source: (promotion evidence is derived from Ref).")
 

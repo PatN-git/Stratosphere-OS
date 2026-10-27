@@ -41,6 +41,14 @@ def test_occurrences_field_warns_without_error(tmp_path):
     assert "[ERROR]" not in out
 
 
+def test_prose_label_inside_the_definition_does_not_warn(tmp_path):
+    entry = ("- **[[G-001]] [ASSUMED] [2026-10-13]** Cart: items held before checkout. "
+             "Note: a cart survives logout. Avoid: basket. Source: BT-001.\n")
+    code, out = _lint(tmp_path, entry)
+    assert code == 0, out
+    assert "unknown field" not in out
+
+
 def test_entry_with_only_avoid_and_source_passes(tmp_path):
     entry = ("- **[[G-001]] [ASSUMED] [2026-10-13]** Model Grade: a capability spec, "
              "e.g. light or high. Avoid: model tier. Source: docs/discovery/model-grade.md.\n")
