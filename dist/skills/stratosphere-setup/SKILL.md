@@ -213,7 +213,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 ### Checkpoint 5.2: Secret hygiene
 
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit).
-- Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+- Rationale: `.memory/STATUS.md` is the churny folder-state file (session lines) — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
 
 ### Checkpoint 5.3: Test gate (opt-in)
 
@@ -291,7 +291,7 @@ GitHub labels already exist and may differ from the registry.
 
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
-1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
+1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
 2. `tracker: local` only: if issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry. Under `github` there is no map to populate.
 3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
@@ -312,8 +312,8 @@ GitHub labels already exist and may differ from the registry.
    # Unix/macOS (Claude Code)
    npm install --prefix .agents/scripts/design
    ```
-   *(Note: If the install fails due to network constraints or offline environment, print a warning, record in STATUS.md that the Google lint seam is not provisioned, and proceed with setup rather than halting).*
-   For `claude-design`, `native`, or non-Node/offline projects: skip the npm install and record in `.memory/STATUS.md` that the lint toolchain is not provisioned.
+   *(Note: If the install fails due to network constraints or offline environment, print a warning, record in STATUS.md `Repo notes` that the Google lint seam is not provisioned, and proceed with setup rather than halting).*
+   For `claude-design`, `native`, or non-Node/offline projects: skip the npm install and record in `.memory/STATUS.md` `Repo notes` that the lint toolchain is not provisioned.
 
 ## Checkpoint 9: Skill setup (interactive)
 

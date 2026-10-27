@@ -1,22 +1,18 @@
 ---
 type: status
 title: Status
-description: Per-session resume hint (last focus, next step). NOT the authoritative active-work set.
-stale_after: <ISO 8601>   # STATUS is a per-session hint; treat as stale past this instant
+description: Folder state only (last merge sync, one session line per task in this folder, repo notes, blocker). Never issue state.
+stale_after: <ISO 8601>   # the document hint only; session lines age out by their own date (0b)
 generated:
   by: stratosphere-setup
-  at: 2026-09-29
-version: "1.1.1"
+  at: 2026-10-27
+version: "2.0.0"
 ---
 # STATUS
 
-> Per-working-directory resume hint — best-effort, local (gitignored), single-session. **Not** the source of truth for what's active: the authoritative in-flight set is the `status:in progress` issues in `.memory/BACKLOG_MAP.md`/GitHub (supports many concurrent tasks). For concurrent sessions (e.g. several `/3z` runs plus your own), use separate git worktrees so each keeps its own STATUS.md.
+> Folder state only, local (gitignored). Issue state (title, status, next step) lives in the tracker; a task's progress and next step are its resume note on the issue. Sessions in one folder share its checked-out branch: work on another branch in a separate folder with its own `.memory/`. Edit only your own session line or a single field; never rewrite the whole file or add history.
 
 - **Last Sync:**
-- **Current Branch:**
-- **Active Issue / PRD:** <!-- this session's focus; a hint, not the global active set -->
-- **Current Focus:**
-- **Completed This Session:**
-- **Open/Active Task Brief:**
+- **Sessions:** <!-- one line per task in this folder: `BT-n · branch · date` -->
+- **Repo notes:** <!-- folder-local caveats only (stale scripts, shell quirks, lint toolchain not provisioned) -->
 - **Blocker (if any):**
-- **Next Immediate Step:**

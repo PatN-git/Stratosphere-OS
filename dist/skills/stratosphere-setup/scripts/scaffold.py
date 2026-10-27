@@ -365,7 +365,8 @@ SKILL_TARGETS = [".agents/skills"]
 # `.agents/skills/.gitignore`, which sync_skills.py regenerates from its lockfile.
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
-                     "*.work.md", "*.stratosphere-new"]
+                     "*.work.md", "*.stratosphere-new",
+                     ".memory/STATUS.md", ".memory/resume/"]
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
 

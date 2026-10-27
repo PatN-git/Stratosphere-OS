@@ -21,6 +21,8 @@ import subprocess
 from pathlib import Path
 
 # Common Secret Signatures
+STATUS_BUDGET = 3000
+
 SECRET_PATTERNS = {
     'OpenAI API Key': r'\bsk-[a-zA-Z0-9]{48}\b',
     'GitHub Personal Access Token (Classic)': r'\bghp_[a-zA-Z0-9]{36}\b',
@@ -179,6 +181,19 @@ def main():
         if path.is_file():
             sec_errs = scan_file_for_secrets(path)
             errors.extend(sec_errs)
+
+    # STATUS.md is folder state only: keep it small and local (gitignored).
+    status_file = memory_dir / 'STATUS.md'
+    if status_file.is_file():
+        size = len(status_file.read_text(encoding='utf-8', errors='replace'))
+        if size > STATUS_BUDGET:
+            warnings.append(f"STATUS.md is {size} chars (budget {STATUS_BUDGET:,}): keep folder state only; history and next steps live on the issue.")
+        try:
+            tracked = subprocess.run(['git', '-C', str(memory_dir), 'ls-files', '--error-unmatch', 'STATUS.md'], capture_output=True).returncode == 0
+        except OSError:
+            tracked = False
+        if tracked:
+            warnings.append("STATUS.md is tracked by git: run `git rm --cached .memory/STATUS.md` and add `.memory/STATUS.md` to .gitignore.")
 
     # Files to parse for IDs and protocol compliance
     target_files = [
@@ -445,8 +460,8 @@ def main():
     okf_files_to_check = []
     if memory_dir.exists() and memory_dir.is_dir():
         for path in memory_dir.glob('**/*.md'):
-            if path.name == "index.md":
-                continue
+            if path.name == "index.md" or 'resume' in path.relative_to(memory_dir).parts[:-1]:
+                continue  # resume/ holds per-task resume notes, local scratch with no frontmatter
             okf_files_to_check.append(path)
             
     docs_dir = Path('docs')

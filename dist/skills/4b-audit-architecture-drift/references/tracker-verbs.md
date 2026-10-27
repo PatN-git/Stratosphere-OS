@@ -28,11 +28,19 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 | `clear_blocker` | `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear | remove the id from the Blocked by cell |
 | `close` | `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop); merging a PR with `Closes #<n>` closes too | set Status to `done` (closed = done) |
 | `reopen` | `gh issue reopen <n>`, then `set_status` | set Status back |
-| `comment` | `gh issue comment <n> --body …` | append a dated line to the issue's draft file; a PR-link comment has no local form (no PR) |
+| `comment` | `gh issue comment <n> --body …`; a resume note: `--body-file .tmp/resume-BT-<n>.md` | append a dated line to the issue's draft file; a resume note overwrites `.memory/resume/<id>.md` (one file per issue, gitignored); a PR-link comment has no local form (no PR) |
 | `set_refs` | the issue body's `Refs: [[L-012]], [[A-003]]` line: replace that line through `set_body`; memory ids only, never doc paths | edit the Ref cell |
 | `set_ice` | nothing stored: ICE is computed on read from the body's `I:`/`C:` metrics and the `size:` label | edit the ICE cell |
 | `set_body` | `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here) | the issue's draft or spec file (`docs/prds/`, `docs/design/`, the drafts file); the table holds only a title |
 | `claim` | `gh issue edit <n> --add-assignee @me` | no-op |
+
+## Resume note
+Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
+```
+<!-- stratos:resume -->
+Branch: / Done: / Open: / Next step: / Blockers:
+```
+`.memory/STATUS.md` never holds it: STATUS is folder state only.
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
@@ -48,6 +56,7 @@ GitHub reads are scoped `--json` queries; the local backend scans the table.
 - `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body`
 - `list`: `gh issue list --label … --state … --json number,title,labels,milestone`
 - `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens; the local backend scans the table for that status)
+- `resume_note`: the task's latest resume note. GitHub: `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30); local: `.memory/resume/<id>.md`. Empty → no note yet.
 - `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label
 - `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
 - Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` (GitHub mode) per `references/terminal-sync-invariant.md`.
