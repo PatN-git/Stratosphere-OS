@@ -42,7 +42,7 @@ def test_old_last_run_only_format_reads_as_empty_history_and_keeps_last_run(stat
     run(state, "findings", "--slugs", "file-reread")
     data = read(state)
     assert data["last_run"] == "2026-10-09T08:00:00+00:00"
-    assert data["findings"]["file-reread"]["nights"] == 1 and data["drift"] == {}
+    assert data["findings"]["file-reread"]["nights"] == 1
 
 
 def test_malformed_or_bom_state_does_not_crash(state):
@@ -69,36 +69,13 @@ def test_findings_unseen_for_90_days_are_pruned_on_the_next_write(state):
     assert set(read(state)["findings"]) == {"recent"}
 
 
-def test_drift_keys_unseen_tonight_are_dropped_and_ages_accumulate(state):
-    keys = "BT-215|blocked_by\nBT-216|labels\n"
-    out = run(state, "drift", "--keys-file", "-", date="2026-10-09", stdin=keys)
-    assert out.returncode == 0 and "2 keys · 0 dropped" in out.stdout
-    run(state, "drift", "--keys-file", "-", date="2026-10-13", stdin="BT-215|blocked_by\nBT-300|status\n")
-    drift = read(state)["drift"]
-    assert set(drift) == {"BT-215|blocked_by", "BT-300|status"}
-    assert drift["BT-215|blocked_by"] == {"first": "2026-10-09", "last": "2026-10-13", "nights": 2}
-    assert drift["BT-300|status"]["nights"] == 1
-
-
-def test_drift_is_idempotent_within_a_night_and_reads_a_keys_file(state, tmp_path):
-    f = tmp_path / "keys.txt"
-    f.write_text("BT-1|labels\n\nBT-1|labels\n", encoding="utf-8")  # blank lines and duplicates ignored
-    for _ in range(2):
-        assert run(state, "drift", "--keys-file", str(f)).returncode == 0
-    assert read(state)["drift"]["BT-1|labels"]["nights"] == 1
-    f.write_text("", encoding="utf-8")
-    assert "0 keys · 1 dropped" in run(state, "drift", "--keys-file", str(f)).stdout
-    assert read(state)["drift"] == {}
-
-
-def test_stamp_sets_last_run_and_keeps_findings_and_drift(state):
+def test_stamp_sets_last_run_and_keeps_findings(state):
     run(state, "findings", "--slugs", "a")
-    run(state, "drift", "--keys-file", "-", stdin="BT-1|labels\n")
     run(state, "stamp", "--now", "2026-10-13T22:00:00+02:00")
     data = read(state)
     assert data["last_run"] == "2026-10-13T22:00:00+02:00"
-    assert "a" in data["findings"] and "BT-1|labels" in data["drift"]
-    assert set(data) == {"last_run", "findings", "drift"}  # no sessions_reviewed or other keys
+    assert "a" in data["findings"]
+    assert set(data) == {"last_run", "findings"}  # no sessions_reviewed or other keys
 
 
 def test_written_json_has_no_bom_and_lf_endings(state):
@@ -107,9 +84,8 @@ def test_written_json_has_no_bom_and_lf_endings(state):
     assert not raw.startswith(b"\xef\xbb\xbf") and b"\r" not in raw and raw.endswith(b"\n")
 
 
-def test_bad_slug_or_key_is_refused_without_writing(state):
+def test_bad_slug_or_date_is_refused_without_writing(state):
     assert run(state, "findings", "--slugs", "Bad Slug").returncode == 2
-    assert run(state, "drift", "--keys-file", "-", stdin="no-pipe-here\n").returncode == 2
     assert run(state, "findings", "--slugs", "a", date="13-10-2026").returncode == 2
     assert not state.exists()
 
@@ -131,14 +107,8 @@ def test_state_and_date_flags_work_after_the_command_too(state):
     assert run(state, "findings", "--slugs", "a").stdout.strip() == "a nights=2"
 
 
-def test_keys_with_extra_pipes_are_refused(state):
-    assert run(state, "drift", "--keys-file", "-", stdin="a|b|c\n").returncode == 2
-    assert run(state, "drift", "--keys-file", "-", stdin="|kind\n").returncode == 2
-    assert not state.exists()
-
-
 def test_reconcile_gate_runs_without_nightly_state(tmp_path):
-    # reconcile.py is every workflow's terminal gate; only --summary may need nightly_state.py.
+    # reconcile.py is every workflow's terminal gate and stands alone (it never imports nightly_state.py).
     import shutil
     shutil.copy(REPO_ROOT / "src" / "scripts" / "reconcile.py", tmp_path / "reconcile.py")
     r = subprocess.run([sys.executable, str(tmp_path / "reconcile.py"), "--help"],

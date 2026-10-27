@@ -3,13 +3,12 @@
 
   nightly_state.py slugs                                names of known findings (names only, no prose)
   nightly_state.py findings --slugs a,b                 record tonight's findings; prints `<slug> nights=N`
-  nightly_state.py drift --keys-file F|-                replace the drift map with tonight's `BT-x|kind` keys
   nightly_state.py stamp [--now ISO]                    set last_run (the delta start for the next run)
 
-Schema: {"last_run": ISO, "findings": {slug: {first,last,nights}}, "drift": {"BT-x|kind": {first,last,nights}}}
+Schema: {"last_run": ISO, "findings": {slug: {first,last,nights}}}
 `nights` counts distinct nights, so re-running the same night never double-counts (keyed on --date,
 default today). A missing file, the old `{"last_run"}`-only file, or a missing key reads as empty history.
-Drift keys absent tonight are dropped; findings are pruned 90 days after `last`.
+Findings are pruned 90 days after `last`.
 Flags `--state PATH` and `--date YYYY-MM-DD` work before or after the command.
 Every write is UTF-8 without BOM. Stdlib only; runs from the repo root.
 """
@@ -24,7 +23,6 @@ from pathlib import Path
 STATE = Path("docs") / "nightly" / ".last-run.json"
 RETAIN_DAYS = 90
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
-KEY_RE = re.compile(r"^[^|\s]+\|[^|\s]+$")
 
 
 def _entries(raw):
@@ -43,7 +41,7 @@ def load(path):
         raw = {}
     raw = raw if isinstance(raw, dict) else {}
     return {"last_run": raw.get("last_run") if isinstance(raw.get("last_run"), str) else None,
-            "findings": _entries(raw.get("findings")), "drift": _entries(raw.get("drift"))}
+            "findings": _entries(raw.get("findings"))}
 
 
 def save(path, state):
@@ -91,8 +89,6 @@ def main(argv=None):
     sub.add_parser("slugs", parents=[common])
     f = sub.add_parser("findings", parents=[common])
     f.add_argument("--slugs", required=True, help="comma-separated kebab-case slugs")
-    d = sub.add_parser("drift", parents=[common])
-    d.add_argument("--keys-file", required=True, help="file of `BT-x|kind` lines, `-` for stdin")
     s = sub.add_parser("stamp", parents=[common])
     s.add_argument("--now", help="ISO 8601 (default: now, local offset)")
     args = ap.parse_args(argv)
@@ -113,17 +109,6 @@ def main(argv=None):
         state["findings"] = prune_findings(state["findings"], date)
         for slug in slugs:
             print(f"{slug} nights={bump(state['findings'], slug, date)['nights']}")
-    elif args.cmd == "drift":
-        text = sys.stdin.read() if args.keys_file == "-" else Path(args.keys_file).read_text(encoding="utf-8-sig")
-        keys = sorted({ln.strip() for ln in text.splitlines() if ln.strip()})
-        bad = [k for k in keys if not KEY_RE.match(k)]
-        if bad:
-            ap.error(f"drift keys must look like BT-x|kind: {bad}")
-        old = state["drift"]
-        state["drift"] = {k: old[k] for k in keys if k in old}
-        for k in keys:
-            bump(state["drift"], k, date)
-        print(f"drift: {len(keys)} keys · {len(set(old) - set(keys))} dropped")
     else:  # stamp
         state["findings"] = prune_findings(state["findings"], date)
         state["last_run"] = args.now or datetime.datetime.now().astimezone().isoformat(timespec="seconds")
