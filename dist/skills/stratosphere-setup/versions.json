@@ -186,7 +186,7 @@
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "50823292e3d67f19d833d76099e4bb9af95fb60571cac43d2da33acb9269b601",
+      "sha256": "92c1f23d455cfd79e9a8d148a6cae88557b1232a48c4cc69227fef4f25fc8f36",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
@@ -341,7 +341,7 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "1585b204fecdd8682fd671f8065334c27b08cb4e73d7869c557437451840676a",
+      "sha256": "09befb0857cd059b3fecfa96a4aacd2f24edf925f1eda6b231e0f6d86648cd12",
       "timestamp": "2026-10-22",
       "version": "2.7.1"
     },
@@ -726,7 +726,7 @@
       "version": "1.3.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "a681ceb53f53b737c451fc362995fb7f7d44a9430baddb3992e257df7ca137ca",
+      "sha256": "7486e2b3e7ee32d1e8df8b3b00c4b7d95e683831a74b759bd2692b075f12e78b",
       "timestamp": "2026-10-22",
       "version": "1.6.0"
     },

@@ -35,7 +35,7 @@ timestamp: 2026-10-22
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
 3. **Register Map:**
    - **GitHub CLI:** Create the `concept:map` issue using `references/concept-map-template.md` (`create`, `status:in progress`, milestone-exempt; `references/tracker-verbs.md`). GitHub is the only record.
-   - **BT-LOCAL Fallback:** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
+   - **BT-LOCAL (local backend):** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
    - Link as sub-issues and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `references/github-issue-relations.md`.

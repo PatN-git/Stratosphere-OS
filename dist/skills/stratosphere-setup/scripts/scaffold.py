@@ -856,6 +856,7 @@ def main():
             "needs_review_constitution": [],
             "preserved_files": {},
             "design_lockfile_stale": False,
+            "tracker_advisory": False,
             "refreshed_scripts": [],
             "created_scripts": [],
             "needs_review_scripts": [],
@@ -1274,6 +1275,11 @@ def main():
             worklist["design_lockfile_stale"] = True
             print(f"NOTE: design toolchain lockfile pins {drift[0]} but package.json pins {drift[1]}; "
                   "run `npm install --prefix .agents/scripts/design` and commit package-lock.json (`npm ci` fails until then).")
+
+        if (project / ".memory" / "BACKLOG_MAP.md").is_file() and reconcile.read_tracker(project / ".memory" / "ARCHITECTURE.md") is None:
+            worklist["tracker_advisory"] = True
+            print("NOTE: a BACKLOG_MAP.md and no `tracker:` key in ARCHITECTURE.md resolve to the local tracker backend, which never touches GitHub "
+                  "from v5.0.0. To use GitHub issues run `python .agents/scripts/tracker_switch.py` (dry run), then `--apply`; to stay local set `tracker: local`.")
 
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)

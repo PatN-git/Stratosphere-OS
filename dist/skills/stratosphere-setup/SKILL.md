@@ -293,7 +293,7 @@ GitHub labels already exist and may differ from the registry.
 
 1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
 2. `tracker: local` only: if issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry. Under `github` there is no map to populate.
-3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
+3. Backlog seeding and the instantiate command emit ids per `references/tracker-verbs.md`: `BT-LOCAL-<slug>` under `tracker: local`; under `github` the zero-padded `BT-007` from `gh issue create` (there is no map to seed).
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)
