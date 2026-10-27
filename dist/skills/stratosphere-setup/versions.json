@@ -191,7 +191,7 @@
       "version": "1.4.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
-      "sha256": "2ff9835c4587c96d9b9ba8e8484718306ea576d8e7e3383b40a6dfd0a2e8a6c7",
+      "sha256": "549612a659fcd128de2c5d537786f06b55f7637e12ad893a4695dcd94d73ce64",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
@@ -341,7 +341,7 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "09befb0857cd059b3fecfa96a4aacd2f24edf925f1eda6b231e0f6d86648cd12",
+      "sha256": "7e0daf02910f8974b20d975ce8768ad1438ad2aacda2ceb6b1b48da1a4038d12",
       "timestamp": "2026-10-22",
       "version": "2.7.1"
     },
