@@ -14,7 +14,7 @@ import pytest
 from conftest import SRC, read_src
 
 sys.path.insert(0, str(SRC / "scripts"))
-import issues  # noqa: E402
+import issues
 
 VERBS = ["create", "set_status", "set_labels", "ensure_label", "set_milestone", "ensure_milestone", "close_milestone",
          "set_parent", "add_blocker", "clear_blocker", "close", "reopen", "comment", "set_refs", "set_ice", "set_body", "claim"]
