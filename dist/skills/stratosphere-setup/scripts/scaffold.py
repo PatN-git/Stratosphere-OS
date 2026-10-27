@@ -346,7 +346,7 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
 
-def skips_map(proj_path, tracker):
+def skips_map(proj_path):
     """True for the retired v5 map store on either backend: it is never placed, merged or locked. The
     local tracker lives on the `<repo>/issues` branch (issues.py); a leftover map is migrated by `issues.py migrate`."""
     return proj_path == issues.MAP_DEFAULT
@@ -354,17 +354,21 @@ def skips_map(proj_path, tracker):
 
 def init_local_tracker(project, arch):
     """Fresh `tracker: local` install: record `tracker_branch: <repo>/issues` and create that branch (issues.py init).
-    Outside a git repository the key is still recorded and setup is told to run `issues.py init` after `git init`."""
+    Outside a git repository the key is still recorded (named after the folder) and setup is told to run
+    `issues.py init` after `git init`."""
     cwd = Path.cwd()
     try:
         os.chdir(project)
-        branch = f"{issues.repo_name()}/issues"
-        tracker_switch.write_key(arch, "tracker_branch", branch)
+        try:
+            name = issues.repo_name()
+        except issues.IssuesError:  # not a git repository yet
+            name = Path(project).resolve().name
+        tracker_switch.write_key(arch, "tracker_branch", f"{name}/issues")
         lines = []
-        issues.main(["--arch", str(arch), "init"], out=lines.append)
-        print(f"Local tracker: {' '.join(lines)}")
-    except issues.IssuesError as e:
-        print(f"NOTE: local tracker not initialised ({e}); after `git init` run `python .agents/scripts/issues.py init`.")
+        if issues.main(["--arch", str(arch), "init"], out=lines.append):  # 1 = refused, the message is in `lines`
+            print(f"NOTE: local tracker not initialised ({' '.join(lines)}); after `git init` run `python .agents/scripts/issues.py init`.")
+        else:
+            print(f"Local tracker: {' '.join(lines)}")
     finally:
         os.chdir(cwd)
 
@@ -709,7 +713,6 @@ def main():
     args = ap.parse_args()
 
     project = Path.cwd()
-    tracker = resolve_tracker(project, args.tracker)
     dry = args.dry_run or args.verify
     update = args.update or args.verify
     res = {
@@ -745,7 +748,7 @@ def main():
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
-            if proj_path.startswith(".github/workflows/") or skips_map(proj_path, tracker):
+            if proj_path.startswith(".github/workflows/") or skips_map(proj_path):
                 continue
             
             p = project / proj_path
@@ -862,7 +865,7 @@ def main():
         
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
-            if not proj_path or skips_map(proj_path, tracker):
+            if not proj_path or skips_map(proj_path):
                 continue
                 
             p = project / proj_path
@@ -1511,7 +1514,7 @@ def main():
 
     # 3. Memory templates -> .memory/
     for src in sorted((ASSETS / "memory").glob("*.md")):
-        if skips_map(f".memory/{src.name}", tracker):
+        if skips_map(f".memory/{src.name}"):
             continue
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
     arch = project / ".memory" / "ARCHITECTURE.md"

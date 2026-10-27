@@ -28,9 +28,9 @@ import sys
 import uuid
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import reconcile
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # the lazy imports below (pr_body, ice_read, reconcile)
 
+NONE_TOKENS = {'', '-', '—'}  # an empty value in a map cell or an argument (reconcile.NONE_TOKENS is this set)
 ROOT = 'docs/issues'
 ARCHIVE = f'{ROOT}/archive'
 README = f'{ROOT}/README.md'
@@ -92,8 +92,8 @@ def _identity():
     rc, _ = _git('config', 'user.email', check=False)
     if rc == 0:
         return {}
-    return {k: v for k in ('AUTHOR', 'COMMITTER')
-            for k, v in ((f'GIT_{k}_NAME', 'issues.py'), (f'GIT_{k}_EMAIL', 'issues.py@localhost'))}
+    return {'GIT_AUTHOR_NAME': 'issues.py', 'GIT_AUTHOR_EMAIL': 'issues.py@localhost',
+            'GIT_COMMITTER_NAME': 'issues.py', 'GIT_COMMITTER_EMAIL': 'issues.py@localhost'}
 
 
 def frontmatter_key(path, key):
@@ -304,6 +304,11 @@ def summary(issue):
     return {k: issue[k] for k in FIELDS if k != 'type'} | {'state': 'CLOSED' if issue['closed'] else 'OPEN'}
 
 
+def full(issue):
+    """`get`'s JSON: the summary plus the body and the comment lines (tracker_switch.read_rows reads the same)."""
+    return summary(issue) | {'body': issue['body'], 'comments': issue['comments']}
+
+
 def select(store, status=None, labels=(), milestone=None, parent=None, include_closed=False):
     out = []
     for issue in sorted(store.issues.values(), key=lambda i: i['id']):
@@ -359,7 +364,7 @@ def make_merged_of(store):
             return None
         def local(r):
             return r.split('/', 1)[1] if r.startswith('origin/') else r
-        longer = [f"*/{x}-*" for x in store.issues if x != bt and x.startswith(bt + '-')]
+        longer = pr_body.longer_id_globs([bt, i['parent']], store.issues)
         hits = [r for r in refs if any(fnmatch.fnmatch(local(r), g) for g in globs)
                 and not any(fnmatch.fnmatch(local(r), g) for g in longer)]
         if not hits:
@@ -372,6 +377,7 @@ def make_merged_of(store):
 def ready(store, merged_of=None):
     """(candidate lines, other lines): open leaves whose effective blockers all clear, then [BLOCKED]/[MISSING-LABELS]."""
     import ice_read
+    import reconcile  # lazy: reconcile imports this module for the store and the map parser
     rows = store.rows()
     merged_of = merged_of or make_merged_of(store)
     free, blocked = [], []
@@ -385,7 +391,8 @@ def ready(store, merged_of=None):
             free.append(issue)
     lines, missing = ice_read.candidates(free)
     shown = {line.split(' |', 1)[0] for line in lines + [m.split(' ')[1] for m in missing]}
-    blocked = [b for b in blocked if b.split(' ')[1] in candidate_ids(store) and b.split(' ')[1] not in shown]
+    wanted = candidate_ids(store)
+    blocked = [b for b in blocked if b.split(' ')[1] in wanted and b.split(' ')[1] not in shown]
     return lines, missing + blocked
 
 
@@ -423,7 +430,7 @@ def _status(value):
 
 
 def _ids(text):
-    return [t.strip() for t in (text or '').split(',') if t.strip() and t.strip() not in reconcile.NONE_TOKENS]
+    return [t.strip() for t in (text or '').split(',') if t.strip() and t.strip() not in NONE_TOKENS]
 
 
 def _labels(values):
@@ -461,12 +468,12 @@ def cmd_create(store, a):
     labels = _labels(a.label)
     status = next((l[7:] for l in labels if l.startswith('status:')), None)
     labels = [l for l in labels if not l.startswith('status:')]
-    parent = None if (a.parent or '—') in reconcile.NONE_TOKENS else a.parent
+    parent = None if (a.parent or '—') in NONE_TOKENS else a.parent
     blockers = _ids(a.blocked_by)
     _require(store, ([parent] if parent else []) + blockers, 'parent or blocker')
     bt = new_id(store, a.title)
     issue = {'type': 'issue', 'id': bt, 'title': a.title, 'status': _status(a.status or status or 'planned'),
-             'labels': labels, 'milestone': None if (a.milestone or '—') in reconcile.NONE_TOKENS else a.milestone,
+             'labels': labels, 'milestone': None if (a.milestone or '—') in NONE_TOKENS else a.milestone,
              'parent': parent, 'blocked_by': blockers, 'claimed_by': None, 'created': today(), 'updated': now(),
              'closed': None, 'close_reason': None, 'body': _body(a.body_file), 'comments': []}
     store.issues[bt] = issue
@@ -488,9 +495,9 @@ def cmd_set(store, a):
             issue['labels'].append(l)
     issue['labels'] = [l for l in issue['labels'] if l not in _labels(a.remove_label)]
     if a.milestone is not None:
-        issue['milestone'] = None if a.milestone in reconcile.NONE_TOKENS else a.milestone
+        issue['milestone'] = None if a.milestone in NONE_TOKENS else a.milestone
     if a.parent is not None:
-        issue['parent'] = None if a.parent in reconcile.NONE_TOKENS else a.parent
+        issue['parent'] = None if a.parent in NONE_TOKENS else a.parent
         if issue['parent'] == a.id:
             raise IssuesError(f"[ERROR] {a.id} cannot be its own parent")
         _require(store, [issue['parent']] if issue['parent'] else [], 'parent')
@@ -692,23 +699,25 @@ def _row_cells(line):
     return bt, raw
 
 
-def parse_backlog(path):
-    """Parse 9-col BACKLOG_MAP rows into {BT-id: {fields}}. Pure (reads one file)."""
-    rows = {}
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
+def map_rows(text):
+    """The 9-cell v5 BACKLOG_MAP data rows as [{id, title, status, labels, milestone, parent, blocked_by, ice, refs}]
+    (the cells as written, none tokens dropped from the lists). Pure."""
+    out = []
+    for line in text.splitlines():
         hit = _row_cells(line)
-        if not hit:
-            continue
-        bt, raw = hit
-        parts = [p.strip() for p in raw]
-        rows[bt] = {
-            'status': parts[3],
-            'labels': {l.strip() for l in parts[4].split(',') if l.strip() not in reconcile.NONE_TOKENS},
-            'milestone': parts[5],
-            'parent': parts[6],
-            'blocked_by': {b.strip() for b in parts[7].split(',') if b.strip() not in reconcile.NONE_TOKENS},
-        }
-    return rows
+        if hit:
+            bt, raw = hit
+            c = [x.strip() for x in raw]
+            out.append({'id': bt, 'title': c[2], 'status': c[3], 'labels': _ids(c[4]), 'milestone': c[5],
+                        'parent': c[6], 'blocked_by': _ids(c[7]), 'ice': c[8], 'refs': c[9]})
+    return out
+
+
+def parse_backlog(path):
+    """{BT-id: {status, labels, milestone, parent, blocked_by}} of a map file, in reconcile.py's row shape."""
+    return {r['id']: {'status': r['status'], 'labels': set(r['labels']), 'milestone': r['milestone'],
+                      'parent': r['parent'], 'blocked_by': set(r['blocked_by'])}
+            for r in map_rows(Path(path).read_text(encoding='utf-8'))}
 
 
 def migrate_issues(map_text, map_path):
@@ -717,23 +726,19 @@ def migrate_issues(map_text, map_path):
     for line in map_text.splitlines():
         if '**Area (`area:xxx`)**' in line:
             areas = [a for a in re.findall(r'`(area:[^`]+)`', line) if '<' not in a and a != 'area:xxx']
-        hit = _row_cells(line)
-        if not hit:
-            continue
-        bt, raw = hit
-        cells = [c.strip() for c in raw]
-        status, done = cells[3], cells[3] == 'done'
-        labels = [l.strip() for l in cells[4].split(',') if l.strip() not in reconcile.NONE_TOKENS
-                  and not l.strip().startswith('status:')]
+    for r in map_rows(map_text):
+        done = r['status'] == 'done'
         body = [f"Migrated from `{map_path}`."]
-        if ice := _ice_lines(cells[8]):
+        if ice := _ice_lines(r['ice']):
             body.append('\n'.join(ice))
-        if cells[9] not in reconcile.NONE_TOKENS:
-            body.append(f"Refs: {cells[9]}")
-        issue = {'type': 'issue', 'id': bt, 'title': cells[2], 'status': status if status in STATUSES else 'planned',
-                 'labels': labels, 'milestone': None if cells[5] in reconcile.NONE_TOKENS else cells[5],
-                 'parent': None if cells[6] in reconcile.NONE_TOKENS else cells[6],
-                 'blocked_by': _ids(cells[7]), 'claimed_by': None, 'created': today(), 'updated': today(),
+        if r['refs'] not in NONE_TOKENS:
+            body.append(f"Refs: {r['refs']}")
+        issue = {'type': 'issue', 'id': r['id'], 'title': r['title'],
+                 'status': r['status'] if r['status'] in STATUSES else 'planned',
+                 'labels': [l for l in r['labels'] if not l.startswith('status:')],
+                 'milestone': None if r['milestone'] in NONE_TOKENS else r['milestone'],
+                 'parent': None if r['parent'] in NONE_TOKENS else r['parent'], 'blocked_by': r['blocked_by'],
+                 'claimed_by': None, 'created': today(), 'updated': today(),
                  'closed': today() if done else None, 'close_reason': 'completed' if done else None,
                  'body': '\n\n'.join(body), 'comments': []}
         files[path_of(issue)] = render_issue(issue)
@@ -797,6 +802,10 @@ WRITES = {'create': cmd_create, 'set': cmd_set, 'comment': cmd_comment, 'claim':
           'reopen': cmd_reopen, 'label': cmd_label}
 
 
+def _dump(value):
+    return json.dumps(value, ensure_ascii=False)
+
+
 def run(a, out):
     tracker = Tracker(a.arch)
     if a.cmd == 'branch':
@@ -814,22 +823,19 @@ def run(a, out):
     else:
         store = tracker.store()
         if a.cmd == 'get':
-            issue = store.get(a.id)
-            out(json.dumps(summary(issue) | {'body': issue['body'], 'comments': issue['comments']}, ensure_ascii=False))
-        elif a.cmd in ('list', 'wip', 'children'):
-            kw = {'list': dict(status=a.status if a.cmd == 'list' else None, labels=a.label or () if a.cmd == 'list' else (),
-                               milestone=getattr(a, 'milestone', None), parent=getattr(a, 'parent', None),
-                               include_closed=getattr(a, 'all', False)),
-                  'wip': dict(status='in progress'),
-                  'children': dict(parent=getattr(a, 'id', None), include_closed=True)}[a.cmd]
-            if a.cmd == 'children':
-                store.get(a.id)
-            out(json.dumps(select(store, **kw), ensure_ascii=False))
+            out(_dump(full(store.get(a.id))))
+        elif a.cmd == 'list':
+            out(_dump(select(store, status=a.status, labels=a.label or (), milestone=a.milestone, parent=a.parent,
+                             include_closed=a.all)))
+        elif a.cmd == 'wip':
+            out(_dump(select(store, status='in progress')))
+        elif a.cmd == 'children':
+            store.get(a.id)
+            out(_dump(select(store, parent=a.id, include_closed=True)))
         elif a.cmd == 'blockers':
-            issue = store.get(a.id)
-            out(json.dumps([{'id': b, 'title': store.issues[b]['title'] if b in store.issues else None,
-                             'status': store.rows()[b]['status'] if b in store.issues else None}
-                            for b in issue['blocked_by']], ensure_ascii=False))
+            rows = store.rows()
+            out(_dump([{'id': b, 'title': store.issues[b]['title'] if b in rows else None,
+                        'status': rows[b]['status'] if b in rows else None} for b in store.get(a.id)['blocked_by']]))
         elif a.cmd == 'ready':
             lines, other = ready(store)
             out('\n'.join(lines + other))

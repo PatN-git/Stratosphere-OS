@@ -326,31 +326,31 @@ def _reconcile():
     return reconcile
 
 
-def backlog_rows(path=None):
-    """Local-tracker rows: the issues.py store, or a v5 map file at `path` (fixtures); {} when neither is
-    readable (fails open)."""
+def backlog_rows():
+    """Local-tracker rows from the issues.py store; {} when it is unreadable (fails open)."""
     try:
-        if path:
-            return _reconcile().parse_backlog(path)
         import issues
+    except ImportError:
+        return {}
+    try:
         return issues.Tracker().store().rows()
-    except Exception:  # ImportError, OSError, ValueError, issues.IssuesError: an epic commit then shows as PENDING
+    except (OSError, ValueError, issues.IssuesError):  # an epic commit then shows as PENDING
         return {}
 
 
-def epic_ids(path=None):
+def epic_ids():
     """Int ids of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-x ignored).
 
     Fails open to an empty set when the store is absent or unreadable: an epic commit then shows as PENDING.
     """
-    ids = (re.fullmatch(r"BT-0*(\d+)", bt) for bt, r in backlog_rows(path).items() if "tier:epic" in r["labels"])
+    ids = (re.fullmatch(r"BT-0*(\d+)", bt) for bt, r in backlog_rows().items() if "tier:epic" in r["labels"])
     return {int(m.group(1)) for m in ids if m}
 
 
-def backlog_parents(path=None):
+def backlog_parents():
     """{int id: 'BT-<nnn>'} of each local-tracker issue that has a parent (padded `BT-051`); {} when unreadable."""
     out = {}
-    for bt, r in backlog_rows(path).items():
+    for bt, r in backlog_rows().items():
         row, parent = re.fullmatch(r"BT-0*(\d+)", bt), re.fullmatch(r"BT-0*(\d+)", r["parent"])
         if row and parent:
             out[int(row.group(1))] = f"BT-{int(parent.group(1)):03d}"
@@ -584,6 +584,15 @@ def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
     return {"unit": _unit_id(parent), "kind": "epic", "globs": [parent_glob], "needs_milestone": True}
 
 
+def longer_id_globs(ids, known=None):
+    """`*/<longer>-*` globs of the store ids that extend one of `ids` with `-…`: the glob `*/BT-LOCAL-login-*` also
+    matches a branch of `BT-LOCAL-login-form`, which belongs to that longer issue. `known` defaults to the issues.py
+    store's ids (fails open: none)."""
+    known = backlog_rows() if known is None else known
+    ids = [i for i in ids if i and i.strip() not in NONE_TOKENS]
+    return [f"*/{k}-*" for k in known if any(k != i and k.startswith(i + "-") for i in ids)]
+
+
 def cmd_unit(args):
     try:
         out = resolve_unit(args.slice, args.milestone, args.parent, args.parent_milestone, args.epic)
@@ -596,7 +605,9 @@ def cmd_unit(args):
             out["branch"] = f"{args.type or 'feat'}/{out['unit']}-{slug}"
         if args.branch is not None:
             names = {args.branch, args.branch.removeprefix("origin/")}
-            out["branch_ok"] = any(fnmatch.fnmatchcase(n, g) for n in names for g in out["globs"])
+            longer = longer_id_globs([args.slice, args.parent]) if args.slice.startswith("BT-LOCAL-") else []
+            out["branch_ok"] = (any(fnmatch.fnmatchcase(n, g) for n in names for g in out["globs"])
+                                and not any(fnmatch.fnmatchcase(n, g) for n in names for g in longer))
     except ValueError as e:
         print(f"[SHIP-UNIT-ERROR] {e}", file=sys.stderr)
         return 2

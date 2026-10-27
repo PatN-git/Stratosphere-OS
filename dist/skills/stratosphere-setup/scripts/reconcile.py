@@ -33,19 +33,13 @@ import time
 from pathlib import Path
 
 STATUS_RE = re.compile(r'^status:(.+)$')
-NONE_TOKENS = {'', '-', '—'}
+NONE_TOKENS = {'', '-', '—'}  # issues.NONE_TOKENS is the same set (reconcile.py stands alone: no top-level import)
 ALL_FIELDS = ('status', 'milestone', 'labels', 'parent', 'blocked_by')
 SHIPPED = ('in review', 'done')  # a same-ship-unit blocker in one of these satisfies its edge (D3)
 
 
 def _bt(n):
     return f"BT-{int(n):03d}"
-
-
-def _row_cells(line):
-    """(BT id, raw `|`-split cells) of a v5 map data row, else None. issues.py owns the v5 map parser."""
-    import issues
-    return issues._row_cells(line)
 
 
 def parse_backlog(path):
@@ -593,7 +587,7 @@ def main(argv=None):
             ap.error(f"--expect/--expect-file: {e}")
         return github_main(args, [_padded(i) for i in args.ids.split(',') if i.strip()], expect, fields, gate)
     if args.backlog:
-        rows = parse_backlog(args.backlog)
+        rows, merged_of = parse_backlog(args.backlog), make_merged_of()
     else:
         import issues
         try:
@@ -601,11 +595,9 @@ def main(argv=None):
         except issues.IssuesError as e:
             print(e)
             return 3
-        rows = store.rows()
-        ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
-        return edges_cmd(args, rows, ids, issues.make_merged_of(store))
+        rows, merged_of = store.rows(), issues.make_merged_of(store)
     ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
-    return edges_cmd(args, rows, ids, make_merged_of())
+    return edges_cmd(args, rows, ids, merged_of)
 
 
 if __name__ == '__main__':
