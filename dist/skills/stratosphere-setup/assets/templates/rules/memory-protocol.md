@@ -35,7 +35,7 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 ### Promotion rules
 
 - **New entries default to `[ASSUMED]`.**
-- **`[ASSUMED] → [PATTERN]`**: cite ≥2 occurrences across distinct tasks. Agent may self-promote with evidence.
+- **`[ASSUMED] → [PATTERN]`**: ≥2 distinct tasks whose `Ref` cites the ID; name them in the 0d report or promotion commit, never in the entry. Agent may self-promote with evidence.
 - **`[PATTERN] → [LAW]`**: explicit human confirmation required. Agent NEVER self-promotes to `[LAW]`. `GLOSSARY.md` entries never reach `[LAW]` — vocabulary is not architectural law.
 
 ### Demotion / challenge
@@ -98,7 +98,7 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - **Never delete structural headings, comments, or guidelines:** When populating or updating any memory file during project setup or ongoing development, you MUST PRESERVE all of the following; they must remain in place as placeholders and guidance until needed or replaced by real domain content:
   - Section headings (even if empty, such as `## Major Feature Areas`, `## State / Data Flow`, `## Backend / Database Boundaries`, `## Shapes`, `## Components`, `## Do's and Don'ts`).
   - HTML/markdown comments (e.g., `<!-- shadcn variable names... -->`).
-  - Guidance text (e.g., `<Rationale...>`, `Avoid:` instructions).
+  - Guidance text (e.g., `<Rationale...>`).
   - Governance rules/bullet points.
   - The format example lines under `## Superseded`.
 - **What to remove:** When writing real active content into a memory file, remove ONLY the dummy active items in that section (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.

@@ -35,7 +35,7 @@ Cold starts are expensive! A small, durable memory layer eliminates re-derivatio
 All templates ship **bundled inside this skill** under its `assets/templates/` directory (the scaffolder payload — `scripts/`, `assets/`, `versions.json` — rides in the `stratosphere-setup` skill folder so every install channel carries it). Locate the installed skill's `assets/templates/` (Checkpoint 0 finds it) and read the relevant template file before creating any project file — never reconstruct templates from memory:
 - `assets/templates/constitution/` → `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`
-- `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
+- `assets/templates/memory/` → `STATUS.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
 All 23 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
@@ -66,16 +66,16 @@ Before any file operations:
      - If they answer yes, initialize it by running `git init` before continuing.
    - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
 
-2. **Choose the issue tracker (GitHub recommended):** the answer is the tracker backend, `github` (GitHub issues are the only store, no `BACKLOG_MAP.md`) or `local` (the map is the store). Checkpoint 0 records it.
+2. **Choose the issue tracker (GitHub recommended):** the answer is the tracker backend, `github` (GitHub issues are the only store) or `local` (one file per issue on the `<repo>/issues` git branch). Checkpoint 0 records it.
    - Check if the GitHub CLI (`gh`) is installed and authenticated. Run `gh --version` and `gh auth status` (be sure to clear the `GITHUB_TOKEN` environment variable if running tests to verify the user's persistent credentials).
    - If `gh` is not installed or not authenticated, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
-     `No GitHub connection: issues will be tracked in a local file (BACKLOG_MAP.md), and the project can be switched to GitHub later. Set up GitHub now? [Y/n]`
+     `No GitHub connection: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Set up GitHub now? [Y/n]`
    - If the user selects **Yes** (recommended):
      - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal. Wait for authentication before proceeding.
    - If the user selects **No**: the tracker is `local`. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6).
    - **Check GitHub Remote Repository Connection:** If `gh` is installed and authenticated (or if GitHub integration was selected during plugin installation), verify that the local repository is connected to a remote GitHub repository by running `git remote -v` or `gh repo view`.
    - If no GitHub remote repository is connected, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
-     `No GitHub repository is connected to this project: issues will be tracked in a local file (BACKLOG_MAP.md), and the project can be switched to GitHub later. Connect or create a GitHub repository now? [Y/n]`
+     `No GitHub repository is connected to this project: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Connect or create a GitHub repository now? [Y/n]`
    - If the user selects **Yes** (recommended):
      - Provide instructions or assist the user in running `gh repo create` or `git remote add origin <url>` and pushing their initial commit. Wait for connection confirmation before proceeding.
    - If the user selects **No**: the tracker is `local`; skip remote GitHub integrations as above.
@@ -119,13 +119,15 @@ python <plugin>/scripts/scaffold.py --update
 **What it creates** (skips anything already present):
 - Folders: `.memory/`, `.agents/rules/`, `.agents/skills/`, `.agents/scripts/`, `docs/discovery/`, `docs/prds/`, `.tmp/`
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
-- Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md` (no `BACKLOG_MAP.md` under `--tracker github`; `tracker:` is written into ARCHITECTURE.md's frontmatter)
+- Memory: `.memory/{STATUS,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md` (`tracker:` is written into ARCHITECTURE.md's frontmatter)
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
 - All 23 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
 - `.gitignore` (only if missing)
 
 **Record the tracker as a law:** in `.memory/ARCHITECTURE.md`, turn the tracker `[[A-XXX]] [LAW]` placeholder under Known Architectural Constraints into an entry with the next free `A-nnn` ID and the chosen backend (`<github|local>` replaced); keep the placeholder wording otherwise.
+
+**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand.
 
 **Upgrades and Updates:** If this is an existing project needing an upgrade or sync, do not use setup. Instead, run `/stratosphere-update` which performs a safe, in-place framework block update.
 
@@ -206,14 +208,14 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 - **Greenfield:** skip. Leave `.memory/GLOSSARY.md` as the empty template.
 - **Brownfield:** scan `docs/prds/`, `docs/discovery/`, READMEs, and DB enum/type definitions for recurring domain terms.
   1. Propose 5–10 terms with one-line definitions to the user.
-  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc.
+  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc, per `references/glossary-entry-rules.md`.
   3. Assign sequential IDs starting from `[[G-001]]`.
-  4. **Preserve guidelines and placeholders:** Do NOT delete the protocol instruction line (`> GLOSSARY follows the same protocol as LEARNINGS.md — not exempt from trust tags.`), the `Avoid:` instructions, or the format example line under `## Superseded`.
+  4. **Preserve guidelines and placeholders:** Do NOT delete the `glossary-guidance` header block or the format example line under `## Superseded`.
 
 ### Checkpoint 5.2: Secret hygiene
 
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit).
-- Rationale: `.memory/STATUS.md` is the churny folder-state file (session lines) — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+- Rationale: `.memory/STATUS.md` is the churny folder-state file (session lines) — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES`) stay tracked and backed up.
 
 ### Checkpoint 5.3: Test gate (opt-in)
 
@@ -224,9 +226,9 @@ Ask once (native question tool) whether to install the pre-commit test gate: it 
 ## Checkpoint 6: Label Reconciliation (both paths)
 
 > [!NOTE]
-> **GitHub CLI Fallback:** If the tracker is `local` (the user declined GitHub in the Version Control Setup step), skip all automated remote GitHub operations (Steps 1-4). Instead, skip directly to Step 5 using the template's canonical labels for the local registry, and inform the user they will need to manage remote labels manually on GitHub.
+> **The registry:** canonical labels live in `references/label-taxonomy.md`. The project's `area:*` labels go to the `## Tracker Registry` lines of `.memory/ARCHITECTURE.md` (with the Project ID) under `tracker: github`, and to the tracker branch through `python .agents/scripts/issues.py label area:<slug>` (one call per slug) under `tracker: local`.
 >
-> **No map under `tracker: github`:** there is no `BACKLOG_MAP.md ## Label Registry`. Canonical labels live in `references/label-taxonomy.md`; the project's live `area:*` labels (and the Project ID) go to the `## Tracker Registry` lines of `.memory/ARCHITECTURE.md`. Read "the registry" in the steps below as that, and skip the Label Registry writes.
+> **Local tracker:** the local backend never touches GitHub. Skip every GitHub operation below (labels and Project board); only register the project's `area:*` slugs, as above.
 
 GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `mode:`, `tier:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
 
@@ -234,7 +236,7 @@ GitHub labels are ground truth for the `area:` dimension — the same principle 
 No GitHub labels exist yet.
 1. Create every label in the canonical registry verbatim in GitHub.
 2. No user confirmation required — no conflicts possible.
-3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry` while preserving all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
+3. Write the project's live `area:*` labels into the registry; none yet → leave the Area line empty (slugs are added as they are introduced).
 
 ### Brownfield
 GitHub labels already exist and may differ from the registry.
@@ -269,7 +271,7 @@ GitHub labels already exist and may differ from the registry.
 
 5. **Execute** confirmed changes in GitHub.
 
-6. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes the single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
+6. **Write the final resolved `area:*` set** into the registry. It is the source of truth: never revert to template defaults.
 
 ### GitHub Project & Board Setup (both paths)
 1. **Programmatic Check:** Before prompting or setting up, search for any existing Project V2 board for the owner by running `gh project list --owner <owner>`. If a board is detected, query its fields (`gh project view <number> --owner <owner> --json fields`) to verify if the `Status` single-select field is configured.
@@ -292,8 +294,7 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
-2. `tracker: local` only: if issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry. Under `github` there is no map to populate.
-3. Backlog seeding and the instantiate command emit ids per `references/tracker-verbs.md`: `BT-LOCAL-<slug>` under `tracker: local`; under `github` the zero-padded `BT-007` from `gh issue create` (there is no map to seed).
+2. If issues or active tasks exist, seed them through the `create` verb (`references/tracker-verbs.md`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)
@@ -358,5 +359,5 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
 - **Re-running this skill is safe.** Files are created only if missing; existing files are checked for structural drift and user is asked before changes.
 - **Minimalism:** shortest accurate phrasing. No filler.
 - **Live DB wins over code.** Conflicts logged as `[LAW]` entries in `LEARNINGS.md`.
-- **Live GitHub labels win over the template registry (area: only).** After Checkpoint 6, the registry (`.memory/BACKLOG_MAP.md`, or ARCHITECTURE.md's `## Tracker Registry` under `tracker: github`) is authoritative. Do not revert to template defaults.
+- **Live GitHub labels win over the template registry (area: only).** After Checkpoint 6, the registry (Checkpoint 6) is authoritative. Do not revert to template defaults.
 - **Protocols govern ongoing behavior.** This skill instantiates the structure; the rule files in `.agents/rules/` and `.memory/DESIGN_RULES.md` govern all ongoing work. `DESIGN.md` follows an external spec.

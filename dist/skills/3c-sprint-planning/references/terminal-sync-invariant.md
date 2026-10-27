@@ -1,5 +1,5 @@
 ---
-description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a, 0b). Closes the completion-bias gap where one GitHub write of a multi-write phase silently drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
+description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a, 0b). Closes the completion-bias gap where one write of a multi-write phase silently drops. Gate: `.agents/scripts/reconcile.py`.
 version: "2.0.0"
 timestamp: 2026-10-27
 ---
@@ -26,4 +26,4 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 ## Boundaries
 - **Never writes GitHub.** `reconcile.py` only reads it; a fix that belongs on GitHub is a `tracker-verbs.md` write the workflow performs.
 - **An edge is stale only when `reconcile.py --edges` says CLEAR.** A `[KEEP]` edge is never removed; it clears at merge via 0b.
-- **The local backend has no gate.** Its map rows are the store and nothing is compared; only `reconcile.py --edges` runs there (blocker guards, clearing).
+- **Local: no `--expect` gate.** `issues.py` validates each write and commits it atomically; after a multi-write phase run `issues.py check` (exit 1: HALT). `reconcile.py --edges` reads the local store.

@@ -1,7 +1,7 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "35c4d4e664d0e0b1208798803e5c67bdab17c2874c420eb6cdd57b996a71d6de",
+      "sha256": "79bafd8aa540cce512cde36f37da920d6daf83d9e47ffa0ce5a22b413919a92e",
       "timestamp": "2026-10-27",
       "version": "3.5.1"
     },
@@ -16,14 +16,9 @@
       "version": "1.2.0"
     },
     "assets/templates/memory/ARCHITECTURE.md": {
-      "sha256": "fc5d763235b8f60b2c80e7654aeaeca031b45c76f887c6b8b960861e867bceab",
+      "sha256": "e5c8435f986a4eeda9cf63f062f7e024f5f7e435f945b04257056655fecee2e7",
       "timestamp": "2026-09-29",
       "version": "1.0.7"
-    },
-    "assets/templates/memory/BACKLOG_MAP.md": {
-      "sha256": "de85ba2461e580c64e49f95234c11b973e6b44dbe7b933cf193b38077414fb0c",
-      "timestamp": "2026-09-29",
-      "version": "1.5.0"
     },
     "assets/templates/memory/DATABASE_SCHEMA.md": {
       "sha256": "691964469a9f714c242493a02e0698572e38b2529724bdd3105786509b01cac3",
@@ -41,9 +36,9 @@
       "version": "1.0.8"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "6cfd0c1bdd9f617d12e8e30339207fcff79440b8fa7fd49e434c325d84e75d31",
+      "sha256": "d0aa2d6b40f18e52d2ca2f5bf7b26e2a70cd0dbc5baff395df2827dba2cc08d3",
       "timestamp": "2026-09-29",
-      "version": "1.0.5"
+      "version": "1.1.0"
     },
     "assets/templates/memory/LEARNINGS.md": {
       "sha256": "320bf4c61fd876c44d2113e5a39ab2726f3d00cf1c09d174f1c55442f4db006a",
@@ -56,12 +51,12 @@
       "version": "2.0.0"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "605b683666f914488b4b9d94bba496eb5f162ff438a6689e57e15cb8909313cb",
+      "sha256": "2ade76ad69d61a7f1db70f32d9dfe3c898626f2381ea898e826a2e2517b5e224",
       "timestamp": "2026-10-27",
       "version": "2.2.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "be52aaf483f66080bbf0eddef3e8f540d1cdee0be7b8a8a38a310683e6b21355",
+      "sha256": "f858a24acb5c1b62ac5f5accbaba587b028bd744b49c8189a670ad9d8c88e4d2",
       "timestamp": "2026-10-22",
       "version": "2.0.4"
     },
@@ -71,32 +66,32 @@
       "version": "2.0.0"
     },
     "skills/0a-start-session/SKILL.md": {
-      "sha256": "4fa21368c779d922f6e4ec046f13abb40ad4f28b1d9ce3f3155beb90dae97c53",
+      "sha256": "289f2f9cd3d1d37833b355bf90b3adc92e8c01a8961b4352fa0326c486e89437",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
     "skills/0a-start-session/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/0a-start-session/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/0a-start-session/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/0a-start-session/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "bfe50a88c49f7e0415546689fb3e629a8c0dfd0361fc39aad5fa07d08111faf9",
+      "sha256": "d5928766ff784041486f31e446eb9fd8e6612f2128035dd76ad18ab177810c1f",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -106,27 +101,32 @@
       "version": "1.2.2"
     },
     "skills/0b-stop-session/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
+    "skills/0b-stop-session/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
+    },
     "skills/0b-stop-session/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/0b-stop-session/references/post-merge-sync.md": {
-      "sha256": "c09e616c29d3b8ddb06292d5c2090e9ebc9860f06914a90723de200e5c0b220a",
+      "sha256": "70f5ae74bd50d862a433714fd560ad0972d08cfce0bb63f51c08c1375503af82",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/0b-stop-session/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -136,7 +136,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "004c14b388e0deb979f4f64ac744d1c00ca7dfda6d9a1939922b50c9b76edfcc",
+      "sha256": "97d6d2b0b487073cf4b1993515c9b6c2a9232a8320a87f1b60c0e1ea272a5fc5",
       "timestamp": "2026-10-27",
       "version": "1.4.0"
     },
@@ -171,7 +171,7 @@
       "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "d5584cd3e520a5ae19ae7228f08cde73313a1bb78ceca57304eddb4c8f384d49",
+      "sha256": "a887f5b76c7d2a048cda3daf6f2f1cc0a849689288c865ece8de55d991299082",
       "timestamp": "2026-10-22",
       "version": "1.5.0"
     },
@@ -180,18 +180,23 @@
       "timestamp": "2026-10-13",
       "version": "2.1.0"
     },
+    "skills/1b-concept-framing/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
+    },
     "skills/1b-concept-framing/references/multi-sided-discovery.md": {
       "sha256": "2653444d43c3eca62f148ea0bef6874ca55980f46746def55252f172d492f61c",
       "timestamp": "2026-06-18",
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "92c1f23d455cfd79e9a8d148a6cae88557b1232a48c4cc69227fef4f25fc8f36",
+      "sha256": "fd509df2db8e1503605bbf90a42e37af5a3688279b3221bdce312eeb9afa2a8f",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
-      "sha256": "549612a659fcd128de2c5d537786f06b55f7637e12ad893a4695dcd94d73ce64",
+      "sha256": "3c28c00e68ef7235d351dfab2fc6138ae12b1622f58f32a1881ec77c261dd12b",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
@@ -201,27 +206,32 @@
       "version": "2.0.0"
     },
     "skills/1c-concept-map/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
+    "skills/1c-concept-map/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
+    },
     "skills/1c-concept-map/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/1c-concept-map/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/1c-concept-map/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "ac533e2a233a1f0dbd16aad05663fff456a696695c8357c2b5044fafe791a8bf",
+      "sha256": "f14711e6d242cccb5049d7c8ca7459159e435f01507eb93060a9aa237155e37a",
       "timestamp": "2026-10-22",
       "version": "1.7.1"
     },
@@ -231,27 +241,27 @@
       "version": "2.2.0"
     },
     "skills/2a-write-prd/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/2a-write-prd/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/2a-write-prd/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/2a-write-prd/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/2b-interface-design/SKILL.md": {
-      "sha256": "ffd0e0775513f76facb6edee47babe9eac170ae819b1906f34a2247d0a9f031e",
+      "sha256": "6a2c0c0e00bfc70bee8117def84f0ba4ccc23ee1f7d26a9f8f394936c570079d",
       "timestamp": "2026-10-22",
       "version": "1.6.1"
     },
@@ -276,22 +286,22 @@
       "version": "1.0.0"
     },
     "skills/2b-interface-design/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/2b-interface-design/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/2b-interface-design/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/2b-interface-design/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -311,7 +321,7 @@
       "version": "1.1.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "a58e533fae67aa2c996fde3b3c5be8de8a0fea396953e102e8267036d2087b0d",
+      "sha256": "465998a814a51ab04dfe51dfa6d5680f13be1a6f1168aff0303a1c2bf4447f87",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
@@ -321,27 +331,27 @@
       "version": "2.0.1"
     },
     "skills/3a-version-planning/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/3a-version-planning/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3a-version-planning/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "7e0daf02910f8974b20d975ce8768ad1438ad2aacda2ceb6b1b48da1a4038d12",
+      "sha256": "5eb1db462f5edc5952cfb70f0198288eb9966f2aea28e0a9d03ffb3fa1d877cf",
       "timestamp": "2026-10-22",
       "version": "2.7.1"
     },
@@ -356,7 +366,7 @@
       "version": "1.1.0"
     },
     "skills/3b-create-issue/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
@@ -366,27 +376,27 @@
       "version": "1.1.1"
     },
     "skills/3b-create-issue/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3b-create-issue/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "35ee7eab0d2ea147cdbc13845b0bc0e60646c27ddc0f97fbae0db4cadd191d19",
+      "sha256": "2963e94e667d71fe0433f7c0d2347dac87d8b09e9dcf2ced895f4ba611c27dfe",
       "timestamp": "2026-10-22",
       "version": "2.6.0"
     },
     "skills/3c-sprint-planning/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
@@ -396,22 +406,22 @@
       "version": "1.1.1"
     },
     "skills/3c-sprint-planning/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3c-sprint-planning/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "87d3d006610731d90a730d5ccb3813f2a3f104c20637c411e0a82e9ae419ecab",
+      "sha256": "4cd7d9fbdeaedbbe4bcd8b043b72821cf17fa228b9f2dc175da86b93425d26cb",
       "timestamp": "2026-10-22",
       "version": "2.8.0"
     },
@@ -421,12 +431,12 @@
       "version": "1.0.2"
     },
     "skills/3d-implement-issue/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/3d-implement-issue/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -441,12 +451,12 @@
       "version": "1.0.2"
     },
     "skills/3d-implement-issue/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3d-implement-issue/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -456,7 +466,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "8cbfcab973cfbdc6156c12b585bced9972869f6b760d7f7c32b0cf8ca44c4b99",
+      "sha256": "08be7731c70278a3fb1511d8c68e5f7a06b392968995f060f3607800b863f31c",
       "timestamp": "2026-10-22",
       "version": "1.9.0"
     },
@@ -476,12 +486,12 @@
       "version": "1.0.2"
     },
     "skills/3z-afk-loop/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
     "skills/3z-afk-loop/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -491,22 +501,22 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/pr-body-and-ship.md": {
-      "sha256": "e493004119fee939673e0ee313fb9578ce0e0a8f7a2a139d356ac04473f517ca",
+      "sha256": "f7e213ca578933a0be824fcc018564920ea3d3053a3f5184634966d4accd13a8",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
     "skills/3z-afk-loop/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3z-afk-loop/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "6f635c916f0c0bc535095225bfcd9fa476351da3828ff3d2913e2647f0f80c37",
+      "sha256": "e8ddbfe3eed8275c6aaafbb28bb36ac8da28f8158f74ece58c21cb746e77763a",
       "timestamp": "2026-10-22",
       "version": "1.8.0"
     },
@@ -546,7 +556,7 @@
       "version": "1.1.1"
     },
     "skills/4a-verify-and-ship/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
@@ -556,7 +566,7 @@
       "version": "1.1.1"
     },
     "skills/4a-verify-and-ship/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -566,22 +576,22 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "e493004119fee939673e0ee313fb9578ce0e0a8f7a2a139d356ac04473f517ca",
+      "sha256": "f7e213ca578933a0be824fcc018564920ea3d3053a3f5184634966d4accd13a8",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4a-verify-and-ship/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4b-audit-architecture-drift/SKILL.md": {
-      "sha256": "fd1e98f1e4259447b4fcbe050cb3397590283da1c9d196242b1b0eb7352d4d91",
+      "sha256": "40aa348509b80d2a06eab9e124ded92d16f6c4e2dacf242600296bb08cb197ca",
       "timestamp": "2026-10-22",
       "version": "1.3.0"
     },
@@ -611,7 +621,7 @@
       "version": "1.0.0"
     },
     "skills/4b-audit-architecture-drift/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
@@ -621,22 +631,22 @@
       "version": "1.1.1"
     },
     "skills/4b-audit-architecture-drift/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4b-audit-architecture-drift/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4b-audit-architecture-drift/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4c-codebase-health-audit/SKILL.md": {
-      "sha256": "f8970a208a1e4c24a647e7dc0ba17cb8bc9561dbb6baaf606051d71f358ef7be",
+      "sha256": "624eb75fde80a053ad572f96819d442dea779517c4712577c4eba39e6f616e62",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
@@ -651,7 +661,7 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
@@ -671,17 +681,17 @@
       "version": "1.1.1"
     },
     "skills/4c-codebase-health-audit/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4c-codebase-health-audit/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4c-codebase-health-audit/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -696,7 +706,7 @@
       "version": "1.0.0"
     },
     "skills/load-memory/SKILL.md": {
-      "sha256": "e551999a3628f2c716e8ac6af949c04595ec514b995b1a80013b5ed8429381f9",
+      "sha256": "1604905ddf81f61029c3f521d428eaf1ccccd4f0db2f0b68488c25aa5a2b428e",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
@@ -726,7 +736,7 @@
       "version": "1.3.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "7486e2b3e7ee32d1e8df8b3b00c4b7d95e683831a74b759bd2692b075f12e78b",
+      "sha256": "b6b3df7b8b5b550135876f0efd88d7517dbae1fdbe3105277a2c5cc5aa4ec8f1",
       "timestamp": "2026-10-22",
       "version": "1.6.0"
     },
@@ -736,27 +746,32 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-setup/references/github-issue-relations.md": {
-      "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
+      "sha256": "6a1425ddf2c114c6cc64cf30e2408d096523145c7cb5ac181d4f71e67c467da7",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
     },
+    "skills/stratosphere-setup/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
+    },
     "skills/stratosphere-setup/references/label-taxonomy.md": {
-      "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
+      "sha256": "c098779898e0ce85e9e568bc1dca7c194b63c591127330979fcbe05df691dfef",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/stratosphere-setup/references/terminal-sync-invariant.md": {
-      "sha256": "1e94ef74f63a43cc86770494dab99abf91480a399ad44ce9d6029689763cb4c2",
+      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/stratosphere-setup/references/tracker-verbs.md": {
-      "sha256": "576a269bd56d070882553bf69413262e887ca01ee30178114c60f3dee9a151b4",
+      "sha256": "909bd2ae36668ab3c775da5c3ca2654fd1aed6de1a7ece88108979164fa9d472",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "e6fb551967f9628b1b2ccce4890fa5b55710658233f17f391c0c2158df680c50",
+      "sha256": "8beebe9d3b048ed96cac70a32795e900ee9532032206375c3f0853219becf860",
       "timestamp": "2026-10-22",
       "version": "1.7.1"
     },

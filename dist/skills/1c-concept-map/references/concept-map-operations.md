@@ -1,16 +1,16 @@
 ---
 name: concept-map-operations
-description: CLI verbs and local fallbacks for executing concept map tracker operations.
+description: GitHub CLI and local `issues.py` forms of the concept map tracker operations.
 timestamp: 2026-10-22
 version: "1.1.0"
 ---
 
 # Concept Map Tracker Operations
 
-This reference documents the CLI operations (reusing `3b` primitives) and their disconnected local fallbacks (`BT-LOCAL`) for charting, working, and querying a concept map issue tree.
+The operations (reusing `3b` primitives) for charting, working, and querying a concept map issue tree, in GitHub and local (`tracker: local`, `references/tracker-verbs.md`) form. Both backends hold the same issues: the map issue and its decision tickets.
 
 ## Issue relations
-Wire sub-issue and blocked-by relations via `github-issue-relations.md` (native `gh api graphql`). Disconnected: encode `Blocked by: [IDs]` text in the issue body, matching the `BT-LOCAL` fallback.
+Wire sub-issue and blocked-by relations via `github-issue-relations.md` (native `gh api graphql`). Local: `--parent` and `--blocked-by` on `issues.py create`.
 
 ---
 
@@ -24,8 +24,7 @@ Create the root tracking issue for the concept map.
   Write `.tmp/1c-concept-map-body.md` first from the template's **Artifact body** section only — never pipe the template file itself, whose frontmatter and instantiation instructions are not issue content.
 
   No milestone. Nothing is written to a local copy.
-- **BT-LOCAL Fallback (local backend):**
-  Create a local map file at `docs/discovery/<slug>.map.md` copying the template body, and add a `BT-LOCAL-<slug>` row to `.memory/BACKLOG_MAP.md`.
+- **Local:** `issues.py create --title "Concept Map: <Destination>" --label concept:map --status "in progress" --body-file .tmp/1c-concept-map-body.md` (same body).
 
 ---
 
@@ -41,8 +40,7 @@ Blocked by:
      ```
      *(Where `<type>` is research, grilling, prototype, or task)*
   2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `github-issue-relations.md`).
-- **BT-LOCAL Fallback:**
-  Add a new `BT-LOCAL-<slug>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, and `Blocked by: [BT-LOCAL-ids]` text field.
+- **Local:** `issues.py create --title "<Type>: <Title>" --label concept:<type> --parent <map-id> [--blocked-by <ids>] --body-file <f>` (same block body).
 
 ---
 
@@ -54,8 +52,7 @@ Claim an open decision ticket to prevent concurrent agent execution.
   ```bash
   gh issue edit <ticket#> --add-assignee @me
   ```
-- **BT-LOCAL Fallback:**
-  Mark the ticket row in the local map file as `assigned: @me`. (Advisory only; acts as a single-writer lock).
+- **Local:** `issues.py claim <ticket-id>` (compare-and-set; `[CLAIMED …]` → pick another ticket).
 
 ---
 
@@ -74,8 +71,7 @@ Identify the set of open, unblocked, unassigned decision tickets (the "frontier"
      ```
   3. Filter to find the frontier:
      `state == "OPEN" && length(blockedBy.nodes containing open issues) == 0 && length(assignees) == 0`
-- **BT-LOCAL Fallback:**
-  Parse `docs/discovery/<slug>.map.md`'s ticket table, selecting rows where `status == open`, no listed `Blocked by` local IDs are open, and `assignee` is empty.
+- **Local:** `issues.py children <map-id>`: `state == "OPEN"`, no `claimed_by`, and every `blocked_by` id `CLOSED`.
 
 ---
 
@@ -93,7 +89,4 @@ Post the decision answer, close the ticket, and index it on the map.
      ```
   3. Update the map: Append a line to the `Decisions so far` section in the `concept:map` body:
      `- [<ticket title>](<#/link>) — <gist>`
-- **BT-LOCAL Fallback:**
-  1. Record the answer directly in the local map file's ticket row/section.
-  2. Transition status to `done`.
-  3. Update the local map file's `Decisions so far` index.
+- **Local:** the same three steps: `issues.py comment <ticket-id> --body "<answer>"`, `issues.py close <ticket-id>`, then the `Decisions so far` line through `issues.py set <map-id> --body-file <f>`.

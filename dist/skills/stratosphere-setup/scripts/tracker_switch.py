@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
 """tracker_switch.py — move a local-tracker project to GitHub (local -> GitHub only; never the reverse).
 
-Default is a dry run: prints the plan and writes nothing, locally or on GitHub. `--apply` then:
-  1. creates a GitHub issue per `BT-LOCAL-*` row of `.memory/BACKLOG_MAP.md` (labels, status label, milestone; ICE and
-     Refs in the body; a `done` row is closed), then links Parent and Blocked by through `gh api graphql`;
-  2. appends the ICE and `Refs:` lines to the body of rows that already are real issues (`BT-007`);
+The source is the issues.py store (the `<repo>/issues` branch); a v5 `.memory/BACKLOG_MAP.md` must be migrated into
+it first (`issues.py migrate`). Default is a dry run: prints the plan and writes nothing, locally or on GitHub.
+`--apply` then:
+  1. creates a GitHub issue per `BT-LOCAL-*` issue (labels, status label, milestone, the body verbatim; its comments
+     as one comment; a closed issue is closed with its reason), then links Parent and Blocked by (`gh api graphql`);
+  2. appends the `Refs:` and Impact/Confidence lines a store issue holds to issues that already are real (`BT-007`);
   3. rewrites `BT-LOCAL-*` -> `BT-<padded>` under `.memory/` and `docs/`; every other hit is only reported;
-  4. archives the map to `.memory/archive/` and, last, sets `tracker: github` in `.memory/ARCHITECTURE.md`.
-Re-running is safe: an issue is found again by the `<!-- tracker-switch: BT-LOCAL-x -->` marker in its body, links
-and body lines already present are skipped, and the key is the last write (`github` + no map = `[ALREADY-GITHUB]`).
+  4. last, sets `tracker: github` in `.memory/ARCHITECTURE.md`. The tracker branch is kept as the archive.
+Re-running is safe: an issue is found again by the `<!-- tracker-switch: BT-LOCAL-x -->` marker in its body; links,
+comments and body lines already present are skipped, and the key is the last write (`[ALREADY-GITHUB]`).
 A `gh` failure stops the run before any local rewrite. Exit: 0 ok/dry run, 1 a step failed, 2 cannot run.
 """
 import argparse
 import json
 import re
-import shutil
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import issues as store_lib
 import reconcile
 
-MAP = '.memory/BACKLOG_MAP.md'
 ARCH = '.memory/ARCHITECTURE.md'
 REWRITE_ROOTS = ('.memory', 'docs')
 SKIP_DIRS = {'.git', '.tmp', 'node_modules', '.agents', '.claude', 'dist', '__pycache__'}
 LOCAL_ID = re.compile(r'BT-LOCAL-[A-Za-z0-9_-]*[A-Za-z0-9_]')
 MARKER = re.compile(r'<!-- tracker-switch: (\S+) -->')
-NONE = reconcile.NONE_TOKENS | {'ICE: -'}
+NONE = reconcile.NONE_TOKENS
+CARRIED = re.compile(r'^(Refs:|[-*]\s*\*\*(Impact|Confidence):\*\*).*$', re.M)  # lines an existing issue gains
 
 
 class GhFail(RuntimeError):
@@ -37,15 +39,20 @@ class GhFail(RuntimeError):
 def write_tracker(path, value):
     """Set `tracker: <value>` in the frontmatter of `path`, keeping its line endings.
     True when the file changed. ValueError when the file has no frontmatter (nothing is written)."""
+    return write_key(path, 'tracker', value)
+
+
+def write_key(path, key, value):
+    """Set `<key>: <value>` in the frontmatter of `path` (see write_tracker)."""
     text = Path(path).read_bytes().decode('utf-8-sig')
     eol = '\r\n' if '\r\n' in text else '\n'
     m = re.match(r'---\r?\n(.*?\r?\n)?---(?=\r?\n|$)', text, re.S)
     if not m:
-        raise ValueError(f"{path} has no frontmatter to hold `tracker:`")
+        raise ValueError(f"{path} has no frontmatter to hold `{key}:`")
     head = m.group(1) or ''
-    line = f"tracker: {value}"
-    if re.search(r'^tracker:.*$', head, re.M):
-        new_head = re.sub(r'^tracker:.*?(?=\r?$)', line, head, count=1, flags=re.M)
+    line = f"{key}: {value}"
+    if re.search(rf'^{re.escape(key)}:.*$', head, re.M):
+        new_head = re.sub(rf'^{re.escape(key)}:.*?(?=\r?$)', lambda _: line, head, count=1, flags=re.M)
     else:
         new_head = head + line + eol
     if new_head == head:
@@ -62,28 +69,19 @@ def gh(*args):
     return out
 
 
-def read_rows(path):
-    """Rows of the map as dicts (id, title, status, labels, milestone, parent, blocked, ice, ref)."""
-    rows = []
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
-        hit = reconcile._row_cells(line)
-        if not hit:
-            continue
-        _, bt, title, status, labels, milestone, parent, blocked, ice, ref, _ = [p.strip() for p in hit[1]][:11]  # 9 columns between the outer pipes
-        rows.append({'id': bt, 'title': title, 'status': status, 'milestone': milestone, 'parent': parent, 'ice': ice, 'ref': ref,
-                     'labels': [l.strip() for l in labels.split(',') if l.strip() not in NONE],
-                     'blocked': [b.strip() for b in blocked.split(',') if b.strip() not in NONE]})
-    return rows
+def read_rows(arch=ARCH):
+    """The store's issues as rows (id, title, status, labels, milestone, parent, blocked, body, comments, reason)."""
+    s = store_lib.Tracker(arch).store()
+    return [{'id': i['id'], 'title': i['title'], 'status': i['status'], 'labels': i['labels'],
+             'milestone': i['milestone'] or '—', 'parent': i['parent'] or '—', 'blocked': i['blocked_by'],
+             'body': i['body'], 'comments': i['comments'], 'reason': i['close_reason'] if i['closed'] else None}
+            for i in sorted(s.issues.values(), key=lambda i: i['id'])]
 
 
 def extra_lines(row, body=''):
-    """The ICE and `Refs:` lines the row holds that `body` lacks."""
-    lines = []
-    if row['ice'] not in NONE and not re.search(r'^ICE:', body, re.M):
-        lines.append(row['ice'] if row['ice'].startswith('ICE:') else f"ICE: {row['ice']}")
-    if row['ref'] not in NONE and not re.search(r'^Refs:', body, re.M):
-        lines.append(f"Refs: {row['ref']}")
-    return lines
+    """The `Refs:` and Impact/Confidence lines of the store issue whose kind `body` lacks."""
+    have = {m.group(1) for m in CARRIED.finditer(body)}
+    return [m.group(0) for m in CARRIED.finditer(row['body']) if m.group(1) not in have]
 
 
 def real_number(bt):
@@ -109,7 +107,7 @@ def create_issue(row):
         args += ['--label', label]
     if row['milestone'] not in NONE:
         args += ['--milestone', row['milestone']]
-    body = '\n'.join([f"Migrated from local tracker `{row['id']}`.", f"<!-- tracker-switch: {row['id']} -->", *extra_lines(row)]) + '\n'
+    body = (row['body'].rstrip('\n') + '\n\n' if row['body'] else '') + f"<!-- tracker-switch: {row['id']} -->\n"
     out = gh(*args, '--body-file', body_file(body))
     return int(out.strip().rsplit('/', 1)[-1])
 
@@ -150,7 +148,7 @@ def pending_rewrites(numbers):
     """(path, new text) for every file under REWRITE_ROOTS (the map and the archive excluded) that holds a mapped id."""
     for top in REWRITE_ROOTS:
         for p, text in text_files(top) if Path(top).is_dir() else ():
-            if p.as_posix() == MAP or p.as_posix().startswith('.memory/archive/'):
+            if p.as_posix().startswith('.memory/archive/'):
                 continue
             new = LOCAL_ID.sub(lambda m: padded(numbers[m.group(0)]) if numbers.get(m.group(0)) else m.group(0), text)
             if new != text:
@@ -180,44 +178,41 @@ def sync_row(row, numbers, bodies):
     if is_existing and (lines := extra_lines(row, bodies.get(n, ''))):
         body = bodies.get(n, '').rstrip('\n') + '\n\n' + '\n'.join(lines) + '\n'
         gh('issue', 'edit', str(n), '--body-file', body_file(body))
-    if row['status'] == 'done' and not is_existing:
-        gh('issue', 'close', str(n))
+    if row['comments'] and not is_existing:
+        marker = f"<!-- tracker-switch-comments: {row['id']} -->"
+        posted = json.loads(gh('issue', 'view', str(n), '--json', 'comments'))['comments']
+        if not any(marker in (c.get('body') or '') for c in posted):
+            text = "Comments from the local tracker:\n\n" + '\n'.join(row['comments']) + f"\n\n{marker}\n"
+            gh('issue', 'comment', str(n), '--body-file', body_file(text))
+    if row['reason'] and not is_existing:
+        gh('issue', 'close', str(n), '--reason', row['reason'])
     related = [(row['parent'], link_parent)] if row['parent'] not in NONE else []
     related += [(b, link_blocked_by) for b in row['blocked']]
     for other, link in related:
         target = numbers.get(other) or real_number(other)
         if target is None:
-            print(f"[LINK-SKIP {row['id']}: {other} is not in the map]")
+            print(f"[LINK-SKIP {row['id']}: {other} is not in the store]")
         else:
             link(n, target)
 
 
-def archive_map():
-    """Move the map to `.memory/archive/`, under a fresh name when an earlier run archived one."""
-    dst = Path('.memory/archive/BACKLOG_MAP.md')
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    n = 0
-    while dst.exists():
-        n += 1
-        dst = dst.with_name(f"BACKLOG_MAP.{n}.md")
-    shutil.move(MAP, dst)
-    return dst
-
-
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Move a local-tracker project to GitHub (dry run unless --apply).")
-    ap.add_argument('--apply', action='store_true', help="write: create the issues, rewrite ids, archive the map, set tracker: github")
+    ap.add_argument('--apply', action='store_true', help="write: create the issues, rewrite ids, set tracker: github")
     args = ap.parse_args(argv)
-    has_map = Path(MAP).is_file()
     if reconcile.read_tracker(ARCH) == 'github':
-        print(f"[ALREADY-GITHUB: tracker is github; nothing to switch{'; the BACKLOG_MAP.md left in .memory/ is not touched' if has_map else ''}]")
+        print("[ALREADY-GITHUB: tracker is github; nothing to switch]")
         return 0
+    try:
+        rows = read_rows()
+    except store_lib.IssuesError as e:
+        print(f"{e}; nothing changed")
+        return 2
     if reconcile._gh_run(['auth', 'status'])[0]:
         print("[GH-UNAVAILABLE: gh is missing or not logged in (`gh auth login`); nothing changed]")
         return 2
     try:
         issues = json.loads(gh('issue', 'list', '--state', 'all', '--limit', '1000', '--json', 'number,body'))
-        rows = read_rows(MAP) if has_map else []
         marked = {m.group(1): i['number'] for i in issues for m in [MARKER.search(i['body'] or '')] if m}
         bodies = {i['number']: i['body'] or '' for i in issues}
         numbers = {r['id']: real_number(r['id']) or marked.get(r['id']) for r in rows}
@@ -244,14 +239,13 @@ def main(argv=None):
         for r in rows:
             sync_row(r, numbers, bodies)
     except GhFail as e:
-        print(f"[SWITCH-FAIL: {e}; no local file was rewritten, the map and key are unchanged. Fix the cause and re-run: created issues are found again by their marker]")
+        print(f"[SWITCH-FAIL: {e}; no local file was rewritten, the store and key are unchanged. Fix the cause and re-run: created issues are found again by their marker]")
         return 1
     files = apply_rewrites(numbers)
     report_other_hits(numbers)
-    archived = archive_map() if has_map else None
     write_tracker(ARCH, 'github')
-    print(f"[SWITCHED: {created} issue(s) created, {files} file(s) rewritten, "
-          f"map archived to {archived.as_posix() if archived else 'nowhere (none existed)'}, tracker: github]")
+    print(f"[SWITCHED: {created} issue(s) created, {files} file(s) rewritten, tracker: github; "
+          f"branch {store_lib.branch_name(ARCH)} kept as the archive]")
     return 0
 
 

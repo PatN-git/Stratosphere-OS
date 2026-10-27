@@ -20,4 +20,4 @@ No native `gh sub-issue` subcommand or `--blocked-by` flag exists; no extension.
 
 **Read:** `gh issue view <n> --json subIssues` | `gh issue view <n> --json blockedBy` — each is a connection `{"nodes": [{number,state,title,url,…}], "totalCount": n}` (also under `gh issue list --json`): read `.nodes`, never iterate the value itself. `parent` is a plain object or `null`.
 
-**Fallback** (gh absent / mutation errors on older GHES): keep `Blocked by: <BT-ids>` text in the issue body and tell the user; reconcile later. The local backend holds both edges in the `Parent`/`Blocked by` columns of its map.
+**Fallback** (gh absent / mutation errors on older GHES): keep `Blocked by: <BT-ids>` text in the issue body and tell the user; reconcile later. Locally both edges are issue fields (`issues.py set --parent | --add-blocker`).

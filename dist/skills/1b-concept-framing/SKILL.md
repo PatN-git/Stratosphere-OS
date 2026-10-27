@@ -35,7 +35,7 @@ Run the `load-memory` skill to restore session context (read-only).
 
 1. Read `.memory/GLOSSARY.md` to avoid re-definitions.
 2. Capture raw ask verbatim. Restate in one sentence. If multiple independent problems, ask: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
-3. Scan for overlaps: github → `gh issue list --state open --search "<keywords from the ask>" --json number,title,labels` (never a whole-backlog read); local → scan the titles in `.memory/BACKLOG_MAP.md`.
+3. Scan for overlaps: github → `gh issue list --state open --search "<keywords from the ask>" --json number,title,labels` (never a whole-backlog read); local → the titles of `python .agents/scripts/issues.py list`.
 4. Small items start in `1b` without ODI.
 5. If complex/foggy, recommend `/1c-concept-map`.
 6. **Multi-sided check:** Ask: *"Is this a multi-sided product?"* If yes, read `references/multi-sided-discovery.md` and append focus areas. RAT tests both sides (10 DMs each). `1b` grills and flags both sides but does not assign per-side opportunity scores — scoring is a `/1a-research` activity (it has the evidence source; `1b` does not).
@@ -98,7 +98,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Compile agreed definitions into 3–8 term list.
 2. Present for approval.
-3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term; assign IDs with `[ASSUMED]` tag — do not write without confirmation.
+3. Flag reusable terms for `.memory/GLOSSARY.md` (per `references/glossary-entry-rules.md`): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term; assign IDs with `[ASSUMED]` tag — do not write without confirmation.
 4. Record rejected synonyms in `Avoid:` list.
 
 ## Phase 4: Choose Framing
@@ -147,7 +147,7 @@ Present brief for approval (Not-consent rule applies).
 ## Phase 7: Hand-off & Memory Sync
 
 1. Write `docs/discovery/<slug>.md` using semantic slug; no `BT-<n>`.
-2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder), each with its `Avoid:` list. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
+2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the `G-XXX` placeholder), each with its `Avoid:` list, per `references/glossary-entry-rules.md`. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
 3. If framing decision is reusable, propose `[[L-xxx]]` for `.memory/LEARNINGS.md`.
 4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/discovery/<slug>.html` (never committed; re-render from the `.md` whenever presenting it).
 5. Delete `.tmp/1b-discovery-<slug>.work.md`.

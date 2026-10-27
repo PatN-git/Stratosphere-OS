@@ -55,7 +55,7 @@ Recent-change lens feeds recently-modified files as priority targets into all pa
    Filter to resolved scan targets. This is `priority_files`.
 
 ### 1.3 Backlog Collision Check
-Read the `wip` set (`references/tracker-verbs.md`; local backend: the `status:in progress` rows of `.memory/BACKLOG_MAP.md`). Skip directories where modules are `status:in progress`:
+Read the `wip` set (`references/tracker-verbs.md`). Skip directories where modules are `status:in progress`:
 ```
 [SKIP] <path> — BT-<padded> in progress. Findings omitted.
 ```

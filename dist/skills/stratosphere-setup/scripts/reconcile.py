@@ -10,13 +10,14 @@ the expectation the gate also checks issue state: closed must match done. One ba
 exits 3 (`[GH-UNAVAILABLE]`); GitHub mode never falls back to a local copy. Non-zero exit: the calling workflow
 HALTS, applies the missing write and re-runs.
 
-`tracker: local`: the map is the store and there is no gate; only `--edges` runs, over `.memory/BACKLOG_MAP.md`.
+`tracker: local`: the issues.py store (the `<repo>/issues` branch) is the store and there is no gate; only `--edges`
+runs, over its issues (closed ones count as done). `--backlog F` reads a v5 map file instead (fixtures).
 
 --edges (read-only decision list; D3 blocker predicate): `blockers` prints each effective blocker (own + parent epic's)
 of the ids as `[BLOCKER-OK|BLOCKER-UNMET|BLOCKER-UNKNOWN D <- B] same-unit|cross-unit: reason` (exit 1 unless all OK);
 `dependents` prints each stored edge naming the ids as `[CLEAR D <- B]` + its `removeBlockedBy` cmd, or `[KEEP D <- B]`.
 Same ship unit (pr_body.resolve_unit) -> blocker shipped; else its code must be on the default branch (PR merged).
-`--all-open` (local backend) scopes `--edges` to every open row.
+`--all-open` (local backend) scopes `--edges` to every open issue.
 
 Usage:
   python .agents/scripts/reconcile.py --ids BT-007[,BT-006] [--pr-id BT-007] [--fields status,blocked_by] \
@@ -42,35 +43,15 @@ def _bt(n):
 
 
 def _row_cells(line):
-    """(BT id, raw `|`-split cells) of a BACKLOG_MAP data row, else None (header, separator, placeholder)."""
-    if not line.lstrip().startswith('|'):
-        return None
-    raw = line.split('|')
-    if len(raw) < 11:  # leading + trailing empty cells around 9 columns
-        return None
-    bt = raw[1].strip()
-    if not re.match(r'^BT-(LOCAL-)?\S+$', bt) or bt == 'BT-XXX':
-        return None
-    return bt, raw
+    """(BT id, raw `|`-split cells) of a v5 map data row, else None. issues.py owns the v5 map parser."""
+    import issues
+    return issues._row_cells(line)
 
 
 def parse_backlog(path):
-    """Parse 9-col BACKLOG_MAP rows into {BT-id: {fields}}. Pure (reads one file)."""
-    rows = {}
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
-        hit = _row_cells(line)
-        if not hit:
-            continue
-        bt, raw = hit
-        parts = [p.strip() for p in raw]
-        rows[bt] = {
-            'status': parts[3],
-            'labels': {l.strip() for l in parts[4].split(',') if l.strip() not in NONE_TOKENS},
-            'milestone': parts[5],
-            'parent': parts[6],
-            'blocked_by': {b.strip() for b in parts[7].split(',') if b.strip() not in NONE_TOKENS},
-        }
-    return rows
+    """{BT-id: {fields}} of a v5 map file (issues.parse_backlog)."""
+    import issues
+    return issues.parse_backlog(path)
 
 
 def issue_number(bt):
@@ -128,7 +109,7 @@ def edge_verdict(dep, blk, rows, merged_of=_no_pr_state):
     ('merged'|'open'|'none'|None) for its `Shipped in PR` PR. Pure given `merged_of`."""
     b = rows.get(blk)
     if b is None:
-        return 'UNKNOWN', 'cross-unit', 'blocker row absent from BACKLOG_MAP'
+        return 'UNKNOWN', 'cross-unit', 'blocker absent from the tracker'
     du, bu = ship_unit(dep, rows), ship_unit(blk, rows)
     if du is None or bu is None:
         return 'UNKNOWN', 'cross-unit', 'ship unit unknown (bad id or milestone)'
@@ -298,7 +279,7 @@ def edges_cmd(args, rows, ids, merged_of):
     """--edges: print one D3 verdict line per edge. Decides only, never writes. Returns the exit code."""
     code = 0
     for bt in (i for i in ids if i not in rows):
-        print(f"[EDGES-ABSENT {bt}: absent from BACKLOG_MAP]")
+        print(f"[EDGES-ABSENT {bt}: absent from the tracker]")
         code = 1
     ids = [i for i in ids if i in rows]
     if args.edges == 'blockers':
@@ -366,14 +347,24 @@ def _retry(ok):
     return False
 
 
-def resolve_backend(arch=ARCH_DEFAULT, backlog='.memory/BACKLOG_MAP.md'):
-    """'github' | 'local' | None (halt). 1 key present -> use it (an unknown value halts); 2 no key + a map -> local;
-    3 no key, no map, a GitHub remote and gh ready -> github; 4 otherwise halt. A transient gh failure is
-    retried and then halts: it is never read as `local`."""
+def _has_store(arch):
+    """True when the issues.py tracker branch exists in this repository."""
+    import issues
+    try:
+        return issues.head(f"refs/heads/{issues.branch_name(arch)}") is not None
+    except (issues.IssuesError, OSError):
+        return False
+
+
+def resolve_backend(arch=ARCH_DEFAULT, backlog=None):
+    """'github' | 'local' | None (halt). 1 key present -> use it (an unknown value halts); 2 no key + a v5 map or
+    the issues.py tracker branch -> local; 3 no key, neither, a GitHub remote and gh ready -> github; 4 otherwise
+    halt. A transient gh failure is retried and then halts: it is never read as `local`."""
     key = read_tracker(arch)
     if key:
         return key if key in ('github', 'local') else None
-    if Path(backlog).exists():
+    import issues
+    if Path(backlog or issues.MAP_DEFAULT).exists() or _has_store(arch):
         return 'local'
     return 'github' if _github_remote() and _retry(gh_available) else None
 
@@ -556,11 +547,12 @@ def main(argv=None):
     scope = ap.add_mutually_exclusive_group(required=True)
     scope.add_argument('--ids', help="comma-separated BT ids, e.g. BT-007,BT-006")
     scope.add_argument('--all-open', action='store_true',
-                       help="local backend with --edges: every row of the map whose status is not done")
+                       help="local backend with --edges: every open issue of the store")
     ap.add_argument('--pr-id', help="the id that must carry a PR-link comment (e.g. the shipped slice)")
     ap.add_argument('--fields', default=None,
                     help="fields to check (default: all). Pass only the fields this phase wrote.")
-    ap.add_argument('--backlog', default='.memory/BACKLOG_MAP.md')
+    ap.add_argument('--backlog', default=None,
+                    help="local backend: read rows from this v5 map file instead of the issues.py store (fixtures)")
     ap.add_argument('--edges', choices=('blockers', 'dependents'),
                     help="D3 blocker verdicts for the --ids / --all-open scope, read-only: blockers = each effective "
                          "blocker of the ids; dependents = each stored edge naming the ids (CLEAR or KEEP)")
@@ -581,7 +573,7 @@ def main(argv=None):
     if backend is None:
         key = read_tracker(args.arch)
         why = (f"`tracker: {key}` in ARCHITECTURE.md is not github or local" if key else
-               "no `tracker:` key in ARCHITECTURE.md, no BACKLOG_MAP.md and no ready GitHub connection")
+               "no `tracker:` key in ARCHITECTURE.md, no local issue store and no ready GitHub connection")
         print(f"[TRACKER-UNRESOLVED: {why}; nothing checked. Run /stratosphere-setup to record the tracker backend]")
         return 3
     github = backend == 'github'
@@ -590,7 +582,7 @@ def main(argv=None):
     if not github and (args.expect or args.expect_file or args.with_edges):
         ap.error("--expect/--expect-file/--with-edges need `tracker: github`")
     if not github and not args.edges:
-        ap.error("local backend: only --edges is supported (the map is the store, there is no gate to run)")
+        ap.error("local backend: only --edges is supported (issues.py validates every write; there is no gate to run)")
     if github:
         gate = not args.edges
         args.edges = args.edges or args.with_edges
@@ -600,7 +592,18 @@ def main(argv=None):
         except (OSError, ValueError) as e:
             ap.error(f"--expect/--expect-file: {e}")
         return github_main(args, [_padded(i) for i in args.ids.split(',') if i.strip()], expect, fields, gate)
-    rows = parse_backlog(args.backlog)
+    if args.backlog:
+        rows = parse_backlog(args.backlog)
+    else:
+        import issues
+        try:
+            store = issues.Tracker(args.arch).store()
+        except issues.IssuesError as e:
+            print(e)
+            return 3
+        rows = store.rows()
+        ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
+        return edges_cmd(args, rows, ids, issues.make_merged_of(store))
     ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
     return edges_cmd(args, rows, ids, make_merged_of())
 

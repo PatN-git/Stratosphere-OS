@@ -11,7 +11,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
     PENDING (no Closes line). A prior row a human set to `DROPPED` (never a `--verdict`) is kept verbatim and
-    gets no Closes line. Commits scoped to an epic (`tier:epic` per the tracker backend: a row in .memory/BACKLOG_MAP.md, or GitHub labels when `tracker: github`, plus any
+    gets no Closes line. Commits scoped to an epic (`tier:epic` per the tracker backend: the issues.py store, or GitHub labels when `tracker: github`, plus any
     `--epic BT-n`; none when the file is absent and no flag is given) are not slices, except the shipped one. post_merge/deviations/refs are unioned
     (order-preserving) with the prior block.
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
@@ -61,6 +61,7 @@ AUDIT_COUNTS = ("spec_r1", "spec_final", "std_hard", "std_judg", "watch")
 AUDIT_TEXT = ("phase1", "std_tier")
 AUDIT_INPUTS = ("lean", "full")
 PARENT_RE = re.compile(r"BT-\d+")
+UNIT_ID_RE = re.compile(r"BT-(\d+|LOCAL-[a-z0-9-]+)")  # a GitHub number or a local-tracker id
 MILESTONE_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)")
 TYPE_RE = re.compile(r"[a-z]+")
 NONE_TOKENS = ("", "-", "—")
@@ -325,25 +326,29 @@ def _reconcile():
     return reconcile
 
 
-def backlog_rows(path=".memory/BACKLOG_MAP.md"):
-    """BACKLOG_MAP rows via `reconcile.parse_backlog`; {} when the map is absent or unreadable (fails open)."""
+def backlog_rows(path=None):
+    """Local-tracker rows: the issues.py store, or a v5 map file at `path` (fixtures); {} when neither is
+    readable (fails open)."""
     try:
-        return _reconcile().parse_backlog(path)
-    except (ImportError, OSError, ValueError):
+        if path:
+            return _reconcile().parse_backlog(path)
+        import issues
+        return issues.Tracker().store().rows()
+    except Exception:  # ImportError, OSError, ValueError, issues.IssuesError: an epic commit then shows as PENDING
         return {}
 
 
-def epic_ids(path=".memory/BACKLOG_MAP.md"):
-    """Int ids of the BACKLOG_MAP rows labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-1 ignored).
+def epic_ids(path=None):
+    """Int ids of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-x ignored).
 
-    Fails open to an empty set when the map is absent or unreadable: an epic commit then shows as PENDING.
+    Fails open to an empty set when the store is absent or unreadable: an epic commit then shows as PENDING.
     """
     ids = (re.fullmatch(r"BT-0*(\d+)", bt) for bt, r in backlog_rows(path).items() if "tier:epic" in r["labels"])
     return {int(m.group(1)) for m in ids if m}
 
 
-def backlog_parents(path=".memory/BACKLOG_MAP.md"):
-    """{int id: 'BT-<nnn>'} of each BACKLOG_MAP row that has a parent (padded `BT-051`); {} when the map is unreadable."""
+def backlog_parents(path=None):
+    """{int id: 'BT-<nnn>'} of each local-tracker issue that has a parent (padded `BT-051`); {} when unreadable."""
     out = {}
     for bt, r in backlog_rows(path).items():
         row, parent = re.fullmatch(r"BT-0*(\d+)", bt), re.fullmatch(r"BT-0*(\d+)", r["parent"])
@@ -353,7 +358,7 @@ def backlog_parents(path=".memory/BACKLOG_MAP.md"):
 
 
 def tracker_facts(nums):
-    """(epic ids, {id: 'BT-nnn' parent}) from the tracker backend. Local: the map, failing open (empty when absent).
+    """(epic ids, {id: 'BT-nnn' parent}) from the tracker backend. Local: the issues.py store, failing open (empty when absent).
     GitHub (`tracker: github`): one batched fetch of `nums`, failing closed: GhError propagates, never `{}`."""
     try:
         rec = _reconcile()
@@ -549,6 +554,11 @@ def slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40].strip("-")
 
 
+def _unit_id(bt):
+    """`BT-<padded>` for a GitHub number, the id itself for a local-tracker `BT-LOCAL-<slug>`."""
+    return f"BT-{int(bt[3:]):03d}" if bt[3:].isdigit() else bt
+
+
 def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
     """Ship unit of a slice (or of an epic row with epic=True): {unit, kind, globs}. ValueError on bad input.
 
@@ -556,22 +566,22 @@ def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
     else the issue itself (a standalone issue never joins a release). Globs are fnmatch patterns for branch names;
     the legacy own-epic glob comes first so a mid-flight per-epic branch keeps its epic. Pure; no I/O.
     """
-    if not PARENT_RE.fullmatch(id):
-        raise ValueError(f"--slice must look like BT-<n>, got {id!r}")
-    if parent is not None and parent.strip() not in NONE_TOKENS and not PARENT_RE.fullmatch(parent):
-        raise ValueError(f"--parent must look like BT-<n> or be none, got {parent!r}")
+    if not UNIT_ID_RE.fullmatch(id):
+        raise ValueError(f"--slice must look like BT-<n> or BT-LOCAL-<slug>, got {id!r}")
+    if parent is not None and parent.strip() not in NONE_TOKENS and not UNIT_ID_RE.fullmatch(parent):
+        raise ValueError(f"--parent must look like BT-<n>, BT-LOCAL-<slug> or be none, got {parent!r}")
     own, inherited = _milestone(milestone, "--milestone"), _milestone(parent_milestone, "--parent-milestone")
     has_parent = parent is not None and parent.strip() not in NONE_TOKENS
-    own_glob = f"*/BT-{int(id[3:]):03d}-*"
+    own_glob = f"*/{_unit_id(id)}-*"
     if epic and own:
         return {"unit": f"v{own[0]}.{own[1]}", "kind": "release", "globs": [own_glob, f"*/v{own[0]}.{own[1]}-*"]}
     if epic or not has_parent:
-        return {"unit": f"BT-{int(id[3:]):03d}", "kind": "epic" if epic else "issue", "globs": [own_glob]}
-    parent_glob = f"*/BT-{int(parent[3:]):03d}-*"
+        return {"unit": _unit_id(id), "kind": "epic" if epic else "issue", "globs": [own_glob]}
+    parent_glob = f"*/{_unit_id(parent)}-*"
     release = own or inherited
     if release:
         return {"unit": f"v{release[0]}.{release[1]}", "kind": "release", "globs": [parent_glob, f"*/v{release[0]}.{release[1]}-*"]}
-    return {"unit": f"BT-{int(parent[3:]):03d}", "kind": "epic", "globs": [parent_glob], "needs_milestone": True}
+    return {"unit": _unit_id(parent), "kind": "epic", "globs": [parent_glob], "needs_milestone": True}
 
 
 def cmd_unit(args):
@@ -616,7 +626,7 @@ def build_parser():
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
     b.add_argument("--epic", action="append", default=[],
-                   help="BT-n of an epic whose commits are not slices (repeatable; adds to BACKLOG_MAP's tier:epic rows)")
+                   help="BT-n of an epic whose commits are not slices (repeatable; adds to the local store's tier:epic issues)")
     b.add_argument("--close", action="append", default=[],
                    help="BT-n of an epic this PR completes: adds `Closes #n.` after the slice lines (repeatable)")
     b.add_argument("--close-parent", action="store_true", help="alias: close --parent")

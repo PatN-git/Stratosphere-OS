@@ -108,40 +108,22 @@ def apply_autofix(memory_dir, file_name, line_num, cid):
         line_stripped = line.rstrip('\r\n')
         newline = line[len(line_stripped):]
         
-        # If it's a markdown table row (typically in BACKLOG_MAP.md)
-        if '|' in line:
-            parts = line.split('|')
-            if len(parts) >= 9:
-                cell = parts[8].strip()
-                if cell == '—' or cell == '-' or cell == '':
-                    parts[8] = f" [[{cid}]] "
+        # Glossary or list item
+        if f"[[{cid}]]" not in line_stripped:
+            if "Refs:" in line_stripped:
+                # Find last bracket link and append reference after it
+                match = re.search(r'(\[\[[A-Za-z0-9_-]+\]\])\s*\.?$', line_stripped)
+                if match:
+                    end = match.end(1)
+                    lines[idx] = line_stripped[:end] + f", [[{cid}]]" + line_stripped[end:] + newline
                 else:
-                    # If it already has references, check if we need to append
-                    if f"[[{cid}]]" not in cell:
-                        parts[8] = f" {cell}, [[{cid}]] "
-                lines[idx] = '|'.join(parts)
+                    lines[idx] = line_stripped + f", [[{cid}]]" + newline
             else:
-                last_pipe = line.rfind('|')
-                if last_pipe != -1:
-                    if f"[[{cid}]]" not in line:
-                        lines[idx] = line[:last_pipe].rstrip() + f", [[{cid}]] |" + line[last_pipe+1:]
-        else:
-            # Glossary or list item
-            if f"[[{cid}]]" not in line_stripped:
-                if "Refs:" in line_stripped:
-                    # Find last bracket link and append reference after it
-                    match = re.search(r'(\[\[[A-Za-z0-9_-]+\]\])\s*\.?$', line_stripped)
-                    if match:
-                        end = match.end(1)
-                        lines[idx] = line_stripped[:end] + f", [[{cid}]]" + line_stripped[end:] + newline
-                    else:
-                        lines[idx] = line_stripped + f", [[{cid}]]" + newline
+                if line_stripped.endswith('.'):
+                    lines[idx] = line_stripped.rstrip('.') + f". Refs: [[{cid}]]." + newline
                 else:
-                    if line_stripped.endswith('.'):
-                        lines[idx] = line_stripped.rstrip('.') + f". Refs: [[{cid}]]." + newline
-                    else:
-                        lines[idx] = line_stripped + f" Refs: [[{cid}]]" + newline
-                    
+                    lines[idx] = line_stripped + f" Refs: [[{cid}]]" + newline
+
         with open(fpath, 'w', encoding='utf-8', newline='') as f:
             f.writelines(lines)
         return True
@@ -200,18 +182,10 @@ def main():
         'LEARNINGS.md',
         'GLOSSARY.md',
         'ARCHITECTURE.md',
-        'DESIGN_RULES.md',
-        'BACKLOG_MAP.md'
+        'DESIGN_RULES.md'
     ]
-    # The map's ID and Ref lint belongs to the local backend; with `tracker: github` a leftover map is not linted.
-    try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from reconcile import read_tracker
-        if read_tracker(memory_dir / 'ARCHITECTURE.md') == 'github':
-            target_files.remove('BACKLOG_MAP.md')
-    except ImportError:
-        pass
-    
+    # Local issues live on the tracker branch; `issues.py check` lints them.
+
     definitions = {}
     references = []
     
@@ -250,103 +224,6 @@ def main():
                     elif level == 2:
                         in_superseded = False
             
-            # Special Backlog Map table parsing
-            if fname == 'BACKLOG_MAP.md':
-                table_match = re.match(r'^\s*\|\s*([^|]+)\s*\|', line)
-                if table_match:
-                    cell_1 = table_match.group(1).strip()
-                    # Skip separator or header
-                    if not cell_1.startswith(':') and not cell_1.startswith('-') and cell_1.lower() != 'id':
-                        clean_id = cell_1.replace('[[', '').replace(']]', '').strip()
-                        # Strictly validate format: BT-XXX, BT-LOCAL-<slug>, or BT-[0-9]{3,}
-                        if not re.match(r'^(?:BT-XXX|BT-LOCAL-[a-zA-Z0-9_-]+|BT-[0-9]{3,})$', clean_id):
-                            errors.append(f"Invalid Backlog ID format '{clean_id}' in {fname}:{line_idx}. Hierarchical suffixes (e.g. BT-059-01) are forbidden. Must be a flat 3+ digit integer (e.g. BT-060) or BT-LOCAL-<slug>.")
-                            continue
-                        
-                        def_id = clean_id
-                        
-                        # Register definition
-                        if not is_placeholder(def_id):
-                            if def_id in definitions:
-                                prev = definitions[def_id]
-                                errors.append(f"Duplicate ID definition: '{def_id}' defined in {prev['file']}:{prev['line_num']} and {fname}:{line_idx}")
-                            else:
-                                definitions[def_id] = {
-                                    'id': def_id,
-                                    'file': fname,
-                                    'line_num': line_idx,
-                                    'tag': None,
-                                    'superseded_by': None,
-                                    'in_superseded': in_superseded,
-                                    'content': stripped
-                                }
-                                
-                                # Validate taxonomy labels for slices and epics (tier:epic replaces size:large as the parent signal)
-                                parts = [p.strip() for p in line.split('|')]
-                                if len(parts) >= 6:
-                                    status_str = parts[3].lower()
-                                    labels_str = parts[4]
-                                    labels = [l.strip() for l in labels_str.split(',') if l.strip()]
-                                    
-                                    is_epic = 'tier:epic' in labels
-                                    is_concept = any(l.startswith('concept:') for l in labels)
-                                    exempt_status = {'planned', 'status:planned', 'needs_spec', 'status:needs_spec'}
-                                    
-                                    if is_epic:
-                                        # Epic checks: must NOT carry size: or mode:
-                                        has_size = [l for l in labels if l.startswith('size:')]
-                                        has_mode = [l for l in labels if l.startswith('mode:')]
-                                        if has_size:
-                                            errors.append(f"Epic '{def_id}' in {fname}:{line_idx} must not carry size: labels: {has_size}.")
-                                        if has_mode:
-                                            errors.append(f"Epic '{def_id}' in {fname}:{line_idx} must not carry execution mode labels: {has_mode}.")
-                                    elif is_concept:
-                                        # Concept rows exempt from taxonomy checks (BACKLOG_MAP.md:29)
-                                        pass
-                                    elif status_str not in exempt_status:
-                                        # Leaf checks
-                                        primary_types = {'type:bug', 'type:content', 'type:feature', 'type:improvement', 'type:maintenance', 'type:research'}
-                                        execution_modes = {'mode:HITL', 'mode:AFK'}
-                                        
-                                        has_primary = [l for l in labels if l in primary_types]
-                                        has_execution = [l for l in labels if l in execution_modes]
-                                        has_size = [l for l in labels if l.startswith('size:')]
-                                        has_tier_slice = 'tier:slice' in labels
-                                        
-                                        if not has_primary:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing a Primary Type label (e.g., type:feature, type:bug, type:improvement).")
-                                        elif len(has_primary) > 1:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Primary Type labels: {has_primary}.")
-                                            
-                                        if not has_execution:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing an Execution Mode label (mode:HITL or mode:AFK).")
-                                        elif len(has_execution) > 1:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple Execution Mode labels: {has_execution}.")
-                                            
-                                        if not has_size:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing a size: label.")
-                                        elif len(has_size) > 1:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} has multiple size: labels: {has_size}.")
-                                            
-                                        if not has_tier_slice:
-                                            errors.append(f"Slice '{def_id}' in {fname}:{line_idx} is missing 'tier:slice' label.")
-                            
-                            # Parse references in the rest of the row
-                            ref_ids = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
-                            if def_id in ref_ids:
-                                ref_ids.remove(def_id)
-                            for rid in ref_ids:
-                                if is_placeholder(rid):
-                                    continue
-                                references.append({
-                                    'id': rid,
-                                    'file': fname,
-                                    'line_num': line_idx,
-                                    'context_id': def_id if not is_placeholder(def_id) else None,
-                                    'content': stripped
-                                })
-                            continue
-
             # Standard list/heading item parsing
             list_match = re.match(r'^(\s*)([-*+])\s+(.*)', line)
             is_list_item = list_match is not None
@@ -537,9 +414,6 @@ def main():
 
     # 2. Trust Tag Rules Validation
     for def_id, info in definitions.items():
-        if info['file'] == 'BACKLOG_MAP.md':
-            continue  # Backlog items do not carry trust tags
-            
         if info['in_superseded']:
             if info.get('removed'):
                 continue  # [REMOVED] tombstone: valid terminal marker, no successor needed
@@ -561,6 +435,13 @@ def main():
             elif fname == 'GLOSSARY.md':
                 if tag == 'LAW':
                     errors.append(f"Purity error: Glossary term '{def_id}' in {fname}:{info['line_num']} has trust tag '[LAW]'. Glossary entries cannot be '[LAW]'.")
+                # An entry carries only Avoid:/Source:; promotion evidence is derived from Ref, never stored.
+                # Fields start at the first Avoid:/Source:, so a prose label in the definition is not one.
+                first = re.search(r'\.\s+(?:Avoid|Source):\s', info['content'])
+                tail = info['content'][first.start():] if first else ''
+                for field in re.findall(r'\.\s+([A-Z][a-z]+):\s', tail):
+                    if field not in ('Avoid', 'Source'):
+                        warnings.append(f"Glossary field: unknown field `{field}:` in {def_id} ({fname}:{info['line_num']}); glossary entries carry only Avoid:/Source: (promotion evidence is derived from Ref).")
 
     # 2.4 Check bindings: a [LAW] naming its check must name a file git tracks, so a stale binding cannot
     # silently switch the 4a Standards auditor off for that rule. No git: one warning, only when a binding exists.

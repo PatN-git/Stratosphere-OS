@@ -6,33 +6,33 @@ timestamp: 2026-10-22
 
 # Tracker verbs
 
-The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a present `BACKLOG_MAP.md` means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
+The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a tracker branch (or a v5 map still to migrate) means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
 
 ## Runtime rule
-- **GitHub mode:** GitHub is the only store. Never write a local copy: no `BACKLOG_MAP.md` row or cell, no `BT-LOCAL-*` id, no mirror file.
+- **GitHub mode:** GitHub is the only store. Never write a local copy: no issue file, no `BT-LOCAL-*` id, no mirror file.
 - A `gh` failure is retried 3 times with backoff (the scripts do it; by hand, retry the same way). Then halt and say so. Never fall back to a local write.
-- **Local mode:** `.memory/BACKLOG_MAP.md` is the store and GitHub is not touched. The 9-column row schema and its rules are in the map template; ids are `BT-LOCAL-<slug>` until `tracker_switch.py` moves the project to GitHub.
+- **Local mode:** GitHub is not touched. One file per issue, `docs/issues/<id>.md` (closed: `archive/`), on the `<repo>/issues` branch (`tracker_branch:` in ARCHITECTURE.md), never in the working tree, so every branch sees one state. Ids are `BT-LOCAL-<slug>`. `python .agents/scripts/issues.py` does every read and write; never edit an issue file, never check out the tracker branch. A refused write exits 1: halt and say so.
 
 ## Verbs
 | Verb | GitHub form | Local form |
 |:--|:--|:--|
-| `create` | `gh issue create --title … --label … [--milestone …] --body-file .tmp/<name>.md`; the id is the returned number, zero-padded (`BT-007`). Never predict it: GitHub shares numbering with PRs | append the row; the id is `BT-LOCAL-<slug>` |
-| `set_status` | `gh issue edit <n> --remove-label "status:<old>" --add-label "status:<new>"`; it owns the Single Status Invariant, so the old label goes first. The board Action moves the card | edit the Status cell |
-| `set_labels` | `gh issue edit <n> --add-label … --remove-label …` | edit the Labels cell |
-| `ensure_label` | `gh label create "<name>" --description …` after the user confirms; the live `gh label list` is the registry | add the label to the map's Label Registry, then use it |
-| `set_milestone` | `gh issue edit <n> --milestone "vX.Y.Z"` | edit the Milestone cell |
-| `ensure_milestone` | list with `gh api --paginate 'repos/{owner}/{repo}/milestones?state=open' --jq '.[].title'`, create with `gh api repos/{owner}/{repo}/milestones -f title=vX.Y.0` | the Milestone cell value is the milestone; nothing to create |
-| `close_milestone` | `gh api -X PATCH repos/{owner}/{repo}/milestones/<n> -f state=closed`, only at 0 open issues | derived: no open row carries it |
-| `set_parent` | `addSubIssue` (`removeSubIssue` to unlink), per `references/github-issue-relations.md` | edit the Parent cell (one value, on the child) |
-| `add_blocker` | `addBlockedBy` per `references/github-issue-relations.md` | add the bare id to the Blocked by cell |
-| `clear_blocker` | `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear | remove the id from the Blocked by cell |
-| `close` | `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop); merging a PR with `Closes #<n>` closes too | set Status to `done` (closed = done) |
-| `reopen` | `gh issue reopen <n>`, then `set_status` | set Status back |
-| `comment` | `gh issue comment <n> --body …`; a resume note: `--body-file .tmp/resume-BT-<n>.md` | append a dated line to the issue's draft file; a resume note overwrites `.memory/resume/<id>.md` (one file per issue, gitignored); a PR-link comment has no local form (no PR) |
-| `set_refs` | the issue body's `Refs: [[L-012]], [[A-003]]` line: replace that line through `set_body`; memory ids only, never doc paths | edit the Ref cell |
-| `set_ice` | nothing stored: ICE is computed on read from the body's `I:`/`C:` metrics and the `size:` label | edit the ICE cell |
-| `set_body` | `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here) | the issue's draft or spec file (`docs/prds/`, `docs/design/`, the drafts file); the table holds only a title |
-| `claim` | `gh issue edit <n> --add-assignee @me` | no-op |
+| `create` | `gh issue create --title … --label … [--milestone …] --body-file .tmp/<name>.md`; the id is the returned number, zero-padded (`BT-007`). Never predict it: GitHub shares numbering with PRs | `issues.py create --title <t> --label <l,l> --body-file .tmp/<name>.md` (`--status`, `--milestone`, `--parent`, `--blocked-by` as needed) prints `BT-LOCAL-<slug>` (`-2` … on a clash) |
+| `set_status` | `gh issue edit <n> --remove-label "status:<old>" --add-label "status:<new>"`; it owns the Single Status Invariant, so the old label goes first. The board Action moves the card | `issues.py set <id> --status <s>` (one field: the invariant holds in code) |
+| `set_labels` | `gh issue edit <n> --add-label … --remove-label …` | `issues.py set <id> --add-label <l> --remove-label <l>` |
+| `ensure_label` | `gh label create "<name>" --description …` after the user confirms; the live `gh label list` is the registry | `issues.py label area:<slug>` after the user confirms |
+| `set_milestone` | `gh issue edit <n> --milestone "vX.Y.Z"` | `issues.py set <id> --milestone vX.Y.Z` (`—` unsets) |
+| `ensure_milestone` | list with `gh api --paginate 'repos/{owner}/{repo}/milestones?state=open' --jq '.[].title'`, create with `gh api repos/{owner}/{repo}/milestones -f title=vX.Y.0` | nothing to create: the field value is the milestone |
+| `close_milestone` | `gh api -X PATCH repos/{owner}/{repo}/milestones/<n> -f state=closed`, only at 0 open issues | derived: no open issue carries it |
+| `set_parent` | `addSubIssue` (`removeSubIssue` to unlink), per `references/github-issue-relations.md` | `issues.py set <id> --parent <id>` (`—` unlinks) |
+| `add_blocker` | `addBlockedBy` per `references/github-issue-relations.md` | `issues.py set <id> --add-blocker <id>` |
+| `clear_blocker` | `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear | `issues.py set <id> --remove-blocker <id>` |
+| `close` | `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop); merging a PR with `Closes #<n>` closes too | `issues.py close <id> [--reason "not planned"]`: `done` plus date and reason, moved to `archive/` |
+| `reopen` | `gh issue reopen <n>`, then `set_status` | `issues.py reopen <id> [--status <s>]` |
+| `comment` | `gh issue comment <n> --body …`; a resume note: `--body-file .tmp/resume-BT-<n>.md` | `issues.py comment <id> --body-file .tmp/<name>.md` (or `--body`); a resume note overwrites `.memory/resume/<id>.md` (one file per issue, gitignored); a PR-link comment is a normal comment |
+| `set_refs` | the issue body's `Refs: [[L-012]], [[A-003]]` line: replace that line through `set_body`; memory ids only, never doc paths | the same `Refs:` line, through `issues.py set <id> --body-file <f>` |
+| `set_ice` | nothing stored: ICE is computed on read from the body's `I:`/`C:` metrics and the `size:` label | the same: nothing stored |
+| `set_body` | `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here) | `issues.py set <id> --body-file .tmp/<name>.md` |
+| `claim` | `gh issue edit <n> --add-assignee @me` | `issues.py claim <id>` (compare-and-set: `in progress`, `claimed_by` = the branch); `[CLAIMED <id> by <x>]` → halt |
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
@@ -44,19 +44,15 @@ Branch: / Done: / Open: / Next step: / Blockers:
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `set_ice`: GitHub keeps no score; it is derived. Bodies in older formats return null, which falls into 3c's "recalculate if empty" path.
-- `set_refs`: a pointer into `.memory/` has no GitHub field, so it is a body line. `validate_memory.py` lints Refs for the local backend only.
-- `set_body`: the local table has no body; the draft and spec files stand in.
-- `claim`: no owner column locally.
 - `close`: on GitHub the unit PR merge closes epics (`Closes #<n>`) with no tracker call; locally 0b closes explicitly because there is no merge.
 - PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
 
 ## Reads
-GitHub reads are scoped `--json` queries; the local backend scans the table.
-- `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body`
-- `list`: `gh issue list --label … --state … --json number,title,labels,milestone`
-- `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens; the local backend scans the table for that status)
+GitHub reads are scoped `--json` queries; local reads are the same-named `issues.py` command (JSON).
+- `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body` (local adds `comments`)
+- `list`: `gh issue list --label … --state … --json number,title,labels,milestone`; local: `issues.py list [--status <s>] [--label <l>] [--parent <id>] [--all]` (`--all` adds closed)
+- `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens)
 - `resume_note`: the task's latest resume note. GitHub: `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30); local: `.memory/resume/<id>.md`. Empty → no note yet.
-- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label
+- `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label. Local `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
 - `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
-- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` (GitHub mode) per `references/terminal-sync-invariant.md`.
+- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` (GitHub mode) per `references/terminal-sync-invariant.md`; local: `issues.py check` (exit 1 on a finding).
