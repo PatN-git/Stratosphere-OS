@@ -29,15 +29,16 @@ def seed_upstream(project: Path, child: dict, shim_dir: Path, tracker: str = "lo
     The run says so out loud, and Slice 9's report must record it, or a green late
     chain will be read as a green whole chain.
 
-    The parent epic is minted THROUGH the shim rather than written into its store by
-    hand, so the store's shape has one author. The BACKLOG row is then written to
-    agree with it - `reconcile.py` compares the two, and a fixture that disagreed
-    with itself would fail the first terminal gate `3b` reaches.
+    Under `tracker: github` the parent epic is minted THROUGH the shim rather than
+    written into its store by hand, so the store's shape has one author. Under the
+    local backend GitHub is not touched: the epic is one `BT-LOCAL-<slug>` map row
+    (`references/tracker-verbs.md`) and the shim's store stays empty.
     """
     shutil.copytree(UPSTREAM, project, dirs_exist_ok=True)
-    epic = _mint_epic(child, shim_dir)
-    if tracker != GITHUB:  # GitHub is the only store there: the minted epic is the whole record
-        _seed_backlog_row(project, epic)
+    if tracker == GITHUB:  # GitHub is the only store there: the minted epic is the whole record
+        _mint_epic(child, shim_dir)
+    else:  # the local backend never touches GitHub: its map row is the whole record
+        _seed_backlog_row(project)
     subprocess.run(["git", "-C", str(project), "add", "-A"], capture_output=True)
     subprocess.run(["git", "-C", str(project), "commit", "-m",
                     "docs(BT-001): seeded upstream artifacts (L3 fixture)"],
@@ -63,12 +64,15 @@ def _mint_epic(child: dict, shim_dir: Path) -> str:
     return r.stdout.strip()
 
 
-def _seed_backlog_row(project: Path, epic_url: str) -> None:
-    """One row, agreeing with the store: status bare in Status, never in Labels."""
+LOCAL_EPIC_ID = "BT-LOCAL-local-feature-flag-evaluation"
+
+
+def _seed_backlog_row(project: Path) -> None:
+    """The local backend's epic row: status bare in Status, never in Labels."""
     backlog = project / ".memory" / "BACKLOG_MAP.md"
     text = backlog.read_text(encoding="utf-8")
     labels = ", ".join(l for l in EPIC_LABELS if not l.startswith("status:"))
-    row = (f"| BT-001 | Local feature flag evaluation | planned | {labels} "
+    row = (f"| {LOCAL_EPIC_ID} | Local feature flag evaluation | planned | {labels} "
            f"| v1.0.0 | — | — | I1.0×C80%/E1 | "
            f"docs/prds/BT-001-local-feature-flag-evaluation.md |")
     lines = text.splitlines()

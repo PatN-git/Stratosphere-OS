@@ -2371,6 +2371,37 @@ def test_design_lockfile_in_sync_or_absent_is_silent():
     print("Silent design lockfile test passed!")
 
 
+def _advisory_env(name, key):
+    tmp, scaffold_script = setup_orphan_test_env(name)
+    mem = tmp / ".memory"
+    mem.mkdir(parents=True, exist_ok=True)
+    (mem / "BACKLOG_MAP.md").write_text("| ID | Title |" + chr(10), encoding="utf-8")
+    fm = "type: architecture" + chr(10) + (f"tracker: {key}" + chr(10) if key else "")
+    (mem / "ARCHITECTURE.md").write_text("---" + chr(10) + fm + "---" + chr(10) + "# A" + chr(10), encoding="utf-8")
+    return tmp, scaffold_script
+
+
+def test_tracker_advisory_for_a_map_without_a_tracker_key():
+    print("--- Test: A map with no tracker key gets the v5 tracker advisory ---")
+    tmp, scaffold_script = _advisory_env("test_tracker_advisory", None)
+    res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+    assert "resolve to the local tracker backend" in res.stdout and "tracker_switch.py" in res.stdout
+    worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+    assert worklist["tracker_advisory"] is True
+    print("Tracker advisory test passed!")
+
+
+def test_tracker_advisory_is_silent_when_the_key_is_recorded():
+    print("--- Test: A recorded tracker key keeps the advisory silent ---")
+    for name, key in (("test_tracker_adv_local", "local"), ("test_tracker_adv_github", "github")):
+        tmp, scaffold_script = _advisory_env(name, key)
+        res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
+        assert "resolve to the local tracker backend" not in res.stdout
+        worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
+        assert worklist["tracker_advisory"] is False
+    print("Silent tracker advisory test passed!")
+
+
 def test_script_locally_edited_preserved():
     print("--- Test: Script Locally Edited Preserved ---")
     tmp, scaffold_script = setup_orphan_test_env("test_script_edited_preserved")
@@ -2954,6 +2985,8 @@ if __name__ == "__main__":
     test_script_pristine_refresh()
     test_script_locally_edited_preserved()
     test_design_lockfile_stale_after_pin_refresh()
+    test_tracker_advisory_for_a_map_without_a_tracker_key()
+    test_tracker_advisory_is_silent_when_the_key_is_recorded()
     test_design_lockfile_in_sync_or_absent_is_silent()
     test_script_nested_preservation()
     test_script_resolve_workflow()

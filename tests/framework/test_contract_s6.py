@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from conftest import SRC, read_src
+from conftest import REPO_ROOT, SRC, read_src
 
 DEAD = [r"reconcile\.py[^`\n]*--(heal|summary|require-gh)", r"nightly_state\.py drift", r"MIRROR-UNVERIFIED",
         r"faithful mirror", r"Backlog Drift", r"\[CHRONIC", r"stale_blocker", r"\bmap=", r"map_only="]
@@ -70,3 +70,20 @@ def test_update_corroboration_counts_bt_ids_in_backlog_rows_only(tmp_path):
     with pytest.raises(ValueError, match="BT-id set changed"):
         scaffold.check_cheap_corroborations(tmp_path / "BACKLOG_MAP.md", with_rules,
                                             without_rules.replace("BT-012", "BT-013"))
+
+
+def test_the_local_backend_has_one_id_rule_everywhere():
+    """tracker-verbs `create`: the local id is `BT-LOCAL-<slug>`; GitHub mode binds `BT-<padded>` from `gh issue create`."""
+    for rel in ("workflows/3b-create-issue.md", "references/tracker-verbs.md", "commands/stratosphere-setup/SKILL.md",
+                "memory-templates/BACKLOG_MAP.md", "rules/memory-protocol.md"):
+        assert "BT-LOCAL-<n>" not in read_src(rel), rel
+    assert "`create` appends the entry (`BT-LOCAL-<slug>`)" in read_src("workflows/3b-create-issue.md")
+    assert "MUST emit BT ids in zero-padded" not in read_src("commands/stratosphere-setup/SKILL.md")
+    assert "BT-LOCAL (local backend)" in read_src("workflows/1c-concept-map.md")
+
+
+def test_the_breaking_v5_release_is_documented_for_consumers():
+    notes = (REPO_ROOT / "RELEASING.md").read_text(encoding="utf-8")
+    section = notes.split("## v5.0.0 — breaking release", 1)[1]
+    for needle in ("tracker_switch.py", "--apply", "tracker: github", "BACKLOG_MAP", "--heal", "needs_review_constitution"):
+        assert needle in section, needle

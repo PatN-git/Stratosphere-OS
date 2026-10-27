@@ -113,21 +113,20 @@ def test_the_upstream_artifacts_pass_their_own_phase_checks(seeded):
 
 # --- the world the artifacts describe -----------------------------------------
 
-def test_the_parent_epic_exists_in_the_gh_store(seeded):
-    """`2a:30` mints it with `gh issue create`; the seed uses the same path, so the
-    store has one author and cannot drift from the shim's own shape."""
+def test_the_local_backend_seed_touches_no_github(seeded):
+    """The local backend never touches GitHub: the epic is a map row and the shim's store stays empty."""
     _, child = seeded
-    issues = store(child)["issues"]
-    assert issues["1"]["title"].startswith("BT-001")
-    assert {l["name"] for l in issues["1"]["labels"]} == set(e.EPIC_LABELS)
+    store_file = Path(child["L3_GH_STORE"])
+    assert not store_file.exists() or not store(child)["issues"]
 
 
-def test_the_backlog_row_agrees_with_the_store(seeded):
-    """Status bare in the Status column, never in Labels (3b:69)."""
+def test_the_local_epic_row_is_a_bt_local_row(seeded):
+    """Status bare in the Status column, never in Labels (3b:69); the id follows tracker-verbs `create`."""
     project, _ = seeded
     row = [ln for ln in a.read(project / ".memory" / "BACKLOG_MAP.md").splitlines()
-           if ln.startswith("| BT-001 ")][0]
+           if ln.startswith("| BT-LOCAL-")][0]
     cells = [c.strip() for c in row.split("|")]
+    assert cells[1] == e._seed.LOCAL_EPIC_ID
     assert cells[3] == "planned"
     assert "status:" not in cells[4]
     assert cells[5] == "v1.0.0"

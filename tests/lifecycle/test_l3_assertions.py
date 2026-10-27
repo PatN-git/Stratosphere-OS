@@ -317,33 +317,40 @@ def _project_with_reconcile(tmp_path, backlog):
     return proj
 
 
-def test_3b_passes_when_every_issue_has_a_backlog_row(tmp_path, monkeypatch):
+ROW = "| BT-LOCAL-ruleset-parsing | Ruleset parsing | planned | type:feature | v1.0.0 | — | — | 1.0 | — |\n"
+
+
+def _local_3b(tmp_path, monkeypatch, after, *, mint_issue=False):
     child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing", "--label",
-             "status:planned,type:feature", "--milestone", "v1.0.0"])
     proj = _project_with_reconcile(tmp_path, BACKLOG)
     before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md",
-          BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16"))
-
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert problems == [], problems
+    if mint_issue:
+        gh.main(["issue", "create", "--title", "Ruleset parsing"])
+    write(proj / ".memory" / "BACKLOG_MAP.md", after)
+    c = a.Context(project=proj, child_env={**os.environ}, store=Path(child["L3_GH_STORE"]), before=before)
+    return a.check("3b", c)[0]
 
 
-def test_3b_fails_when_an_issue_has_no_backlog_row(tmp_path, monkeypatch):
-    child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing"])
-    gh.main(["issue", "create", "--title", "Unmirrored slice"])
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
-    before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md", BACKLOG + "\n")
+def test_3b_local_passes_when_it_appends_a_bt_local_row_and_touches_no_github(tmp_path, monkeypatch):
+    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW
+    assert _local_3b(tmp_path, monkeypatch, after) == []
 
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert any("BT-002" in p for p in problems)
+
+def test_3b_local_fails_when_no_row_was_appended(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, BACKLOG + "\n")
+    assert any("no BACKLOG_MAP row" in p for p in problems)
+
+
+def test_3b_local_fails_on_a_row_that_is_not_a_bt_local_id(tmp_path, monkeypatch):
+    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW.replace("BT-LOCAL-ruleset-parsing", "BT-002")
+    problems = _local_3b(tmp_path, monkeypatch, after)
+    assert any("BT-LOCAL-<slug>" in p and "BT-002" in p for p in problems)
+
+
+def test_3b_local_fails_when_it_created_a_github_issue(tmp_path, monkeypatch):
+    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW
+    problems = _local_3b(tmp_path, monkeypatch, after, mint_issue=True)
+    assert any("never touches GitHub" in p for p in problems)
 
 
 # --- 3d ----------------------------------------------------------------------

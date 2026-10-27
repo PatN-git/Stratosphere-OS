@@ -323,30 +323,39 @@ def check_0a_second(ctx: Context):
 
 
 def check_3b(ctx: Context):
-    """The store is authoritative: `3b` writes BACKLOG_MAP from what gh returned."""
+    """GitHub mode: the store is authoritative (`github_3b.py`). Local backend: GitHub is not touched, so the
+    check reads the rows 3b appended to BACKLOG_MAP (`create`, `references/tracker-verbs.md`)."""
     problems, notes = [], []
-    state = store_state(ctx)
-    issues = [i for i in state["issues"].values() if not i.get("isPR")]
-    if not issues:
-        return ["3b minted no issues in the fixture store"], notes
     if ctx.tracker == "github":
+        state = store_state(ctx)
+        issues = [i for i in state["issues"].values() if not i.get("isPR")]
+        if not issues:
+            return ["3b minted no issues in the fixture store"], notes
         return check_3b_github(ctx, issues), notes
     backlog = ctx.project / ".memory" / "BACKLOG_MAP.md"
     if not backlog.exists():
         return ["BACKLOG_MAP.md does not exist"], notes
     text = read(backlog)
-    missing = [f"BT-{i['number']:03d}" for i in issues
-               if f"BT-{i['number']:03d}" not in text]
-    if missing:
-        problems.append(f"issues minted with no BACKLOG_MAP row: {missing}")
-    if ctx.before.get("backlog_md") == text:
-        problems.append("BACKLOG_MAP.md is untouched, so nothing was mirrored")
-    elif "generated:" in text:
+    row_ids = lambda t: set(re.findall(r"^\|\s*(BT-[\w-]+)\s*\|", t, re.M)) - {"BT-XXX"}
+    new = row_ids(text) - row_ids(ctx.before.get("backlog_md") or "")
+    if not new:
+        problems.append("3b appended no BACKLOG_MAP row, so no slice was written")
+    bad = sorted(i for i in new if not re.fullmatch(r"BT-LOCAL-[A-Za-z0-9][\w-]*", i))
+    if bad:
+        problems.append(f"local-backend rows must be `BT-LOCAL-<slug>` (tracker-verbs `create`): {bad}")
+    if state_issues(ctx):
+        problems.append("3b created GitHub issues, but the local backend never touches GitHub")
+    if new and ctx.before.get("backlog_md") != text and "generated:" in text:
         before_at = re.search(r"at:\s*(\S+)", ctx.before.get("backlog_md") or "")
         now_at = re.search(r"at:\s*(\S+)", text)
         if before_at and now_at and before_at.group(1) == now_at.group(1):
             problems.append("BACKLOG_MAP generated.at was not refreshed (3b:69)")
     return problems, notes
+
+
+def state_issues(ctx: Context) -> list:
+    """Non-PR issues in the gh shim's store beyond none: the local backend must leave it empty."""
+    return [i for i in store_state(ctx)["issues"].values() if not i.get("isPR")]
 
 
 def check_3b_github(ctx: Context, issues: list) -> list:
