@@ -24,6 +24,7 @@ Antigravity, Cursor, Codex, Devin and OpenClaw; Claude Code reads the same tree
 from `.claude/skills/`. There is no separate workflows/ or commands/ channel.
 """
 import argparse
+import os
 import hashlib
 import json
 import re
@@ -33,7 +34,6 @@ from pathlib import Path
 
 # MUST match the block ids in memory-templates/*.md — enforced by test_known_block_ids_drift_guard
 KNOWN_BLOCK_IDS = {
-    "backlog-rules", "label-canonical", "backlog-header",
     "design-principles", "design-reference-rules",
     "arch-vocabulary", "arch-guidance",
     "learnings-guidance", "glossary-guidance", "dbschema-rules"
@@ -231,33 +231,7 @@ def verify_invariants(orig_text, prop_text, changed_block_ids):
 
 def check_cheap_corroborations(file_path: Path, orig_text, prop_text):
     name = file_path.name
-    if name == "BACKLOG_MAP.md":
-        # Only the rows under `## Backlog` count: a rules block that gains or loses an example id is not a change of the map.
-        def get_backlog_rows(text):
-            lines = text.split("\n")
-            in_backlog = False
-            rows = []
-            for line in lines:
-                if line.strip().startswith("## Backlog"):
-                    in_backlog = True
-                    continue
-                if in_backlog and line.strip().startswith("##"):
-                    in_backlog = False
-                if in_backlog and line.strip().startswith("|") and "BT-" in line:
-                    if "ID" not in line and ":---" not in line:
-                        rows.append(line)
-            return rows
-
-        bt_pattern = re.compile(r'\b(BT-\d{3,})\b')
-        orig_rows, prop_rows = get_backlog_rows(orig_text), get_backlog_rows(prop_text)
-        orig_bts = set(bt_pattern.findall("\n".join(orig_rows)))
-        prop_bts = set(bt_pattern.findall("\n".join(prop_rows)))
-        if orig_bts != prop_bts:
-            raise ValueError(f"BT-id set changed. Original: {orig_bts}, Proposed: {prop_bts}")
-        if len(orig_rows) != len(prop_rows):
-            raise ValueError(f"Backlog row count changed. Original: {len(orig_rows)}, Proposed: {len(prop_rows)}")
-            
-    elif name == "DESIGN_RULES.md":
+    if name == "DESIGN_RULES.md":
         dr_pattern = re.compile(r'\[\[(DR-\w+)\]\]')
         def get_immortal_drs(text):
             lines = text.split("\n")
@@ -325,6 +299,7 @@ try:
 except ImportError:
     _versioning = None
 import reconcile
+import issues
 import tracker_switch
 
 
@@ -372,8 +347,26 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
 
 def skips_map(proj_path, tracker):
-    """True for the local tracker's store (`BACKLOG_MAP.md`) under `tracker: github`: it is never placed, merged or locked."""
-    return tracker == "github" and proj_path == tracker_switch.MAP
+    """True for the retired v5 map store on either backend: it is never placed, merged or locked. The
+    local tracker lives on the `<repo>/issues` branch (issues.py); a leftover map is migrated by `issues.py migrate`."""
+    return proj_path == issues.MAP_DEFAULT
+
+
+def init_local_tracker(project, arch):
+    """Fresh `tracker: local` install: record `tracker_branch: <repo>/issues` and create that branch (issues.py init).
+    Outside a git repository the key is still recorded and setup is told to run `issues.py init` after `git init`."""
+    cwd = Path.cwd()
+    try:
+        os.chdir(project)
+        branch = f"{issues.repo_name()}/issues"
+        tracker_switch.write_key(arch, "tracker_branch", branch)
+        lines = []
+        issues.main(["--arch", str(arch), "init"], out=lines.append)
+        print(f"Local tracker: {' '.join(lines)}")
+    except issues.IssuesError as e:
+        print(f"NOTE: local tracker not initialised ({e}); after `git init` run `python .agents/scripts/issues.py init`.")
+    finally:
+        os.chdir(cwd)
 
 
 def resolve_tracker(project, flag=None):
@@ -642,7 +635,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name
@@ -712,7 +705,7 @@ def main():
     ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")
-    ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend (github places no BACKLOG_MAP.md); recorded as `tracker:` in ARCHITECTURE.md")
+    ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend, recorded as `tracker:` in ARCHITECTURE.md; local also records `tracker_branch:` and creates that branch")
     args = ap.parse_args()
 
     project = Path.cwd()
@@ -1276,10 +1269,11 @@ def main():
             print(f"NOTE: design toolchain lockfile pins {drift[0]} but package.json pins {drift[1]}; "
                   "run `npm install --prefix .agents/scripts/design` and commit package-lock.json (`npm ci` fails until then).")
 
-        if (project / ".memory" / "BACKLOG_MAP.md").is_file() and reconcile.read_tracker(project / ".memory" / "ARCHITECTURE.md") is None:
+        if (project / issues.MAP_DEFAULT).is_file() and reconcile.read_tracker(project / ".memory" / "ARCHITECTURE.md") != "github":
             worklist["tracker_advisory"] = True
-            print("NOTE: a BACKLOG_MAP.md and no `tracker:` key in ARCHITECTURE.md resolve to the local tracker backend, which never touches GitHub "
-                  "from v5.0.0. To use GitHub issues run `python .agents/scripts/tracker_switch.py` (dry run), then `--apply`; to stay local set `tracker: local`.")
+            print(f"NOTE: the local tracker moved from {issues.MAP_DEFAULT} to one file per issue on the `<repo>/issues` branch in v5.0.0. "
+                  "Run `python .agents/scripts/issues.py migrate` once and set `tracker: local`; to use GitHub issues instead, "
+                  "migrate first, then run `python .agents/scripts/tracker_switch.py` (dry run) and `--apply`.")
 
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -1523,6 +1517,8 @@ def main():
     arch = project / ".memory" / "ARCHITECTURE.md"
     if args.tracker and not dry and arch in res["created"]:
         tracker_switch.write_tracker(arch, args.tracker)
+        if args.tracker == "local":
+            init_local_tracker(project, arch)
 
     # 4. Rules -> .agents/rules/ (Antigravity-native: reads trigger/globs here).
     #    glob-triggered rules ALSO -> .claude/rules/ so Claude Code activates them

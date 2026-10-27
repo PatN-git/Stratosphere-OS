@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""ice_read.py — ICE on read, and 3c's candidate list, for `tracker: github` (no stored score, no map).
+"""ice_read.py — ICE on read, and 3c's candidate list, on both tracker backends (no stored score).
 
 ICE = Impact * Confidence / Effort. Impact and Confidence are the body's `- **Impact:**` / `- **Confidence:**`
 lines (3b writes them); Effort comes from the `size:` label (small 1, medium 2, large 3). A Spike, a body without
 metrics or an issue without a size label has no score (`—`): 3c's "recalculate if empty" path.
 
-  ice_read.py candidates   one scoped `gh issue list`: open leaf issues at `status:planned|needs_spec`, no
-                           `concept:*`, no `scope:deferred`, one line each; a leaf lacking a required label is
-                           listed as `[MISSING-LABELS]` instead.
-Exit: 0 ok, 3 GitHub unreachable after the retries (never a local fallback).
+  ice_read.py candidates   open leaf issues at `status:planned|needs_spec`, no `concept:*`, no `scope:deferred`,
+                           one line each; a leaf lacking a required label is listed as `[MISSING-LABELS]` instead.
+                           `tracker: github`: one scoped `gh issue list`; `tracker: local`: the issues.py store.
+Exit: 0 ok, 1 local store unreadable, 3 GitHub unreachable after the retries (never a local fallback).
 """
 import argparse
 import json
@@ -66,7 +66,7 @@ def candidates(issues):
         if (_status(labels) not in CANDIDATE_STATUS or 'tier:epic' in labels or 'scope:deferred' in labels
                 or any(l.startswith('concept:') for l in labels)):
             continue
-        bt = reconcile._bt(issue['number'])
+        bt = issue.get('id') or reconcile._bt(issue['number'])
         absent = [r for r in REQUIRED if not any(l.startswith(r) for l in labels)]
         if absent:
             missing.append(f"[MISSING-LABELS] {bt} - {issue['title']} ({', '.join(absent)})")
@@ -94,9 +94,19 @@ def fetch_open_issues():
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="ICE on read and 3c candidates (tracker: github).")
+    ap = argparse.ArgumentParser(description="ICE on read and 3c candidates (both tracker backends).")
     ap.add_argument('command', choices=('candidates',))
-    ap.parse_args(argv)
+    ap.add_argument('--arch', default=reconcile.ARCH_DEFAULT)
+    args = ap.parse_args(argv)
+    if reconcile.resolve_backend(args.arch) == 'local':
+        import issues as local
+        try:
+            lines, missing = candidates(local.open_as_gh(local.Tracker(args.arch).store()))
+        except local.IssuesError as e:
+            print(e)
+            return 1
+        print("\n".join(lines + missing))
+        return 0
     try:
         issues = fetch_open_issues()
     except reconcile.GhError as e:

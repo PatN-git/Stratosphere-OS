@@ -4,6 +4,7 @@ Seams: `write_tracker` (the frontmatter record, shared with scaffold.py) and `ma
 gh shim (`tests/lifecycle-harness/shims/gh_shim.py`, a JSON-store `gh`), with `reconcile._gh_run` pointed at it.
 """
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,7 @@ from conftest import REPO_ROOT
 
 SCRIPTS = REPO_ROOT / "src" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+import issues
 import reconcile
 import tracker_switch as ts
 
@@ -82,6 +84,9 @@ def project(tmp_path, monkeypatch):
 
     root = tmp_path / "proj"
     (root / ".memory").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True)
+    for k, v in (("user.email", "t@example.com"), ("user.name", "T")):
+        subprocess.run(["git", "-C", str(root), "config", k, v], check=True)
     (root / "docs" / "prds").mkdir(parents=True)
     (root / "src").mkdir()
     (root / ".memory" / "ARCHITECTURE.md").write_text("---\ntype: architecture\ntracker: local\n---\n# ARCHITECTURE\n", encoding="utf-8")
@@ -92,6 +97,10 @@ def project(tmp_path, monkeypatch):
     for n in (1, 2, 3):
         shim(["issue", "create", "--title", f"filler {n}", "--body", f"body {n}"])
     monkeypatch.chdir(root)
+    monkeypatch.setattr(issues, "today", lambda: "2026-10-27")
+    assert issues.main(["migrate"], out=lambda s: None) == 0
+    issues.main(["comment", "BT-LOCAL-login", "--body", "Design agreed"], out=lambda s: None)
+    assert issues.main(["check"], out=lambda s: None) == 0, "the migrated fixture passes issues.py check"
     return root, store
 
 
@@ -121,21 +130,28 @@ def test_dry_run_writes_nothing(project, capsys):
 
 def test_apply_creates_issues_rewrites_ids_archives_map_sets_key(project, capsys):
     root, store = project
+    local_bodies = {r["title"]: r["body"] for r in ts.read_rows()}
     assert ts.main(["--apply"]) == 0
     out = capsys.readouterr().out
+    for i in new_issues(store):  # each body byte for byte, plus only the switch marker
+        bt = re.search(r"<!-- tracker-switch: (\S+) -->", i["body"]).group(1)
+        assert i["body"] == local_bodies[i["title"]] + f"\n\n<!-- tracker-switch: {bt} -->\n"
     issues = {i["title"]: i for i in new_issues(store)}
     assert set(issues) == {"Auth epic", "DB setup", "Login page"}  # the real row BT-003 is not re-created
     auth, db, login = issues["Auth epic"], issues["DB setup"], issues["Login page"]
     assert {l["name"] for l in login["labels"]} == {"type:feature", "mode:HITL", "tier:slice", "size:small", "status:planned"}
     assert login["milestone"] == {"title": "v1.0.1"}
     assert "<!-- tracker-switch: BT-LOCAL-login -->" in login["body"]
-    assert "ICE: 0.27 (I: 2.0, C: 80%)" in login["body"] and "Refs: [[L-001]], [[A-002]]" in login["body"]
+    assert login["body"].startswith("Migrated from `.memory/BACKLOG_MAP.md`.\n\n- **Impact:** 2.0\n- **Confidence:** 80%")
+    assert "Refs: [[L-001]], [[A-002]]" in login["body"]
+    assert [c["body"] for c in login["comments"]] == [
+        "Comments from the local tracker:\n\n- 2026-10-27: Design agreed\n\n<!-- tracker-switch-comments: BT-LOCAL-login -->\n"]
     assert db["state"] == "CLOSED" and login["state"] == "OPEN"
     assert login["parent"]["number"] == auth["number"] and db["parent"]["number"] == auth["number"]
     assert [b["number"] for b in login["blockedBy"]] == [db["number"]]
     # existing issue #3 gains its Refs and ICE lines, nothing else changes
     body3 = gh_state(store)["issues"]["3"]["body"]
-    assert body3.startswith("body 3") and "Refs: [[L-002]]" in body3 and "ICE: 0.50 (I: 1.0, C: 50%)" in body3
+    assert body3.startswith("body 3") and "Refs: [[L-002]]" in body3 and "- **Confidence:** 50%" in body3
     # ids rewritten under docs/ and .memory/, other files reported and untouched
     num = {k: f"BT-{v['number']:03d}" for k, v in (("login", login), ("db", db), ("auth", auth))}
     assert (root / "docs" / "prds" / "auth.md").read_text(encoding="utf-8") == (
@@ -143,9 +159,9 @@ def test_apply_creates_issues_rewrites_ids_archives_map_sets_key(project, capsys
     assert (root / ".memory" / "LEARNINGS.md").read_text(encoding="utf-8") == f"Lesson from {num['auth']}.\n"
     assert (root / "src" / "app.py").read_text(encoding="utf-8") == "# see BT-LOCAL-db\n"
     assert "src" in out and "BT-LOCAL-db" in out and "not edited" in out
-    # the map is archived whole, the key flips last
-    assert not (root / ".memory" / "BACKLOG_MAP.md").exists()
-    assert (root / ".memory" / "archive" / "BACKLOG_MAP.md").read_text(encoding="utf-8") == MAP
+    # the migration archived the map; the switch keeps the tracker branch and flips the key last
+    assert (root / ".memory" / "archive" / "BACKLOG_MAP.2026-10-27.md").read_text(encoding="utf-8") == MAP
+    assert "branch proj/issues kept as the archive" in out
     assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "github"
 
 
@@ -160,12 +176,11 @@ def test_rerun_is_idempotent(project, capsys):
 
 
 def test_resume_after_an_interrupted_run_creates_nothing_twice(project):
-    """The map is still there and the key still says local (a crash before the last steps): a re-run finds the
-    issues by their marker, adds no second copy, and appends no second Refs line."""
+    """The key still says local (a crash before the last step): a re-run finds the issues by their marker and
+    adds no second copy, comment or Refs line."""
     root, store = project
     ts.main(["--apply"])
     snapshot = gh_state(store)["issues"]
-    shutil.copy(root / ".memory" / "archive" / "BACKLOG_MAP.md", root / ".memory" / "BACKLOG_MAP.md")
     ts.write_tracker(root / ".memory" / "ARCHITECTURE.md", "local")
     assert ts.main(["--apply"]) == 0
     assert gh_state(store)["issues"] == snapshot
@@ -179,7 +194,6 @@ def test_a_failed_create_stops_the_run_before_any_rewrite(project, monkeypatch, 
                         lambda a: (1, "", "milestone not found") if a[:2] == ["issue", "create"] and "Login page" in a else real(a))
     assert ts.main(["--apply"]) == 1
     assert "BT-LOCAL-login" in capsys.readouterr().out
-    assert (root / ".memory" / "BACKLOG_MAP.md").exists()
     assert (root / "docs" / "prds" / "auth.md").read_text(encoding="utf-8").startswith("Build BT-LOCAL-login")
     assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "local"
 
@@ -189,4 +203,12 @@ def test_gh_unavailable_halts_without_touching_anything(project, monkeypatch, ca
     monkeypatch.setattr(reconcile, "_gh_run", lambda a: (1, "", "not logged in"))
     assert ts.main(["--apply"]) == 2
     assert "gh" in capsys.readouterr().out.lower()
-    assert (root / ".memory" / "BACKLOG_MAP.md").exists()
+    assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "local"
+
+
+def test_an_unmigrated_map_halts_before_gh(project, capsys):
+    root, _ = project
+    subprocess.run(["git", "branch", "-D", "proj/issues"], cwd=root, check=True, capture_output=True)
+    (root / ".memory" / "BACKLOG_MAP.md").write_text(MAP, encoding="utf-8")
+    assert ts.main(["--apply"]) == 2
+    assert "[MIGRATE-FIRST]" in capsys.readouterr().out

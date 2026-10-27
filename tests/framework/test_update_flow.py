@@ -55,16 +55,16 @@ def run_cmd(args, cwd, expect_code=0):
         raise RuntimeError(f"Command failed: {args}")
     return res
 
-def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
+def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4", name="NOTES.md"):
+    """Mock bundle whose only artifact is the memory template `name` (a generic SOS:BLOCK merge fixture)."""
     mock_plugin = tmp_dir / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
     if mock_plugin.parent.exists():
         shutil.rmtree(mock_plugin.parent)
     shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
-    
-    # Write mock versions.json listing BACKLOG_MAP.md
+
     versions_data = {
         "artifacts": {
-            "assets/templates/memory/BACKLOG_MAP.md": {
+            f"assets/templates/memory/{name}": {
                 "version": version,
                 "timestamp": "2026-07-08",
                 "sha256": "dummy"
@@ -73,8 +73,7 @@ def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
     }
     (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
     
-    # Write mock template BACKLOG_MAP.md
-    (mock_plugin / "assets" / "templates" / "memory" / "BACKLOG_MAP.md").write_text(backlog_template_content, encoding="utf-8")
+    (mock_plugin / "assets" / "templates" / "memory" / name).write_text(backlog_template_content, encoding="utf-8")
 
     # Pre-place the constitution files from the plugin's own templates. These tests
     # exercise SOS:BLOCK merging in .memory/, not constitution review; without this
@@ -89,145 +88,91 @@ def setup_mock_plugin(tmp_dir, backlog_template_content, version="1.1.4"):
 
     return mock_plugin / "scripts" / "scaffold.py"
 
-def test_pristine_update():
-    print("--- Test: Pristine Update ---")
-    tmp = _sandbox("test_pristine_update")
-    if tmp.exists():
-        shutil.rmtree(tmp, ignore_errors=True)
-    tmp.mkdir(parents=True, exist_ok=True)
-    
-    # 1. Setup mock legacy project (simulate version 1.1.3 backlog_map)
-    (tmp / ".memory").mkdir(parents=True, exist_ok=True)
-    (tmp / ".agents").mkdir(parents=True, exist_ok=True)
-    
-    # Write lockfile
-    lock_data = {
-        "installed_plugin_version": "1.0.0",
-        "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
-                "version": "1.1.3",
-                "sha256_at_install": "unknown"
-            }
-        }
-    }
-    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
-    
-    # Write legacy BACKLOG_MAP.md (v1.1.3 content without markers)
-    legacy_rules = (
-        "- **PRESERVATION RULE:** Do NOT delete or modify operational instructions under Rules (such as Label source of truth syncing rules) or the `Milestone` definition line under Label Registry during setup or backlog updates. They must remain permanently as operational guidance.\n"
-        "- When writing the first entry, populate the Label Registry with all labels used in this GitHub project.\n"
-        "- **BT-id padding & Atomic Minting:** The GitHub issue number must be zero-padded to 3 digits (e.g., #7 becomes BT-007). All references, links, and filenames must use this padded format. **CRITICAL:** Never predict or pre-allocate `BT-<n>` IDs offline by scanning existing entries and calculating `MAX(BT_ID) + 1`. Because GitHub shares sequence numbers across both Issues and Pull Requests, guessing numbers locally guarantees collisions. IDs must be atomically captured strictly upon executing `gh issue create`.\n"
-        "- Update when GitHub issues are created, closed, or change status.\n"
-        "- Include only ID, Title, Status, Labels, Milestone, Dependencies, ICE, Ref — nothing else.\n"
-        "- Use the Label Registry; do not invent labels.\n"
-        "- The `Ref` column links to learnings, architecture rules, design rules, or glossary terms (e.g., L-012, A-003, DR-020, G-005). Doc paths (PRD/design) live in the GitHub issue body, not in Ref.\n"
-        "- **Label source of truth:** After installation (Checkpoint 6), the Label Registry here reflects the live GitHub label set.\n"
-        "  - If a label appears in **GitHub but not the registry** → add it to the registry (with user confirmation).\n"
-        "  - If a label appears in the **registry but not GitHub** → create it in GitHub before using it in any issue.\n"
-        "  - Never use a label in the Backlog table that is not in both the registry and GitHub.\n"
-        "- **Single Status Invariant:** An issue must always have exactly one `status:*` label. When transitioning an issue to a new status in GitHub or the Backlog table, always remove the prior `status:*` label first."
-    )
-    
-    legacy_labels = (
-        "- **Primary Type (`type:<class>`)**: `type:bug`, `type:content`, `type:feature`, `type:improvement`, `type:maintenance`, `type:research`\n"
-        "- **Execution Mode (`type:<mode>`)**: `type:HITL` (Human-in-Loop required), `type:AFK` (Autonomous execution)\n"
-        "- **Priority (`priority:xxx`)**: `priority:high` (Must have), `priority:medium` (Important), `priority:low` (Nice to have)\n"
-        "- **Size (`size:xxx`)**: `size:large` (Architectural: Multi-feature/major schema), `size:medium` (Vertical: Standard Data/Logic/UI slice), `size:small` (Surgical: Local/Single-file)\n"
-        "- **Scope (`scope:xxx`)**: `scope:baseline` (MVP end-to-end), `scope:differentiator` (differentiator to win), `scope:deferred` (out of scope/temporal deferral)\n"
-        "- **Status (`status:xxx`)**: `status:planned`, `status:needs_spec`, `status:in progress`, `status:blocked`, `status:done`\n"
-        "- **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a-version-planning`; `SPRINT` (Z) owned by `/3c-sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. Mirrors the GitHub milestone. This is the project's product-release tracker — not a tool/library version."
-    )
-    
-    legacy_backlog = (
+def _legacy_design_rules(eol="\n"):
+    """An unmarked v1.1.3 DESIGN_RULES.md that inject_markers knows, and its two block texts."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts" / "migrations"))
+    import inject_markers
+    old = inject_markers.OLD_BLOCKS["DESIGN_RULES.md"]
+    rules, refs = old["design-principles"], old["design-reference-rules"]
+    text = (
         "---\n"
-        "type: backlog\n"
-        "title: Backlog Map\n"
-        "description: Authoritative registry and status mapping of all project issues.\n"
+        "type: design-rules\n"
+        "title: Design Rules\n"
+        "description: Project design laws.\n"
         "timestamp: 2026-07-02\n"
         "version: \"1.1.3\"\n"
         "---\n"
-        "# BACKLOG MAP\n\n"
-        "## Purpose\n"
-        "Authoritative, high-density reference for project issues and their status.\n\n"
-        "> Cross-reference rules → `.agents/rules/memory-protocol.md`.\n\n"
-        "## Rules\n"
-        f"{legacy_rules}\n\n"
-        "## Label Registry\n"
-        "- **Area (`area:xxx`)**: `area:BE-ai`, `area:BE-api`, `area:BE-auth`, `area:BE-data`, `area:BE-infrastructure`, `area:FE-<page_name>` (where `<page_name>` is replaced with the page's slug during audit or page creation, e.g., `area:FE-login`, `area:FE-dashboard`)\n"
-        f"{legacy_labels}\n\n"
-        "## Backlog\n\n"
-        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "| BT-001 | Test task | planned | area:FE-dashboard, type:feature | v1.0.3 | — | ICE: 0.27 (I: 2.0, C: 80%) | — |\n"
+        "# DESIGN RULES\n\n"
+        "## Principles\n"
+        f"{rules}\n\n"
+        "## Reference\n"
+        f"{refs}\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(legacy_backlog, encoding="utf-8")
-    
-    # 2. Run inject_markers.py to migrate legacy file to marked file
-    run_cmd([sys.executable, str(MIGRATION_SCRIPT)], tmp)
-    
-    migrated_text = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
-    assert "SOS:BLOCK id=backlog-rules" in migrated_text
-    
-    # 3. Setup mock plugin with modified backlog-rules block at 1.1.4
-    new_rules = legacy_rules + "\n- A new mock rules change to trigger pristine update."
-    new_template = (
+    return text.replace("\n", eol), rules, refs
+
+
+def _design_rules_template(rules, refs):
+    """The v1.1.4 bundle template: the principles block gains a rule."""
+    return (
         "---\n"
-        "type: backlog\n"
-        "title: Backlog Map\n"
-        "description: Authoritative registry\n"
+        "type: design-rules\n"
+        "title: Design Rules\n"
+        "description: Project design laws.\n"
         "timestamp: 2026-07-08\n"
         "version: \"1.1.4\"\n"
         "---\n"
-        "# BACKLOG MAP\n\n"
-        "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
-        f"{new_rules}\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
-        "## Label Registry\n"
-        "- **Area (`area:xxx`)**: `area:BE-ai`\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
-        "- **Primary Type (`type:<class>`)**: `type:bug`\n"
-        "- **Execution Mode (`type:<mode>`)**: `type:HITL`\n"
-        "- **Priority (`priority:xxx`)**: `priority:high`\n"
-        "- **Size (`size:xxx`)**: `size:large`\n"
-        "- **Scope (`scope:xxx`)**: `scope:baseline`\n"
-        "- **Status (`status:xxx`)**: `status:planned`\n"
-        "- **Milestone**: `vX.Y.Z`\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
-        "## Backlog\n\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
-        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
-        "| BT-001 | Test task | planned | area:FE-dashboard, type:feature | v1.0.3 | — | ICE: 0.27 (I: 2.0, C: 80%) | — |\n"
+        "# DESIGN RULES\n\n"
+        "## Principles\n"
+        "<!-- SOS:BLOCK id=design-principles v=1.1.4 -->\n"
+        f"{rules}\n- A new mock rules change to trigger pristine update.\n"
+        "<!-- SOS:/BLOCK id=design-principles -->\n\n"
+        "## Reference\n"
+        "<!-- SOS:BLOCK id=design-reference-rules v=1.1.4 -->\n"
+        f"{refs}\n"
+        "<!-- SOS:/BLOCK id=design-reference-rules -->\n"
     )
-    scaffold_script = setup_mock_plugin(tmp, new_template)
-    
-    # 4. Dry-run update
+
+
+def _legacy_lock(tmp):
+    lock_data = {"installed_plugin_version": "1.0.0",
+                 "artifacts": {".memory/DESIGN_RULES.md": {"version": "1.1.3", "sha256_at_install": "unknown"}}}
+    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
+
+
+def test_pristine_update():
+    print("--- Test: Pristine Update ---")
+    tmp = _sandbox("test_pristine_update")
+    (tmp / ".memory").mkdir(parents=True, exist_ok=True)
+    (tmp / ".agents").mkdir(parents=True, exist_ok=True)
+    _legacy_lock(tmp)
+    legacy, rules, refs = _legacy_design_rules()
+    p = tmp / ".memory" / "DESIGN_RULES.md"
+    p.write_bytes(legacy.encode("utf-8"))
+
+    # 1. inject_markers.py marks the legacy file
+    run_cmd([sys.executable, str(MIGRATION_SCRIPT)], tmp)
+    assert "SOS:BLOCK id=design-principles" in p.read_text(encoding="utf-8")
+
+    # 2. The bundle's principles block changed at 1.1.4
+    scaffold_script = setup_mock_plugin(tmp, _design_rules_template(rules, refs), name="DESIGN_RULES.md")
+
+    # 3. Dry run stages the update to .stratosphere-new
     run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], tmp)
-    
-    # Assert dry-run staged the update to .stratosphere-new
-    new_file = tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new"
+    new_file = tmp / ".memory" / "DESIGN_RULES.md.stratosphere-new"
     assert new_file.exists()
     new_text = new_file.read_text(encoding="utf-8")
     assert 'version: "1.1.3"' in new_text
-    assert "SOS:BLOCK id=backlog-rules v=1.1.4" in new_text
+    assert "SOS:BLOCK id=design-principles v=1.1.4" in new_text
     assert "A new mock rules change to trigger pristine update." in new_text
-    
-    # 5. Commit update
+
+    # 4. The update applies it in place and advances the lock
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
-    
-    # Assert original is updated and .stratosphere-new is deleted
     assert not new_file.exists()
-    final_text = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    final_text = p.read_text(encoding="utf-8")
     assert 'version: "1.1.3"' in final_text
     assert "A new mock rules change to trigger pristine update." in final_text
-    
-    # Check lockfile advanced
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
-    
-    shutil.rmtree(tmp, ignore_errors=True)
+    assert lock_final["artifacts"][".memory/DESIGN_RULES.md"]["version"] == "1.1.4"
     print("Pristine Update E2E passed!")
 
 def test_conflict_update():
@@ -241,7 +186,7 @@ def test_conflict_update():
     (tmp / ".memory").mkdir(parents=True, exist_ok=True)
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
     
-    # Write a marked BACKLOG_MAP.md (v1.1.3)
+    # Write a marked NOTES.md (v1.1.3)
     # The user has customized the rules block!
     legacy_marked = (
         "---\n"
@@ -251,43 +196,43 @@ def test_conflict_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
         "- User custom rule!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(legacy_marked, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md").write_text(legacy_marked, encoding="utf-8")
     
     # Lockfile has blocks map matching original v1.1.3 template block hashes
     # We mock a baseline hash that differs from H_user (since user edited the rules block)
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": "mocked_old_base_hash_that_differs",
-                    "label-canonical": _versioning.block_hash(legacy_marked, "label-canonical"),
-                    "backlog-header": _versioning.block_hash(legacy_marked, "backlog-header")
+                    "learnings-guidance": "mocked_old_base_hash_that_differs",
+                    "glossary-guidance": _versioning.block_hash(legacy_marked, "glossary-guidance"),
+                    "arch-guidance": _versioning.block_hash(legacy_marked, "arch-guidance")
                 }
             }
         }
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
-    # 2. Setup mock plugin where backlog-rules has changed
+    # 2. Setup mock plugin where learnings-guidance has changed
     new_template = (
         "---\n"
         "type: backlog\n"
@@ -296,20 +241,20 @@ def test_conflict_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.4 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
@@ -328,31 +273,31 @@ def test_conflict_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
         "- User custom rule!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new").write_text(merged_backlog, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md.stratosphere-new").write_text(merged_backlog, encoding="utf-8")
     
     # 5. Rerun update. It should verify invariants and succeed!
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
     
     # Verify original file updated and .stratosphere-new cleaned up
-    assert not (tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new").exists()
-    final_text = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    assert not (tmp / ".memory" / "NOTES.md.stratosphere-new").exists()
+    final_text = (tmp / ".memory" / "NOTES.md").read_text(encoding="utf-8")
     assert 'version: "1.1.4"' in final_text
     assert "- User custom rule!" in final_text
     assert "- Framework improvements!" in final_text
@@ -379,57 +324,54 @@ def test_invariant_trips():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(base_file, encoding="utf-8")
     
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": _versioning.block_hash(base_file, "backlog-rules"),
-                    "label-canonical": _versioning.block_hash(base_file, "label-canonical"),
-                    "backlog-header": _versioning.block_hash(base_file, "backlog-header")
+                    "learnings-guidance": _versioning.block_hash(base_file, "learnings-guidance"),
+                    "glossary-guidance": _versioning.block_hash(base_file, "glossary-guidance"),
+                    "arch-guidance": _versioning.block_hash(base_file, "arch-guidance")
                 }
             }
         }
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
-    # Build local mock plugin root to satisfy locate_plugin_root search
-    mock_plugin = tmp / ".agents" / "plugins" / "stratosphere-os" / "stratosphere-setup"
-    shutil.copytree(REPO_ROOT / "dist" / "skills", mock_plugin.parent)
-    scaffold_script = mock_plugin / "scripts" / "scaffold.py"
-    
+    scaffold_script = setup_mock_plugin(tmp, base_file)
+
     # Case A: Trip whole row count / IDs check
     # We drop BT-001 row
     tripped_a = base_file.replace('| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n', '')
     p.with_suffix(".md.stratosphere-new").write_text(tripped_a, encoding="utf-8")
     res = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp), capture_output=True, text=True)
-    if res.returncode != 1 or "Validation failed for '.memory/BACKLOG_MAP.md'" not in res.stdout:
+    if res.returncode != 1 or "Validation failed for '.memory/NOTES.md'" not in res.stdout:
         print("DEBUG Case A:")
         print("exit code:", res.returncode)
         print("stdout:\n", res.stdout)
         print("stderr:\n", res.stderr)
     assert res.returncode == 1
-    assert "Validation failed for '.memory/BACKLOG_MAP.md'" in res.stdout
+    assert "Validation failed for '.memory/NOTES.md'" in res.stdout
     
     # Case B: Trip raw out-of-block byte identity check
     # We edit "area:FE-login" to "area:FE-dashboard" outside the blocks
@@ -440,8 +382,8 @@ def test_invariant_trips():
     assert "Raw out-of-block content changed" in res.stdout
     
     # Case C: Trip marker integrity check
-    # We drop the backlog-rules close marker
-    tripped_c = base_file.replace('<!-- SOS:/BLOCK id=backlog-rules -->', '')
+    # We drop the learnings-guidance close marker
+    tripped_c = base_file.replace('<!-- SOS:/BLOCK id=learnings-guidance -->', '')
     p.with_suffix(".md.stratosphere-new").write_text(tripped_c, encoding="utf-8")
     res = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp), capture_output=True, text=True)
     assert res.returncode == 1
@@ -453,119 +395,40 @@ def test_invariant_trips():
 def test_crlf_bom_preservation():
     print("--- Test: CRLF & BOM Preservation ---")
     tmp = _sandbox("test_crlf_bom")
-    if tmp.exists():
-        shutil.rmtree(tmp, ignore_errors=True)
-    tmp.mkdir(parents=True, exist_ok=True)
-    
-    # Setup mock legacy project with BOM and CRLF
     (tmp / ".memory").mkdir(parents=True, exist_ok=True)
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
-    
-    lock_data = {
-        "installed_plugin_version": "1.0.0",
-        "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
-                "version": "1.1.3",
-                "sha256_at_install": "unknown"
-            }
-        }
-    }
-    (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
-    
-    # Raw backlog map using CRLF line endings and starting with a UTF-8 BOM (\ufeff)
-    sys.path.insert(0, str(REPO_ROOT / "scripts" / "migrations"))
-    import inject_markers
-    legacy_rules = inject_markers.OLD_BLOCKS["BACKLOG_MAP.md"]["backlog-rules"].replace("\n", "\r\n")
-    legacy_labels = inject_markers.OLD_BLOCKS["BACKLOG_MAP.md"]["label-canonical"].replace("\n", "\r\n")
-    
-    legacy_backlog = (
-        "\ufeff" # BOM
-        "---\r\n"
-        "type: backlog\r\n"
-        "title: Backlog Map\r\n"
-        "description: Authoritative registry and status mapping of all project issues.\r\n"
-        "timestamp: 2026-07-02\r\n"
-        "version: \"1.1.3\"\r\n"
-        "---\r\n"
-        "# BACKLOG MAP\r\n\r\n"
-        "## Purpose\r\n"
-        "Authoritative, high-density reference for project issues and their status.\r\n\r\n"
-        "> Cross-reference rules → `.agents/rules/memory-protocol.md`.\r\n\r\n"
-        "## Rules\r\n"
-        f"{legacy_rules}\r\n\r\n"
-        "## Label Registry\r\n"
-        "- **Area (`area:xxx`)**: `area:BE-ai`, `area:BE-api`, `area:BE-auth`, `area:BE-data`, `area:BE-infrastructure`, `area:FE-<page_name>` (where `<page_name>` is replaced with the page's slug during audit or page creation, e.g., `area:FE-login`, `area:FE-dashboard`)\r\n"
-        f"{legacy_labels}\r\n\r\n"
-        "## Backlog\r\n\r\n"
-        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\r\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|\r\n"
-        "| BT-001 | Test task | planned | area:FE-dashboard, type:feature | v1.0.3 | — | ICE: 0.27 (I: 2.0, C: 80%) | — |\r\n"
-    )
-    
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
-    p.write_bytes(legacy_backlog.encode("utf-8"))
-    
+    _legacy_lock(tmp)
+    legacy, rules, refs = _legacy_design_rules("\r\n")
+    p = tmp / ".memory" / "DESIGN_RULES.md"
+    p.write_bytes(("﻿" + legacy).encode("utf-8"))
+
     # 1. Run migration. Assert EOL/BOM preserved
     res = subprocess.run([sys.executable, str(MIGRATION_SCRIPT)], cwd=str(tmp), capture_output=True, text=True)
     print("MIGRATION STDOUT:\n", res.stdout)
     print("MIGRATION STDERR:\n", res.stderr)
     migrated_text = p.read_bytes().decode("utf-8")
-    assert migrated_text.startswith("\ufeff")
+    assert migrated_text.startswith("﻿")
     assert "\r\n" in migrated_text
     assert "\n" not in migrated_text.replace("\r\n", "")
-    
-    # 2. Setup mock template with modified rules (v1.1.4)
-    new_rules = legacy_rules.replace("\r\n", "\n") + "\n- A new mock rules change to trigger pristine update."
-    new_template = (
-        "---\n"
-        "type: backlog\n"
-        "title: Backlog Map\n"
-        "description: Authoritative registry\n"
-        "timestamp: 2026-07-08\n"
-        "version: \"1.1.4\"\n"
-        "---\n"
-        "# BACKLOG MAP\n\n"
-        "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
-        f"{new_rules}\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
-        "## Label Registry\n"
-        "- **Area (`area:xxx`)**: `area:BE-ai`\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
-        "- **Primary Type (`type:<class>`)**: `type:bug`\n"
-        "- **Execution Mode (`type:<mode>`)**: `type:HITL`\n"
-        "- **Priority (`priority:xxx`)**: `priority:high`\n"
-        "- **Size (`size:xxx`)**: `size:large`\n"
-        "- **Scope (`scope:xxx`)**: `scope:baseline`\n"
-        "- **Status (`status:xxx`)**: `status:planned`\n"
-        "- **Milestone**: `vX.Y.Z`\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
-        "## Backlog\n\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
-        "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
-        "| BT-001 | Test task | planned | area:FE-dashboard, type:feature | v1.0.3 | — | ICE: 0.27 (I: 2.0, C: 80%) | — |\n"
-    )
-    scaffold_script = setup_mock_plugin(tmp, new_template)
-    
+
+    # 2. Mock template with modified rules (v1.1.4)
+    scaffold_script = setup_mock_plugin(tmp, _design_rules_template(rules, refs), name="DESIGN_RULES.md")
+
     # 3. Dry-run update. Assert staged new file retains BOM and CRLF
     run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], tmp)
-    new_p = tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new"
+    new_p = tmp / ".memory" / "DESIGN_RULES.md.stratosphere-new"
     assert new_p.exists()
     new_text = new_p.read_bytes().decode("utf-8")
-    assert new_text.startswith("\ufeff")
+    assert new_text.startswith("﻿")
     assert "\r\n" in new_text
-    
+
     # 4. Commit update. Assert committed file retains EOL/BOM
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
     assert not new_p.exists()
     final_text = p.read_bytes().decode("utf-8")
-    assert final_text.startswith("\ufeff")
+    assert final_text.startswith("﻿")
     assert "\r\n" in final_text
     assert "A new mock rules change to trigger pristine update." in final_text
-    
-    shutil.rmtree(tmp, ignore_errors=True)
     print("CRLF & BOM Preservation E2E passed!")
 
 def test_unchanged_but_bumped():
@@ -583,13 +446,13 @@ def test_unchanged_but_bumped():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": "dummy_rules_hash",
-                    "label-canonical": "dummy_labels_hash",
-                    "backlog-header": "dummy_header_hash"
+                    "learnings-guidance": "dummy_rules_hash",
+                    "glossary-guidance": "dummy_labels_hash",
+                    "arch-guidance": "dummy_header_hash"
                 }
             }
         }
@@ -605,29 +468,29 @@ def test_unchanged_but_bumped():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     # Mock lock hashes with the actual hashes of the file
-    lock_data["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"] = {
-        "backlog-rules": _versioning.block_hash(user_file, "backlog-rules"),
-        "label-canonical": _versioning.block_hash(user_file, "label-canonical"),
-        "backlog-header": _versioning.block_hash(user_file, "backlog-header")
+    lock_data["artifacts"][".memory/NOTES.md"]["blocks"] = {
+        "learnings-guidance": _versioning.block_hash(user_file, "learnings-guidance"),
+        "glossary-guidance": _versioning.block_hash(user_file, "glossary-guidance"),
+        "arch-guidance": _versioning.block_hash(user_file, "arch-guidance")
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
@@ -640,19 +503,19 @@ def test_unchanged_but_bumped():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.4 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
@@ -670,11 +533,11 @@ def test_unchanged_but_bumped():
     final_text = p.read_text(encoding="utf-8")
     assert 'version: "1.1.3"' in final_text
     # Blocks are untouched, so stamps are still v=1.1.3
-    assert "SOS:BLOCK id=backlog-rules v=1.1.3" in final_text
+    assert "SOS:BLOCK id=learnings-guidance v=1.1.3" in final_text
     
     # Lockfile baseline is advanced
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
+    assert lock_final["artifacts"][".memory/NOTES.md"]["version"] == "1.1.4"
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Unchanged-but-bumped test passed!")
@@ -693,13 +556,13 @@ def test_atomicity_crash_recovery():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": "dummy_rules_hash",
-                    "label-canonical": "dummy_labels_hash",
-                    "backlog-header": "dummy_header_hash"
+                    "learnings-guidance": "dummy_rules_hash",
+                    "glossary-guidance": "dummy_labels_hash",
+                    "arch-guidance": "dummy_header_hash"
                 }
             }
         }
@@ -714,28 +577,28 @@ def test_atomicity_crash_recovery():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
-    lock_data["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"] = {
-        "backlog-rules": _versioning.block_hash(user_file, "backlog-rules"),
-        "label-canonical": _versioning.block_hash(user_file, "label-canonical"),
-        "backlog-header": _versioning.block_hash(user_file, "backlog-header")
+    lock_data["artifacts"][".memory/NOTES.md"]["blocks"] = {
+        "learnings-guidance": _versioning.block_hash(user_file, "learnings-guidance"),
+        "glossary-guidance": _versioning.block_hash(user_file, "glossary-guidance"),
+        "arch-guidance": _versioning.block_hash(user_file, "arch-guidance")
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
@@ -747,40 +610,40 @@ def test_atomicity_crash_recovery():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.4 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
     # 1. Run dry-run to stage the proposed file
     run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], tmp)
-    new_p = tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new"
+    new_p = tmp / ".memory" / "NOTES.md.stratosphere-new"
     assert new_p.exists()
     
-    # 2. Simulate a crash right after dry-run (so original BACKLOG_MAP.md is untouched,
+    # 2. Simulate a crash right after dry-run (so original NOTES.md is untouched,
     # lockfile is untouched, but .stratosphere-new file is left staged in project)
     assert 'version: "1.1.3"' in p.read_text(encoding="utf-8")
-    assert json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.3"
+    assert json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))["artifacts"][".memory/NOTES.md"]["version"] == "1.1.3"
     
     # 3. Rerun update (non-dry-run). It should find the staged file, verify it, apply it, and delete it
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
     assert not new_p.exists()
     assert 'version: "1.1.3"' in p.read_text(encoding="utf-8")
     assert "- Framework improvements!" in p.read_text(encoding="utf-8")
-    assert json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
+    assert json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))["artifacts"][".memory/NOTES.md"]["version"] == "1.1.4"
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Atomicity and Crash Recovery test passed!")
@@ -796,11 +659,11 @@ def test_unmarked_file_skipped():
     (tmp / ".memory").mkdir(parents=True, exist_ok=True)
     (tmp / ".agents").mkdir(parents=True, exist_ok=True)
     
-    # Write lockfile with BACKLOG_MAP locked at 1.1.3
+    # Write lockfile with NOTES.md locked at 1.1.3
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown"
             }
@@ -819,7 +682,7 @@ def test_unmarked_file_skipped():
         "## Rules\n"
         "- Operational rules\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     new_template = (
@@ -830,14 +693,14 @@ def test_unmarked_file_skipped():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
-    # Run update. It should print the Notice, skip updating BACKLOG_MAP, and keep version in lockfile at 1.1.3
+    # Run update. It should print the Notice, skip updating NOTES.md, and keep version in lockfile at 1.1.3
     res = subprocess.run([sys.executable, str(scaffold_script), "--update"], cwd=str(tmp), capture_output=True, text=True)
     assert res.returncode == 0
     assert "Notice: Unmarked framework file" in res.stdout
@@ -848,7 +711,7 @@ def test_unmarked_file_skipped():
     
     # Lockfile remains at 1.1.3
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.3"
+    assert lock_final["artifacts"][".memory/NOTES.md"]["version"] == "1.1.3"
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Unmarked file skipped test passed!")
@@ -866,13 +729,13 @@ def test_project_version_preserved():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": "dummy_rules_hash",
-                    "label-canonical": "dummy_labels_hash",
-                    "backlog-header": "dummy_header_hash"
+                    "learnings-guidance": "dummy_rules_hash",
+                    "glossary-guidance": "dummy_labels_hash",
+                    "arch-guidance": "dummy_header_hash"
                 }
             }
         }
@@ -888,29 +751,29 @@ def test_project_version_preserved():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     # Update baseline hashes to match user_file
-    lock_data["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"] = {
-        "backlog-rules": _versioning.block_hash(user_file, "backlog-rules"),
-        "label-canonical": _versioning.block_hash(user_file, "label-canonical"),
-        "backlog-header": _versioning.block_hash(user_file, "backlog-header")
+    lock_data["artifacts"][".memory/NOTES.md"]["blocks"] = {
+        "learnings-guidance": _versioning.block_hash(user_file, "learnings-guidance"),
+        "glossary-guidance": _versioning.block_hash(user_file, "glossary-guidance"),
+        "arch-guidance": _versioning.block_hash(user_file, "arch-guidance")
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
@@ -922,20 +785,20 @@ def test_project_version_preserved():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.4 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
@@ -947,11 +810,11 @@ def test_project_version_preserved():
     assert 'version: "1.3.0"' in final_text
     # Assert block updated, block marker version bumped to 1.1.4
     assert "- Framework improvements!" in final_text
-    assert "SOS:BLOCK id=backlog-rules v=1.1.4" in final_text
+    assert "SOS:BLOCK id=learnings-guidance v=1.1.4" in final_text
     
     # Assert lockfile records template version 1.1.4
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
+    assert lock_final["artifacts"][".memory/NOTES.md"]["version"] == "1.1.4"
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Project version preserved test passed!")
@@ -969,7 +832,7 @@ def test_frontmatter_never_written_even_when_bundle_higher():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {}
@@ -986,15 +849,15 @@ def test_frontmatter_never_written_even_when_bundle_higher():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
-    lock_data["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"] = {
-        "backlog-rules": _versioning.block_hash(user_file, "backlog-rules")
+    lock_data["artifacts"][".memory/NOTES.md"]["blocks"] = {
+        "learnings-guidance": _versioning.block_hash(user_file, "learnings-guidance")
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
@@ -1006,10 +869,10 @@ def test_frontmatter_never_written_even_when_bundle_higher():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
@@ -1021,7 +884,7 @@ def test_frontmatter_never_written_even_when_bundle_higher():
     
     # Lockfile advances to 1.1.4
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
+    assert lock_final["artifacts"][".memory/NOTES.md"]["version"] == "1.1.4"
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Frontmatter never written test passed!")
@@ -1044,22 +907,22 @@ def test_content_based_scope_catches_stale_block_at_equal_version():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     # Lockfile claims we are at 1.1.4, matching bundle!
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.4",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": _versioning.block_hash(user_file, "backlog-rules")
+                    "learnings-guidance": _versioning.block_hash(user_file, "learnings-guidance")
                 }
             }
         }
@@ -1074,10 +937,10 @@ def test_content_based_scope_catches_stale_block_at_equal_version():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
@@ -1110,11 +973,11 @@ def test_repair_lock_does_not_inflate_or_read_frontmatter():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     # No lockfile initially. We run --repair-lock
@@ -1126,10 +989,10 @@ def test_repair_lock_does_not_inflate_or_read_frontmatter():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.5 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
@@ -1137,8 +1000,8 @@ def test_repair_lock_does_not_inflate_or_read_frontmatter():
     
     # Assert lockfile version is derived from markers (1.1.3), NOT 1.3.0 and NOT the bundle (1.1.5)
     lock_final = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.3"
-    assert "backlog-rules" in lock_final["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"]
+    assert lock_final["artifacts"][".memory/NOTES.md"]["version"] == "1.1.3"
+    assert "learnings-guidance" in lock_final["artifacts"][".memory/NOTES.md"]["blocks"]
     
     # Subsequent update (from 1.1.3 to 1.1.5 template) must be put in scope and succeed
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
@@ -1166,11 +1029,11 @@ def test_repair_then_update_pristine():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     new_template = (
@@ -1181,10 +1044,10 @@ def test_repair_then_update_pristine():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
@@ -1212,7 +1075,7 @@ def test_customization_survives_second_update():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {}
@@ -1221,7 +1084,7 @@ def test_customization_survives_second_update():
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
-    # File has block A (rules) unchanged, and block B (label-canonical) customized!
+    # File has block A (rules) unchanged, and block B (glossary-guidance) customized!
     user_file = (
         "---\n"
         "type: backlog\n"
@@ -1230,15 +1093,15 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels (user customized!)\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
-    p = tmp / ".memory" / "BACKLOG_MAP.md"
+    p = tmp / ".memory" / "NOTES.md"
     p.write_text(user_file, encoding="utf-8")
     
     # The original baseline was standard 1.1.3 rules and 1.1.3 labels
@@ -1250,18 +1113,18 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
     
-    lock_data["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"] = {
-        "backlog-rules": _versioning.block_hash(base_file_113, "backlog-rules"),
-        "label-canonical": _versioning.block_hash(base_file_113, "label-canonical")
+    lock_data["artifacts"][".memory/NOTES.md"]["blocks"] = {
+        "learnings-guidance": _versioning.block_hash(base_file_113, "learnings-guidance"),
+        "glossary-guidance": _versioning.block_hash(base_file_113, "glossary-guidance")
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
     
@@ -1274,18 +1137,18 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, new_template)
     
-    # First update: backlog-rules updates (pristine), label-canonical stays customized (unchanged classification)
+    # First update: learnings-guidance updates (pristine), glossary-guidance stays customized (unchanged classification)
     run_cmd([sys.executable, str(scaffold_script), "--update"], tmp)
     
     first_text = p.read_text(encoding="utf-8")
@@ -1294,9 +1157,9 @@ def test_customization_survives_second_update():
     
     # Assert lockfile advanced to 1.1.4 and block baseline is set to H_new of 1.1.4 template for both blocks
     lock_114 = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_114["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.4"
-    assert lock_114["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"]["backlog-rules"] == _versioning.block_hash(new_template, "backlog-rules")
-    assert lock_114["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"]["label-canonical"] == _versioning.block_hash(new_template, "label-canonical")
+    assert lock_114["artifacts"][".memory/NOTES.md"]["version"] == "1.1.4"
+    assert lock_114["artifacts"][".memory/NOTES.md"]["blocks"]["learnings-guidance"] == _versioning.block_hash(new_template, "learnings-guidance")
+    assert lock_114["artifacts"][".memory/NOTES.md"]["blocks"]["glossary-guidance"] == _versioning.block_hash(new_template, "glossary-guidance")
     
     # Second update with the SAME bundle. The file should be out of scope, zero changes written
     # (especially, our customization must NOT be overwritten)
@@ -1322,18 +1185,18 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.5 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
         "- Version 1.1.5 framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.5 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
     
-    # 2. Modify backlog-rules block in the user's workspace so it's customized as well:
+    # 2. Modify learnings-guidance block in the user's workspace so it's customized as well:
     user_file_custom = (
         "---\n"
         "type: backlog\n"
@@ -1342,25 +1205,25 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
         "- My custom local rule!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels (user customized!)\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
     p.write_text(user_file_custom, encoding="utf-8")
     
     # Update mock plugin to 1.1.5
     scaffold_script_115 = setup_mock_plugin(tmp, template_115, version="1.1.5")
     
-    # Running update. backlog-rules should conflict (both user and template changed)
+    # Running update. learnings-guidance should conflict (both user and template changed)
     res = subprocess.run([sys.executable, str(scaffold_script_115), "--update"], cwd=str(tmp), capture_output=True, text=True)
     assert res.returncode != 0
-    assert "BACKLOG_MAP.md needs merge/review" in res.stdout or "BACKLOG_MAP.md needs merge/review" in res.stderr
+    assert "NOTES.md needs merge/review" in res.stdout or "NOTES.md needs merge/review" in res.stderr
     
     # Simulate user committing conflict-merged file to .stratosphere-new:
     merged_text = (
@@ -1371,26 +1234,26 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
         "- Version 1.1.5 framework improvements!\n"
         "- My custom local rule!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.4 -->\n"
         "- Labels (user customized!)\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md.stratosphere-new").write_text(merged_text, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md.stratosphere-new").write_text(merged_text, encoding="utf-8")
     
     # Run update again to apply the merge. It should succeed.
     run_cmd([sys.executable, str(scaffold_script_115), "--update"], tmp)
     
     # Assert lockfile is advanced to 1.1.5 and the baseline hash is set to the template's hash H_new
     lock_115 = json.loads((tmp / ".agents" / ".stratosphere-lock.json").read_text(encoding="utf-8"))
-    assert lock_115["artifacts"][".memory/BACKLOG_MAP.md"]["version"] == "1.1.5"
-    assert lock_115["artifacts"][".memory/BACKLOG_MAP.md"]["blocks"]["backlog-rules"] == _versioning.block_hash(template_115, "backlog-rules")
+    assert lock_115["artifacts"][".memory/NOTES.md"]["version"] == "1.1.5"
+    assert lock_115["artifacts"][".memory/NOTES.md"]["blocks"]["learnings-guidance"] == _versioning.block_hash(template_115, "learnings-guidance")
     
     # Second update with unchanged 1.1.5 bundle. The file must not be modified or overwritten.
     p.write_text(merged_text, encoding="utf-8")
@@ -1402,7 +1265,7 @@ def test_customization_survives_second_update():
     assert "UPDATED" not in res.stdout
     assert p.stat().st_mtime == mtime_before
     
-    # Third update: bump the bundle to 1.1.6, changing the backlog-rules block:
+    # Third update: bump the bundle to 1.1.6, changing the learnings-guidance block:
     template_116 = (
         "---\n"
         "type: backlog\n"
@@ -1411,16 +1274,16 @@ def test_customization_survives_second_update():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.6 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.6 -->\n"
         "- Operational rules\n"
         "- Framework improvements!\n"
         "- Version 1.1.5 framework improvements!\n"
         "- Version 1.1.6 framework improvements!\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.6 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.6 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
     )
     scaffold_script_116 = setup_mock_plugin(tmp, template_116, version="1.1.6")
     
@@ -1428,7 +1291,7 @@ def test_customization_survives_second_update():
     # was customized/merged (which does not match the 1.1.5 template hash)!
     res = subprocess.run([sys.executable, str(scaffold_script_116), "--update"], cwd=str(tmp), capture_output=True, text=True)
     assert res.returncode != 0
-    assert "BACKLOG_MAP.md needs merge/review" in res.stdout or "BACKLOG_MAP.md needs merge/review" in res.stderr
+    assert "NOTES.md needs merge/review" in res.stdout or "NOTES.md needs merge/review" in res.stderr
     
     shutil.rmtree(tmp, ignore_errors=True)
     print("Customization survives second update test passed!")
@@ -1447,43 +1310,43 @@ def test_canonical_marker_parsing():
     import scaffold
     
     orig_known = set(scaffold.KNOWN_BLOCK_IDS)
-    scaffold.KNOWN_BLOCK_IDS.add("backlog")
+    scaffold.KNOWN_BLOCK_IDS.add("learnings")
     try:
         from scaffold import parse_file_blocks
         
         text = (
-            "# BACKLOG\n\n"
-            "<!-- SOS:BLOCK   id=backlog   v=1.0.0   -->\n"
-            "This is the backlog block.\n"
-            "<!--   SOS:/BLOCK   id=backlog   -->\n\n"
-            "<!-- SOS:BLOCK id=backlog-rules -->\n"
-            "This is backlog-rules.\n"
-            "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+            "# LEARNINGS\n\n"
+            "<!-- SOS:BLOCK   id=learnings   v=1.0.0   -->\n"
+            "This is the learnings block.\n"
+            "<!--   SOS:/BLOCK   id=learnings   -->\n\n"
+            "<!-- SOS:BLOCK id=learnings-guidance -->\n"
+            "This is learnings-guidance.\n"
+            "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
         )
         
         matches = list(CANONICAL_MARKER_PATTERN.finditer(text))
         assert len(matches) == 4
         
         assert matches[0].group(1) == "BLOCK"
-        assert matches[0].group(2) == "backlog"
+        assert matches[0].group(2) == "learnings"
         assert matches[0].group(3) == "1.0.0"
         
         assert matches[1].group(1) == "/BLOCK"
-        assert matches[1].group(2) == "backlog"
+        assert matches[1].group(2) == "learnings"
         assert matches[1].group(3) is None
         
         assert matches[2].group(1) == "BLOCK"
-        assert matches[2].group(2) == "backlog-rules"
+        assert matches[2].group(2) == "learnings-guidance"
         assert matches[2].group(3) is None
         
-        hash_backlog = block_hash(text, "backlog")
-        hash_rules = block_hash(text, "backlog-rules")
-        assert hash_backlog != hash_rules
+        hash_learnings = block_hash(text, "learnings")
+        hash_rules = block_hash(text, "learnings-guidance")
+        assert hash_learnings != hash_rules
         
         segments = parse_file_blocks(text, raw=True)
         assert len(segments) == 5
-        assert segments[1]["id"] == "backlog"
-        assert segments[3]["id"] == "backlog-rules"
+        assert segments[1]["id"] == "learnings"
+        assert segments[3]["id"] == "learnings-guidance"
         print("Canonical marker parsing test passed!")
     finally:
         scaffold.KNOWN_BLOCK_IDS = orig_known
@@ -1531,9 +1394,9 @@ def test_legacy_lockfile():
         "version: 1.1.3\n"
         "timestamp: 2026-06-01\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "Legacy rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     
     import _versioning
@@ -1542,7 +1405,7 @@ def test_legacy_lockfile():
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": h_body,
                 "blocks": {}
@@ -1550,22 +1413,22 @@ def test_legacy_lockfile():
         }
     }
     (tmp / ".agents" / ".stratosphere-lock.json").write_text(json.dumps(lock_data, indent=2), encoding="utf-8")
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md").write_text(backlog_content, encoding="utf-8")
     
     template_content = (
         "---\n"
         "version: 1.1.4\n"
         "timestamp: 2026-07-08\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "Upgraded rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     
     scaffold_script = setup_mock_plugin(tmp, template_content, version="1.1.4")
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
-    updated_content = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    updated_content = (tmp / ".memory" / "NOTES.md").read_text(encoding="utf-8")
     if "Upgraded rules" not in updated_content:
         raise AssertionError("Expected rules to be auto-updated")
     print("Legacy Lockfile fallback test passed!")
@@ -1585,22 +1448,22 @@ def test_version_downgrade():
         "version: 1.1.5\n"
         "timestamp: 2026-07-08\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.5 -->\n"
         "Current rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md").write_text(backlog_content, encoding="utf-8")
     
     import _versioning
-    h_rules = _versioning.block_hash(backlog_content, "backlog-rules")
+    h_rules = _versioning.block_hash(backlog_content, "learnings-guidance")
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.5",
                 "sha256_at_install": _versioning.body_hash(backlog_content),
                 "blocks": {
-                    "backlog-rules": h_rules
+                    "learnings-guidance": h_rules
                 }
             }
         }
@@ -1612,16 +1475,16 @@ def test_version_downgrade():
         "version: 1.1.4\n"
         "timestamp: 2026-07-01\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "Older rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
     scaffold_script = setup_mock_plugin(tmp, template_content, version="1.1.4")
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
-    final_content = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    final_content = (tmp / ".memory" / "NOTES.md").read_text(encoding="utf-8")
     if "Current rules" not in final_content:
-        raise AssertionError("Downgrade should have skipped updating BACKLOG_MAP.md")
+        raise AssertionError("Downgrade should have skipped updating NOTES.md")
     print("Version downgrade test passed!")
 
 def test_managed_file_refresh():
@@ -1839,22 +1702,22 @@ def test_malformed_template_skip():
         "version: 1.1.4\n"
         "timestamp: 2026-07-08\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "Current rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md").write_text(backlog_content, encoding="utf-8")
     
     import _versioning
-    h_rules = _versioning.block_hash(backlog_content, "backlog-rules")
+    h_rules = _versioning.block_hash(backlog_content, "learnings-guidance")
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.4",
                 "sha256_at_install": _versioning.body_hash(backlog_content),
                 "blocks": {
-                    "backlog-rules": h_rules
+                    "learnings-guidance": h_rules
                 }
             }
         }
@@ -1866,13 +1729,13 @@ def test_malformed_template_skip():
         "version: 1.1.5\n"
         "timestamp: 2026-07-09\n"
         "---\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.5 -->\n"
         "Upgraded rules without close marker!\n"
     )
     scaffold_script = setup_mock_plugin(tmp, malformed_template, version="1.1.5")
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
-    final_content = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    final_content = (tmp / ".memory" / "NOTES.md").read_text(encoding="utf-8")
     if "Current rules" not in final_content:
         raise AssertionError("Malformed template should have been skipped")
     print("Malformed template skip test passed!")
@@ -1893,23 +1756,23 @@ def test_template_adds_block():
         "timestamp: 2026-07-08\n"
         "---\n"
         "Text 1\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.4 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.4 -->\n"
         "Content A\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
         "Text 2\n"
     )
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
+    (tmp / ".memory" / "NOTES.md").write_text(backlog_content, encoding="utf-8")
     
     import _versioning
-    h_a = _versioning.block_hash(backlog_content, "backlog-rules")
+    h_a = _versioning.block_hash(backlog_content, "learnings-guidance")
     lock_data = {
         "installed_plugin_version": "1.0.0",
         "artifacts": {
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.4",
                 "sha256_at_install": _versioning.body_hash(backlog_content),
                 "blocks": {
-                    "backlog-rules": h_a
+                    "learnings-guidance": h_a
                 }
             }
         }
@@ -1922,23 +1785,23 @@ def test_template_adds_block():
         "timestamp: 2026-07-09\n"
         "---\n"
         "Text 1\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.5 -->\n"
         "Content A\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n"
         "Text 2\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.5 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.5 -->\n"
         "Content B\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n"
         "Text 3\n"
     )
     scaffold_script = setup_mock_plugin(tmp, template_content, version="1.1.5")
     run_cmd([sys.executable, str(scaffold_script), "--update"], cwd=tmp)
     
-    final_content = (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8")
+    final_content = (tmp / ".memory" / "NOTES.md").read_text(encoding="utf-8")
     if "Content B" not in final_content:
-        raise AssertionError("Expected label-canonical to be added/merged into BACKLOG_MAP.md")
-    if "<!-- SOS:BLOCK id=label-canonical v=1.1.5 -->" not in final_content:
-        raise AssertionError("Expected label-canonical markers to be present")
+        raise AssertionError("Expected glossary-guidance to be added/merged into NOTES.md")
+    if "<!-- SOS:BLOCK id=glossary-guidance v=1.1.5 -->" not in final_content:
+        raise AssertionError("Expected glossary-guidance markers to be present")
     print("Template adds new block test passed!")
 
 # --- BT-106: Project-Level Orphan Guard Tests ------------------------------
@@ -2385,20 +2248,20 @@ def test_tracker_advisory_for_a_map_without_a_tracker_key():
     print("--- Test: A map with no tracker key gets the v5 tracker advisory ---")
     tmp, scaffold_script = _advisory_env("test_tracker_advisory", None)
     res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
-    assert "resolve to the local tracker backend" in res.stdout and "tracker_switch.py" in res.stdout
+    assert "issues.py migrate" in res.stdout and "tracker_switch.py" in res.stdout
     worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
     assert worklist["tracker_advisory"] is True
     print("Tracker advisory test passed!")
 
 
 def test_tracker_advisory_is_silent_when_the_key_is_recorded():
-    print("--- Test: A recorded tracker key keeps the advisory silent ---")
-    for name, key in (("test_tracker_adv_local", "local"), ("test_tracker_adv_github", "github")):
+    print("--- Test: `tracker: github` keeps the advisory silent; `tracker: local` with a map still needs the migration ---")
+    for name, key, expected in (("test_tracker_adv_local", "local", True), ("test_tracker_adv_github", "github", False)):
         tmp, scaffold_script = _advisory_env(name, key)
         res = run_cmd([sys.executable, str(scaffold_script), "--update", "--dry-run"], cwd=tmp)
-        assert "resolve to the local tracker backend" not in res.stdout
+        assert ("issues.py migrate" in res.stdout) is expected
         worklist = json.loads((tmp / ".tmp" / "stratosphere-update-worklist.json").read_text(encoding="utf-8"))
-        assert worklist["tracker_advisory"] is False
+        assert worklist["tracker_advisory"] is expected
     print("Silent tracker advisory test passed!")
 
 
@@ -2756,23 +2619,23 @@ def test_script_staging_deferred_on_verification_failure():
         "---\n"
         "# BACKLOG MAP\n\n"
         "## Rules\n"
-        "<!-- SOS:BLOCK id=backlog-rules v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=learnings-guidance v=1.1.3 -->\n"
         "- Operational rules\n"
-        "<!-- SOS:/BLOCK id=backlog-rules -->\n\n"
+        "<!-- SOS:/BLOCK id=learnings-guidance -->\n\n"
         "## Label Registry\n"
         "- **Area (`area:xxx`)**: area:FE-login\n"
-        "<!-- SOS:BLOCK id=label-canonical v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=glossary-guidance v=1.1.3 -->\n"
         "- Labels\n"
-        "<!-- SOS:/BLOCK id=label-canonical -->\n\n"
+        "<!-- SOS:/BLOCK id=glossary-guidance -->\n\n"
         "## Backlog\n"
-        "<!-- SOS:BLOCK id=backlog-header v=1.1.3 -->\n"
+        "<!-- SOS:BLOCK id=arch-guidance v=1.1.3 -->\n"
         "| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |\n"
         "|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "<!-- SOS:/BLOCK id=backlog-header -->\n"
+        "<!-- SOS:/BLOCK id=arch-guidance -->\n"
         "| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n"
     )
     (tmp / ".memory").mkdir(parents=True, exist_ok=True)
-    p_mem = tmp / ".memory" / "BACKLOG_MAP.md"
+    p_mem = tmp / ".memory" / "NOTES.md"
     p_mem.write_text(base_file, encoding="utf-8")
     
     lock_data = {
@@ -2782,13 +2645,13 @@ def test_script_staging_deferred_on_verification_failure():
                 "version": "unknown",
                 "sha256_at_install": _versioning.body_hash("// Old theme baseline\n")
             },
-            ".memory/BACKLOG_MAP.md": {
+            ".memory/NOTES.md": {
                 "version": "1.1.3",
                 "sha256_at_install": "unknown",
                 "blocks": {
-                    "backlog-rules": _versioning.block_hash(base_file, "backlog-rules"),
-                    "label-canonical": _versioning.block_hash(base_file, "label-canonical"),
-                    "backlog-header": _versioning.block_hash(base_file, "backlog-header")
+                    "learnings-guidance": _versioning.block_hash(base_file, "learnings-guidance"),
+                    "glossary-guidance": _versioning.block_hash(base_file, "glossary-guidance"),
+                    "arch-guidance": _versioning.block_hash(base_file, "arch-guidance")
                 }
             }
         }
@@ -2797,18 +2660,19 @@ def test_script_staging_deferred_on_verification_failure():
     
     # Staged memory file that trips row invariant (dropping BT-001)
     tripped_mem = base_file.replace('| BT-001 | Test task | planned | area:FE-dashboard | v1.0.3 | — | — | — |\n', '')
-    p_mem.with_name("BACKLOG_MAP.md.stratosphere-new").write_text(tripped_mem, encoding="utf-8")
+    p_mem.with_name("NOTES.md.stratosphere-new").write_text(tripped_mem, encoding="utf-8")
     
-    # Register BACKLOG_MAP.md in mock_plugin versions.json with bumped version so update evaluates it
+    # Register NOTES.md in mock_plugin versions.json with bumped version so update evaluates it
     versions_data = json.loads((mock_plugin / "versions.json").read_text(encoding="utf-8"))
-    versions_data["artifacts"]["assets/templates/memory/BACKLOG_MAP.md"] = {
+    versions_data["artifacts"]["assets/templates/memory/NOTES.md"] = {
         "version": "1.1.4",
         "timestamp": "2026-09-25",
         "sha256": "dummy"
     }
     (mock_plugin / "versions.json").write_text(json.dumps(versions_data, indent=2), encoding="utf-8")
+    (mock_plugin / "assets" / "templates" / "memory" / "NOTES.md").write_text(base_file, encoding="utf-8")
 
-    staged_script = script_dir / "design_theme.py.stratosphere-new"
+    staged_script =script_dir / "design_theme.py.stratosphere-new"
     if staged_script.exists():
         staged_script.unlink()
         
@@ -2916,14 +2780,21 @@ def test_resolve_tracker_prefers_the_key():
 
 
 def test_fresh_scaffold_tracker_flag():
-    """BT-197: setup passes the answer as `--tracker`; github places no map, both record the key."""
-    for answer, has_map in (("github", False), ("local", True)):
+    """BT-197/BT-221: setup passes the answer as `--tracker`; both record the key and place no map; local records
+    `tracker_branch:` and creates that branch. The sandbox is its own repository: the branch never lands in this one."""
+    for answer in ("github", "local"):
         tmp, script = _tracker_env(f"test_fresh_tracker_{answer}")
         shutil.rmtree(tmp / ".memory")
+        subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
         run_cmd([sys.executable, str(script), "--tracker", answer], cwd=tmp)
-        assert (tmp / ".memory" / "BACKLOG_MAP.md").exists() is has_map
-        arch = (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8")
-        assert re.search(rf"^tracker: {answer}$", arch.split("---")[1], re.M)
+        assert not (tmp / ".memory" / "BACKLOG_MAP.md").exists()
+        front = (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8").split("---")[1]
+        assert re.search(rf"^tracker: {answer}$", front, re.M)
+        branch = re.search(r"^tracker_branch: (\S+)$", front, re.M)
+        assert (branch is not None) is (answer == "local")
+        if branch:
+            assert subprocess.run(["git", "rev-parse", "--verify", "-q", f"refs/heads/{branch.group(1)}"],
+                                  cwd=tmp, capture_output=True).returncode == 0
         assert (tmp / ".agents" / "scripts" / "tracker_switch.py").is_file()
         assert (tmp / ".agents" / "scripts" / "ice_read.py").is_file()  # BT-198: 3c's ICE on read
 

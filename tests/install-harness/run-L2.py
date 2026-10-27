@@ -103,7 +103,7 @@ def assert_tree(skills_dir, proj):
     p = Path(proj)
     for f in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".gitignore", ".gitattributes", "index.md"):
         check(f"scaffold: {f}", (p / f).exists())
-    check("scaffold: 9 memory files", len(list((p / ".memory").glob("*.md"))) == 9 if (p / ".memory").exists() else False)
+    check("scaffold: 8 memory files (no BACKLOG_MAP)", len(list((p / ".memory").glob("*.md"))) == 8 if (p / ".memory").exists() else False)
     check("scaffold: 3 rule files", len(list((p / ".agents" / "rules").glob("*.md"))) == 3 if (p / ".agents" / "rules").exists() else False)
     check("scaffold: 28 skills", len(list((p / ".agents" / "skills").glob("*/SKILL.md"))) == EXPECTED_SKILLS)
     check("scaffold: no legacy workflows/ dir", not (p / ".agents" / "workflows").exists())

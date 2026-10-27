@@ -21,92 +21,6 @@ def test_validate_memory():
         print("validate_memory test failed! Output:\n", result.stdout, result.stderr)
         return False
 
-def test_validate_memory_backlog():
-    print("\n--- Testing validate_memory.py Backlog checks ---")
-    tmp_mem = Path(".tmp/dummy_memory_backlog")
-    if tmp_mem.exists():
-        shutil.rmtree(tmp_mem, ignore_errors=True)
-    tmp_mem.mkdir(parents=True, exist_ok=True)
-    
-    backlog_content = """---
-type: backlog
-title: Backlog Map
-description: Test
-timestamp: 2026-06-18
-version: "1.1.1"
----
-# BACKLOG MAP
-
-## Rules
-- Dummy rule
-
-## Label Registry
-- **Primary Type (`type:<class>`)**: `type:feature`
-- **Execution Mode (`mode:<mode>`)**: `mode:HITL`, `mode:AFK`
-- **Tier (`tier:<tier>`)**: `tier:epic`, `tier:slice`
-
-## Backlog
-
-| ID | Title | Status | Labels | Milestone | Dependencies | ICE | Ref |
-|:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-059-01 | Hierarchical | planned | type:feature, mode:HITL | v1.0.0 | — | — | — |
-| BT-060 | Missing primary type | in progress | mode:HITL, tier:slice, size:medium | v1.0.0 | — | — | — |
-| BT-061 | Missing execution mode | in progress | type:feature, tier:slice, size:medium | v1.0.0 | — | — | — |
-| BT-062 | Fully valid slice | in progress | type:feature, mode:HITL, tier:slice, size:medium | v1.0.0 | — | — | — |
-| BT-063 | Parent feature is ignored | in progress | type:feature, tier:epic | v1.0.0 | — | — | — |
-| BT-064 | Needs spec row exempt | needs_spec | size:medium | v1.0.0 | — | — | — |
-| BT-065 | Planned row exempt | planned | size:medium | v1.0.0 | — | — | — |
-| BT-066 | Leftover needs_spec invalid primary | in progress | type:NEEDS_SPEC, mode:AFK, tier:slice, size:medium | v1.0.0 | — | — | — |
-| BT-067 | Epic with size | in progress | type:feature, tier:epic, size:large | v1.0.0 | — | — | — |
-| BT-068 | Leaf with legacy type:AFK | in progress | type:feature, type:AFK, tier:slice, size:medium | v1.0.0 | — | — | — |
-| BT-069 | Active concept map | in progress | concept:map, status:in progress | v1.0.0 | — | — | — |
-"""
-    (tmp_mem / "BACKLOG_MAP.md").write_text(backlog_content, encoding="utf-8")
-    
-    result = subprocess.run([sys.executable, "dist/skills/stratosphere-setup/scripts/validate_memory.py", "--path", str(tmp_mem)], capture_output=True, text=True)
-    print("Exit code:", result.returncode)
-    
-    # Assertions
-    passed = True
-    if result.returncode != 1:
-        print("Error: Expected exit code 1, got", result.returncode)
-        passed = False
-        
-    expected_errors = [
-        "Invalid Backlog ID format 'BT-059-01'",
-        "Slice 'BT-060'",
-        "is missing a Primary Type label",
-        "Slice 'BT-061'",
-        "is missing an Execution Mode label",
-        "Slice 'BT-066'",
-        "is missing a Primary Type label",
-        "Epic 'BT-067'",
-        "must not carry size: labels",
-        "Slice 'BT-068'",
-        "is missing an Execution Mode label"
-    ]
-    
-    for err in expected_errors:
-        if err not in result.stdout:
-            print(f"Error: Expected to find '{err}' in output, but did not. Output:\n", result.stdout)
-            passed = False
-            
-    unexpected_errors = [
-        "BT-062",
-        "BT-063",
-        "BT-064",
-        "BT-065",
-        "BT-069"
-    ]
-    for uerr in unexpected_errors:
-        if uerr in result.stdout and ("missing" in result.stdout or "Invalid" in result.stdout or "must not" in result.stdout) and f"'{uerr}'" in result.stdout:
-            print(f"Error: Unexpected error reported for '{uerr}'. Output:\n", result.stdout)
-            passed = False
-            
-    if passed:
-        print("validate_memory backlog checks passed!")
-    return passed
-
 def test_sync_skills():
     print("\n--- Testing sync_skills.py ---")
     # Run sync_skills.py from the setup skill payload
@@ -292,6 +206,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/reconcile.py"
             elif rel_str == "scripts/tracker_switch.py":
                 proj_rel_path = ".agents/scripts/tracker_switch.py"
+            elif rel_str == "scripts/issues.py":
+                proj_rel_path = ".agents/scripts/issues.py"
             elif rel_str == "scripts/ice_read.py":
                 proj_rel_path = ".agents/scripts/ice_read.py"
             elif rel_str == "scripts/okf_view.py":
@@ -370,11 +286,9 @@ def test_orphan_guard():
         shutil.rmtree(tmp_with_board, ignore_errors=True)
 
 if __name__ == "__main__":
-    atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in (Path(".tmp/dummy_memory"), Path(".tmp/dummy_memory_backlog"))])
+    atexit.register(lambda: [shutil.rmtree(p, ignore_errors=True) for p in (Path(".tmp/dummy_memory"),)])
     success = True
     if not test_validate_memory():
-        success = False
-    if not test_validate_memory_backlog():
         success = False
     if not test_sync_skills():
         success = False

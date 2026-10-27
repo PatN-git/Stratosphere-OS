@@ -6,6 +6,7 @@ it never calls `gh`; the prior PR body arrives as a file.
 import importlib.util
 import json
 import re
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -545,11 +546,23 @@ def test_pr_body_is_registered_like_contract_check():
 
 
 def write_backlog(repo, *rows):
-    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels[, parent])."""
-    (repo / ".memory").mkdir(exist_ok=True)
-    lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | PR |", "|---|---|---|---|---|---|---|---|---|"]
-    lines += [f"| {i} | t | open | {labels} | — | {(parent or ['—'])[0]} | — | — | — |" for i, labels, *parent in rows]
-    (repo / ".memory" / "BACKLOG_MAP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    """Throwaway local-tracker store (the `<repo>/issues` branch, issues.py); each row is (id, labels[, parent])."""
+    sys.path.insert(0, str(SCRIPT.parent))
+    import issues
+    files = {}
+    for i, labels, *parent in rows:
+        issue = {k: None for k in issues.FIELDS} | {
+            "type": "issue", "id": i, "title": "t", "status": "planned", "blocked_by": [], "body": "", "comments": [],
+            "labels": [l.strip() for l in labels.split(",")], "parent": parent[0] if parent else None}
+        files[issues.path_of(issue)] = issues.render_issue(issue)
+    cwd = Path.cwd()
+    try:
+        os.chdir(repo)
+        ref = f"refs/heads/{issues.branch_name()}"
+        old = issues.head(ref)
+        assert issues.update_ref(ref, issues.commit([old] if old else [], None, files, "fixture"), old)
+    finally:
+        os.chdir(cwd)
 
 
 def test_dropped_prior_row_is_kept_without_a_closes_line(repo):
@@ -602,7 +615,7 @@ def test_non_numeric_epic_ids_are_ignored_and_unreadable_map_fails_open(repo):
     commit(repo, "docs(BT-7): plan doc")
     write_backlog(repo, ("BT-LOCAL-1", "tier:epic"))
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
-    (repo / ".memory" / "BACKLOG_MAP.md").write_bytes(b"\xff\xfe\x00bad")
+    subprocess.run(["git", "branch", "-D", f"{repo.name}/issues"], cwd=repo, check=True, capture_output=True)
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
 
 
