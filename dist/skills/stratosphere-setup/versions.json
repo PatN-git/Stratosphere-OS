@@ -41,9 +41,9 @@
       "version": "1.0.8"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "6cfd0c1bdd9f617d12e8e30339207fcff79440b8fa7fd49e434c325d84e75d31",
+      "sha256": "d0aa2d6b40f18e52d2ca2f5bf7b26e2a70cd0dbc5baff395df2827dba2cc08d3",
       "timestamp": "2026-09-29",
-      "version": "1.0.5"
+      "version": "1.1.0"
     },
     "assets/templates/memory/LEARNINGS.md": {
       "sha256": "320bf4c61fd876c44d2113e5a39ab2726f3d00cf1c09d174f1c55442f4db006a",
@@ -56,7 +56,7 @@
       "version": "2.0.0"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "605b683666f914488b4b9d94bba496eb5f162ff438a6689e57e15cb8909313cb",
+      "sha256": "2ade76ad69d61a7f1db70f32d9dfe3c898626f2381ea898e826a2e2517b5e224",
       "timestamp": "2026-10-27",
       "version": "2.2.0"
     },
@@ -96,7 +96,7 @@
       "version": "1.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "bfe50a88c49f7e0415546689fb3e629a8c0dfd0361fc39aad5fa07d08111faf9",
+      "sha256": "8e0e1ede10c3cfee22cbd296aa0526112d7a774766a1921859f88fd67c7811c2",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -109,6 +109,11 @@
       "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
+    },
+    "skills/0b-stop-session/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
     },
     "skills/0b-stop-session/references/label-taxonomy.md": {
       "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
@@ -136,7 +141,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "004c14b388e0deb979f4f64ac744d1c00ca7dfda6d9a1939922b50c9b76edfcc",
+      "sha256": "97d6d2b0b487073cf4b1993515c9b6c2a9232a8320a87f1b60c0e1ea272a5fc5",
       "timestamp": "2026-10-27",
       "version": "1.4.0"
     },
@@ -171,7 +176,7 @@
       "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "d5584cd3e520a5ae19ae7228f08cde73313a1bb78ceca57304eddb4c8f384d49",
+      "sha256": "6aba0343f4e118efb515e38b6e4fc4d134ad09d3bb9c9e938dc9e73ee2265974",
       "timestamp": "2026-10-22",
       "version": "1.5.0"
     },
@@ -180,13 +185,18 @@
       "timestamp": "2026-10-13",
       "version": "2.1.0"
     },
+    "skills/1b-concept-framing/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
+    },
     "skills/1b-concept-framing/references/multi-sided-discovery.md": {
       "sha256": "2653444d43c3eca62f148ea0bef6874ca55980f46746def55252f172d492f61c",
       "timestamp": "2026-06-18",
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "92c1f23d455cfd79e9a8d148a6cae88557b1232a48c4cc69227fef4f25fc8f36",
+      "sha256": "798d4393de3bd1c6c96f71c9ea93c70882dc3d70bf4b49a9080b4d739e8a2a67",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
@@ -204,6 +214,11 @@
       "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
+    },
+    "skills/1c-concept-map/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
     },
     "skills/1c-concept-map/references/label-taxonomy.md": {
       "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",
@@ -726,7 +741,7 @@
       "version": "1.3.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "7486e2b3e7ee32d1e8df8b3b00c4b7d95e683831a74b759bd2692b075f12e78b",
+      "sha256": "3e734baaa26bd282301ff4eea366b5f683e16f41338ba864572c8ffbac22020d",
       "timestamp": "2026-10-22",
       "version": "1.6.0"
     },
@@ -739,6 +754,11 @@
       "sha256": "6785cebf224c3af74151ec1a3ec20493b7875856c8e6fc82644bdda0b7a6c57c",
       "timestamp": "2026-10-13",
       "version": "1.0.3"
+    },
+    "skills/stratosphere-setup/references/glossary-entry-rules.md": {
+      "sha256": "605e86dff298dce89fcf95a527d107f8ac7926848c799ea44d290654f3f9f4bc",
+      "timestamp": "2026-10-27",
+      "version": "1.0.0"
     },
     "skills/stratosphere-setup/references/label-taxonomy.md": {
       "sha256": "4932d432a082e06d7d06cf65e920c48029d3ef91dc069316739a8e6536eb0583",

@@ -561,6 +561,10 @@ def main():
             elif fname == 'GLOSSARY.md':
                 if tag == 'LAW':
                     errors.append(f"Purity error: Glossary term '{def_id}' in {fname}:{info['line_num']} has trust tag '[LAW]'. Glossary entries cannot be '[LAW]'.")
+                # An entry carries only Avoid:/Source:; promotion evidence is derived from Ref, never stored
+                for field in re.findall(r'\.\s+([A-Z][a-z]+):\s', info['content']):
+                    if field not in ('Avoid', 'Source'):
+                        warnings.append(f"Glossary field: unknown field `{field}:` in {def_id} ({fname}:{info['line_num']}); glossary entries carry only Avoid:/Source: (promotion evidence is derived from Ref).")
 
     # 2.4 Check bindings: a [LAW] naming its check must name a file git tracks, so a stale binding cannot
     # silently switch the 4a Standards auditor off for that rule. No git: one warning, only when a binding exists.

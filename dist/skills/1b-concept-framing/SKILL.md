@@ -98,7 +98,7 @@ Never accept: vague actor nouns, solution-shaped problem statements, unmeasurabl
 
 1. Compile agreed definitions into 3–8 term list.
 2. Present for approval.
-3. Flag reusable terms for `.memory/GLOSSARY.md` (checking GLOSSARY.md's inclusion/exclusion lists): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term; assign IDs with `[ASSUMED]` tag — do not write without confirmation.
+3. Flag reusable terms for `.memory/GLOSSARY.md` (per `references/glossary-entry-rules.md`): *"These terms look cross-PRD reusable. Promote to [[G-xxx]]?"* User decides per term; assign IDs with `[ASSUMED]` tag — do not write without confirmation.
 4. Record rejected synonyms in `Avoid:` list.
 
 ## Phase 4: Choose Framing
@@ -147,7 +147,7 @@ Present brief for approval (Not-consent rule applies).
 ## Phase 7: Hand-off & Memory Sync
 
 1. Write `docs/discovery/<slug>.md` using semantic slug; no `BT-<n>`.
-2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the G-001 placeholder), each with its `Avoid:` list. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
+2. Write confirmed `[[G-xxx]]` entries to `.memory/GLOSSARY.md` only after user confirmation from Phase 3 (if this is the first real entry, purge the `G-XXX` placeholder), each with its `Avoid:` list, per `references/glossary-entry-rules.md`. If a newly-recorded synonym is likely already in code, offer a one-time module-scoped search and propose renames (propose-only; user confirms).
 3. If framing decision is reusable, propose `[[L-xxx]]` for `.memory/LEARNINGS.md`.
 4. If brief is long (≥100 lines), invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/discovery/<slug>.html` (never committed; re-render from the `.md` whenever presenting it).
 5. Delete `.tmp/1b-discovery-<slug>.work.md`.
