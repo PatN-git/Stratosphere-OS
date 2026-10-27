@@ -149,7 +149,7 @@ For each constitution file that has changed:
    - Run Level-3 invariants:
      1. **Out-of-block byte-identity:** Compare raw bytes outside changed blocks against the original file, asserting they are identical.
      2. **Marker integrity:** Validate exactly one ordered START/END pair per block ID, and check for unknown block IDs.
-     3. **Cheap corroborating checks:** Assert BT-xxx ID sets, Backlog row count (when a `BACKLOG_MAP.md` exists), and §3 Immortal Component DR-xxx ID sets are unchanged.
+     3. **Cheap corroborating checks:** Assert the BT-xxx ID set and row count of the `## Backlog` table (when a `BACKLOG_MAP.md` exists; ids in the Rules text do not count), and §3 Immortal Component DR-xxx ID sets are unchanged.
 
 2. **Apply changes:**
    If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.

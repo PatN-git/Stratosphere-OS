@@ -232,12 +232,7 @@ def verify_invariants(orig_text, prop_text, changed_block_ids):
 def check_cheap_corroborations(file_path: Path, orig_text, prop_text):
     name = file_path.name
     if name == "BACKLOG_MAP.md":
-        bt_pattern = re.compile(r'\b(BT-\d{3,})\b')
-        orig_bts = set(bt_pattern.findall(orig_text))
-        prop_bts = set(bt_pattern.findall(prop_text))
-        if orig_bts != prop_bts:
-            raise ValueError(f"BT-id set changed. Original: {orig_bts}, Proposed: {prop_bts}")
-            
+        # Only the rows under `## Backlog` count: a rules block that gains or loses an example id is not a change of the map.
         def get_backlog_rows(text):
             lines = text.split("\n")
             in_backlog = False
@@ -251,10 +246,16 @@ def check_cheap_corroborations(file_path: Path, orig_text, prop_text):
                 if in_backlog and line.strip().startswith("|") and "BT-" in line:
                     if "ID" not in line and ":---" not in line:
                         rows.append(line)
-            return len(rows)
-            
-        if get_backlog_rows(orig_text) != get_backlog_rows(prop_text):
-            raise ValueError(f"Backlog row count changed. Original: {get_backlog_rows(orig_text)}, Proposed: {get_backlog_rows(prop_text)}")
+            return rows
+
+        bt_pattern = re.compile(r'\b(BT-\d{3,})\b')
+        orig_rows, prop_rows = get_backlog_rows(orig_text), get_backlog_rows(prop_text)
+        orig_bts = set(bt_pattern.findall("\n".join(orig_rows)))
+        prop_bts = set(bt_pattern.findall("\n".join(prop_rows)))
+        if orig_bts != prop_bts:
+            raise ValueError(f"BT-id set changed. Original: {orig_bts}, Proposed: {prop_bts}")
+        if len(orig_rows) != len(prop_rows):
+            raise ValueError(f"Backlog row count changed. Original: {len(orig_rows)}, Proposed: {len(prop_rows)}")
             
     elif name == "DESIGN_RULES.md":
         dr_pattern = re.compile(r'\[\[(DR-\w+)\]\]')
