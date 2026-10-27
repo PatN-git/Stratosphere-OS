@@ -260,11 +260,16 @@ def test_2b_fails_without_the_interface_contract(tmp_path):
 
 # --- 0a second run -----------------------------------------------------------
 
-def test_0a_second_notes_an_unchanged_status_but_fails_on_a_new_branch(tmp_path):
+def test_0a_second_fails_on_a_retired_status_field_or_a_new_branch(tmp_path):
     proj = project(tmp_path)
     c = ctx(proj)
     problems, notes = a.check("0a-second", c)
-    assert problems == [] and notes
+    assert problems == []
+
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Current Branch:** feat/x\n")
+    problems, _ = a.check("0a-second", c)
+    assert any("retired" in p for p in problems)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n")
 
     subprocess.run(["git", "-C", str(proj), "branch", "feat/BT-002-y"],
                    capture_output=True)
@@ -365,8 +370,17 @@ def test_3d_fails_when_nothing_was_committed_and_no_branch_was_cut(tmp_path):
     assert any("committed nothing" in p for p in problems)
 
 
+def test_3d_fails_without_a_session_line_or_with_a_retired_field(tmp_path):
+    proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Active Issue / PRD:** BT-001\n")
+    problems, _ = a.check("3d", ctx(proj))
+    assert any("session line" in p for p in problems)
+    assert any("retired" in p for p in problems)
+
+
 def test_3d_passes_with_a_branch_and_a_commit(tmp_path):
     proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     before = a.snapshot(proj)
     subprocess.run(["git", "-C", str(proj), "checkout", "-b", "feat/BT-001-flags"],
                    capture_output=True)
@@ -409,6 +423,9 @@ def test_4a_fails_without_a_verdict_token(tmp_path):
 
 # --- 0b ----------------------------------------------------------------------
 
+GOOD_STATUS = "# STATUS\n- **Last Sync:** 2026-10-27\n- **Sessions:**\n  - BT-001 · feat/BT-001-flags · 2026-10-27\n"
+
+
 def _validator(proj, exit_code):
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True, exist_ok=True)
@@ -416,22 +433,33 @@ def _validator(proj, exit_code):
         f"import sys\nsys.exit({exit_code})\n", encoding="utf-8")
 
 
-def test_0b_passes_when_it_wrote_status_and_ran_the_scripts(tmp_path):
+def test_0b_passes_when_it_synced_status_and_ran_the_scripts(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     c = a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
         {"name": "Bash", "input": '{"command": "python .agents/scripts/okf_view.py"}'}])
     problems, _ = a.check("0b", c)
     assert problems == []
 
 
+def test_0b_fails_without_last_sync_or_with_a_retired_field(tmp_path):
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Next Immediate Step:** x\n")
+    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "python okf_view.py"}'}]))
+    assert any("Last Sync" in p for p in problems)
+    assert any("retired" in p for p in problems)
+
+
 def test_0b_fails_when_okf_view_never_ran(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD,
                                           before=before))
     assert any("okf_view.py" in p for p in problems)
@@ -442,7 +470,7 @@ def test_0b_fails_if_a_single_run_promoted_a_memory_to_verified(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     write(proj / ".memory" / "LEARNINGS.md",
           "## [[L-001]] Local evaluation\nverified: true\n")
     c = a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[

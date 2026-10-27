@@ -25,7 +25,7 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 
 ## What does NOT belong here
 - Temporary TODOs → the tracker (`references/tracker-verbs.md`)
-- Current task status → `STATUS.md`
+- Current task status → the issue's resume note
 - One-off debugging logs unless they reveal a reusable rule
 - `[LAW]`-tier rules → `ARCHITECTURE.md` or `DESIGN_RULES.md`
 - Domain vocabulary → `GLOSSARY.md`

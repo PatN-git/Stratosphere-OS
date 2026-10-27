@@ -43,7 +43,7 @@ and `1b` never learns a budget exists.
 | # | Gate | Source | Answer |
 |:--|:---|:---|:---|
 | 0a-G1 | `Session Status: no-active-task` → next-step guidance, then **HALT before any side effect** | `0a:23` | No question is asked. The greenfield run's assertion is that nothing happened: STATUS.md unchanged, **no branch created** (`0a:24`). |
-| 0a-G2 | An active task is resolved → restore it | `0a:26` | No question. The second run asserts STATUS.md updated and the existing branch checked out. `0a` never creates one. |
+| 0a-G2 | An active task is resolved → restore it | `0a:26` | No question. The second run asserts no retired STATUS field was written and no branch created (no slice is `in progress` yet, so no session line); the 3d phase asserts the slice's session line. `0a` never creates a branch. |
 
 ---
 
@@ -121,7 +121,7 @@ The refutation subagent (`1a:78`) is Phase 2 only, so it does not run here (fact
 | 0b-G3 | Structural `[LAW]` change → propose, add `[[A-xxx]]` on confirmation | `0b:33-35` | `policy:confirm` → yes. |
 | 0b-G4 | UI structural / brand token changes | `0b:38` | `policy:confirm`, but it should not fire on a non-UI fixture — if it does, the same leak `2b-G4` watches for has reached `0b`, and that is a finding. |
 | 0b-G5 | Memory lint — propose fixes, list warnings, **await confirmation** | `0b:39` | `policy:confirm` → yes. |
-| 0b-G6 | Durable lesson → durability gate, then propose `[[L-xxx]]` text, write on confirmation | `0b:29-31` | `policy:confirm` → yes. A lesson failing the durability gate goes to the issue or `STATUS.md` with no prompt. |
+| 0b-G6 | Durable lesson → durability gate, then propose `[[L-xxx]]` text, write on confirmation | `0b:29-31` | `policy:confirm` → yes. A lesson failing the durability gate goes to the issue (resume note) or STATUS `Repo notes` with no prompt. |
 | 0b-G7 | New `[[A-xxx]]` codifies a step-4 learning → propose superseding it | `0b:36` | `policy:confirm` → yes. |
 
 `0b:56` makes this explicit: crystallization, supersession and lint fixes all require user

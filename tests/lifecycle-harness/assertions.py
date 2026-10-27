@@ -140,6 +140,18 @@ def store_state(ctx: Context) -> dict:
     return {"issues": {}, "invocations": []}
 
 
+# --- STATUS.md: folder state only (BT-218) -----------------------------------
+
+RETIRED_STATUS_FIELDS = ("Current Branch", "Active Issue", "Current Focus", "Completed This Session",
+                         "Open/Active Task Brief", "Next Immediate Step")
+SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-\d+ · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
+LAST_SYNC = re.compile(r"\*\*Last Sync:\*\*\s*\d{4}-\d{2}-\d{2}")
+
+
+def retired_status_fields(text: str) -> list:
+    return [f for f in RETIRED_STATUS_FIELDS if f in text]
+
+
 # --- per phase ---------------------------------------------------------------
 
 def check_0a(ctx: Context):
@@ -299,9 +311,10 @@ def check_0a_second(ctx: Context):
     status = ctx.project / ".memory" / "STATUS.md"
     if not status.exists():
         return ["STATUS.md does not exist"], notes
-    if ctx.before.get("status_md") == read(status):
-        notes.append("0a did not update STATUS.md on the second run; with a backlog "
-                     "present it should restore an active task")
+    old = retired_status_fields(read(status))
+    if old:
+        problems.append(f"STATUS.md carries retired single-task fields {old}; it holds "
+                        "folder state only (0a Phase B.3)")
     new = branches(ctx.project) - ctx.before.get("branches", set())
     if new:
         problems.append(f"0a created branch(es) {sorted(new)} - only 3d creates "
@@ -377,6 +390,13 @@ def check_3d(ctx: Context):
                         "branch - 3d is the only creator of branches (AGENTS.md 4)")
     if head(ctx.project) == ctx.before.get("head"):
         problems.append("3d committed nothing")
+    status = ctx.project / ".memory" / "STATUS.md"
+    text = read(status) if status.exists() else ""
+    if not SESSION_LINE.search(text):
+        problems.append("3d wrote no session line `BT-n · branch · date` to STATUS.md "
+                        "(3d Phase 0 step 1)")
+    if retired_status_fields(text):
+        problems.append(f"STATUS.md carries retired fields {retired_status_fields(text)}")
     tests = sorted(ctx.project.glob("tests/test_*.py")) + \
         sorted(ctx.project.glob("test_*.py"))
     if not tests:
@@ -425,8 +445,12 @@ def check_0b(ctx: Context):
     status = ctx.project / ".memory" / "STATUS.md"
     if not status.exists():
         return ["STATUS.md does not exist"], notes
-    if read(status) == ctx.before.get("status_md"):
-        problems.append("0b wrote no STATUS.md fields (0b step 2)")
+    text = read(status)
+    if not LAST_SYNC.search(text):
+        problems.append("0b did not set `Last Sync` in STATUS.md (0b step 2)")
+    if retired_status_fields(text):
+        problems.append(f"STATUS.md carries retired fields {retired_status_fields(text)} "
+                        "(0b step 2 keeps folder state only)")
     r = subprocess.run(["python", str(ctx.project / ".agents" / "scripts" /
                                       "validate_memory.py"), "--path", ".memory"],
                        cwd=str(ctx.project), env=ctx.child_env,

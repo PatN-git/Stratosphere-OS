@@ -49,14 +49,14 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 ### Step 2A: Implement
 0. **Frontier check (Orchestrator):** run `python .agents/scripts/reconcile.py --edges blockers --ids BT-<padded>`. Every `[BLOCKER-OK]` passes, and so does a `[BLOCKER-UNMET] same-unit` blocker that is `VERIFIED`/`VERIFIED-LOCAL` in this run. Any cross-unit unmet/unknown, or a same-unit blocker not verified, → emit `[SKIP-DEP] BT-<padded> waits on BT-<blocker>`, leave the slice's status unchanged (do **not** mark it blocked), log to `.tmp/3z-loop.work.md`, and continue to the next slice.
 1. **Activate Slice (Orchestrator):** `set_status` the target slice `BT-<padded>` `in progress` (`references/tracker-verbs.md`; it clears `planned`, `blocked`, `in review`).
-   `set_status` the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`**. Update `.memory/STATUS.md` (`Active issue`, `Current Branch`). Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
+   `set_status` the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`**. Refresh `generated.at` (and `generated.by`) on any mutated `.memory/` document.
 2. **Dispatch Implementer (Subagent):**
    (the subagent's active task is the `BT-<padded>` passed here — not `.memory/STATUS.md`, so concurrent runs never collide on it):
    > "Run `/3d-implement-issue` for `BT-<padded>` (its Phase 0 self-hydrates via `load-memory` and creates/restores the ship-unit branch — no `/0a` prefix needed). If prior gap report is attached, target it. Commit locally. The blocker guard is already satisfied by the frontier check; skip it.
    > Return JSON: `{\"files_changed\": [], \"tests_added\": [], \"commit_shas\": [], \"ac_self_coverage\": {}, \"red_confirmed\": [], \"docs_read\": [], \"needs_manual_qa\": false, \"plan_path\": \"\", \"branch\": \"\", \"stuck\": null}` (`docs_read` = the reference docs actually opened — PRD, design doc, LEARNINGS, ARCHITECTURE, etc.; `red_confirmed` = the observed RED per micro-tdd; `plan_path` = the 3d plan file `.tmp/3d-plan-BT-<padded>.md`, empty if 3d skipped Phase 0.5; `branch` = `git branch --show-current` after 3d's last commit; `stuck` = micro-tdd's `{reason, options}` when it froze, else null).
    > Do NOT push; do NOT open PR."
 
-_Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
+_Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) upserts the slice's session line in `.memory/STATUS.md` (`BT-<padded> · <branch> · <date>`, `branch` from the JSON; own line only), then runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
 1. **Dispatch** (`BT-<parentPadded>` = the slice's Parent from the queue read, else `gh issue view <n> --json parent`; local backend: its `BACKLOG_MAP.md` row):

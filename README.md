@@ -41,7 +41,7 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 ├── AGENTS.md / CLAUDE.md / GEMINI.md  ← Core constitution and layer rules
 ├── .agents/                          ← Orchestration engine (rules, workflows, skills)
 ├── .memory/                          ← Authoritative project memory
-│   ├── STATUS.md                     ← Active session health and build status
+│   ├── STATUS.md                     ← Folder state: last sync, one session line per task
 │   ├── BACKLOG_MAP.md                ← Feature slices and issue tracking
 │   ├── LEARNINGS.md                  ← Accumulated architectural traps and fixes
 │   ├── GLOSSARY.md                   ← Project domain vocabulary
@@ -68,7 +68,7 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 | **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
 | **4. Ship & Audit** | `/4a-verify-and-ship`<br/>`/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, audit reports (docs/audits/) + slice proposals |
 | **0. Anytime** | `/0e-plain-english` | Restates the agent's last message or question in plain, non-technical English; say "more" to elaborate. | Last agent message | Plain-language explanation |
-| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
+| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Resume note on the issue, updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
 ---

@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.5.0"
-timestamp: 2026-10-20
+version: "3.5.1"
+timestamp: 2026-10-27
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -34,7 +34,7 @@ timestamp: 2026-10-20
 - **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. An epic's slice needs a release milestone (3d halts without one).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label.
 - **main/master:** never a work target for code. It is only a base to branch from and a merge target.
-- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores an existing active branch or falls back to default+pull. 4a verifies, pushes, and opens/updates the single unit PR; it never creates the first commit and never merges.
+- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores the chosen task's existing branch, else stays put. 4a verifies, pushes, and opens/updates the single unit PR; it never creates the first commit and never merges.
 - **Merge:** a human merges the unit PR after review (HITL outward action). Workflows never merge.
 - **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind the HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
