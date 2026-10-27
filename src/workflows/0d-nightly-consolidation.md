@@ -35,7 +35,7 @@ Do not modify files without user approval, except the report, `.last-run.json` (
     |:---|:---|
     | Duplicate or overlapping entries | Merge? |
     | `[PATTERN]` cited ≥3 times | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (Not for `GLOSSARY.md`) |
-    | `[ASSUMED]` cited by ≥2 distinct tasks | Promote to `[PATTERN]`? |
+    | `[ASSUMED]` cited in `Ref` by ≥2 distinct tasks | Promote to `[PATTERN]`? |
     | `[ASSUMED]` older than 7 days by its inline `[YYYY-MM-DD]`, unvalidated | Supersede with a `[REMOVED]` tombstone? |
 - A removal is a tombstone under `## Superseded`, never a deletion (memory-protocol §3, §5): deleting leaves an ID gap.
 - **Avoid-list reconciliation:** Migrate or retire `Avoid:` synonyms for superseded terms.

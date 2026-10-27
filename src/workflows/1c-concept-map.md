@@ -86,6 +86,6 @@ timestamp: 2026-10-22
    - Decoupled Follow-ups are each marked existing BT-<n> or candidate.
    - RAT + cheapest test documented with status.
    - No unfiled Open Questions.
-5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`, each with its `Avoid:` list (rejected synonyms from the map's resolutions).
+5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`, each with its `Avoid:` list (rejected synonyms from the map's resolutions), per `references/glossary-entry-rules.md`.
 6. **Archive Lifecycle:** `close` the `concept:map` issue and `set_status` it `done` (local backend: set the row's status in `BACKLOG_MAP.md` to `done`).
 7. **Hand-off:** Expose brief. Trigger `/2a-write-prd` or exit ramps.

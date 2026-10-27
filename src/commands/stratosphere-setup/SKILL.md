@@ -206,9 +206,9 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 - **Greenfield:** skip. Leave `.memory/GLOSSARY.md` as the empty template.
 - **Brownfield:** scan `docs/prds/`, `docs/discovery/`, READMEs, and DB enum/type definitions for recurring domain terms.
   1. Propose 5–10 terms with one-line definitions to the user.
-  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc.
+  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc, per `references/glossary-entry-rules.md`.
   3. Assign sequential IDs starting from `[[G-001]]`.
-  4. **Preserve guidelines and placeholders:** Do NOT delete the protocol instruction line (`> GLOSSARY follows the same protocol as LEARNINGS.md — not exempt from trust tags.`), the `Avoid:` instructions, or the format example line under `## Superseded`.
+  4. **Preserve guidelines and placeholders:** Do NOT delete the `glossary-guidance` header block or the format example line under `## Superseded`.
 
 ### Checkpoint 5.2: Secret hygiene
 
