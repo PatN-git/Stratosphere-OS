@@ -25,7 +25,7 @@ Create the root tracking issue for the concept map.
 
   No milestone. Nothing is written to a local copy.
 - **BT-LOCAL Fallback (local backend):**
-  Create a local map file at `docs/discovery/<slug>.map.md` copying the template body, and add a `BT-LOCAL-<n>` row to `.memory/BACKLOG_MAP.md`.
+  Create a local map file at `docs/discovery/<slug>.map.md` copying the template body, and add a `BT-LOCAL-<slug>` row to `.memory/BACKLOG_MAP.md`.
 
 ---
 
@@ -42,7 +42,7 @@ Blocked by:
      *(Where `<type>` is research, grilling, prototype, or task)*
   2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `github-issue-relations.md`).
 - **BT-LOCAL Fallback:**
-  Add a new `BT-LOCAL-<n>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, and `Blocked by: [BT-LOCAL-ids]` text field.
+  Add a new `BT-LOCAL-<slug>` row to the local map file `docs/discovery/<slug>.map.md` under a `## Tickets` section, recording its type, status, and `Blocked by: [BT-LOCAL-ids]` text field.
 
 ---
 

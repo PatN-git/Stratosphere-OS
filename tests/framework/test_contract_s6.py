@@ -80,6 +80,9 @@ def test_the_local_backend_has_one_id_rule_everywhere():
     assert "`create` appends the entry (`BT-LOCAL-<slug>`)" in read_src("workflows/3b-create-issue.md")
     assert "MUST emit BT ids in zero-padded" not in read_src("commands/stratosphere-setup/SKILL.md")
     assert "BT-LOCAL (local backend)" in read_src("workflows/1c-concept-map.md")
+    stale = [f"{p.relative_to(SRC)}:{i}" for p in _sources()
+             for i, l in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if "BT-LOCAL-<n>" in l]
+    assert stale == [], f"local ids are `BT-LOCAL-<slug>`: {stale}"
 
 
 def test_the_breaking_v5_release_is_documented_for_consumers():

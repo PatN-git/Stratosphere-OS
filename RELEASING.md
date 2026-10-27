@@ -99,7 +99,8 @@ python .agents/scripts/tracker_switch.py --apply  # creates the issues, rewrites
   `.memory/ARCHITECTURE.md`.
 - `scaffold --update` flags the constitution (`needs_review_constitution`: the 0a branch rule in
   AGENTS.md section 4 changed) and the STATUS template (unmarked): accept the trimmed STATUS file that
-  0b proposes; old STATUS files lint-warn until then. `.memory/STATUS.md` and `.memory/resume/` are now
+  0b proposes (an old-format STATUS keeps working; `validate_memory.py` warns when it is over 3,000
+  characters or tracked by git). `.memory/STATUS.md` and `.memory/resume/` are now
   in the managed `.gitignore` entries; untrack a tracked STATUS with `git rm --cached .memory/STATUS.md`.
 - A BACKLOG_MAP whose Rules text you edited keeps your edits; the shortened rules block now cites
   `references/label-taxonomy.md`.
