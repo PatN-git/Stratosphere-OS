@@ -62,7 +62,7 @@ def test_4a_ship_gate_is_one_combined_call():
     calls = combined_gate_calls()
     assert len(calls) == 1, f"want exactly one combined `--with-edges dependents` call in 4a, found {len(calls)}"
     args = calls[0]
-    for flag in ("--require-gh", "--ids", "--pr-id", "--expect"):
+    for flag in ("--ids", "--pr-id", "--expect"):
         assert flag in args, f"4a's combined call lacks {flag}"
     assert "BT-<slice>:status=done" in args
 

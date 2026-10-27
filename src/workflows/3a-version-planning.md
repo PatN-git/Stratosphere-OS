@@ -72,9 +72,8 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 4. **Record confirmed dependencies (amend-only, user-confirmed):** for each confirmed `[NEW-DEP]`, `add_blocker` on the epic (`references/tracker-verbs.md`). Add only; clearing stays with 4a/0b.
 5. **Comment:** post release placement and rationale on each assigned parent feature issue.
 6. **Terminal sync gate** (`references/terminal-sync-invariant.md`), over the assigned parent `BT-<padded>` plus each epic step 4 amended; 3a writes no other field than milestone and `Blocked by`:
-   - github: write the intended end state to `.tmp/3a-expect.txt` (`BT-<n>:milestone=vX.Y.0`, `BT-<n>:blocked_by=<its full blocker set>`), then run `python .agents/scripts/reconcile.py --require-gh --ids <comma-list> --expect-file .tmp/3a-expect.txt`.
-   - local backend: `python .agents/scripts/reconcile.py --require-gh --ids <comma-list> --fields milestone,blocked_by`.
-   - Non-zero → github: re-apply the missing write; local: heal per the reference. Re-run, **at most 3 attempts**; still non-zero, or `[MIRROR-UNVERIFIED]` → halt and surface the drift. Never loop unbounded.
+   - Write the intended end state to `.tmp/3a-expect.txt` (`BT-<n>:milestone=vX.Y.0`, `BT-<n>:blocked_by=<its full blocker set>`), then run `python .agents/scripts/reconcile.py --ids <comma-list> --expect-file .tmp/3a-expect.txt`.
+   - Non-zero → re-apply the missing write and re-run, **at most 3 attempts**; still non-zero, or `[GH-UNAVAILABLE]` (exit 3) → halt and surface the drift. Never loop unbounded.
 7. **Render:** invoke `plan-html` using `board` or `plan-document` to render the read-only ephemeral companion `.tmp/render/docs/ROADMAP.html` (never committed; re-render from the `.md` whenever presenting it).
 8. **Commit & Push Doc:** `git add docs/ROADMAP.md && git commit -m "docs: roadmap"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). The roadmap is the cross-feature product changelog re-read by `/3a-version-planning` on default (Phase 2 "Live product" marker) — committing here keeps its `[SHIPPED]`/numbering baseline durable across a fresh clone or session. Never sweep unrelated drift into this commit.
 9. **Cleanup:** delete `.tmp/3a-roadmap.work.md`.
