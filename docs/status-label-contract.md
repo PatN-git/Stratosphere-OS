@@ -5,7 +5,7 @@ description: The status:* label vocabulary is an integration contract with the G
 generated:
   by: Patrick Nennewitz
   at: 2026-09-29
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # Status Label Integration Contract
@@ -14,7 +14,7 @@ The `status:*` issue labels are **not** an internal convention. `.github/workflo
 
 ## Direction of truth
 
-**Labels are the source of truth; the board is a derived view.** The sync is one-way (label → board). `reconcile.py` deliberately does *not* mirror board position — it keeps its 5 fields (status, milestone, labels, parent, blocked-by) and compares `.memory/BACKLOG_MAP.md` against GitHub labels only. Never edit a card's Status on the board by hand; the next label event overwrites it.
+**Labels are the source of truth; the board is a derived view.** The sync is one-way (label → board). `reconcile.py` deliberately does *not* read board position — its gate checks the 5 issue fields (status, milestone, labels, parent, blocked-by) against the phase's intended state, from GitHub labels only. Never edit a card's Status on the board by hand; the next label event overwrites it.
 
 ## Vocabulary
 
@@ -33,15 +33,15 @@ Lifecycle order: `needs_spec → planned → in progress → in review → done`
 
 ## Action rules the vocabulary depends on
 
-- An issue carries exactly one `status:*` label (Single Status Invariant, `BACKLOG_MAP.md`). The Action does not strip stale labels: with two, the last one in the payload wins.
-- An issue that is closed as completed is `done` on **every** event, not just the `closed` one, regardless of its label — so a later label edit cannot reset its card. Still, set `status:done` when closing (`closed ≡ status:done`) so labels, `BACKLOG_MAP` and the board agree. Closing as *not planned* is not forced to `done`. Reopening restores the issue's `status:*` label, or `planned` if it has none.
+- An issue carries exactly one `status:*` label (Single Status Invariant, `references/label-taxonomy.md`). The Action does not strip stale labels: with two, the last one in the payload wins.
+- An issue that is closed as completed is `done` on **every** event, not just the `closed` one, regardless of its label — so a later label edit cannot reset its card. Still, set `status:done` when closing (`closed ≡ status:done`) so labels and the board agree. Closing as *not planned* is not forced to `done`. Reopening restores the issue's `status:*` label, or `planned` if it has none.
 - Issues with any `concept:*` label are excluded from the board.
 - Other `key:value` labels (`type`, `size`, `priority`, …) only sync if the board has a single-select field of that name. Board #2 has none today, so they are skipped.
 
 ## Changing the vocabulary
 
-1. Update the vocabulary in `src/references/label-taxonomy.md` (and the local map template, `src/memory-templates/BACKLOG_MAP.md`, until it is trimmed), this table, and the board's `Status` options together.
-2. `tests/framework/test_status_label_contract.py` fails until the template and this table agree.
+1. Update the vocabulary in `src/references/label-taxonomy.md` this table, and the board's `Status` options together.
+2. `tests/framework/test_status_label_contract.py` fails until the taxonomy and this table agree.
 3. Rebuild `dist/` and bump versions per the normal release rules.
 
 ## Setup (per repository)
