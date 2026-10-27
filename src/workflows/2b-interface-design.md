@@ -103,11 +103,11 @@ Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <desi
 1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`references/tracker-verbs.md`). (2b never touches the PRD's editorial status — 2a owns that.)
 2. **Commit & Push Doc:** `git add docs/design/BT-<padded>-interface.md && git commit -m "docs(BT-<padded>): interface design"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). Never sweep unrelated drift into this commit.
 3. `set_body`: append the design doc link to the parent issue body.
-4. `set_refs(BT-<padded>, <memory IDs>)`, never the design doc path (GitHub: the body's `Refs:` line; local backend: the Ref cell of `BACKLOG_MAP.md`).
+4. `set_refs(BT-<padded>, <memory IDs>)` (the body's `Refs:` line), never the design doc path.
 5. Handoff — route to `/3a-version-planning` only when 3a would act on this feature:
-   - (its `MAJOR.MINOR` is undecided — parent has no milestone (`get(<n>)` shows `null`; local backend: `BT-<padded>` absent from `docs/ROADMAP.md`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first."
+   - (its `MAJOR.MINOR` is undecided — parent has no milestone (`get(<n>)` shows `null`) — **and** ≥ 1 other `tier:epic` is also unassigned), or ≥ 2 features contend for the current release's scope → "Interface design complete. Run `/3a-version-planning` to place this on the roadmap first."
    - Otherwise → "Interface design complete. Run `/3b-create-issue` to slice."
-   - A lone unassigned feature goes to slicing without a roadmap pass: in GitHub mode it has no milestone until 3a assigns one (3a is the only writer of an epic's milestone); on the local backend its map row keeps the provisional `v1.0.0` 2a wrote. A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.
+   - A lone unassigned feature goes to slicing without a roadmap pass: it has no milestone until 3a assigns one (3a is the only writer of an epic's milestone). A sprint-digit change is `/3c-sprint-planning`'s, after slicing — never a reason to route to `/3a-version-planning`.
 
 ---
 

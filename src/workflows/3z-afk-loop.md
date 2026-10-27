@@ -27,17 +27,17 @@ Run `/0a-start-session` to restore branch and load memory.
 _Done when:_ orchestrator context synced.
 
 ### Step 1B: Detect & Confirm Scope [HITL gate]
-1. Build the queue by backend (`references/tracker-verbs.md`): github → a named issue with `gh issue view <n> --json number,state,labels,milestone,parent`, a sprint with `gh issue list --state open --milestone <vX.Y.Z> --json number,title,labels,milestone,parent` (one call carries every slice's status, mode, size, milestone and parent; never a whole-backlog read); local backend → read `.memory/BACKLOG_MAP.md`:
+1. Build the queue by backend (`references/tracker-verbs.md`): github → a named issue with `gh issue view <n> --json number,state,labels,milestone,parent`, a sprint with `gh issue list --state open --milestone <vX.Y.Z> --json number,title,labels,milestone,parent` (one call carries every slice's status, mode, size, milestone and parent; never a whole-backlog read); local → `python .agents/scripts/issues.py ready` (a sprint: its lines at `<vX.Y.Z>`, plus each `[BLOCKED <id> <- <b>]` line whose `<b>` is queued, for Step 2A's frontier check; retries: `list --status blocked --milestone <vX.Y.Z>`; a named issue: `get`):
    - **Single:** the issue this run targets (named at invocation, or the sole `status:in progress` slice). **Batch:** the sprint's sequenced slices.
    - **Retry:** Slices marked `status:blocked` are re-queued (preflight excludes `status:in review` and `status:done` — both are terminal for the loop: shipped; `in review` is a standalone issue awaiting merge).
 2. **Preflight checks:**
-   - **Unknown/closed check:** For each slice ID, verify the issue exists (local backend: a `BACKLOG_MAP.md` row) and its status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
+   - **Unknown/closed check:** For each slice ID, verify the issue exists and its status is neither `status:in review` nor `status:done`. Else halt/skip: `[ERROR] BT-<padded> not found, already in review, or closed`.
    - **Mode-based pre-flight:** AFK/HITL mode governs execution; primary type is orthogonal:
      - `status:needs_spec` (Spike), any mode → `[SKIP] BT-<padded> Spike (needs_spec) — excluded` and drop (if named single issue → HALT with guidance: "Spike is not buildable: close it on its Exit Criteria, or mint a Build slice with /3b-create-issue").
      - `mode:AFK` → Keep (if `size:large`, add complexity advisory).
      - `mode:HITL` → `[SKIP] BT-<padded> mode:HITL — excluded` and drop (if named single issue → HALT with guidance: "run /3d-implement-issue + /4a-verify-and-ship manually").
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
-3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the queue read (the parent's: one `gh issue view <parent> --json milestone` per distinct parent; local backend: the `BACKLOG_MAP.md` rows), as 3d step 1; unit = its `unit` key; a `needs_milestone` slice stays queued, 3d halts it `[NO-RELEASE]` as `stuck` unless a branch is active); order by `(unit, dependency_order, slice_id)`. Blocker satisfaction comes from `python .agents/scripts/reconcile.py --edges blockers --ids <slices>`, never from status words.
+3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the queue read (the parent's: one `gh issue view <parent> --json milestone` per distinct parent; local: `get` each slice and parent), as 3d step 1; unit = its `unit` key; a `needs_milestone` slice stays queued, 3d halts it `[NO-RELEASE]` as `stuck` unless a branch is active); order by `(unit, dependency_order, slice_id)`. Blocker satisfaction comes from `python .agents/scripts/reconcile.py --edges blockers --ids <slices>`, never from status words.
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
 5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
@@ -59,7 +59,7 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 _Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) upserts the slice's session line in `.memory/STATUS.md` (`BT-<padded> · <branch> · <date>`, `branch` from the JSON; own line only), then runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch** (`BT-<parentPadded>` = the slice's Parent from the queue read, else `gh issue view <n> --json parent`; local backend: its `BACKLOG_MAP.md` row):
+1. **Dispatch** (`BT-<parentPadded>` = the slice's Parent from the queue read, else `get` the slice):
    > "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<parentPadded>-interface.md` (no PRD/design doc at that path (standalone slice) → omit the path).
    > Keep the auditor independent (fresh context) and give it the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (inline diff, ACs, named tests; no broad re-reads). On attempt > 1 also pass the previous `coverage_map` and the files changed since the last audited head: the auditor applies that reference's delta rule.
    > Run the Standards auditor with `auditor_model: small` (`references/auditor-model-tiers.md`); the Spec auditor stays on the default. Return the tier as `std_tier`.
@@ -117,5 +117,5 @@ _Done when:_ final report displayed.
 Next step: state which PRs are ready for review/merge and which ship units stayed local.
 
 ## Phase 5: Session Close
-Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS (local backend: and `BACKLOG_MAP.md`) and run memory lint. The decision log is retained (gitignored).
+Run `/0b-stop-session` to crystallize learnings/glossary, update STATUS and run memory lint. The decision log is retained (gitignored).
 _Done when:_ `/0b-stop-session` completes and repository memory persisted.

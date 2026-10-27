@@ -16,7 +16,7 @@ Upgrade project framework files, rules, and memory templates in place while full
 
 ## Core Principle
 
-Your `.memory/` data (such as backlog tasks, active learning logs, custom glossary entries, database tables) and your customized constitution pointers are **never** overwritten. Only framework-owned guidance sections wrapped in `SOS:BLOCK` markers are updated in-place. If there are conflicts, you (the agent) will merge them, and the user will explicitly confirm all diffs.
+Your `.memory/` data (such as active learning logs, custom glossary entries, database tables) and your customized constitution pointers are **never** overwritten. Only framework-owned guidance sections wrapped in `SOS:BLOCK` markers are updated in-place. If there are conflicts, you (the agent) will merge them, and the user will explicitly confirm all diffs.
 
 ---
 
@@ -116,7 +116,7 @@ For each block in `preserved_files` flagged with `status: "conflict"`, you must 
 - **User Block Content:** Read the current block content in the workspace file.
 - **New Block Content:** Read the block content in the new template file under `<plugin>/assets/templates/memory/`.
 - **Merge action:** Merge the framework improvements into the block while preserving the user's custom edits. Do **NOT** touch any content outside the block.
-- **Write back:** Write the fully merged file to its path suffix: `<filepath>.stratosphere-new` (e.g. `.memory/BACKLOG_MAP.md.stratosphere-new`). A project with `tracker: github` has no `BACKLOG_MAP.md`: the scaffolder neither creates nor merges one.
+- **Write back:** Write the fully merged file to its path suffix: `<filepath>.stratosphere-new` (e.g. `.memory/LEARNINGS.md.stratosphere-new`).
 - **Frontmatter:** copy the project file's frontmatter verbatim; never adopt the template's (a changed frontmatter, e.g. `timestamp:` → `generated:`, aborts the update).
 
 ### 2. Constitution Files (`needs_review_constitution`)
@@ -145,11 +145,10 @@ For each constitution file that has changed:
 1. **Verify proposed files:**
    Ensure all `.stratosphere-new` files are populated. Run `python <plugin>/scripts/scaffold.py --verify` or `python <plugin>/scripts/scaffold.py --update` (non-dry-run).
    The scaffolder will:
-   - Load each `.stratosphere-new` file.
    - Run Level-3 invariants:
      1. **Out-of-block byte-identity:** Compare raw bytes outside changed blocks against the original file, asserting they are identical.
      2. **Marker integrity:** Validate exactly one ordered START/END pair per block ID, and check for unknown block IDs.
-     3. **Cheap corroborating checks:** Assert the BT-xxx ID set and row count of the `## Backlog` table (when a `BACKLOG_MAP.md` exists; ids in the Rules text do not count), and §3 Immortal Component DR-xxx ID sets are unchanged.
+     3. **Cheap corroborating check:** Assert the §3 Immortal Component DR-xxx ID set is unchanged.
 
 2. **Apply changes:**
    If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.
@@ -159,16 +158,15 @@ For each constitution file that has changed:
 
 4. **Test gate advisory:** run `python .agents/scripts/test_gate.py status`. Exit 1 → print one line: `Optional: python .agents/scripts/test_gate.py install adds the pre-commit test gate (see stratosphere-setup Checkpoint 5.3).` Advisory only: do not install, do not ask.
 
+5. **v5 map migration (once):** a `.memory/BACKLOG_MAP.md` with `tracker: local` or no `tracker:` key → ask once (`AskUserQuestion` / `ask_question`) to migrate it. Yes → set `tracker: local` and `tracker_branch: <repo>/issues` in ARCHITECTURE.md's frontmatter, run `python .agents/scripts/issues.py migrate` (the map moves to `.memory/archive/`), commit both. No → the next update asks again. Never merge the map.
+
 ---
 
 ## Phase 5: GitHub Reconcile
 
 1. **Reconcile labels and extensions:**
    Invoke `stratosphere-setup --re-reconcile-labels` (in Standalone Mode) in the user's terminal/workspace.
-   This will:
-   - Synchronize/add any newly introduced canonical labels (such as `concept:*`).
-   - Re-reconcile project boards and sync actions.
-   - Skip gracefully if GitHub CLI is absent or unauthenticated.
+   It syncs new canonical labels (e.g. `concept:*`) and the Project board; it skips without `gh` and under `tracker: local`.
 
 ---
 

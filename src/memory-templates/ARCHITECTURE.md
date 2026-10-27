@@ -7,6 +7,7 @@ generated:
   at: 2026-09-29
 version: "1.0.7"
 tracker: local
+tracker_branch:
 ---
 # ARCHITECTURE
 
@@ -65,7 +66,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 - Any RLS / auth assumptions:
 
 ## Tracker Registry
-<!-- `tracker: github` only: the project-specific lines a local BACKLOG_MAP.md would hold. Setup fills them; under `tracker: local` leave them empty (the map holds them). -->
+<!-- `tracker: github` only; setup fills them. Under `tracker: local` leave them empty: area slugs live in `docs/issues/README.md` on the tracker branch. -->
 - Area labels (`area:xxx`):
 - GitHub Project ID:
 
@@ -77,7 +78,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 ## Known Architectural Constraints
 - **[[A-XXX]] [LAW]** Example placeholder. Source: BT-XXX.
-- **[[A-XXX]] [LAW]** Issue tracker backend: `<github|local>` (frontmatter `tracker:`). `github`: GitHub issues are the only store, there is no `.memory/BACKLOG_MAP.md`, and nothing writes a local copy. `local`: the map is the store (`/stratosphere-setup` records the choice; `tracker_switch.py` moves a local project to GitHub). Source: BT-197.
+- **[[A-XXX]] [LAW]** Issue tracker backend: `<github|local>` (frontmatter `tracker:`). `github`: GitHub issues are the only store and nothing writes a local copy. `local`: one file per issue on the `tracker_branch:` (`<repo>/issues`), read and written only by `issues.py` (`/stratosphere-setup` records the choice; `tracker_switch.py` moves a local project to GitHub). Source: BT-197, BT-221.
 
 ## Floor exceptions
 <!-- Rows a human merges to the default branch, `<rule> <glob> — <reason>`, e.g. `A-003 src/legacy.js — legacy, split in BT-nnn`. The rule is a floor rule or a rule ID above. -->

@@ -18,7 +18,7 @@ timestamp: 2026-10-22
 Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Precondition & Mode
-1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`references/tracker-verbs.md`; local backend: read `.memory/BACKLOG_MAP.md`).
+1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`references/tracker-verbs.md`).
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
@@ -30,7 +30,7 @@ Run the `load-memory` skill to restore session context (read-only).
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
 `create` the parent issue (`references/tracker-verbs.md`) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
 > [!IMPORTANT]
-> **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns. Local backend: `BT-LOCAL-<slug>` until synced.
+> **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns (local backend: `BT-LOCAL-<slug>`).
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
 - **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
@@ -94,17 +94,13 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a-version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. `set_body` the parent issue: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).
 5. **Refs:** `set_refs(BT-<padded>, <memory IDs>)` (`[[L-xxx]]`, `[[A-xxx]]`; doc paths go in the body, never in Refs). The epic stays `status:needs_spec`, with no milestone until 3a assigns one.
-   - Local backend only: `create` appends the row (first real entry: delete dummy row `BT-XXX`) with milestone `v1.0.0` as a provisional placeholder (`/3a-version-planning` owns MAJOR.MINOR and may reassign, `/3c-sprint-planning` the sprint digit), `ICE: -`, `Parent = —`, `Blocked by = —`:
-     ```
-     | BT-LOCAL-<slug> | <Feature name> | needs_spec | area:<x>, tier:epic, type:feature | v1.0.0 | — | — | ICE: - | [[L-xxx]], [[A-xxx]] |
-     ```
 6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/prds/BT-<padded>-<feature-name>.html` (never committed; re-render from the `.md` whenever presenting it).
 7. Tell user: *"PRD `BT-<padded>` ready. Run `/2b-interface-design` to design (Path C covers non-UI interface contracts; only a feature with no external surface skips it), or `/2z-write-spec BT-<padded>` to chain 2b → 2c."*
 
 ---
 
 ## Label Registry
-See `references/label-taxonomy.md`: the registry is the live `gh label list` (the local backend's map `.memory/BACKLOG_MAP.md` holds it offline). Do not invent labels — ask user first if one seems needed.
+See `references/label-taxonomy.md`: it names the registry on each backend. Do not invent labels — ask user first if one seems needed.
 
 ## Re-run Notes
 - Expand mode: never silently overwrite. Surface conflicts.

@@ -19,6 +19,7 @@ import importlib.util
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,7 +52,7 @@ class Context:
     # therefore unreachable in this mode, and a checker that failed on it would be
     # reporting the mode rather than the lifecycle.
     handoff: bool = False
-    # `github`: no BACKLOG_MAP.md exists and GitHub (the shim's store) is the only record.
+    # `github`: GitHub (the shim's store) is the only record. `local`: the `issues.py` store on the tracker branch.
     tracker: str = "local"
 
 
@@ -120,10 +121,9 @@ def head(project: Path) -> str:
 def snapshot(project: Path, bare: Path | None = None) -> dict:
     """Taken before a phase, so "unchanged" is checkable rather than assumed."""
     status = project / ".memory" / "STATUS.md"
-    backlog = project / ".memory" / "BACKLOG_MAP.md"
     snap = {
         "status_md": read(status) if status.exists() else None,
-        "backlog_md": read(backlog) if backlog.exists() else None,
+        "local_issues": local_issue_ids(project),
         "branches": branches(project),
         "head": head(project),
     }
@@ -323,8 +323,9 @@ def check_0a_second(ctx: Context):
 
 
 def check_3b(ctx: Context):
-    """GitHub mode: the store is authoritative (`github_3b.py`). Local backend: GitHub is not touched, so the
-    check reads the rows 3b appended to BACKLOG_MAP (`create`, `references/tracker-verbs.md`)."""
+    """GitHub mode: the store is authoritative (`github_3b.py`). Local backend: GitHub is not touched, so the check
+    reads the issues 3b created in the `issues.py` store (`create`, `references/tracker-verbs.md`) and runs
+    `issues.py check`, the local post-condition (3b Phase 3 step 5)."""
     problems, notes = [], []
     if ctx.tracker == "github":
         state = store_state(ctx)
@@ -332,25 +333,48 @@ def check_3b(ctx: Context):
         if not issues:
             return ["3b minted no issues in the fixture store"], notes
         return check_3b_github(ctx, issues), notes
-    backlog = ctx.project / ".memory" / "BACKLOG_MAP.md"
-    if not backlog.exists():
-        return ["BACKLOG_MAP.md does not exist"], notes
-    text = read(backlog)
-    row_ids = lambda t: set(re.findall(r"^\|\s*(BT-[\w-]+)\s*\|", t, re.M)) - {"BT-XXX"}
-    new = row_ids(text) - row_ids(ctx.before.get("backlog_md") or "")
-    if not new:
-        problems.append("3b appended no BACKLOG_MAP row, so no slice was written")
-    bad = sorted(i for i in new if not re.fullmatch(r"BT-LOCAL-[A-Za-z0-9][\w-]*", i))
-    if bad:
-        problems.append(f"local-backend rows must be `BT-LOCAL-<slug>` (tracker-verbs `create`): {bad}")
+    maps = sorted(str(p.relative_to(ctx.project)) for p in backlog_maps(ctx.project))
+    if maps:
+        problems.append(f"{maps}: no backend keeps a BACKLOG_MAP.md; local issues live on the tracker branch")
     if state_issues(ctx):
         problems.append("3b created GitHub issues, but the local backend never touches GitHub")
-    if new and ctx.before.get("backlog_md") != text and "generated:" in text:
-        before_at = re.search(r"at:\s*(\S+)", ctx.before.get("backlog_md") or "")
-        now_at = re.search(r"at:\s*(\S+)", text)
-        if before_at and now_at and before_at.group(1) == now_at.group(1):
-            problems.append("BACKLOG_MAP generated.at was not refreshed (3b:69)")
+    code, out = run_issues(ctx.project, ctx.child_env, "list", "--all")
+    if code:
+        return problems + [f"the local store cannot be read (issues.py list --all): {out[:300]}"], notes
+    issues = {i["id"]: i for i in json.loads(out)}
+    new = sorted(set(issues) - (ctx.before.get("local_issues") or set()))
+    slices = [bt for bt in new if "tier:slice" in issues[bt]["labels"]]
+    if not slices:
+        problems.append("3b created no slice in the local store (issues.py list --all)")
+    for bt in slices:
+        code, out = run_issues(ctx.project, ctx.child_env, "get", bt)
+        if code or "### Acceptance Criteria" not in json.loads(out)["body"]:
+            problems.append(f"{bt} has no `### Acceptance Criteria` in its body (what 4a's auditor reads)")
+    code, out = run_issues(ctx.project, ctx.child_env, "check")
+    if code:
+        problems.append(f"issues.py check failed: {out[:300]}")
     return problems, notes
+
+
+def backlog_maps(project: Path) -> list:
+    """Every `BACKLOG_MAP.md` in the project outside `.git`: the retired v5 store, which no backend keeps."""
+    return [p for p in project.rglob("BACKLOG_MAP.md") if ".git" not in p.relative_to(project).parts]
+
+
+def run_issues(project: Path, env: dict | None, *argv) -> tuple[int, str]:
+    """The installed `issues.py`, the only reader of the local store (exit code, stdout+stderr)."""
+    script = project / ".agents" / "scripts" / "issues.py"
+    if not script.exists():
+        return 2, f"no issues.py at {script}"
+    r = subprocess.run([sys.executable, str(script), *argv], cwd=str(project), env=env,
+                       capture_output=True, text=True)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def local_issue_ids(project: Path) -> set | None:
+    """Ids in the local store, closed included; None when there is no store (GitHub mode, or before setup)."""
+    code, out = run_issues(project, None, "list", "--all")
+    return {i["id"] for i in json.loads(out)} if code == 0 else None
 
 
 def state_issues(ctx: Context) -> list:
@@ -372,7 +396,7 @@ def mirror_ok(ctx: Context, ids: str, expect: list | None = None):
     Without a reachable GitHub the gate exits 3 with `[GH-UNAVAILABLE]`, so reaching
     `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no map to
     diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
-    The local backend has no gate: its map rows are the store.
+    The local backend has no gate: `issues.py check` is its post-condition (`check_3b`).
     """
     script = ctx.project / ".agents" / "scripts" / "reconcile.py"
     if not script.exists():

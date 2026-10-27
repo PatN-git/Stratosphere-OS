@@ -3,5 +3,5 @@
 Slice the feature whose PRD is in docs/prds/ and whose interface design is in
 docs/design/ into implementable vertical slices.
 
-When every slice is minted (under `tracker: github` also: the terminal sync gate has
-passed), print exactly L3-3B-COMPLETE on its own final line.
+When every slice is minted and the terminal sync has passed (`tracker: github`: the gate;
+local: `issues.py check`), print exactly L3-3B-COMPLETE on its own final line.

@@ -12,8 +12,8 @@ Three rules shape everything here:
     status` as "offline" and prints `[local-only - GitHub not checked]`, returning 0
     without ever emitting `[MIRROR-OK]`. A shim whose auth check fails therefore
     turns the terminal-sync gate into a no-op that still passes.
-  * **The store is authoritative.** `3b` writes `BACKLOG_MAP.md` from what this
-    returns, and `reconcile.py` then compares the two. If the shim invents state per
+  * **The store is authoritative.** `3b` mints from what this returns, and
+    `reconcile.py --expect` then checks the intended state against it. If the shim invents state per
     call rather than keeping it, the mirror and the source diverge by construction.
   * **An unknown subcommand fails loudly**, with the full argv recorded. A shim that
     shrugs and exits 0 makes every downstream assertion meaningless, and the gap it

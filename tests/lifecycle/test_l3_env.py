@@ -127,7 +127,7 @@ def test_lifecycle_env_builds_and_tears_down():
         assert env.home.exists()
         # origin resolves into the temp root, never to GitHub
         remotes = e.git_remotes(env.project / ".git")
-        assert remotes and all(str(root) in r for r in remotes)
+        assert remotes and all(Path(r).resolve().is_relative_to(root.resolve()) for r in remotes)
         # tokens never reach the child
         assert not any(k.startswith(("GH_", "GITHUB_")) for k in env.child_env)
         assert env.child_env["HOME"] == str(env.home)

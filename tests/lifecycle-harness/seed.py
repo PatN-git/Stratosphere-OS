@@ -6,11 +6,14 @@ Split out of `env.py` (one concern per file, A-003). `env.py` loads it by path a
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
-# The tracker backend that keeps no BACKLOG_MAP.md: the minted epic is the whole record.
+# The tracker backend whose store is GitHub itself: the minted epic is the whole record.
 GITHUB = "github"
 
 UPSTREAM = Path(__file__).parent / "fixture" / "upstream"
@@ -31,14 +34,14 @@ def seed_upstream(project: Path, child: dict, shim_dir: Path, tracker: str = "lo
 
     Under `tracker: github` the parent epic is minted THROUGH the shim rather than
     written into its store by hand, so the store's shape has one author. Under the
-    local backend GitHub is not touched: the epic is one `BT-LOCAL-<slug>` map row
-    (`references/tracker-verbs.md`) and the shim's store stays empty.
+    local backend GitHub is not touched: the epic is one `BT-LOCAL-<slug>` issue on the tracker branch, created
+    with the installed `issues.py` (`references/tracker-verbs.md`), and the shim's store stays empty.
     """
     shutil.copytree(UPSTREAM, project, dirs_exist_ok=True)
     if tracker == GITHUB:  # GitHub is the only store there: the minted epic is the whole record
         _mint_epic(child, shim_dir)
-    else:  # the local backend never touches GitHub: its map row is the whole record
-        _seed_backlog_row(project)
+    else:  # the local backend never touches GitHub: its store issue is the whole record
+        _create_local_epic(project, child)
     subprocess.run(["git", "-C", str(project), "add", "-A"], capture_output=True)
     subprocess.run(["git", "-C", str(project), "commit", "-m",
                     "docs(BT-001): seeded upstream artifacts (L3 fixture)"],
@@ -65,17 +68,24 @@ def _mint_epic(child: dict, shim_dir: Path) -> str:
 
 
 LOCAL_EPIC_ID = "BT-LOCAL-local-feature-flag-evaluation"
+EPIC_BODY = "Parent feature. Sliced by /3b-create-issue.\n\nPRD: docs/prds/BT-001-local-feature-flag-evaluation.md\n"
 
 
-def _seed_backlog_row(project: Path) -> None:
-    """The local backend's epic row: status bare in Status, never in Labels."""
-    backlog = project / ".memory" / "BACKLOG_MAP.md"
-    text = backlog.read_text(encoding="utf-8")
-    labels = ", ".join(l for l in EPIC_LABELS if not l.startswith("status:"))
-    row = (f"| {LOCAL_EPIC_ID} | Local feature flag evaluation | planned | {labels} "
-           f"| v1.0.0 | — | — | I1.0×C80%/E1 | "
-           f"docs/prds/BT-001-local-feature-flag-evaluation.md |")
-    lines = text.splitlines()
-    last_table_line = max(i for i, ln in enumerate(lines) if ln.lstrip().startswith("|"))
-    lines.insert(last_table_line + 1, row)
-    backlog.write_text("\n".join(lines) + "\n", encoding="utf-8")
+def _create_local_epic(project: Path, child: dict) -> str:
+    """The local backend's epic, through the installed `issues.py create` (tracker-verbs `create`): status is a field,
+    never a label. The body file lives outside the project, so the working tree stays clean."""
+    fd, body = tempfile.mkstemp(suffix=".md")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(EPIC_BODY)
+    try:
+        r = subprocess.run(
+            [sys.executable, str(project / ".agents" / "scripts" / "issues.py"), "create",
+             "--title", "Local feature flag evaluation",
+             "--label", ",".join(l for l in EPIC_LABELS if not l.startswith("status:")),
+             "--status", "planned", "--milestone", "v1.0.0", "--body-file", body],
+            cwd=str(project), env={**os.environ, **child}, capture_output=True, text=True)
+    finally:
+        os.unlink(body)
+    if r.returncode != 0 or r.stdout.strip() != LOCAL_EPIC_ID:
+        raise RuntimeError(f"could not create the local epic with issues.py: {r.stdout}{r.stderr}")
+    return LOCAL_EPIC_ID

@@ -1,6 +1,7 @@
-# md-crosscheck: stage 0-1 and planning readers (load-memory, 0a, 0b, 1b, 1c, 3a, 3c, 4b, 4c, concept-map-operations, post-merge-sync) vs tracker-verbs.md, ice_read.py and reconcile.py
-"""BT-198: in `tracker: github` mode the stage 0-1 and planning readers ask GitHub only what they need; the map is
-named only as the local backend, and the 3a/3c/0b gates pass `--expect-file` from their own work file.
+# md-crosscheck: stage 0-2 and planning readers (load-memory, 0a, 0b, 1b, 1c, 2a, 2b, 3a, 3c, 4b, 4c, concept-map-operations, post-merge-sync) vs tracker-verbs.md, issues.py, ice_read.py and reconcile.py
+"""BT-198/BT-221: the readers ask the tracker only what they need, through a verb or read name; the retired
+`BACKLOG_MAP.md` and the `.map.md` ticket store are gone; a local command they spell is one `issues.py` accepts; the
+3a/3c/0b gates pass `--expect-file` from their own work file.
 """
 import re
 import subprocess
@@ -11,16 +12,20 @@ import pytest
 from conftest import SRC, read_src
 
 READERS = ["skills/load-memory/SKILL.md", "workflows/0a-start-session.md", "workflows/0b-stop-session.md",
-           "workflows/1b-concept-framing.md", "workflows/1c-concept-map.md", "workflows/3a-version-planning.md",
+           "workflows/1b-concept-framing.md", "workflows/1c-concept-map.md", "workflows/2a-write-prd.md",
+           "workflows/2b-interface-design.md", "workflows/3a-version-planning.md",
            "workflows/3c-sprint-planning.md", "workflows/4b-audit-architecture-drift.md",
            "workflows/4c-codebase-health-audit.md", "references/concept-map-operations.md",
            "references/post-merge-sync.md"]
-NAME_THE_MAP = [r for r in READERS if r != "workflows/0b-stop-session.md"]  # 0b delegates to post-merge-sync
 WIP_READERS = ["skills/load-memory/SKILL.md", "workflows/0a-start-session.md", "workflows/4b-audit-architecture-drift.md",
                "workflows/4c-codebase-health-audit.md"]
 GATES = ["workflows/3a-version-planning.md", "workflows/3c-sprint-planning.md", "references/post-merge-sync.md"]
-GH_WRITE = re.compile(r"gh issue (create|edit|close|comment|reopen)|gh api graphql|addBlockedBy|addSubIssue|removeBlockedBy"
-                      r"|--add-label|--remove-label|--milestone|`(set_status|set_milestone|close|create)`")
+RETIRED = re.compile(r"BACKLOG_MAP|map row|Ref cell|Status cell|BT-LOCAL Fallback|(?<!\*)\.map\.md")
+
+
+def _issues_commands():
+    out = subprocess.run([sys.executable, str(SRC / "scripts" / "issues.py"), "--help"], capture_output=True, text=True).stdout
+    return set(re.search(r"\{([a-z,]+)\}", out).group(1).split(","))
 
 
 def _reads_section():
@@ -30,25 +35,29 @@ def _reads_section():
 
 
 @pytest.mark.parametrize("rel", READERS)
-def test_the_map_is_only_named_as_the_local_backend(rel):
-    offenders = [l.strip()[:120] for l in read_src(rel).splitlines()
-                 if re.search(r"BACKLOG|map row", l) and not re.search(r"local", l, re.I)]
-    assert offenders == [], f"{rel} reads or writes the map outside a local clause: {offenders}"
+def test_no_reader_names_the_retired_local_store(rel):
+    offenders = [l.strip()[:120] for l in read_src(rel).splitlines() if RETIRED.search(l)]
+    assert offenders == [], f"{rel} still names the retired map or ticket store: {offenders}"
 
 
 @pytest.mark.parametrize("rel", READERS)
-def test_no_sentence_writes_both_github_and_the_map(rel):
-    offenders = []
-    for line in read_src(rel).splitlines():
-        for sentence in re.split(r"(?<=[.;:])\s+", line):
-            if "BACKLOG" in sentence and GH_WRITE.search(sentence):
-                offenders.append(sentence.strip()[:120])
-    assert offenders == [], f"{rel} writes GitHub and the map in one sentence: {offenders}"
+def test_every_local_command_is_one_issues_py_accepts(rel):
+    used = set(re.findall(r"issues\.py ([a-z]+)", read_src(rel)))
+    assert used <= _issues_commands(), f"{rel}: {used - _issues_commands()} is not an issues.py command"
 
 
-@pytest.mark.parametrize("rel", NAME_THE_MAP)
-def test_every_reader_keeps_its_local_clause(rel):
-    assert "BACKLOG_MAP" in read_src(rel), f"{rel} lost its local-backend clause"
+def test_0a_syncs_the_tracker_branch_and_only_the_4a_ship_push_pushes_it():
+    """AGENTS.md section 4: the tracker branch is pushed only with the 4a ship push, after a sync."""
+    assert "issues.py sync" in read_src("workflows/0a-start-session.md")
+    assert "git push origin" not in read_src("workflows/0b-stop-session.md")
+    ship = read_src("workflows/4a-verify-and-ship.md")
+    assert "issues.py sync`, then `git push origin \"$(python .agents/scripts/issues.py branch)\"`" in ship
+
+
+def test_load_memory_reads_the_local_store_through_issues_py():
+    """A skill ships alone (no references), so its local reads are spelled inline."""
+    text = read_src("skills/load-memory/SKILL.md")
+    assert "issues.py get" in text and "issues.py wip" in text
 
 
 def test_the_reads_reference_defines_the_wip_set_and_the_candidates_read():
@@ -66,7 +75,7 @@ def test_wip_readers_use_a_scoped_query(rel):
 
 def test_3c_reads_its_candidates_and_ice_from_ice_read():
     text = read_src("workflows/3c-sprint-planning.md")
-    assert "ice_read.py candidates" in text
+    assert "ice_read.py candidates" in text and "Local only" not in text, "one candidates read on both backends"
     out = subprocess.run([sys.executable, str(SRC / "scripts" / "ice_read.py"), "--help"], capture_output=True, text=True).stdout
     assert "candidates" in out
 

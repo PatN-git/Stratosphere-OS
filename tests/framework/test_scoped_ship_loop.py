@@ -1,6 +1,6 @@
-# md-crosscheck: build and ship loop (3d, 3z, 4a, pr-body-and-ship, ci-gate) vs tracker-verbs.md and reconcile.py
-"""BT-199: in `tracker: github` mode the build and ship loop asks GitHub for one issue at a time, 4a's ship gate is one
-combined `reconcile.py` call, and the map is named only as the local backend.
+# md-crosscheck: build and ship loop (3b, 3d, 3z, 4a, pr-body-and-ship, ci-gate) vs tracker-verbs.md and reconcile.py
+"""BT-199: in `tracker: github` mode the build and ship loop asks GitHub for one issue at a time and 4a's ship gate is
+one combined `reconcile.py` call. BT-221: the local backend is the issues.py store; no loop file names the old map.
 """
 import importlib.util
 import re
@@ -9,11 +9,8 @@ import pytest
 
 from conftest import SRC, assert_argv_accepted, combined_gate_argv, combined_gate_calls, read_src, write_architecture
 
-LOOP = ["workflows/3d-implement-issue.md", "workflows/3z-afk-loop.md", "workflows/4a-verify-and-ship.md",
-        "references/pr-body-and-ship.md", "references/ci-gate.md"]
-NAME_THE_MAP = [r for r in LOOP if r != "references/ci-gate.md"]  # ci-gate never read the map
-GH_WRITE = re.compile(r"gh issue (create|edit|close|comment|reopen)|gh api graphql|addBlockedBy|addSubIssue|removeBlockedBy"
-                      r"|--add-label|--remove-label|--milestone|`(set_status|set_milestone|close|create|clear_blocker)`")
+LOOP = ["workflows/3b-create-issue.md", "workflows/3d-implement-issue.md", "workflows/3z-afk-loop.md",
+        "workflows/4a-verify-and-ship.md", "references/pr-body-and-ship.md", "references/ci-gate.md"]
 
 _spec = importlib.util.spec_from_file_location("reconcile_ship_loop", SRC / "scripts" / "reconcile.py")
 rec = importlib.util.module_from_spec(_spec)
@@ -21,25 +18,36 @@ _spec.loader.exec_module(rec)
 
 
 @pytest.mark.parametrize("rel", LOOP)
-def test_the_map_is_only_named_as_the_local_backend(rel):
-    offenders = [l.strip()[:120] for l in read_src(rel).splitlines()
-                 if re.search(r"BACKLOG|map row", l) and not re.search(r"local", l, re.I)]
-    assert offenders == [], f"{rel} reads or writes the map outside a local clause: {offenders}"
+def test_no_loop_file_names_the_retired_map(rel):
+    offenders = [l.strip()[:120] for l in read_src(rel).splitlines() if re.search(r"BACKLOG|map row|map cell", l)]
+    assert offenders == [], f"{rel} still reads or writes the retired map: {offenders}"
 
 
-@pytest.mark.parametrize("rel", LOOP)
-def test_no_sentence_writes_both_github_and_the_map(rel):
-    offenders = []
-    for line in read_src(rel).splitlines():
-        for sentence in re.split(r"(?<=[.;:])\s+", line):
-            if "BACKLOG" in sentence and GH_WRITE.search(sentence):
-                offenders.append(sentence.strip()[:120])
-    assert offenders == [], f"{rel} writes GitHub and the map in one sentence: {offenders}"
+def test_3b_mints_the_draft_as_the_body_and_deletes_drafts_only_after_the_post_condition():
+    text = read_src("workflows/3b-create-issue.md")
+    assert re.search(r"`create`[^\n]*`\.tmp/3b-issue-body\.md`", text), "3b must mint with the body file"
+    assert "issues.py check" in text, "3b's local post-condition is `issues.py check`"
+    cleanup = next(l for l in text.splitlines() if "Scratch cleanup" in l)
+    assert "`check`" in cleanup, "the drafts are deleted only after the gate or the local `check` passes"
 
 
-@pytest.mark.parametrize("rel", NAME_THE_MAP)
-def test_every_loop_file_keeps_its_local_clause(rel):
-    assert "BACKLOG_MAP" in read_src(rel), f"{rel} lost its local-backend clause"
+def test_3d_claims_the_slice_and_halts_on_a_claimed_one():
+    text = read_src("workflows/3d-implement-issue.md")
+    assert re.search(r"`claim` the slice[^\n]*\[CLAIMED", text), "3d must `claim` the slice and halt on [CLAIMED]"
+
+
+def test_3z_local_queue_comes_from_ready():
+    assert "python .agents/scripts/issues.py ready" in read_src("workflows/3z-afk-loop.md")
+
+
+def test_4a_auditor_reads_acceptance_criteria_with_get():
+    line = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "Business-Logic Auditor" in l)
+    assert re.search(r"Acceptance Criteria[^\n]*`get`", line), "the auditor reads the AC with the `get` read"
+
+
+def test_4a_ship_push_also_pushes_the_tracker_branch():
+    push = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "Release bump + push" in l)
+    assert "git push origin" in push and "issues.py branch" in push, "4a's ship push must push the tracker branch"
 
 
 @pytest.mark.parametrize("rel", ["workflows/3d-implement-issue.md", "workflows/3z-afk-loop.md", "workflows/4a-verify-and-ship.md"])

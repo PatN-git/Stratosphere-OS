@@ -52,7 +52,7 @@ Other existing metadata keys (such as `issue_url`, `status`, `linked-prd`) are p
 | `stale` | `deprecated` |
 | `draft` | `draft` (unchanged) |
 
-Work-status (`status:*` GitHub labels / BACKLOG `Status`) **never** appears in doc frontmatter, and the editorial enum never appears on issues. **Exception:** the `discovery-brief` type keeps its routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision rather than editorial maturity.
+Work-status (`status:*` labels) **never** appears in doc frontmatter, and the editorial enum never appears on issues. **Exceptions:** an `issue` file's `status:` is its work status; the `discovery-brief` type keeps its routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision rather than editorial maturity.
 
 `sources` (optional): supersedes a body `# Citations` / `## Sources` section. Each entry requires `resource`; `id`, `title`, `author`, `last_modified` are optional.
 
@@ -94,10 +94,9 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `type` | Applies to | Extra fields beyond the base contract |
 |:---|:---|:---|
 | `status` | `STATUS.md` | — |
-| `backlog` | `BACKLOG_MAP.md` | — |
 | `learnings` | `LEARNINGS.md` | — |
 | `glossary` | `GLOSSARY.md` | — |
-| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a `BACKLOG_MAP.md` present means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`) |
+| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a present tracker branch means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`). `tracker_branch` (local): `<repo>/issues` |
 | `database-schema` | `DATABASE_SCHEMA.md` | — |
 | `design-rules` | `DESIGN_RULES.md` | — |
 | `design` | `DESIGN.md` | conforming (tolerated by the `@google/design.md` linter) |
@@ -109,6 +108,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `roadmap` | `docs/ROADMAP.md` | — |
 | `audit-report` | `docs/audits/*.md` | — |
 | `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
+| `issue` | `docs/issues/*.md` on the `tracker_branch` (never the working tree), written only by `issues.py` | `status` (work status) and the tracker fields; no `generated` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
 | `reference` | in-scope reference material under `docs/` (e.g. `docs/okf-spec-essentials.md`) | — |

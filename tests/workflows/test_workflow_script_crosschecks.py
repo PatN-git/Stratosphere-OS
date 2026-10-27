@@ -150,6 +150,22 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
     assert from_reference, "the --edges dependents call moved to post-merge-sync.md and is no longer found there"
 
 
+# md-crosscheck: build and ship loop issues.py literals vs issues.py's real argparse
+def test_ship_loop_issues_literals_parse_under_the_real_argparse():
+    issues = _load("issues", SRC / "scripts" / "issues.py")
+    call = re.compile(r"issues\.py ([a-z][^`)\"]*)")
+    seen = set()
+    for name in ("3b-create-issue.md", "3d-implement-issue.md", "3z-afk-loop.md", "4a-verify-and-ship.md"):
+        for args in call.findall((WF / name).read_text(encoding="utf-8")):
+            argv = re.sub(r"<[^>]*>", "BT-001", args).split()
+            try:
+                issues.parser().parse_args(argv)
+            except SystemExit:
+                raise AssertionError(f"{name}: `issues.py {args}` rejected by argparse")
+            seen.add(argv[0])
+    assert {"ready", "check", "branch"} <= seen, seen
+
+
 # --- contract_check.py ------------------------------------------------------------------------
 
 def test_every_workflow_call_uses_only_real_contract_check_flags():

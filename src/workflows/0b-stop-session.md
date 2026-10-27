@@ -26,7 +26,7 @@ Leave next session with context to resume immediately. Ensure new entries are ta
     - **Merge-time sync:** run `gh pr list --state closed --search "closed:>=<Last Sync date>" --json number,mergedAt,closingIssuesReferences,headRefName` (`Last Sync` from `.memory/STATUS.md`); any PR back (merged, or closed unmerged) → read `references/post-merge-sync.md` and run it; none → skip silently. `Last Sync` missing or not a date → run it anyway; `gh` unavailable → skip and say so in the handoff `Blockers` line. Use its results for the handoff `Blockers` and `Follow-ups proposed`.
 2. Update `.memory/STATUS.md`, folder state only, by editing single fields and lines, never a whole-file rewrite:
     - Set `Last Sync` (today); set or clear `Blocker` and `Repo notes`.
-    - Remove this session's line from `Sessions` when its slice left `in progress`; prune the other lines whose issue is not in the `wip` read (`references/tracker-verbs.md`; the local backend's in-progress rows) or whose date is older than 14 days.
+    - Remove this session's line from `Sessions` when its slice left `in progress`; prune the other lines whose issue is not in the `wip` read (`references/tracker-verbs.md`) or whose date is older than 14 days.
     - Old-format STATUS (single-task fields or dated history instead of `Sessions`): propose the trimmed new-format file once and write it on confirmation.
 3. **Friction gate:** run steps 3–4 only if this session hit friction: a failed approach, a costly wrong assumption, a defect fixed, or a reviewer/audit catch. Else skip silently. For each defect fixed, ask "what would have prevented it?". Route every candidate per `references/environment-fix-ladder.md`.
 4. If a candidate reaches the LEARNINGS rung and is a durable lesson:

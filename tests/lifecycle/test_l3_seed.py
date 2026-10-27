@@ -3,8 +3,8 @@
 Driving `3b` onward otherwise costs four phases of live agent work to reach the one
 under test. These artifacts stand in for that work.
 
-The fixture has to be **self-consistent**, not merely present: the map rows must agree
-with the gh store, or 3b's local check would fail on my fixture rather than on the
+The fixture has to be **self-consistent**, not merely present: the seeded epic must pass
+`issues.py check`, or 3b's local check would fail on my fixture rather than on the
 lifecycle, which is the worst possible finding to produce.
 """
 import importlib.util
@@ -37,16 +37,10 @@ def seeded(tmp_path, monkeypatch):
     """A scaffold-shaped project with the upstream artifacts installed."""
     project = tmp_path / "project"
     (project / ".memory").mkdir(parents=True)
-    (project / ".memory" / "BACKLOG_MAP.md").write_text(
-        "| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "| BT-XXX | placeholder | planned | — | — | — | — | — | — |\n",
-        encoding="utf-8")
     scripts = project / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    (scripts / "reconcile.py").write_text(
-        (REPO / "src" / "scripts" / "reconcile.py").read_text(encoding="utf-8"),
-        encoding="utf-8")
+    for name in SCRIPTS:
+        (scripts / name).write_text((REPO / "src" / "scripts" / name).read_text(encoding="utf-8"), encoding="utf-8")
     subprocess.run(["git", "init", str(project)], capture_output=True, check=True)
 
     child = {"PATH": os.environ.get("PATH", "")}
@@ -54,8 +48,17 @@ def seeded(tmp_path, monkeypatch):
     child.update({"GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@harness.invalid",
                   "GIT_COMMITTER_NAME": "L3",
                   "GIT_COMMITTER_EMAIL": "l3@harness.invalid"})
+    assert issues(project, child, "init").returncode == 0  # what `scaffold.py --tracker local` runs
     e.seed_upstream(project, child, shim_dir)
     return project, child
+
+
+SCRIPTS = ("issues.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+
+
+def issues(project, child, *argv):
+    return subprocess.run([sys.executable, str(project / ".agents" / "scripts" / "issues.py"), *argv],
+                          cwd=str(project), env={**os.environ, **child}, capture_output=True, text=True)
 
 
 def store(child):
@@ -114,22 +117,20 @@ def test_the_upstream_artifacts_pass_their_own_phase_checks(seeded):
 # --- the world the artifacts describe -----------------------------------------
 
 def test_the_local_backend_seed_touches_no_github(seeded):
-    """The local backend never touches GitHub: the epic is a map row and the shim's store stays empty."""
+    """The local backend never touches GitHub: the epic is a store issue and the shim's store stays empty."""
     _, child = seeded
     store_file = Path(child["L3_GH_STORE"])
     assert not store_file.exists() or not store(child)["issues"]
 
 
-def test_the_local_epic_row_is_a_bt_local_row(seeded):
-    """Status bare in the Status column, never in Labels (3b:69); the id follows tracker-verbs `create`."""
-    project, _ = seeded
-    row = [ln for ln in a.read(project / ".memory" / "BACKLOG_MAP.md").splitlines()
-           if ln.startswith("| BT-LOCAL-")][0]
-    cells = [c.strip() for c in row.split("|")]
-    assert cells[1] == e._seed.LOCAL_EPIC_ID
-    assert cells[3] == "planned"
-    assert "status:" not in cells[4]
-    assert cells[5] == "v1.0.0"
+def test_the_local_epic_is_a_bt_local_issue_on_the_tracker_branch(seeded):
+    """`issues.py create` (tracker-verbs `create`): status is a field, never a label; the store passes `check`."""
+    project, child = seeded
+    epic = json.loads(issues(project, child, "get", e._seed.LOCAL_EPIC_ID).stdout)
+    assert epic["status"] == "planned" and epic["milestone"] == "v1.0.0"
+    assert "tier:epic" in epic["labels"] and not any(l.startswith("status:") for l in epic["labels"])
+    assert issues(project, child, "check").returncode == 0
+    assert not list(a.backlog_maps(project))
 
 
 def test_the_seed_is_committed_so_3d_starts_from_a_clean_tree(seeded):

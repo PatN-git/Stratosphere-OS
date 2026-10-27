@@ -6,15 +6,14 @@ import os
 from pathlib import Path
 
 from conftest import write_architecture
-from test_l3_assertions import ARCH, BACKLOG, MAP, _project_with_reconcile, _shimmed, a, gh, write
+from test_l3_assertions import ARCH, MAP, OLD_MAP, _project_with_reconcile, _shimmed, a, gh, write
 
 EPIC_LABELS = "status:planned,type:feature,tier:epic"
 SLICE_LABELS = "status:planned,type:feature,tier:slice,mode:AFK,size:small"
 
 
 def _github_project(tmp_path):
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
-    (proj / MAP).unlink()
+    proj = _project_with_reconcile(tmp_path)
     write_architecture(proj / ARCH, "github")
     return proj
 
@@ -47,7 +46,7 @@ def test_3b_github_fails_when_a_map_file_exists(tmp_path, monkeypatch):
     child = _shimmed(tmp_path, monkeypatch)
     _mint_feature()
     proj = _github_project(tmp_path)
-    write(proj / MAP, BACKLOG)
+    write(proj / MAP, OLD_MAP)
     problems, _ = a.check("3b", _github_ctx(proj, child))
     assert any("BACKLOG_MAP" in p for p in problems), problems
 

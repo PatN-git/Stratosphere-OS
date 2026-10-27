@@ -277,22 +277,17 @@ def test_0a_second_fails_on_a_retired_status_field_or_a_new_branch(tmp_path):
     assert any("only 3d creates branches" in p for p in problems)
 
 
-# --- 3b: the terminal sync gate, run rather than believed --------------------
+# --- 3b: the store and the gate, run rather than believed ---------------------
 
-BACKLOG = """---
-type: backlog
-generated:
-  at: 2026-01-01
----
-
-| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-001 | Ruleset parsing | planned | type:feature | v1.0.0 | — | — | 1.0 | — |
-"""
-
-
+# The retired v5 store: no backend may leave one (BT-221 moved the local tracker to the `<repo>/issues` branch).
+OLD_MAP = "| ID | Title | Status |\n|:---|:---|:---|\n| BT-LOCAL-x | X | planned |\n"
 MAP = Path(".memory") / "BACKLOG_MAP.md"  # relative to a project root
 ARCH = Path(".memory") / "ARCHITECTURE.md"
+SCRIPTS = ("issues.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+GIT_ID = {"GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@x", "GIT_COMMITTER_NAME": "L3",
+          "GIT_COMMITTER_EMAIL": "l3@x"}
+SLICE = "type:feature,tier:slice,mode:AFK,size:small"
+AC_BODY = "### Overview\nParse.\n\n### Acceptance Criteria (Verifiable)\n- [ ] Parses the ruleset\n"
 
 
 def _shimmed(tmp_path, monkeypatch):
@@ -305,51 +300,68 @@ def _shimmed(tmp_path, monkeypatch):
     return child
 
 
-def _project_with_reconcile(tmp_path, backlog):
+def _project_with_reconcile(tmp_path):
     proj = project(tmp_path)
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    for name in ("reconcile.py", "nightly_state.py"):  # reconcile imports nightly_state
+    for name in SCRIPTS:  # reconcile imports nightly_state; issues imports reconcile, ice_read and pr_body
         (scripts / name).write_text(
             (REPO / "src" / "scripts" / name).read_text(encoding="utf-8"),
             encoding="utf-8")
-    write(proj / ".memory" / "BACKLOG_MAP.md", backlog)
     return proj
 
 
-ROW = "| BT-LOCAL-ruleset-parsing | Ruleset parsing | planned | type:feature | v1.0.0 | — | — | 1.0 | — |\n"
+def _issues(proj, *argv):
+    r = subprocess.run([sys.executable, str(proj / ".agents" / "scripts" / "issues.py"), *argv], cwd=str(proj),
+                       env={**os.environ, **GIT_ID}, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    return r.stdout.strip()
 
 
-def _local_3b(tmp_path, monkeypatch, after, *, mint_issue=False):
+def _local_3b(tmp_path, monkeypatch, *, labels=SLICE, body=AC_BODY, mint=True, mint_issue=False, map_file=False):
     child = _shimmed(tmp_path, monkeypatch)
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
+    proj = _project_with_reconcile(tmp_path)
+    _issues(proj, "init")
+    epic = _issues(proj, "create", "--title", "Flag evaluation", "--label", "type:feature,tier:epic")
     before = a.snapshot(proj)
     if mint_issue:
         gh.main(["issue", "create", "--title", "Ruleset parsing"])
-    write(proj / ".memory" / "BACKLOG_MAP.md", after)
+    if mint:
+        write(tmp_path / "body.md", body)
+        _issues(proj, "create", "--title", "Ruleset parsing", "--label", labels, "--parent", epic,
+                "--body-file", str(tmp_path / "body.md"))
+    if map_file:
+        write(proj / MAP, OLD_MAP)
     c = a.Context(project=proj, child_env={**os.environ}, store=Path(child["L3_GH_STORE"]), before=before)
     return a.check("3b", c)[0]
 
 
-def test_3b_local_passes_when_it_appends_a_bt_local_row_and_touches_no_github(tmp_path, monkeypatch):
-    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW
-    assert _local_3b(tmp_path, monkeypatch, after) == []
+def test_3b_local_passes_when_it_creates_a_checked_slice_and_touches_no_github(tmp_path, monkeypatch):
+    assert _local_3b(tmp_path, monkeypatch) == []
 
 
-def test_3b_local_fails_when_no_row_was_appended(tmp_path, monkeypatch):
-    problems = _local_3b(tmp_path, monkeypatch, BACKLOG + "\n")
-    assert any("no BACKLOG_MAP row" in p for p in problems)
+def test_3b_local_fails_when_no_slice_was_created(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, mint=False)
+    assert any("no slice" in p for p in problems), problems
 
 
-def test_3b_local_fails_on_a_row_that_is_not_a_bt_local_id(tmp_path, monkeypatch):
-    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW.replace("BT-LOCAL-ruleset-parsing", "BT-002")
-    problems = _local_3b(tmp_path, monkeypatch, after)
-    assert any("BT-LOCAL-<slug>" in p and "BT-002" in p for p in problems)
+def test_3b_local_fails_when_a_slice_body_has_no_acceptance_criteria(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, body="### Overview\nParse.\n")
+    assert any("BT-LOCAL-ruleset-parsing" in p and "Acceptance Criteria" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_issues_check_finds_a_bad_label_set(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, labels="type:feature,tier:slice,mode:AFK")
+    assert any("issues.py check" in p and "size:" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_a_backlog_map_exists(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, map_file=True)
+    assert any("BACKLOG_MAP.md" in p for p in problems), problems
 
 
 def test_3b_local_fails_when_it_created_a_github_issue(tmp_path, monkeypatch):
-    after = BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16") + ROW
-    problems = _local_3b(tmp_path, monkeypatch, after, mint_issue=True)
+    problems = _local_3b(tmp_path, monkeypatch, mint_issue=True)
     assert any("never touches GitHub" in p for p in problems)
 
 

@@ -48,7 +48,7 @@ def test_the_github_scenario_runs_end_to_end_with_no_map_file(monkeypatch):
         assert not (project / ".memory" / "BACKLOG_MAP.md").exists()
         assert re.search(r"^tracker: github$", (project / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8"), re.M)
         before = a.snapshot(project, env.bare)
-        assert before["backlog_md"] is None
+        assert before["local_issues"] is None, "GitHub mode created a local tracker store"
 
         # 3b: two slices under the epic (BT-001), the second blocked by the first
         gh.main(["issue", "create", "--title", "Slice one", "--label", SLICE, "--milestone", "v1.0.0"])
@@ -95,7 +95,3 @@ def test_env_only_github_has_no_map_file():
         assert not (env.project / ".memory" / "BACKLOG_MAP.md").exists()
         assert (env.project / ".memory" / "ARCHITECTURE.md").exists()
 
-
-def test_env_defaults_to_the_local_tracker_with_its_map():
-    with e.lifecycle_env(REPO, scaffold=True) as env:
-        assert (env.project / ".memory" / "BACKLOG_MAP.md").exists()

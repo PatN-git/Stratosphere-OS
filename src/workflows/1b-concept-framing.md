@@ -35,7 +35,7 @@ Run the `load-memory` skill to restore session context (read-only).
 
 1. Read `.memory/GLOSSARY.md` to avoid re-definitions.
 2. Capture raw ask verbatim. Restate in one sentence. If multiple independent problems, ask: *"This sounds like N problems. Which one are we grilling?"* Do not grill multiple problems in one session.
-3. Scan for overlaps: github → `gh issue list --state open --search "<keywords from the ask>" --json number,title,labels` (never a whole-backlog read); local → scan the titles in `.memory/BACKLOG_MAP.md`.
+3. Scan for overlaps: github → `gh issue list --state open --search "<keywords from the ask>" --json number,title,labels` (never a whole-backlog read); local → the titles of `python .agents/scripts/issues.py list`.
 4. Small items start in `1b` without ODI.
 5. If complex/foggy, recommend `/1c-concept-map`.
 6. **Multi-sided check:** Ask: *"Is this a multi-sided product?"* If yes, read `references/multi-sided-discovery.md` and append focus areas. RAT tests both sides (10 DMs each). `1b` grills and flags both sides but does not assign per-side opportunity scores — scoring is a `/1a-research` activity (it has the evidence source; `1b` does not).

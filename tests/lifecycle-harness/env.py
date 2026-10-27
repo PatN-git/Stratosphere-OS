@@ -218,7 +218,8 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
                   vendor: bool = False, seed: bool = False, tracker: str = "local"):
     """Build an isolated project with StratOS installed, and tear it down.
 
-    `tracker="github"` installs with `--tracker github`: no `BACKLOG_MAP.md` is placed, and the seed writes no row.
+    `tracker` is passed to `scaffold.py --tracker`: `local` creates the `throwaway/issues` tracker branch, `github`
+    keeps no local store.
     """
     repo_root = Path(repo_root).resolve()
     real_home = Path(os.path.expanduser("~"))
@@ -246,12 +247,14 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
 
         home = root / "home"
         project = root / "project"
-        bare = root / "origin.git"
+        # The repo name: the local tracker branch is `throwaway/issues`. The remote is added with forward slashes,
+        # since `issues.py` takes the name from the URL's last `/` segment.
+        bare = root / "throwaway.git"
         for d in (home, project):
             d.mkdir(parents=True)
         subprocess.run(["git", "init", "--bare", str(bare)], capture_output=True, check=True)
         subprocess.run(["git", "init", str(project)], capture_output=True, check=True)
-        subprocess.run(["git", "-C", str(project), "remote", "add", "origin", str(bare)],
+        subprocess.run(["git", "-C", str(project), "remote", "add", "origin", bare.as_posix()],
                        capture_output=True, check=True)
 
         child = scrub(dict(os.environ))
@@ -278,7 +281,7 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
                   f"the phases that would have produced them were NOT driven")
 
         strip_remotes(project)
-        subprocess.run(["git", "-C", str(project), "remote", "add", "origin", str(bare)],
+        subprocess.run(["git", "-C", str(project), "remote", "add", "origin", bare.as_posix()],
                        capture_output=True)
         preflight_remotes(root)
 
@@ -587,7 +590,7 @@ def _built_dist(repo_root: Path) -> Path:
 
 
 def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict, tracker: str = "local") -> None:
-    """Build the bundle and scaffold it into the project (Slice 1's core). `tracker="github"` adds `--tracker github`."""
+    """Build the bundle and scaffold it into the project (Slice 1's core) with `--tracker <tracker>`."""
     dist = _built_dist(repo_root)
     claude_dir = home / ".claude"
     # The canonical bundle is what a skills installer places: skill folders, with the
@@ -599,15 +602,15 @@ def _install_stratos(repo_root: Path, home: Path, project: Path, child: dict, tr
     # full-depth run drove 1b against a project with no .agents/ and no .memory/
     # at all, and nothing said so. Fail loudly instead.
     scaffold = ["python", str(claude_dir / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py")]
-    r = subprocess.run(scaffold + (["--tracker", GITHUB] if tracker == GITHUB else []),
+    r = subprocess.run(scaffold + ["--tracker", tracker],
                        cwd=str(project), env=child, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(
             f"scaffold.py failed (exit {r.returncode}):\n"
             f"{(r.stdout or '')[-800:]}\n{(r.stderr or '')[-800:]}")
     assert_scaffolded(project)
-    if tracker == GITHUB and (project / ".memory" / "BACKLOG_MAP.md").exists():
-        raise RuntimeError("scaffold --tracker github placed a BACKLOG_MAP.md; GitHub mode keeps no map")
+    if (project / ".memory" / "BACKLOG_MAP.md").exists():
+        raise RuntimeError("scaffold placed the retired BACKLOG_MAP.md; no tracker backend keeps a map")
     assert_memory_valid(project, child)
 
 

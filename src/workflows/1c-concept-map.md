@@ -21,9 +21,7 @@ timestamp: 2026-10-22
 ## Phase 0: Resume & Route
 
 1. **Hydrate:** Run the `load-memory` skill to restore session context (read-only).
-2. **Discover Open Maps:** Query open concept maps:
-   - **GitHub CLI:** `gh issue list --label concept:map --state open`
-   - **BT-LOCAL Fallback:** Scan `docs/discovery/*.map.md` for open maps.
+2. **Discover Open Maps:** `list` the open `concept:map` issues (`references/tracker-verbs.md`).
 3. **Map Selection:** Present open maps. Resume existing map (proceed to Phase 2: Work) or proceed to Phase 1: Chart to start new map.
 4. **Fog-or-Flat:** If new map, assess complexity. Single-session and no dependencies → redirect `/1b-concept-framing`; else proceed to Phase 1: Chart.
 
@@ -33,12 +31,10 @@ timestamp: 2026-10-22
 
 1. **Destination:** Define destination and scope.
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
-3. **Register Map:**
-   - **GitHub CLI:** Create the `concept:map` issue using `references/concept-map-template.md` (`create`, `status:in progress`, milestone-exempt; `references/tracker-verbs.md`). GitHub is the only record.
-   - **BT-LOCAL (local backend):** Create `docs/discovery/<slug>.map.md` using template; row in `BACKLOG_MAP.md`.
+3. **Register Map:** `create` the `concept:map` issue using `references/concept-map-template.md` (`status:in progress`, milestone-exempt; `references/tracker-verbs.md`). The tracker is the only record.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
-   - Link as sub-issues and wire blockers via the `addSubIssue` / `addBlockedBy` mutations per `references/github-issue-relations.md`.
+   - Link as sub-issues and wire blockers with `set_parent` / `add_blocker` (`references/tracker-verbs.md`).
 5. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
 ---
@@ -48,7 +44,7 @@ timestamp: 2026-10-22
 1. **Calculate Frontier:** Query the tracker to compute the "frontier" (the set of open, unblocked, unassigned decision tickets):
    - Open tickets with no open dependencies/blockers and no assignee.
 2. **Select & Claim Ticket:** Present the frontier to the user. The user select (or the agent picks) one ticket.
-   - **Claim:** Assign the ticket to yourself (`gh issue edit <N> --add-assignee @me`) to lock the ticket.
+   - **Claim:** `claim` the ticket (`references/tracker-verbs.md`) to lock it.
 3. **Grilling Guidelines (G1-G3):**
    - **G1 (Recommend when grounded, open when not):** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
    - **G2 (Facts vs Decisions):** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
@@ -71,7 +67,7 @@ timestamp: 2026-10-22
 ## Phase 3: Converge
 
 1. **Convergence Condition:** Run Phase 3: Converge only when frontier and fog are empty.
-2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`). Stamp `generated.by: 1c-concept-map` and set `concept-map:` to the map (`#<n>` of the `concept:map` issue, or the `.map.md` path under BT-LOCAL).
+2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`). Stamp `generated.by: 1c-concept-map` and set `concept-map:` to the map (the `concept:map` issue's id).
 3. **RAT Audit:** Invoke a subagent to challenge brief:
    - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
 4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist, then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.
@@ -87,5 +83,5 @@ timestamp: 2026-10-22
    - RAT + cheapest test documented with status.
    - No unfiled Open Questions.
 5. **Crystallize Vocabulary:** Only after the user confirmation in step 4 (per `.agents/rules/memory-protocol.md` — never write a `.memory/` content entry without it), write confirmed terms to `.memory/GLOSSARY.md` as `[[G-xxx]] [ASSUMED]`, each with its `Avoid:` list (rejected synonyms from the map's resolutions).
-6. **Archive Lifecycle:** `close` the `concept:map` issue and `set_status` it `done` (local backend: set the row's status in `BACKLOG_MAP.md` to `done`).
+6. **Archive Lifecycle:** `close` the `concept:map` issue and `set_status` it `done`.
 7. **Hand-off:** Expose brief. Trigger `/2a-write-prd` or exit ramps.
