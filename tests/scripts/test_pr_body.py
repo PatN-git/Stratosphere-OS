@@ -873,6 +873,24 @@ def test_unit_branch_ok(repo, branch, ok):
     assert unit_ok(repo, *BASE_UNIT, "--branch", branch)["branch_ok"] is ok
 
 
+def test_unit_branch_ok_rejects_a_branch_of_a_longer_local_id(repo):
+    write_backlog(repo, ("BT-LOCAL-login", "tier:slice"), ("BT-LOCAL-login-form", "tier:slice"))
+    args = ["--slice", "BT-LOCAL-login", "--milestone", NONE]
+    assert unit_ok(repo, *args, "--branch", "feature/BT-LOCAL-login-x")["branch_ok"] is True
+    assert unit_ok(repo, *args, "--branch", "origin/feature/BT-LOCAL-login-form-x")["branch_ok"] is False
+    assert unit_ok(repo, "--slice", "BT-LOCAL-login-form", "--milestone", NONE,
+                   "--branch", "feature/BT-LOCAL-login-form-x")["branch_ok"] is True
+
+
+def test_unit_branch_ok_guards_the_parent_epics_glob_and_fails_open_without_a_store(repo):
+    args = ["--slice", "BT-LOCAL-s", "--parent", "BT-LOCAL-auth", "--milestone", NONE, "--branch"]
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-v2-x")["branch_ok"] is True  # no store: the glob alone
+    write_backlog(repo, ("BT-LOCAL-auth", "tier:epic"), ("BT-LOCAL-auth-v2", "tier:epic"),
+                  ("BT-LOCAL-s", "tier:slice", "BT-LOCAL-auth"))
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-v2-x")["branch_ok"] is False
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-x")["branch_ok"] is True
+
+
 def test_unit_smoke_matches_the_plan(repo):
     out = unit_ok(repo, "--slice", "BT-070", "--milestone", "v1.2.5", "--parent", "BT-051", "--type", "feat",
                   "--slug", "Offline sync", "--branch", "feat/BT-051-old")

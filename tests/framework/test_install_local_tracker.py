@@ -47,3 +47,17 @@ def test_user_facing_pages_name_no_map():
     for rel in ("README.md", "docs/status-label-contract.md"):
         assert "BACKLOG_MAP" not in read(rel), rel
     assert "docs/issues/" in read("README.md")
+
+
+def test_init_local_tracker_outside_a_git_repo_records_the_key_and_says_how_to_finish(tmp_path, monkeypatch, capsys):
+    sys.path.insert(0, str(REPO_ROOT / "src" / "scripts"))
+    import scaffold
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))  # never discover a repository above the sandbox
+    project = tmp_path / "shop"
+    (project / ".memory").mkdir(parents=True)
+    arch = project / ".memory" / "ARCHITECTURE.md"
+    arch.write_text("---\ntype: architecture\n---\n", encoding="utf-8")
+    scaffold.init_local_tracker(project, arch)
+    out = capsys.readouterr().out
+    assert re.search(r"^tracker_branch: shop/issues$", arch.read_text(encoding="utf-8"), re.M)
+    assert out.startswith("NOTE: local tracker not initialised") and "issues.py init" in out, out

@@ -452,3 +452,57 @@ def test_merged_of_ignores_a_longer_id_sharing_the_prefix(repo):
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
     assert issues.make_merged_of(issues.Tracker().store())(login) == 'none'
+
+
+def test_a_write_that_loses_the_compare_and_set_rereads_and_retries(repo, monkeypatch):
+    ok('init')
+    a = ok('create', '--title', 'A')
+    real, olds = issues.update_ref, []
+
+    def racing(ref, new, old):
+        olds.append(old)
+        if len(olds) == 1:  # another writer lands between this write's read and its update-ref
+            monkeypatch.setattr(issues, 'update_ref', real)
+            ok('comment', a, '--body', 'from the other writer')
+            monkeypatch.setattr(issues, 'update_ref', racing)
+        return real(ref, new, old)
+
+    monkeypatch.setattr(issues, 'update_ref', racing)
+    ok('set', a, '--add-label', 'type:bug')
+    monkeypatch.setattr(issues, 'update_ref', real)
+    assert len(olds) == 2 and olds[0] != olds[1], "the retry re-read the moved ref"
+    got = json.loads(ok('get', a))
+    assert got['labels'] == ['type:bug'] and len(got['comments']) == 1, "neither write was lost"
+    assert git(repo, 'rev-list', '--count', 'shop/issues') == '4\n'  # init, create, the other comment, the retried set
+
+
+def test_a_write_that_loses_every_attempt_raises_conflict_and_writes_nothing(repo, monkeypatch):
+    ok('init')
+    a = ok('create', '--title', 'A')
+    before = git(repo, 'rev-parse', 'shop/issues')
+    calls, real = [], issues.update_ref
+    monkeypatch.setattr(issues, 'update_ref', lambda ref, new, old: calls.append(old) and False)
+    code, text = run('set', a, '--add-label', 'type:bug')
+    assert code == 1 and text.startswith('[CONFLICT] shop/issues moved 4 times'), text
+    assert len(calls) == issues.MAX_RETRIES + 1
+    monkeypatch.setattr(issues, 'update_ref', real)
+    assert git(repo, 'rev-parse', 'shop/issues') == before
+    assert json.loads(ok('get', a))['labels'] == []
+
+
+def test_merged_of_ignores_a_longer_parent_id_sharing_the_prefix(repo):
+    ok('init')
+    epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
+    ok('create', '--title', 'Auth v2', '--label', 'type:feature,tier:epic')
+    db = ok('create', '--title', 'DB', '--label', SLICE, '--parent', epic)
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-v2-x')
+    (repo / 'f.txt').write_text('f\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'f')
+    git(repo, 'checkout', '-q', 'main')
+    assert issues.make_merged_of(issues.Tracker().store())(db) == 'none'
+
+
+def test_issues_and_reconcile_share_one_none_token_set():
+    import reconcile  # neither module imports the other at load time, so the constant is pinned here
+    assert issues.NONE_TOKENS == reconcile.NONE_TOKENS

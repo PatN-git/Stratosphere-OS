@@ -56,6 +56,10 @@ def _body(env, title):
     return str(p)
 
 
+def _tracker_files(env, branch):
+    return set(_git(env, "ls-tree", "-r", "--name-only", branch).split())
+
+
 def _ready_ids(env):
     return {ln.split(" |", 1)[0] for ln in _issues(env, "ready").splitlines() if ln and not ln.startswith("[")}
 
@@ -92,6 +96,8 @@ def test_the_local_scenario_runs_end_to_end_on_the_tracker_branch():
         got = json.loads(_issues(env, "get", one))
         assert got["status"] == "done" and any("Shipped on" in c for c in got["comments"])
         assert _ready_ids(env) == {two}
+        files = _tracker_files(env, branch)  # a closed slice moves to the archive path, its open path is gone
+        assert f"docs/issues/archive/{one}.md" in files and f"docs/issues/{one}.md" not in files
 
         # one state on every branch: a write from a feature branch is read on main with no merge
         main = _git(env, "branch", "--show-current").strip()  # the seeded default branch
@@ -99,8 +105,27 @@ def test_the_local_scenario_runs_end_to_end_on_the_tracker_branch():
         three = _issues(env, "create", "--title", "Follow-up from the branch", "--label", SLICE,
                         "--body-file", _body(env, "Follow-up from the branch"))
         assert _git(env, "rev-parse", "HEAD") == _git(env, "rev-parse", main), "the write committed to the branch"
+        _git(env, "commit", "-q", "--allow-empty", "-m", "feat(BT-LOCAL-flag-evaluation): evaluate flags")
         _git(env, "checkout", "-q", main)
         assert three in {i["id"] for i in json.loads(_issues(env, "list"))}
+
+        # 0b post-merge-sync: the feature PR merged (a git merge stands in); no merge closes a local issue, so the
+        # last slice ships and the epic is closed with `close`, which archives it
+        _git(env, "merge", "-q", "--no-ff", "-m", "Merge the feature", "feature/BT-LOCAL-flag-evaluation")
+        _issues(env, "claim", two, "--by", "feature/BT-LOCAL-flag-evaluation")
+        _issues(env, "close", two)
+        assert {i["state"] for i in json.loads(_issues(env, "children", epic))} == {"CLOSED"}
+        assert epic in {i["id"] for i in json.loads(_issues(env, "list"))}, "the epic is open until post-merge-sync"
+        _issues(env, "close", epic, "--reason", "completed")
+        got = json.loads(_issues(env, "get", epic))
+        assert (got["status"], got["state"], got["close_reason"]) == ("done", "CLOSED", "completed")
+        assert {epic, one, two}.isdisjoint(i["id"] for i in json.loads(_issues(env, "list")))
+        assert {epic, one, two} <= {i["id"] for i in json.loads(_issues(env, "list", "--all"))}
+        assert not {epic, one, two} & _ready_ids(env) and three in _ready_ids(env)
+        files = _tracker_files(env, branch)
+        assert {f"docs/issues/archive/{x}.md" for x in (epic, one, two)} <= files
+        assert not {f"docs/issues/{x}.md" for x in (epic, one, two)} & files
+        assert _issues(env, "check").startswith("[CHECK-OK")
 
         # the store never reaches the working tree or a feature branch; it stays coherent
         assert _git(env, "status", "--porcelain") == ""

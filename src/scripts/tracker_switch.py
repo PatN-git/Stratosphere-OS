@@ -28,7 +28,6 @@ REWRITE_ROOTS = ('.memory', 'docs')
 SKIP_DIRS = {'.git', '.tmp', 'node_modules', '.agents', '.claude', 'dist', '__pycache__'}
 LOCAL_ID = re.compile(r'BT-LOCAL-[A-Za-z0-9_-]*[A-Za-z0-9_]')
 MARKER = re.compile(r'<!-- tracker-switch: (\S+) -->')
-NONE = reconcile.NONE_TOKENS
 CARRIED = re.compile(r'^(Refs:|[-*]\s*\*\*(Impact|Confidence):\*\*).*$', re.M)  # lines an existing issue gains
 
 
@@ -70,12 +69,9 @@ def gh(*args):
 
 
 def read_rows(arch=ARCH):
-    """The store's issues as rows (id, title, status, labels, milestone, parent, blocked, body, comments, reason)."""
+    """The store's issues as `issues.full` rows (`get`'s JSON: milestone and parent are None when unset)."""
     s = store_lib.Tracker(arch).store()
-    return [{'id': i['id'], 'title': i['title'], 'status': i['status'], 'labels': i['labels'],
-             'milestone': i['milestone'] or '—', 'parent': i['parent'] or '—', 'blocked': i['blocked_by'],
-             'body': i['body'], 'comments': i['comments'], 'reason': i['close_reason'] if i['closed'] else None}
-            for i in sorted(s.issues.values(), key=lambda i: i['id'])]
+    return [store_lib.full(i) for i in sorted(s.issues.values(), key=lambda i: i['id'])]
 
 
 def extra_lines(row, body=''):
@@ -105,7 +101,7 @@ def create_issue(row):
     args = ['issue', 'create', '--title', row['title']]
     for label in labels:
         args += ['--label', label]
-    if row['milestone'] not in NONE:
+    if row['milestone']:
         args += ['--milestone', row['milestone']]
     body = (row['body'].rstrip('\n') + '\n\n' if row['body'] else '') + f"<!-- tracker-switch: {row['id']} -->\n"
     out = gh(*args, '--body-file', body_file(body))
@@ -184,10 +180,10 @@ def sync_row(row, numbers, bodies):
         if not any(marker in (c.get('body') or '') for c in posted):
             text = "Comments from the local tracker:\n\n" + '\n'.join(row['comments']) + f"\n\n{marker}\n"
             gh('issue', 'comment', str(n), '--body-file', body_file(text))
-    if row['reason'] and not is_existing:
-        gh('issue', 'close', str(n), '--reason', row['reason'])
-    related = [(row['parent'], link_parent)] if row['parent'] not in NONE else []
-    related += [(b, link_blocked_by) for b in row['blocked']]
+    if row['close_reason'] and not is_existing:
+        gh('issue', 'close', str(n), '--reason', row['close_reason'])
+    related = [(row['parent'], link_parent)] if row['parent'] else []
+    related += [(b, link_blocked_by) for b in row['blocked_by']]
     for other, link in related:
         target = numbers.get(other) or real_number(other)
         if target is None:
@@ -218,7 +214,7 @@ def main(argv=None):
         numbers = {r['id']: real_number(r['id']) or marked.get(r['id']) for r in rows}
         for r in rows:
             if numbers[r['id']] is None:
-                ms = f" milestone={r['milestone']}" if r['milestone'] not in NONE else ''
+                ms = f" milestone={r['milestone']}" if r['milestone'] else ''
                 print(f"[PLAN create {r['id']}: {r['title']!r} labels={r['labels']} status:{r['status']}{ms}]")
             elif real_number(r['id']) is None:
                 print(f"[PLAN reuse {r['id']} -> {padded(numbers[r['id']])}: found by its marker]")
