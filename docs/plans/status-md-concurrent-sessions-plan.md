@@ -1,6 +1,15 @@
+---
+type: plan
+title: STATUS.md for concurrent sessions (BT-218)
+generated:
+  by: claude-code session (PatN-git)
+  at: 2026-10-22
+version: "1.0.0"
+---
+
 # STATUS.md for concurrent sessions: plan
 
-Status: minted 2026-10-22 as BT-218 (slice S7 of epic BT-194, blocked by BT-198/BT-199, blocks BT-200), shipped in PR #216 (release v5.0.0).
+Status: implemented 2026-10-27 (decisions: stale rule = issue not in progress or line older than 14 days; local resume note = `.memory/resume/<id>.md`); minted 2026-10-22 as BT-218 (slice S7 of epic BT-194, blocked by BT-198/BT-199, blocks BT-200), shipped in PR #216 (release v5.0.0).
 
 ## Problem
 
