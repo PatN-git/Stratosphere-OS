@@ -470,6 +470,8 @@ SCOPED_CMDS = [
     "pytest tests/x.py::test_y", "pytest -k foo", "pytest -kfoo", "pytest -m slow", "pytest --ignore=tests/a",
     "pytest --last-failed", "vitest run --changed", "npx vitest run ingestion", "npm run test:ingestion",
     "pytest tests", "npm test -- src/lib", "bash -c 'npx vitest run src/lib'",
+    "python -m unittest tests.test_x", "python -m unittest tests/test_x.py", "python -m unittest discover -k foo",
+    "python -m unittest -k foo", "python -m unittest discover -s",
 ]
 FULL_CMDS = [
     "pytest", "pytest -q", "python -m pytest -n 6 --dist worksteal", "python -m pytest -n auto -q -p no:cacheprovider",
@@ -479,6 +481,9 @@ FULL_CMDS = [
     "bash scripts/check.sh && python -m pytest tests/jules -q",
     "npm test && python .agents/scripts/validate_memory.py --path .memory",
     'bash -c "python -m pytest -q; bash scripts/check.sh"',
+    "python -m unittest", "python -m unittest discover", "python3 -m unittest discover -v", "py -m unittest -q",
+    "python -m unittest discover -s tests -p 'test_*.py' -t .",
+    "python .agents/scripts/test_gate.py record --suite BT-5 -- python -m unittest discover -s tests",
 ]
 
 

@@ -256,6 +256,18 @@ def edge_checks():
             check("offline dependents: KEEP for the unknown edge, CLEAR for same-unit, exit 0",
                   code == 0 and "[KEEP BT-301 <- BT-070]" in out and "[CLEAR BT-207 <- BT-070]" in out)
             check("offline: pr_merge_state is never called", looked == [])
+
+            # 11. local ids (BT-LOCAL-<slug>) have no GitHub issue: CLEAR carries the issues.py hint, not a skip
+            p.write_text("\n".join([
+                "| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |",
+                "|----|-------|--------|--------|-----------|--------|------------|-----|-----|",
+                "| BT-LOCAL-aaa | t | done | type:feature | — | — | — | ICE | — |",
+                "| BT-LOCAL-bbb | t | planned | type:feature | — | — | BT-LOCAL-aaa | ICE | — |"]) + "\n", encoding="utf-8")
+            code, out = _run(["--edges", "dependents", "--all-open", "--backlog", path])
+            check("local ids: CLEAR cmd is issues.py set <D> --remove-blocker <B>",
+                  code == 0 and out.splitlines()[0].startswith("[CLEAR BT-LOCAL-bbb <- BT-LOCAL-aaa]")
+                  and out.splitlines()[1] == "  cmd: python .agents/scripts/issues.py set BT-LOCAL-bbb --remove-blocker BT-LOCAL-aaa"
+                  and "# skip" not in out)
     finally:
         rec.gh_available, rec.pr_merge_state = orig_avail, orig_state
 
