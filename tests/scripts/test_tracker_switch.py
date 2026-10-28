@@ -212,3 +212,70 @@ def test_an_unmigrated_map_halts_before_gh(project, capsys):
     (root / ".memory" / "BACKLOG_MAP.md").write_text(MAP, encoding="utf-8")
     assert ts.main(["--apply"]) == 2
     assert "[MIGRATE-FIRST]" in capsys.readouterr().out
+
+
+def recording_gh(monkeypatch):
+    """Every gh call from here on, in order, as an argv list."""
+    calls, real = [], reconcile._gh_run
+    monkeypatch.setattr(reconcile, "_gh_run", lambda a: (calls.append(list(a)), real(a))[1])
+    return calls
+
+
+def test_milestones_are_ensured_before_any_issue_is_created(project, monkeypatch):
+    root, store = project
+    calls = recording_gh(monkeypatch)
+    assert ts.main(["--apply"]) == 0
+    made = [i for i, a in enumerate(calls) if a[:1] == ["api"] and "title=v1.0.1" in a]
+    assert len(made) == 1 and made[0] < min(i for i, a in enumerate(calls) if a[:2] == ["issue", "create"])
+    assert any(m["title"] == "v1.0.1" for m in gh_state(store)["milestones"])
+    ts.write_tracker(root / ".memory" / "ARCHITECTURE.md", "local")
+    assert ts.main(["--apply"]) == 0
+    assert len([a for a in calls if a[:1] == ["api"] and "title=v1.0.1" in a]) == 1, "an existing milestone is not created again"
+
+
+def test_created_issues_hold_the_new_ids_a_claim_is_an_assignee_and_a_rerun_edits_nothing(project, monkeypatch, capsys):
+    root, store = project
+    (root / ".tmp").mkdir(exist_ok=True)
+    text = root / ".tmp" / "login.md"
+    text.write_text("Parent: BT-LOCAL-auth\nBlocked by: BT-LOCAL-db\n", encoding="utf-8")
+    quiet = lambda s: None
+    assert issues.main(["set", "BT-LOCAL-login", "--body-file", str(text)], out=quiet) == 0
+    assert issues.main(["comment", "BT-LOCAL-login", "--body", "after BT-LOCAL-db"], out=quiet) == 0
+    assert issues.main(["claim", "BT-LOCAL-login", "--by", "feat/login"], out=quiet) == 0
+    before = rewrite_roots(root)
+    assert ts.main(["--apply"]) == 0
+    out = capsys.readouterr().out
+    by_title = {i["title"]: i for i in new_issues(store)}
+    auth, db, login = by_title["Auth epic"], by_title["DB setup"], by_title["Login page"]
+    assert login["body"] == (f"Parent: BT-{auth['number']:03d}\nBlocked by: BT-{db['number']:03d}\n\n"
+                             "<!-- tracker-switch: BT-LOCAL-login -->\n")
+    comment = login["comments"][0]["body"]
+    assert f"after BT-{db['number']:03d}" in comment and "BT-LOCAL-db" not in comment
+    assert "<!-- tracker-switch-comments: BT-LOCAL-login -->" in comment
+    for i in new_issues(store):
+        assert "BT-LOCAL-" not in re.sub(r"<!-- tracker-switch: \S+ -->", "", i["body"]), i["title"]
+    assert login["assignees"] == ["@me"] and db["assignees"] == [] and auth["assignees"] == []
+    # the count names the files that really changed
+    after = rewrite_roots(root)
+    assert f"{len([p for p in after if before[p] != after[p]])} file(s) rewritten" in out
+    arch = root / ".memory" / "ARCHITECTURE.md"
+    # a re-run edits no body, posts no comment and adds no assignee
+    ts.write_tracker(arch, "local")
+    calls = recording_gh(monkeypatch)
+    assert ts.main(["--apply"]) == 0
+    assert [a for a in calls if a[:2] in (["issue", "edit"], ["issue", "comment"], ["issue", "create"])] == []
+    assert gh_state(store)["issues"][str(login["number"])]["assignees"] == ["@me"]
+
+
+def rewrite_roots(root):
+    """{path: bytes} of the files the switch may rewrite (.memory/ minus the archive and the key's file, docs/)."""
+    return {p: p.read_bytes() for top in (".memory", "docs") for p in (root / top).rglob("*")
+            if p.is_file() and "archive" not in p.parts and p.name != "ARCHITECTURE.md"}
+
+
+def test_a_failing_gh_with_no_message_still_names_a_reason(project, monkeypatch, capsys):
+    real = reconcile._gh_run
+    monkeypatch.setattr(reconcile, "_gh_run",
+                        lambda a: (7, "", "") if a[:2] == ["issue", "create"] and "Login page" in a else real(a))
+    assert ts.main(["--apply"]) == 1
+    assert "[SWITCH-FAIL: gh issue create: exit 7;" in capsys.readouterr().out

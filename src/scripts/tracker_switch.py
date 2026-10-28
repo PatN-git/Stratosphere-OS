@@ -4,14 +4,17 @@
 The source is the issues.py store (the `<repo>/issues` branch); a v5 `.memory/BACKLOG_MAP.md` must be migrated into
 it first (`issues.py migrate`). Default is a dry run: prints the plan and writes nothing, locally or on GitHub.
 `--apply` then:
-  1. creates a GitHub issue per `BT-LOCAL-*` issue (labels, status label, milestone, the body verbatim; its comments
-     as one comment; a closed issue is closed with its reason), then links Parent and Blocked by (`gh api graphql`);
+  1. ensures the milestones the issues use, creates a GitHub issue per `BT-LOCAL-*` issue (labels, status label,
+     milestone, the body; its comments as one comment; a closed issue is closed with its reason; a claimed one is
+     assigned `@me`), then rewrites the `BT-LOCAL-*` ids in those bodies and comments to the new `BT-<padded>`
+     (the marker keeps the old id) and links Parent and Blocked by (`gh api graphql`);
   2. appends the `Refs:` and Impact/Confidence lines a store issue holds to issues that already are real (`BT-007`);
   3. rewrites `BT-LOCAL-*` -> `BT-<padded>` under `.memory/` and `docs/`; every other hit is only reported;
   4. last, sets `tracker: github` in `.memory/ARCHITECTURE.md`. The tracker branch is kept as the archive.
 Re-running is safe: an issue is found again by the `<!-- tracker-switch: BT-LOCAL-x -->` marker in its body; links,
 comments and body lines already present are skipped, and the key is the last write (`[ALREADY-GITHUB]`).
 A `gh` failure stops the run before any local rewrite. Exit: 0 ok/dry run, 1 a step failed, 2 cannot run.
+A killed run can leave a `gh` child finishing its call; re-running is safe, the marker finds what it made.
 """
 import argparse
 import json
@@ -64,7 +67,7 @@ def write_key(path, key, value):
 def gh(*args):
     rc, out, err = reconcile._gh_run(list(args))
     if rc:
-        raise GhFail(f"gh {' '.join(args[:2])}: {(err or out).strip()[:200]}")
+        raise GhFail(f"gh {' '.join(args[:2])}: {(err or out).strip()[:200] or f'exit {rc}'}")
     return out
 
 
@@ -96,6 +99,24 @@ def body_file(text):
     return str(p)
 
 
+def rewrite_ids(text, numbers):
+    """`BT-LOCAL-x` -> `BT-<padded>` for every id with a number; others stay."""
+    return LOCAL_ID.sub(lambda m: padded(numbers[m.group(0)]) if numbers.get(m.group(0)) else m.group(0), text)
+
+
+def issue_body(row, numbers=None):
+    """The GitHub body of a store issue: its text (ids rewritten once `numbers` is known) plus the switch marker."""
+    text = row['body'] if numbers is None else rewrite_ids(row['body'], numbers)
+    return (text.rstrip('\n') + '\n\n' if text else '') + f"<!-- tracker-switch: {row['id']} -->\n"
+
+
+def ensure_milestones(titles):
+    """Create each milestone GitHub lacks: `gh issue create --milestone` fails on a missing one (tracker-verbs.md)."""
+    have = {t.strip() for t in gh('api', '--paginate', 'repos/{owner}/{repo}/milestones?state=open', '--jq', '.[].title').splitlines()}
+    for title in sorted(titles - have):
+        gh('api', 'repos/{owner}/{repo}/milestones', '-f', f'title={title}')
+
+
 def create_issue(row):
     labels = [l for l in row['labels'] if not l.startswith('status:')] + [f"status:{row['status']}"]
     args = ['issue', 'create', '--title', row['title']]
@@ -103,8 +124,7 @@ def create_issue(row):
         args += ['--label', label]
     if row['milestone']:
         args += ['--milestone', row['milestone']]
-    body = (row['body'].rstrip('\n') + '\n\n' if row['body'] else '') + f"<!-- tracker-switch: {row['id']} -->\n"
-    out = gh(*args, '--body-file', body_file(body))
+    out = gh(*args, '--body-file', body_file(issue_body(row)))
     return int(out.strip().rsplit('/', 1)[-1])
 
 
@@ -146,7 +166,7 @@ def pending_rewrites(numbers):
         for p, text in text_files(top) if Path(top).is_dir() else ():
             if p.as_posix().startswith('.memory/archive/'):
                 continue
-            new = LOCAL_ID.sub(lambda m: padded(numbers[m.group(0)]) if numbers.get(m.group(0)) else m.group(0), text)
+            new = rewrite_ids(text, numbers)
             if new != text:
                 yield p, new
 
@@ -167,6 +187,10 @@ def report_other_hits(numbers):
                 print(f"[OTHER-HIT {p.as_posix()}:{n} {m.group(0)} -> {padded(num) if num else 'a new BT id'} (not edited)]")
 
 
+def norm(text):
+    return text.replace('\r\n', '\n').strip()
+
+
 def sync_row(row, numbers, bodies):
     """Bring one row's issue up to date: Refs/ICE lines on an existing issue, closed when done, Parent and Blocked by linked."""
     n = numbers[row['id']]
@@ -174,11 +198,17 @@ def sync_row(row, numbers, bodies):
     if is_existing and (lines := extra_lines(row, bodies.get(n, ''))):
         body = bodies.get(n, '').rstrip('\n') + '\n\n' + '\n'.join(lines) + '\n'
         gh('issue', 'edit', str(n), '--body-file', body_file(body))
+    if not is_existing:
+        want = issue_body(row, numbers)
+        if norm(bodies.get(n, '')) != norm(want):  # a created issue still holds the old ids; a re-run finds it equal
+            gh('issue', 'edit', str(n), '--body-file', body_file(want))
+        if row['claimed_by'] and not json.loads(gh('issue', 'view', str(n), '--json', 'assignees'))['assignees']:
+            gh('issue', 'edit', str(n), '--add-assignee', '@me')  # the claim verb's GitHub form
     if row['comments'] and not is_existing:
         marker = f"<!-- tracker-switch-comments: {row['id']} -->"
         posted = json.loads(gh('issue', 'view', str(n), '--json', 'comments'))['comments']
         if not any(marker in (c.get('body') or '') for c in posted):
-            text = "Comments from the local tracker:\n\n" + '\n'.join(row['comments']) + f"\n\n{marker}\n"
+            text = "Comments from the local tracker:\n\n" + rewrite_ids('\n'.join(row['comments']), numbers) + f"\n\n{marker}\n"
             gh('issue', 'comment', str(n), '--body-file', body_file(text))
     if row['close_reason'] and not is_existing:
         gh('issue', 'close', str(n), '--reason', row['close_reason'])
@@ -227,9 +257,11 @@ def main(argv=None):
             print(f"[NO-ARCHITECTURE: {ARCH} needs frontmatter to hold `tracker:`; nothing changed]")
             return 2
         created = 0
+        ensure_milestones({r['milestone'] for r in rows if numbers[r['id']] is None and r['milestone']})
         for r in rows:
             if numbers[r['id']] is None:
                 numbers[r['id']] = create_issue(r)
+                bodies[numbers[r['id']]] = issue_body(r)
                 created += 1
                 print(f"[CREATED {r['id']} -> {padded(numbers[r['id']])}]")
         for r in rows:

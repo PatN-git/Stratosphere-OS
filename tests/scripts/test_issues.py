@@ -73,6 +73,20 @@ def test_branch_is_the_repo_name_plus_issues_and_the_architecture_key_wins(repo)
     assert ok('branch') == 'tracker/issues'
 
 
+def test_every_command_refuses_under_tracker_github_and_runs_as_before_otherwise(repo):
+    arch = repo / '.memory' / 'ARCHITECTURE.md'
+    arch.parent.mkdir()
+    arch.write_text('---\ntype: architecture\ntracker: github\n---\n')
+    msg = '[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs.md)'
+    for argv in (('list',), ('init',), ('branch',), ('create', '--title', 'A')):
+        assert run(*argv) == (1, msg), argv
+    assert git(repo, 'branch', '--list', 'shop/issues') == ''
+    arch.write_text('---\ntype: architecture\ntracker: local\n---\n')
+    assert ok('init') == '[INIT shop/issues]' and json.loads(ok('list')) == []
+    arch.unlink()
+    assert json.loads(ok('list')) == []
+
+
 def test_init_creates_the_branch_once_and_never_touches_the_working_tree(repo):
     assert ok('init') == '[INIT shop/issues]'
     assert ok('init') == '[INIT-EXISTS shop/issues]'
@@ -156,6 +170,24 @@ def test_comment_appends_dated_entries_under_comments(repo):
                                                     '- 2026-10-27: line one\n  line two']
     assert git(repo, 'show', f'shop/issues:docs/issues/{a}.md').endswith(
         '---\nBody\n\n<!-- issues.py: comments -->\n## Comments\n- 2026-10-27: Shipped in commit abc\n- 2026-10-27: line one\n  line two\n')
+
+
+RESUME = '<!-- stratos:resume -->'
+
+
+def test_a_resume_note_comment_is_the_resume_file_replaced_whole_and_makes_no_commit(repo):
+    ok('init')
+    a = ok('create', '--title', 'A')
+    before = git(repo, 'rev-parse', 'shop/issues')
+    assert ok('comment', a, '--body', f'{RESUME}\nfirst') == a
+    note = repo / '.memory' / 'resume' / f'{a}.md'
+    assert note.read_text(encoding='utf-8') == f'{RESUME}\nfirst'
+    ok('comment', a, '--body', f'{RESUME}\nsecond')
+    assert note.read_text(encoding='utf-8') == f'{RESUME}\nsecond'
+    assert git(repo, 'rev-parse', 'shop/issues') == before and json.loads(ok('get', a))['comments'] == []
+    ok('comment', a, '--body', 'plain')
+    assert json.loads(ok('get', a))['comments'] == ['- 2026-10-27: plain'] and note.read_text(encoding='utf-8').endswith('second')
+    assert run('comment', 'BT-LOCAL-nope', '--body', f'{RESUME}\nx')[0] == 1
 
 
 def test_claim_is_compare_and_set(repo):

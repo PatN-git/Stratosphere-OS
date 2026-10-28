@@ -243,6 +243,24 @@ def test_commit_scoped_to_the_parent_is_not_a_slice_or_closes_line(repo):
     assert "Closes #10." in build(repo, "BT-11", "--close-parent")
 
 
+def test_local_backend_ids_build_a_body_and_keep_prior_rows(repo, tmp_path):
+    commit(repo, "feat(BT-LOCAL-a): first")
+    commit(repo, "fix(BT-LOCAL-e): touches the epic itself")
+    first = build(repo, "BT-LOCAL-a", "--epic", "BT-LOCAL-e", parent="BT-LOCAL-e")
+    assert field(first, "features") == "[BT-LOCAL-e]" and "Closes" not in first  # a local issue has no number to close
+    assert re.findall(r"^  - \{id: (\S+), parent: (\S+), ", block(first), re.M) == [("BT-LOCAL-a", "BT-LOCAL-e")]
+    prior = tmp_path / "prior.md"
+    prior.write_text(first, encoding="utf-8")
+    commit(repo, "feat(BT-LOCAL-b): second")
+    second = build(repo, "BT-LOCAL-b", "--epic", "BT-LOCAL-e", prior=prior, parent="BT-LOCAL-e")
+    assert re.findall(r"^  - \{id: (\S+), parent: \S+, summary: \".*?\", verdict: (\w+)", block(second), re.M) == [
+        ("BT-LOCAL-a", "PASS"), ("BT-LOCAL-b", "PASS")]
+    assert field(second, "features") == "[BT-LOCAL-e]"
+    bad = build_raw(repo, "--parent", "BT-LOCAL-", suite=write_suite(repo))
+    assert_clean_error(bad)
+    assert "--parent" in bad.stderr
+
+
 def test_parent_differing_from_prior_feature_joins_features_without_a_warning(repo):
     commit(repo, "feat(BT-11): first")
     prior = repo / ".tmp" / "prior.md"

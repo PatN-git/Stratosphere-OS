@@ -96,7 +96,7 @@ def test_merge_risk_paths_tag_sql_and_ci():
 
 def test_pr_body_slice_id_regex_ignores_unscoped_commits():
     subjects = ["feat(BT-12): a", "fix(BT-12): b", "feat(BT-13): c", "release: prepare v1.0.0", "fix(ci): x", "chore: y"]
-    assert sorted({pr_body.SCOPE_RE.match(s).group(1) for s in subjects if pr_body.SCOPE_RE.match(s)}) == ["12", "13"]
+    assert sorted({pr_body.SCOPE_RE.match(s).group(1) for s in subjects if pr_body.SCOPE_RE.match(s)}) == ["BT-12", "BT-13"]
 
 
 def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
