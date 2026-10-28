@@ -501,8 +501,3 @@ def test_merged_of_ignores_a_longer_parent_id_sharing_the_prefix(repo):
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
     assert issues.make_merged_of(issues.Tracker().store())(db) == 'none'
-
-
-def test_issues_and_reconcile_share_one_none_token_set():
-    import reconcile  # neither module imports the other at load time, so the constant is pinned here
-    assert issues.NONE_TOKENS == reconcile.NONE_TOKENS

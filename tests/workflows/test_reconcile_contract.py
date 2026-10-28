@@ -26,7 +26,7 @@ MAP = """\
 DELETED = ["stale_blockers", "fetch_issue", "classify", "summarize", "drift_kind", "heal", "upsert_cells",
            "gh_fix_commands", "KIND_PREFIXES", "CHRONIC_NIGHTS", "HEAL_KINDS", "HEAL_CELL", "STATE_DEFAULT",
            "_nightly_state", "_gh_state", "_cell_text", "_map_text"]
-KEPT = ["parse_backlog", "open_ids", "ship_unit", "effective_blockers", "edge_verdict", "edges_cmd", "compare",
+KEPT = ["parse_backlog", "open_ids", "effective_blockers", "edge_verdict", "edges_cmd", "compare",
         "closed_on_github", "open_on_github", "pr_merge_state", "make_merged_of", "github_gate", "github_main",
         "resolve_backend", "read_tracker", "parse_expect"]
 

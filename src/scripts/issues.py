@@ -28,9 +28,10 @@ import sys
 import uuid
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # the lazy imports below (pr_body, ice_read, reconcile)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _tracker_common import (NONE_TOKENS, candidates, csv_list, edge_verdict, effective_blockers, longer_id_globs,
+                             make_row, resolve_unit)
 
-NONE_TOKENS = {'', '-', '—'}  # an empty value in a map cell or an argument (reconcile.NONE_TOKENS is this set)
 ROOT = 'docs/issues'
 ARCHIVE = f'{ROOT}/archive'
 README = f'{ROOT}/README.md'
@@ -264,9 +265,8 @@ class Store:
 
     def rows(self):
         """reconcile.py's row shape {id: {status, labels, milestone, parent, blocked_by}}; closed issues are done."""
-        return {bt: {'status': 'done' if i['closed'] else i['status'], 'labels': set(i['labels']),
-                     'milestone': i['milestone'] or '—', 'parent': i['parent'] or '—',
-                     'blocked_by': set(i['blocked_by'])} for bt, i in self.issues.items()}
+        return {bt: make_row('done' if i['closed'] else i['status'], i['labels'], i['milestone'], i['parent'],
+                             i['blocked_by']) for bt, i in self.issues.items()}
 
 
 class Tracker:
@@ -348,7 +348,6 @@ def make_merged_of(store):
     """`merged_of(bt)` for reconcile.edge_verdict without a PR host: the blocker's ship-unit branches (pr_body
     globs) are merged when every local or remote-tracking one is an ancestor of the default branch, 'none' when no
     such branch exists (deleted after merge, or a Spike with no code), 'open' otherwise."""
-    import pr_body
     target = default_branch()
     refs = _git('for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes').split()
 
@@ -358,13 +357,13 @@ def make_merged_of(store):
             return None
         parent = store.issues.get(i['parent']) if i['parent'] else None
         try:
-            globs = pr_body.resolve_unit(bt, i['milestone'] or '—', i['parent'] or '—',
-                                         (parent or {}).get('milestone') or '—', 'tier:epic' in i['labels'])['globs']
+            globs = resolve_unit(bt, i['milestone'] or '—', i['parent'] or '—',
+                                 (parent or {}).get('milestone') or '—', 'tier:epic' in i['labels'])['globs']
         except ValueError:
             return None
         def local(r):
             return r.split('/', 1)[1] if r.startswith('origin/') else r
-        longer = pr_body.longer_id_globs([bt, i['parent']], store.issues)
+        longer = longer_id_globs([bt, i['parent']], store.issues)
         hits = [r for r in refs if any(fnmatch.fnmatch(local(r), g) for g in globs)
                 and not any(fnmatch.fnmatch(local(r), g) for g in longer)]
         if not hits:
@@ -376,29 +375,27 @@ def make_merged_of(store):
 
 def ready(store, merged_of=None):
     """(candidate lines, other lines): open leaves whose effective blockers all clear, then [BLOCKED]/[MISSING-LABELS]."""
-    import ice_read
-    import reconcile  # lazy: reconcile imports this module for the store and the map parser
     rows = store.rows()
     merged_of = merged_of or make_merged_of(store)
     free, blocked = [], []
     for issue in open_as_gh(store):
         bt = issue['id']
-        unmet = [(blk, why) for blk in sorted(reconcile.effective_blockers(bt, rows))
-                 for verdict, _, why in [reconcile.edge_verdict(bt, blk, rows, merged_of)] if verdict != 'OK']
+        unmet = [(blk, why) for blk in sorted(effective_blockers(bt, rows))
+                 for verdict, _, why in [edge_verdict(bt, blk, rows, merged_of)] if verdict != 'OK']
         if unmet:
             blocked += [f"[BLOCKED {bt} <- {blk}] {why}" for blk, why in unmet]
         else:
             free.append(issue)
-    lines, missing = ice_read.candidates(free)
-    shown = {line.split(' |', 1)[0] for line in lines + [m.split(' ')[1] for m in missing]}
-    wanted = candidate_ids(store)
-    blocked = [b for b in blocked if b.split(' ')[1] in wanted and b.split(' ')[1] not in shown]
+    lines, missing = candidates(free)
+    if blocked:
+        shown = {line.split(' |', 1)[0] for line in lines + [m.split(' ')[1] for m in missing]}
+        wanted = candidate_ids(store)
+        blocked = [b for b in blocked if b.split(' ')[1] in wanted and b.split(' ')[1] not in shown]
     return lines, missing + blocked
 
 
 def candidate_ids(store):
-    import ice_read
-    lines, missing = ice_read.candidates(open_as_gh(store))
+    lines, missing = candidates(open_as_gh(store))
     return {l.split(' |', 1)[0] for l in lines} | {m.split(' ')[1] for m in missing}
 
 
@@ -429,14 +426,10 @@ def _status(value):
     return value
 
 
-def _ids(text):
-    return [t.strip() for t in (text or '').split(',') if t.strip() and t.strip() not in NONE_TOKENS]
-
-
 def _labels(values):
     out = []
     for v in values or ():
-        out += [l for l in _ids(v)]
+        out += csv_list(v)
     return out
 
 
@@ -469,7 +462,7 @@ def cmd_create(store, a):
     status = next((l[7:] for l in labels if l.startswith('status:')), None)
     labels = [l for l in labels if not l.startswith('status:')]
     parent = None if (a.parent or '—') in NONE_TOKENS else a.parent
-    blockers = _ids(a.blocked_by)
+    blockers = csv_list(a.blocked_by)
     _require(store, ([parent] if parent else []) + blockers, 'parent or blocker')
     bt = new_id(store, a.title)
     issue = {'type': 'issue', 'id': bt, 'title': a.title, 'status': _status(a.status or status or 'planned'),
@@ -501,12 +494,12 @@ def cmd_set(store, a):
         if issue['parent'] == a.id:
             raise IssuesError(f"[ERROR] {a.id} cannot be its own parent")
         _require(store, [issue['parent']] if issue['parent'] else [], 'parent')
-    add = _ids(a.add_blocker)
+    add = csv_list(a.add_blocker)
     _require(store, add, 'blocker')
     if a.id in add:
         raise IssuesError(f"[ERROR] {a.id} cannot block itself")
     issue['blocked_by'] = [b for b in issue['blocked_by'] + [b for b in add if b not in issue['blocked_by']]
-                           if b not in _ids(a.remove_blocker)]
+                           if b not in csv_list(a.remove_blocker)]
     if add and (cyc := _cycle(store, a.id)):
         raise IssuesError(f"[ERROR] blocked-by cycle: {' <- '.join(cyc)}")
     if a.title:
@@ -708,15 +701,14 @@ def map_rows(text):
         if hit:
             bt, raw = hit
             c = [x.strip() for x in raw]
-            out.append({'id': bt, 'title': c[2], 'status': c[3], 'labels': _ids(c[4]), 'milestone': c[5],
-                        'parent': c[6], 'blocked_by': _ids(c[7]), 'ice': c[8], 'refs': c[9]})
+            out.append({'id': bt, 'title': c[2], 'status': c[3], 'labels': csv_list(c[4]), 'milestone': c[5],
+                        'parent': c[6], 'blocked_by': csv_list(c[7]), 'ice': c[8], 'refs': c[9]})
     return out
 
 
 def parse_backlog(path):
     """{BT-id: {status, labels, milestone, parent, blocked_by}} of a map file, in reconcile.py's row shape."""
-    return {r['id']: {'status': r['status'], 'labels': set(r['labels']), 'milestone': r['milestone'],
-                      'parent': r['parent'], 'blocked_by': set(r['blocked_by'])}
+    return {r['id']: make_row(r['status'], r['labels'], r['milestone'], r['parent'], r['blocked_by'])
             for r in map_rows(Path(path).read_text(encoding='utf-8'))}
 
 

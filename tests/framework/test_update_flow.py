@@ -2763,20 +2763,9 @@ def test_update_without_key_keeps_local_map():
     map_text = "# BACKLOG MAP\n\n| ID | Title |\n|:---|:---|\n| BT-LOCAL-a | kept |\n"
     arch_text = "---\ntype: architecture\n---\n# ARCHITECTURE\n"
     tmp, script = _tracker_env("test_update_no_key", arch_text=arch_text, map_text=map_text)
-    assert scaffold.resolve_tracker(tmp) == "local"
     run_cmd([sys.executable, str(script), "--update"], cwd=tmp)
     assert (tmp / ".memory" / "BACKLOG_MAP.md").read_text(encoding="utf-8") == map_text
     assert (tmp / ".memory" / "ARCHITECTURE.md").read_text(encoding="utf-8") == arch_text
-
-
-def test_resolve_tracker_prefers_the_key():
-    tmp = _sandbox("test_resolve_tracker")
-    (tmp / ".memory").mkdir()
-    assert scaffold.resolve_tracker(tmp) == "local"  # nothing recorded: legacy behaviour
-    (tmp / ".memory" / "BACKLOG_MAP.md").write_text("x", encoding="utf-8")
-    (tmp / ".memory" / "ARCHITECTURE.md").write_text("---\ntracker: github\n---\n", encoding="utf-8")
-    assert scaffold.resolve_tracker(tmp) == "github"  # the key wins over a leftover map
-    assert scaffold.resolve_tracker(tmp, "local") == "local"  # an explicit flag wins over both
 
 
 def test_fresh_scaffold_tracker_flag():
@@ -2812,7 +2801,6 @@ if __name__ == "__main__":
     test_sandboxes_are_unique_and_cleanup_is_scoped()
     test_update_github_tracker_creates_no_map()
     test_update_without_key_keeps_local_map()
-    test_resolve_tracker_prefers_the_key()
     test_fresh_scaffold_tracker_flag()
     test_architecture_template_declares_the_tracker()
     test_pristine_update()

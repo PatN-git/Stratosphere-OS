@@ -32,96 +32,22 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _tracker_common import bt_id, csv_list, edge_verdict, effective_blockers, make_row, norm, open_ids
+
 STATUS_RE = re.compile(r'^status:(.+)$')
-NONE_TOKENS = {'', '-', '—'}  # issues.NONE_TOKENS is the same set (reconcile.py stands alone: no top-level import)
 ALL_FIELDS = ('status', 'milestone', 'labels', 'parent', 'blocked_by')
-SHIPPED = ('in review', 'done')  # a same-ship-unit blocker in one of these satisfies its edge (D3)
-
-
-def _bt(n):
-    return f"BT-{int(n):03d}"
 
 
 def parse_backlog(path):
     """{BT-id: {fields}} of a v5 map file (issues.parse_backlog)."""
-    import issues
+    import issues  # lazy: the GitHub gate runs with only this file and _tracker_common.py beside it
     return issues.parse_backlog(path)
 
 
 def issue_number(bt):
     m = re.match(r'^BT-0*(\d+)$', bt)
     return m.group(1) if m else None
-
-
-def _norm(token):
-    return None if token in NONE_TOKENS else token
-
-
-def open_ids(rows):
-    """BT ids of every row whose status is not `done`, in map order. Pure."""
-    return [bt for bt, r in rows.items() if r['status'] != 'done']
-
-
-def _pr_body():
-    """Lazy import: only the D3 edge verdict needs pr_body.py (the single D1 ship-unit implementation)."""
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import pr_body
-    return pr_body
-
-
-def ship_unit(bt, rows):
-    """D1 ship-unit key (`vX.Y` or `BT-<padded>`) of row `bt`, or None when the row is absent or its
-    id/milestone/parent is unparseable (the edge is then UNKNOWN, never a crash). Pure."""
-    r = rows.get(bt)
-    if r is None:
-        return None
-    parent = _norm(r.get('parent', '—'))
-    prow = rows.get(parent) if parent else None
-    try:
-        return _pr_body().resolve_unit(bt, r.get('milestone'), parent, prow.get('milestone') if prow else None,
-                                       epic='tier:epic' in r.get('labels', ()))['unit']
-    except ValueError:
-        return None
-
-
-def effective_blockers(dep, rows):
-    """Own `Blocked by` plus the parent epic's, never the dependent itself. Pure."""
-    r = rows[dep]
-    parent = _norm(r.get('parent', '—'))
-    prow = rows.get(parent) if parent else None
-    return (set(r.get('blocked_by', ())) | set(prow.get('blocked_by', ()) if prow else ())) - {dep}
-
-
-def _no_pr_state(bt):
-    return None
-
-
-def edge_verdict(dep, blk, rows, merged_of=_no_pr_state):
-    """D3: (OK|UNMET|UNKNOWN, 'same-unit'|'cross-unit', reason) for the edge dep <- blk.
-    Same ship unit -> OK once the blocker is shipped. Cross unit -> its code must be on the default branch:
-    an epic/standalone blocker is merged <=> done; a child-slice blocker needs `merged_of(blk)`
-    ('merged'|'open'|'none'|None) for its `Shipped in PR` PR. Pure given `merged_of`."""
-    b = rows.get(blk)
-    if b is None:
-        return 'UNKNOWN', 'cross-unit', 'blocker absent from the tracker'
-    du, bu = ship_unit(dep, rows), ship_unit(blk, rows)
-    if du is None or bu is None:
-        return 'UNKNOWN', 'cross-unit', 'ship unit unknown (bad id or milestone)'
-    status, shipped = b['status'], b['status'] in SHIPPED
-    if du == bu:
-        return ('OK' if shipped else 'UNMET'), 'same-unit', f"{du}, blocker {status}"
-    if not _norm(b.get('parent', '—')):  # epic or standalone: closed <=> merged <=> done; `in review` = PR still open
-        return ('OK' if status == 'done' else 'UNMET'), 'cross-unit', f"{blk} is {status}, merged only when done"
-    if not shipped:
-        return 'UNMET', 'cross-unit', f"{blk} not shipped ({status})"
-    m = merged_of(blk)
-    if m == 'merged':
-        return 'OK', 'cross-unit', f"{blk} PR merged"
-    if m == 'none':
-        return 'OK', 'cross-unit', f"{blk} has no PR (spike or manual close), no code to merge"
-    if m == 'open':
-        return 'UNMET', 'cross-unit', f"{blk} PR not merged"
-    return 'UNKNOWN', 'cross-unit', f"{blk} PR state unknown (gh unavailable)"
 
 
 def closed_on_github(row, gh):
@@ -152,13 +78,13 @@ def compare(row, gh, fields, check_pr):
 
     if 'status' in fields:
         gh_status = next((STATUS_RE.match(l).group(1) for l in gh_labels if STATUS_RE.match(l)), None)
-        if gh_status != _norm(row['status']):
+        if gh_status != norm(row['status']):
             drift.append(f"status expect={row['status']} gh={gh_status}")
 
     if 'milestone' in fields:
         gh_ms = (gh.get('milestone') or {}).get('title')
-        if gh_ms != _norm(row['milestone']):
-            drift.append(f"milestone expect={_norm(row['milestone'])} gh={gh_ms}")
+        if gh_ms != norm(row['milestone']):
+            drift.append(f"milestone expect={norm(row['milestone'])} gh={gh_ms}")
 
     if 'labels' in fields:
         # status:* is compared under `status`; strip it on both sides.
@@ -174,15 +100,15 @@ def compare(row, gh, fields, check_pr):
         bb = gh.get('blockedBy') or []
         if isinstance(bb, dict):
             bb = bb.get('nodes') or []
-        gh_bb = {_bt(i['number']) for i in bb}
+        gh_bb = {bt_id(i['number']) for i in bb}
         if row['blocked_by'] != gh_bb:
             drift.append(f"blocked_by expect={sorted(row['blocked_by'])} gh={sorted(gh_bb)}")
 
     if 'parent' in fields and 'parent' in gh:
         p = gh.get('parent')
-        gh_parent = _bt(p['number']) if p else None
-        if gh_parent != _norm(row['parent']):
-            drift.append(f"parent expect={_norm(row['parent'])} gh={gh_parent}")
+        gh_parent = bt_id(p['number']) if p else None
+        if gh_parent != norm(row['parent']):
+            drift.append(f"parent expect={norm(row['parent'])} gh={gh_parent}")
 
     if check_pr:
         if not any('/pull/' in (c.get('body') or '') for c in (gh.get('comments') or [])):
@@ -343,7 +269,7 @@ def _retry(ok):
 
 def _has_store(arch):
     """True when the issues.py tracker branch exists in this repository."""
-    import issues
+    import issues  # lazy: local backend only (the GitHub gate stands alone)
     try:
         return issues.head(f"refs/heads/{issues.branch_name(arch)}") is not None
     except (issues.IssuesError, OSError):
@@ -357,7 +283,7 @@ def resolve_backend(arch=ARCH_DEFAULT, backlog=None):
     key = read_tracker(arch)
     if key:
         return key if key in ('github', 'local') else None
-    import issues
+    import issues  # lazy: local backend only (the GitHub gate stands alone)
     if Path(backlog or issues.MAP_DEFAULT).exists() or _has_store(arch):
         return 'local'
     return 'github' if _github_remote() and _retry(gh_available) else None
@@ -439,9 +365,8 @@ def node_row(node):
     names = _names(node)
     status = next((m.group(1) for n in names if (m := STATUS_RE.match(n))), '') or ('done' if node['state'] == 'CLOSED' else '')
     parent = node.get('parent')
-    return {'status': status, 'labels': set(names), 'milestone': (node.get('milestone') or {}).get('title') or '—',
-            'parent': _bt(parent['number']) if parent else '—',
-            'blocked_by': {_bt(b['number']) for b in _conn(node, 'blockedBy')}}
+    return make_row(status, names, (node.get('milestone') or {}).get('title'),
+                    bt_id(parent['number']) if parent else None, {bt_id(b['number']) for b in _conn(node, 'blockedBy')})
 
 
 def rows_from_nodes(nodes):
@@ -451,13 +376,13 @@ def rows_from_nodes(nodes):
     rows = {}
 
     def put(node):
-        rows[_bt(node['number'])] = node_row(node)
+        rows[bt_id(node['number'])] = node_row(node)
 
     for node in found:
         parent = node.get('parent')
         if parent:
             put(parent)
-            rows[_bt(parent['number'])]['blocked_by'] = {_bt(b['number']) for b in _conn(parent, 'blockedBy')}
+            rows[bt_id(parent['number'])]['blocked_by'] = {bt_id(b['number']) for b in _conn(parent, 'blockedBy')}
             for blocker in _conn(parent, 'blockedBy'):
                 put(blocker)
         for ref in _conn(node, 'blockedBy') + _conn(node, 'blocking'):
@@ -466,13 +391,13 @@ def rows_from_nodes(nodes):
         put(node)
     for node in found:  # a blocking edge is a stored `blocked_by` on the dependent
         for dep in _conn(node, 'blocking'):
-            rows[_bt(dep['number'])]['blocked_by'].add(_bt(node['number']))
+            rows[bt_id(dep['number'])]['blocked_by'].add(bt_id(node['number']))
     return rows
 
 
 def _padded(token):
     m = re.fullmatch(r'BT-0*(\d+)', token.strip())
-    return _bt(m.group(1)) if m else token.strip()
+    return bt_id(m.group(1)) if m else token.strip()
 
 
 def parse_expect(text):
@@ -488,7 +413,7 @@ def parse_expect(text):
         if not (eq and colon and re.fullmatch(r'BT-\d+', ident.strip())) or field not in EXPECT_FIELDS:
             raise ValueError(f"bad expectation {item!r}: want BT-<n>:<field>=<value> with field one of {', '.join(EXPECT_FIELDS)}")
         if field in ('labels', 'blocked_by'):
-            vals = {v.strip() for v in value.split(',') if v.strip() not in NONE_TOKENS}
+            vals = set(csv_list(value))
             value = {_padded(v) for v in vals} if field == 'blocked_by' else vals
         elif field == 'parent':
             value = _padded(value)
@@ -509,7 +434,7 @@ def github_gate(ids, nodes, expect, fields, pr_id):
         if node is None:
             drifted.append(f"[MIRROR-DRIFT {bt}: gh issue #{num} not found]")
             continue
-        want = {k: v for k, v in expect.get(_bt(num), {}).items() if k in fields}
+        want = {k: v for k, v in expect.get(bt_id(num), {}).items() if k in fields}
         gh = node_gh(node)
         closed = (closed_on_github(want, gh) or open_on_github(want, gh)) if 'status' in want else None
         drift = [closed] if closed else compare(want, gh, set(want), check_pr=(bt == pr_id))
@@ -589,7 +514,7 @@ def main(argv=None):
     if args.backlog:
         rows, merged_of = parse_backlog(args.backlog), make_merged_of()
     else:
-        import issues
+        import issues  # lazy: local backend only (the GitHub gate stands alone)
         try:
             store = issues.Tracker(args.arch).store()
         except issues.IssuesError as e:

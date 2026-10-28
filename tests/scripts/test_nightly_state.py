@@ -108,9 +108,11 @@ def test_state_and_date_flags_work_after_the_command_too(state):
 
 
 def test_reconcile_gate_runs_without_nightly_state(tmp_path):
-    # reconcile.py is every workflow's terminal gate and stands alone (it never imports nightly_state.py).
+    # reconcile.py is every workflow's terminal gate and stands alone: it needs only the leaf _tracker_common.py
+    # beside it (never nightly_state.py, issues.py or pr_body.py).
     import shutil
-    shutil.copy(REPO_ROOT / "src" / "scripts" / "reconcile.py", tmp_path / "reconcile.py")
+    for name in ("reconcile.py", "_tracker_common.py"):
+        shutil.copy(REPO_ROOT / "src" / "scripts" / name, tmp_path / name)
     r = subprocess.run([sys.executable, str(tmp_path / "reconcile.py"), "--help"],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr

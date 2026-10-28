@@ -1,7 +1,7 @@
 """BT-198: ICE on read. In `tracker: github` mode no score is stored; 3c computes it from the issue body's
 Impact and Confidence plus the `size:` label, and lists its candidates through one scoped `gh issue list`.
 
-Seams: `ice_from_body` / `parse_metrics` (pure), `candidates` (pure over gh's JSON) and `main` with `gh` stubbed.
+Seams: `ice_from_body` / `parse_metrics` / `candidates` (pure, in _tracker_common over gh's JSON) and `main` with `gh` stubbed.
 """
 import json
 import re
@@ -13,6 +13,7 @@ from conftest import REPO_ROOT
 
 SCRIPTS = REPO_ROOT / "src" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+import _tracker_common as common
 import ice_read
 import reconcile
 
@@ -38,19 +39,19 @@ LEAF = ["tier:slice", "type:feature", "mode:AFK", "size:medium"]
     ("1.5", "80 %", (1.5, 0.8)),
 ])
 def test_parse_metrics_reads_the_formats_3b_writes(impact, confidence, want):
-    got = ice_read.parse_metrics(_body(impact, confidence))
+    got = common.parse_metrics(_body(impact, confidence))
     assert (got["impact"], got["confidence"]) == want
 
 
 @pytest.mark.parametrize("label,weight", [("size:small", 1), ("size:medium", 2), ("size:large", 3)])
 def test_effort_weight_comes_from_the_size_label(label, weight):
-    assert ice_read.ice_from_body(_body("3", "100%"), ["tier:slice", label]) == pytest.approx(3 / weight, abs=0.01)
+    assert common.ice_from_body(_body("3", "100%"), ["tier:slice", label]) == pytest.approx(3 / weight, abs=0.01)
 
 
 def test_ice_is_none_without_metrics_or_a_size_label():
-    assert ice_read.ice_from_body("### Overview\nno metrics here", LEAF) is None
-    assert ice_read.ice_from_body("### ICE Priorities\n- Not set at mint (user decision)", LEAF) is None
-    assert ice_read.ice_from_body(_body("2.0", "100%"), ["tier:slice"]) is None
+    assert common.ice_from_body("### Overview\nno metrics here", LEAF) is None
+    assert common.ice_from_body("### ICE Priorities\n- Not set at mint (user decision)", LEAF) is None
+    assert common.ice_from_body(_body("2.0", "100%"), ["tier:slice"]) is None
 
 
 @pytest.mark.parametrize("name", ["cth-bt241.json", "cth-bt243.json"])
@@ -58,7 +59,7 @@ def test_real_bodies_reproduce_stored_score(name):
     """Two real CleanTechHub bodies (BT-241, BT-243): the computed score equals the score 3b stored in the body."""
     issue = json.loads((FIXTURES / name).read_text(encoding="utf-8"))
     stored = float(re.search(r"\*\*ICE Score:\*\*\s*([0-9.]+)", issue["body"]).group(1))
-    assert ice_read.ice_from_body(issue["body"], issue["labels"]) == pytest.approx(stored, abs=0.01)
+    assert common.ice_from_body(issue["body"], issue["labels"]) == pytest.approx(stored, abs=0.01)
 
 
 def test_candidates_keep_planned_and_needs_spec_leaves_only():

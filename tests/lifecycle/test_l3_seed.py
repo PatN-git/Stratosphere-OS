@@ -53,7 +53,7 @@ def seeded(tmp_path, monkeypatch):
     return project, child
 
 
-SCRIPTS = ("issues.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+SCRIPTS = ("issues.py", "_tracker_common.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
 
 
 def issues(project, child, *argv):

@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("reconcile", ROOT / "src" / "scripts" / "reconcile.py")
 rec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rec)
+from _tracker_common import ship_unit  # on sys.path once reconcile has loaded
 # The map-mode checks below pass no --arch: pin the default to an absent file so the repo's own (gitignored)
 # .memory/ARCHITECTURE.md, which says `tracker: github` once StratOS dogfoods it, never changes the backend under test.
 rec.ARCH_DEFAULT = str(ROOT / "tests" / "workflows" / "_absent-architecture.md")
@@ -130,19 +131,19 @@ def edge_checks():
 
     # 1. ship_unit adapter smoke (the rule itself is tested with pr_body.resolve_unit)
     check("ship_unit: slices v1.2.5 and v1.2.6 share release v1.2",
-          rec.ship_unit("BT-070", rows) == rec.ship_unit("BT-207", rows) == "v1.2")
-    check("ship_unit: milestone-less slice inherits its epic's release", rec.ship_unit("BT-310", rows) == "v1.3")
-    check("ship_unit: epic row with a milestone is in that release", rec.ship_unit("BT-051", rows) == "v1.2")
-    check("ship_unit: epic without a milestone is its own unit", rec.ship_unit("BT-309", rows) == "BT-309")
+          ship_unit("BT-070", rows) == ship_unit("BT-207", rows) == "v1.2")
+    check("ship_unit: milestone-less slice inherits its epic's release", ship_unit("BT-310", rows) == "v1.3")
+    check("ship_unit: epic row with a milestone is in that release", ship_unit("BT-051", rows) == "v1.2")
+    check("ship_unit: epic without a milestone is its own unit", ship_unit("BT-309", rows) == "BT-309")
     standalone = edge_rows()
     standalone["BT-400"] = {"status": "planned", "labels": {"type:feature"}, "milestone": "v1.2.0",
                             "parent": "—", "blocked_by": set()}
     check("ship_unit: a standalone issue is its own unit even with a milestone",
-          rec.ship_unit("BT-400", standalone) == "BT-400")
+          ship_unit("BT-400", standalone) == "BT-400")
     bad = edge_rows()
     bad["BT-207"]["milestone"] = "Backlog"
-    check("ship_unit: bad milestone -> None (unknown), never a crash", rec.ship_unit("BT-207", bad) is None)
-    check("ship_unit: absent row -> None", rec.ship_unit("BT-404", rows) is None)
+    check("ship_unit: bad milestone -> None (unknown), never a crash", ship_unit("BT-207", bad) is None)
+    check("ship_unit: absent row -> None", ship_unit("BT-404", rows) is None)
 
     # 2. same unit: shipped = in review | done
     for st, want in (("in review", "OK"), ("done", "OK"), ("in progress", "UNMET"), ("planned", "UNMET"),

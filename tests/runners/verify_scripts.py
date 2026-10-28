@@ -208,6 +208,8 @@ def test_orphan_guard():
                 proj_rel_path = ".agents/scripts/tracker_switch.py"
             elif rel_str == "scripts/issues.py":
                 proj_rel_path = ".agents/scripts/issues.py"
+            elif rel_str == "scripts/_tracker_common.py":
+                proj_rel_path = ".agents/scripts/_tracker_common.py"
             elif rel_str == "scripts/ice_read.py":
                 proj_rel_path = ".agents/scripts/ice_read.py"
             elif rel_str == "scripts/okf_view.py":

@@ -283,7 +283,7 @@ def test_0a_second_fails_on_a_retired_status_field_or_a_new_branch(tmp_path):
 OLD_MAP = "| ID | Title | Status |\n|:---|:---|:---|\n| BT-LOCAL-x | X | planned |\n"
 MAP = Path(".memory") / "BACKLOG_MAP.md"  # relative to a project root
 ARCH = Path(".memory") / "ARCHITECTURE.md"
-SCRIPTS = ("issues.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+SCRIPTS = ("issues.py", "_tracker_common.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
 GIT_ID = {"GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@x", "GIT_COMMITTER_NAME": "L3",
           "GIT_COMMITTER_EMAIL": "l3@x"}
 SLICE = "type:feature,tier:slice,mode:AFK,size:small"
@@ -304,7 +304,7 @@ def _project_with_reconcile(tmp_path):
     proj = project(tmp_path)
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    for name in SCRIPTS:  # reconcile imports nightly_state; issues imports reconcile, ice_read and pr_body
+    for name in SCRIPTS:  # reconcile imports nightly_state; every script imports _tracker_common
         (scripts / name).write_text(
             (REPO / "src" / "scripts" / name).read_text(encoding="utf-8"),
             encoding="utf-8")
