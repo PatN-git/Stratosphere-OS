@@ -64,7 +64,7 @@ Advisory findings (does not block shipping):
 `Dismissed` (omit when empty): one line each; HITL shows them at the ship halt; 3z's `audit-only` return carries them (listed, plus counts).
 
 ### 3. Watch (Non-blocking)
-The Spec auditor's 60-79 findings (omit when empty), one line each. Never a halt or a retry. The lead settles an item only on evidence from at most one targeted grep or read (a test or text that covers it → drop it); no further subagent. HITL shows what remains at the ship halt; 3z's `audit-only` return carries the items and the count. Record the count as `watch` per `references/pr-body-and-ship.md` § Audit findings.
+The Spec auditor's 60-79 findings (omit when empty), one line each; an ambiguity the spec does not settle is one, marked as a user decision. Never a halt or a retry. The lead settles an item only on evidence from at most one targeted grep or read (a test or text that covers it → drop it); no further subagent. HITL shows what remains at the ship halt; 3z's `audit-only` return carries the items and the count. Record the count as `watch` per `references/pr-body-and-ship.md` § Audit findings.
 
 ## Phase 4: Handoff
 Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt, scoped by the delta rule of `.agents/skills/4a-verify-and-ship/references/audit-inputs.md`). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).

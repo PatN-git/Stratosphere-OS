@@ -29,9 +29,9 @@ timestamp: 2026-10-22
 
 ## Phase 1: Chart
 
-1. **Destination:** Define destination and scope.
+1. **Destination:** Define destination and scope. Keep the user's opening words unedited for the map's `## Ask (verbatim)`.
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
-3. **Register Map:** `create` the `concept:map` issue using `references/concept-map-template.md` (`status:in progress`, milestone-exempt; `references/tracker-verbs.md`). The tracker is the only record.
+3. **Register Map:** `create` the `concept:map` issue with the body from `references/concept-map-template.md`, `## Ask (verbatim)` filled with the user's words as given (`status:in progress`, milestone-exempt; `references/tracker-verbs.md`). The tracker is the only record.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
    - Link as sub-issues and wire blockers with `set_parent` / `add_blocker` (`references/tracker-verbs.md`).
@@ -67,7 +67,7 @@ timestamp: 2026-10-22
 ## Phase 3: Converge
 
 1. **Convergence Condition:** Run Phase 3: Converge only when frontier and fog are empty.
-2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`). Stamp `generated.by: 1c-concept-map` and set `concept-map:` to the map (the `concept:map` issue's id).
+2. **Synthesize Brief:** Compile resolutions and research into brief `docs/discovery/<slug>.md` via template (type: `discovery-brief`), copying the map's `## Ask (verbatim)` into the brief's `## Ask (verbatim)` unedited. Stamp `generated.by: 1c-concept-map` and set `concept-map:` to the map (the `concept:map` issue's id).
 3. **RAT Audit:** Invoke a subagent to challenge brief:
    - *RAT Guardrail:* "Review brief for logical gaps, contradictions, or unaddressed assumptions. Report findings only; do not edit files."
 4. **Self-Review + User Gate (hard HITL stop — same gate `1b` Phase 6 applies to a discovery brief):** verify the brief against the checklist, then present the brief **and** the RAT findings for approval. Do not proceed to steps 5–7 until the user confirms. Never auto-close the map.

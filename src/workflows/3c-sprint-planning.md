@@ -43,7 +43,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - **Weights (all leaves):** `size:large` = 5h | `size:medium` = 3h | `size:small` = 45min. Spikes are always `size:medium`.
 - **Spikes:** `size:medium` (3h), like any leaf.
 - **AFK Check:** Flag leaves containing `size:large` and `mode:AFK`.
-- **Label Check:** Verify labels exist in registry.
+- **Label Check:** Verify labels exist in registry; list each `priority:*` band Phase 5 step 1 will set that is missing (`ensure_label` there, after the user confirms).
 
 ## Phase 4: Sequence Proposal
 Output compressed readout matching capacity thresholds:
@@ -68,7 +68,7 @@ Output compressed readout matching capacity thresholds:
 ## Phase 5: Commit & Sync
 
 Halt for confirmation. When confirmed:
-1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, `set_labels` the new `priority:*` in place of the old one (`references/tracker-verbs.md`) — it is gate-checked in step 5.
+1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, `ensure_label` the new `priority:*` first when the registry lacks it (user confirms; GitHub rejects an unknown label), then `set_labels` it in place of the old one (`references/tracker-verbs.md`) — it is gate-checked in step 5.
 2. `ensure_milestone` `vX.Y.Z`, then `set_milestone` on every sequenced item (Build slices and Spikes; not `[NEXT]` or `[BLOCKED]`), moving it from `vX.Y.0` or an earlier sprint milestone. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. `set_status` `planned` for Build slices only; **Spikes keep `status:needs_spec`** (never set `planned`).
 3. **Record confirmed dependencies (add-only):** for each `[NEW-DEP]` the user confirmed at the halt, `add_blocker` (`references/tracker-verbs.md`). 3c only adds, only on explicit confirmation (`3b` births `Blocked by`; clearing is 4a at ship / 0b at merge); never remove an entry. Skip declined edges.
 4. Comment on each updated issue: 'Sprint vX.Y.Z sync: ICE <score> → priority:<priority>; milestone vX.Y.Z; status:planned.' Spike: 'Sprint vX.Y.Z sync: Spike; milestone vX.Y.Z; status:needs_spec; close on Exit Criteria.'
