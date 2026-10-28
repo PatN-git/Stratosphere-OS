@@ -21,7 +21,9 @@ Three rules shape everything here:
 
 The surface implemented is what the TESTED CHAIN uses, found with
 `grep -rhoE '\\bgh [a-z-]+( [a-z-]+)?' src/workflows/ src/references/ src/scripts/`:
-`issue create|edit|view|list|comment|close|reopen`, `pr create|view|list|edit|ready [--undo]`, `api graphql`,
+`issue create|edit|view|list|comment|close|reopen`, `pr create|view|list|edit|ready [--undo]` (head defaults to the
+current branch, base to a local `origin`'s HEAD branch, `headRefOid` is read from that remote, `pr view` takes a number,
+URL, branch or nothing, and `statusCheckRollup` is one green CheckRun), `api graphql`,
 `api repos/.../milestones` (list, create), `label list|create`, `auth status`, `version`, and
 `repo create|delete|list`. `gh release view`, `gh project`, `gh secret|variable set` and
 `gh repo view` exist in the repo but only inside `stratosphere-setup` and
@@ -36,8 +38,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
+import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 
 VERSION = "gh version 0.0.0-l3-shim (l3-lifecycle-harness)"
 REPO = "l3-harness/throwaway"
@@ -219,7 +224,13 @@ def get(state: dict, number: str) -> dict:
 CONNECTION_FIELDS = ("subIssues", "blockedBy")
 
 
-def project(issue: dict, fields: list[str]) -> dict:
+def live(state: dict | None, ref: dict) -> dict:
+    """A nested reference re-read from the store: a relation recorded while the issue was open must show it closed later."""
+    row = state["issues"].get(str(ref["number"])) if state else None
+    return brief(row) if row else ref
+
+
+def project(issue: dict, fields: list[str], state: dict | None = None) -> dict:
     """`--json a,b` returns exactly those fields, as real `gh` does.
 
     `reconcile.py:130-133` asks for `blockedBy` and `parent` in their own calls and
@@ -233,7 +244,10 @@ def project(issue: dict, fields: list[str]) -> dict:
     out = {f: issue[f] for f in fields}
     for f in CONNECTION_FIELDS:
         if f in out:
-            out[f] = {"nodes": out[f], "totalCount": len(out[f])}
+            nodes = [live(state, n) for n in out[f]]
+            out[f] = {"nodes": nodes, "totalCount": len(nodes)}
+    if out.get("parent"):
+        out["parent"] = live(state, out["parent"])
     return out
 
 
@@ -266,6 +280,8 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         ms = take(rest, "--milestone", "-m")
         if ms is not None:
             issue["milestone"] = {"title": ms} if ms else None
+        if "--remove-milestone" in rest:
+            issue["milestone"] = None
         body = _body(rest)
         if body:
             issue["body"] = body
@@ -278,7 +294,7 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         jq = take(rest, "-q", "--jq")
         if not fields:
             return f"#{issue['number']}\t{issue['title']}\t{issue['state']}"
-        data = project(issue, [f.strip() for f in fields.split(",") if f.strip()])
+        data = project(issue, [f.strip() for f in fields.split(",") if f.strip()], state)
         if jq:
             return str(apply_jq(data, jq))
         return json.dumps(data)
@@ -286,7 +302,10 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
     if action == "list":
         want_state = (take(rest, "--state") or "open").upper()
         labels = set(take_all(rest, "--label", "-l"))
+        milestone = take(rest, "--milestone", "-m")
         rows = [i for i in state["issues"].values() if not i["isPR"]]
+        if milestone is not None:
+            rows = [i for i in rows if (i["milestone"] or {}).get("title") == milestone]
         if want_state != "ALL":
             rows = [i for i in rows if i["state"] == want_state]
         if labels:
@@ -298,7 +317,7 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
             return "\n".join(f"#{i['number']}\t{i['title']}\t{i['state']}"
                              for i in rows)
         names = [f.strip() for f in fields.split(",") if f.strip()]
-        return json.dumps([project(i, names) for i in rows])
+        return json.dumps([project(i, names, state) for i in rows])
 
     if action == "comment":
         issue = get(state, positional(rest)[0])
@@ -363,6 +382,11 @@ def _body(argv: list[str]) -> str:
 def cmd_pr(state: dict, argv: list[str]) -> str:
     action, rest = argv[0], argv[1:]
     if action == "create":
+        head, base = take(rest, "--head", "-H") or current_branch(), take(rest, "--base", "-B") or remote_head_branch()
+        twin = next((p for p in state["issues"].values()
+                     if p["isPR"] and p["state"] == "OPEN" and head and p.get("head") == head and p.get("base") == base), None)
+        if twin:  # as real gh: one open PR per head/base pair
+            raise Failure(EXIT_UNKNOWN, f"a pull request for branch {head!r} into branch {base!r} already exists: {twin['url']}")
         pr = mint(state,
                   title=take(rest, "--title", "-t") or "",
                   body=_body(rest),
@@ -370,24 +394,24 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
                   milestone=None,
                   is_pr=True,
                   draft="--draft" in rest or "-d" in rest)
-        pr["base"] = take(rest, "--base", "-B") or "main"
-        pr["head"] = take(rest, "--head", "-H") or ""
+        pr["base"], pr["head"] = base, head
         return pr["url"]
 
     if action == "view":
-        pr = get(state, positional(rest)[0])
+        pr = find_pr(state, _pr_ref(rest))
         fields = take(rest, "--json")
         jq = take(rest, "-q", "--jq")
         if not fields:
             return f"#{pr['number']}\t{pr['title']}\t{pr['state']}"
-        data = project(pr_record(pr), [f.strip() for f in fields.split(",") if f.strip()])
+        names = [f.strip() for f in fields.split(",") if f.strip()]
+        data = project(pr_record(pr, names), names, state)
         return str(apply_jq(data, jq)) if jq else json.dumps(data)
 
     if action == "list":
         return _pr_list(state, rest)
 
     if action == "edit":
-        pr = get(state, positional(rest)[0])
+        pr = find_pr(state, _pr_ref(rest))
         title = take(rest, "--title", "-t")
         if title is not None:
             pr["title"] = title
@@ -402,7 +426,7 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
 
     if action == "ready":
         undo = "--undo" in rest
-        pr = get(state, positional([a for a in rest if a != "--undo"])[0])
+        pr = find_pr(state, _pr_ref([a for a in rest if a != "--undo"]))
         pr["isDraft"] = undo
         return (f"Pull request #{pr['number']} is converted to draft" if undo
                 else f"Pull request #{pr['number']} is marked as ready for review")
@@ -410,12 +434,92 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
     raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh pr {action}")
 
 
-def pr_record(pr: dict) -> dict:
-    """The PR under the names `gh pr view|list --json` uses: the store row plus the fields derived from it."""
+def _git(*args: str) -> str | None:
+    try:
+        r = subprocess.run(["git", *args], capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def current_branch() -> str:
+    """The checked-out branch of the caller's cwd, as `gh pr create|view` default to; "" when detached or no repo."""
+    b = _git("rev-parse", "--abbrev-ref", "HEAD")
+    return "" if b in (None, "HEAD") else b
+
+
+def remote_git_dir() -> str | None:
+    """`origin` as a git dir when it is a LOCAL repository (the sandbox's bare repo), else None.
+
+    A PR's head oid and the default base come from the remote the way real GitHub knows them. The shim never opens a
+    network connection, so any URL that is not a local path answers "unknown" instead.
+    """
+    url = _git("remote", "get-url", "origin")
+    if not url:
+        return None
+    if url.startswith("file://"):
+        url = urllib.request.url2pathname(urlparse(url).path)
+    path = Path(url)
+    if (path / ".git").is_dir():
+        path = path / ".git"
+    return str(path) if path.is_dir() else None
+
+
+def remote_oid(branch: str | None) -> str | None:
+    git_dir = remote_git_dir()
+    if not git_dir or not branch:
+        return None
+    return _git("--git-dir", git_dir, "rev-parse", "--verify", "-q", f"refs/heads/{branch}")
+
+
+def remote_head_branch() -> str:
+    """The remote's default branch: what `gh pr create` bases on without `--base`."""
+    git_dir = remote_git_dir()
+    return (git_dir and _git("--git-dir", git_dir, "symbolic-ref", "--short", "HEAD")) or "main"
+
+
+def _pr_ref(rest: list[str]) -> str | None:
+    pos = positional(rest)
+    return pos[0] if pos else None
+
+
+def find_pr(state: dict, ref: str | None) -> dict:
+    """A PR by number, `#n`, URL or branch name; with no ref, the PR of the current branch (as `gh pr view`).
+
+    A branch with several PRs resolves to the newest open one, else the newest. An issue number is not a PR.
+    """
+    ref = current_branch() if ref is None else ref.strip()
+    num = re.fullmatch(r"#?(\d+)", ref) or re.search(r"/pull/(\d+)", ref)
+    if num:
+        pr = state["issues"].get(num.group(1))
+        if pr is None or not pr["isPR"]:
+            raise Failure(EXIT_UNKNOWN, f"no pull request #{num.group(1)} in the fixture store")
+        return pr
+    branch = ref.split(":", 1)[-1]
+    hits = [p for p in state["issues"].values() if p["isPR"] and branch and p.get("head") == branch]
+    if not hits:
+        raise Failure(EXIT_UNKNOWN, f"no pull requests found for branch {branch or '<none: detached or no repo>'!r}")
+    return max([p for p in hits if p["state"] == "OPEN"] or hits, key=lambda p: p["number"])
+
+
+def pr_record(pr: dict, want: list[str] | None = None) -> dict:
+    """The PR under the names `gh pr view|list --json` uses: the store row plus the fields derived from it.
+
+    `headRefOid` and `baseRefOid` are read live from the remote (a later push shows, as ci_gate waits for), only when
+    asked for. `statusCheckRollup` is one green CheckRun unless the row stores its own.
+    """
     refs = [{"number": int(n)} for n in dict.fromkeys(
         re.findall(r"(?i)\b(?:closes|fixes|resolves)\s+#(\d+)", pr["body"]))]
-    return {**pr, "headRefName": pr.get("head", ""), "baseRefName": pr.get("base", ""),
-            "mergedAt": pr.get("mergedAt"), "closingIssuesReferences": refs}
+    rec = {**pr, "headRefName": pr.get("head", ""), "baseRefName": pr.get("base", ""),
+           "mergedAt": pr.get("mergedAt"), "closingIssuesReferences": refs}
+    if "statusCheckRollup" not in rec:
+        rec["statusCheckRollup"] = [{"__typename": "CheckRun", "name": "test", "workflowName": "CI",
+                                     "status": "COMPLETED", "conclusion": "SUCCESS",
+                                     "detailsUrl": f"{pr['url'].rsplit('/pull/', 1)[0]}/actions/runs/{pr['number']}"}]
+    for field, branch in (("headRefOid", pr.get("head")), ("baseRefOid", pr.get("base"))):
+        if field not in rec and (want is None or field in want):
+            rec[field] = remote_oid(branch)
+    return rec
 
 
 def _pr_list(state: dict, rest: list[str]) -> str:
@@ -449,7 +553,7 @@ def _pr_list(state: dict, rest: list[str]) -> str:
     if not fields:
         return "\n".join(f"#{p['number']}\t{p['title']}\t{p['state']}" for p in rows)
     names = [f.strip() for f in fields.split(",") if f.strip()]
-    return json.dumps([project(pr_record(p), names) for p in rows])
+    return json.dumps([project(pr_record(p, names), names, state) for p in rows])
 
 
 _MUTATION = re.compile(r"\b(addSubIssue|addBlockedBy|removeBlockedBy)\b")

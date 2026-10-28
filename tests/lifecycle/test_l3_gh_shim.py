@@ -35,6 +35,7 @@ def store(tmp_path, monkeypatch):
     monkeypatch.setenv("L3_GH_STORE", str(path))
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
+    monkeypatch.chdir(tmp_path)  # a PR call asks git about origin: never the developer's checkout
     return path
 
 
@@ -539,3 +540,167 @@ def test_a_gh_failure_halts_without_a_local_copy(tmp_path, monkeypatch, capsys):
                        cwd=str(project), capture_output=True, text=True, env={**os.environ})
     assert r.returncode == 3 and "[GH-UNAVAILABLE" in r.stdout, r.stdout + r.stderr
     assert sorted(p.name for p in (project / ".memory").iterdir()) == ["ARCHITECTURE.md"]
+
+
+# --- the surface the follow-up live test needs: real branches, live relations, a CI rollup -------------------
+
+def _git(cwd, *args):
+    r = subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t.invalid", "-c", "commit.gpgsign=false",
+                        *args], cwd=str(cwd), capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout.strip()
+
+
+@pytest.fixture
+def clone(tmp_path, store, monkeypatch):
+    """A working clone whose `origin` is a local bare repo with `master` pushed: what the sandbox gives the shim."""
+    bare, work = tmp_path / "origin.git", tmp_path / "work"
+    work.mkdir()
+    _git(tmp_path, "init", "--bare", "-b", "master", str(bare))
+    _git(work, "init", "-b", "master")
+    _git(work, "remote", "add", "origin", bare.as_posix())
+    (work / "a.txt").write_text("a", encoding="utf-8")
+    _git(work, "add", "-A")
+    _git(work, "commit", "-m", "init")
+    _git(work, "push", "-q", "origin", "master")
+    monkeypatch.chdir(work)
+    return work
+
+
+def _push_branch(work, name, content="b"):
+    _git(work, "checkout", "-q", "-b", name)
+    (work / f"{name.replace('/', '_')}.txt").write_text(content, encoding="utf-8")
+    _git(work, "add", "-A")
+    _git(work, "commit", "-m", f"work on {name}")
+    _git(work, "push", "-q", "origin", name)
+    return _git(work, "rev-parse", "HEAD")
+
+
+def _view(capsys, *argv):
+    code, out, err = run(["pr", "view", *argv], capsys)
+    assert code == 0, err
+    return json.loads(out)
+
+
+def test_pr_create_defaults_head_to_the_current_branch_and_base_to_the_remote_head(clone, store, capsys):
+    sha = _push_branch(clone, "feat/x")
+    assert run(["pr", "create", "--title", "t", "--draft"], capsys)[0] == 0
+    got = _view(capsys, "1", "--json", "headRefName,baseRefName,headRefOid,baseRefOid")
+    assert (got["headRefName"], got["baseRefName"], got["headRefOid"]) == ("feat/x", "master", sha)
+    assert got["baseRefOid"] == _git(clone, "rev-parse", "origin/master")
+
+
+def test_head_ref_oid_follows_the_remote_not_the_pr_creation(clone, store, capsys):
+    """ci_gate waits until `headRefOid` equals the pushed sha, so a later push must show."""
+    _push_branch(clone, "feat/x")
+    run(["pr", "create", "--title", "t"], capsys)
+    (clone / "more.txt").write_text("m", encoding="utf-8")
+    _git(clone, "add", "-A")
+    _git(clone, "commit", "-m", "more")
+    _git(clone, "push", "-q", "origin", "feat/x")
+    assert _view(capsys, "1", "--json", "headRefOid")["headRefOid"] == _git(clone, "rev-parse", "HEAD")
+
+
+def test_explicit_head_and_base_win_over_the_defaults(clone, store, capsys):
+    _push_branch(clone, "feat/x")
+    run(["pr", "create", "--title", "t", "--head", "feat/y", "--base", "release"], capsys)
+    assert _view(capsys, "1", "--json", "headRefName,baseRefName,headRefOid") == {
+        "headRefName": "feat/y", "baseRefName": "release", "headRefOid": None}
+
+
+def test_a_remote_that_is_not_local_is_never_contacted(clone, store, capsys):
+    """The shim must not reach a network: an https origin falls back to `main` and no oid."""
+    _git(clone, "remote", "set-url", "origin", "https://example.invalid/x/y.git")
+    run(["pr", "create", "--title", "t", "--head", "feat/x"], capsys)
+    assert _view(capsys, "1", "--json", "baseRefName,headRefOid") == {"baseRefName": "main", "headRefOid": None}
+
+
+def test_pr_view_with_no_argument_or_a_branch_name_finds_the_pr(clone, store, capsys):
+    _push_branch(clone, "feat/x")
+    run(["pr", "create", "--title", "one"], capsys)
+    run(["pr", "create", "--title", "other", "--head", "feat/other"], capsys)
+    assert _view(capsys, "--json", "number") == {"number": 1}                      # the current branch
+    assert _view(capsys, "feat/other", "--json", "number") == {"number": 2}
+    assert _view(capsys, "https://github.com/l3-harness/throwaway/pull/2", "--json", "number") == {"number": 2}
+    code, _, err = run(["pr", "view", "feat/none", "--json", "number"], capsys)
+    assert code != 0 and "feat/none" in err
+
+
+def test_pr_view_by_branch_prefers_the_open_pr(clone, store, capsys):
+    _push_branch(clone, "feat/x")
+    def set_states(*states):
+        raw = state(store)
+        for number, st in enumerate(states, 1):
+            raw["issues"][str(number)]["state"] = st
+        store.write_text(json.dumps(raw), encoding="utf-8")
+
+    run(["pr", "create", "--title", "old"], capsys)
+    set_states("CLOSED")
+    run(["pr", "create", "--title", "new"], capsys)
+    set_states("OPEN", "CLOSED")
+    assert _view(capsys, "--json", "number") == {"number": 1}   # the open one, though a newer PR exists
+    set_states("CLOSED", "MERGED")
+    assert _view(capsys, "--json", "number") == {"number": 2}   # none open: the newest
+
+
+def test_a_second_open_pr_for_the_same_head_and_base_is_refused(clone, store, capsys):
+    _push_branch(clone, "feat/x")
+    assert run(["pr", "create", "--title", "one"], capsys)[0] == 0
+    code, _, err = run(["pr", "create", "--title", "two"], capsys)
+    assert code != 0 and "already exists" in err
+
+
+def test_pr_view_of_an_issue_number_fails(store, capsys):
+    run(["issue", "create", "--title", "an issue"], capsys)
+    assert run(["pr", "view", "1", "--json", "number"], capsys)[0] != 0
+
+
+def test_a_pr_carries_one_green_check_run_by_default_and_a_stored_rollup_overrides_it(clone, store, capsys):
+    _push_branch(clone, "feat/x")
+    run(["pr", "create", "--title", "t"], capsys)
+    rollup = _view(capsys, "1", "--json", "statusCheckRollup")["statusCheckRollup"]
+    assert [(c["__typename"], c["status"], c["conclusion"]) for c in rollup] == [("CheckRun", "COMPLETED", "SUCCESS")]
+    raw = state(store)
+    raw["issues"]["1"]["statusCheckRollup"] = []
+    store.write_text(json.dumps(raw), encoding="utf-8")
+    assert _view(capsys, "1", "--json", "statusCheckRollup") == {"statusCheckRollup": []}
+
+
+def test_ci_gate_reads_green_from_the_shim(clone, store, tmp_path, monkeypatch, capsys):
+    """4a's CI gate: `pr view N --json headRefOid,baseRefOid,mergeStateStatus,statusCheckRollup` against the pushed sha."""
+    _shimmed_env(tmp_path, monkeypatch)
+    sha = _push_branch(clone, "feat/x")
+    run(["pr", "create", "--title", "t", "--draft"], capsys)
+    r = subprocess.run([sys.executable, str(REPO / "src" / "scripts" / "ci_gate.py"), "status", "--pr", "1",
+                        "--sha", sha, "--wait", "5"], cwd=str(clone), capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert json.loads(r.stdout)["verdict"] == "green"
+    assert state(Path(os.environ["L3_GH_STORE"]))["unknown"] == []
+
+
+def test_sub_issues_and_blocked_by_render_live_from_the_store(store, capsys):
+    """A relation recorded while the issue was open must show it CLOSED after a later close."""
+    _seed_chain(capsys)
+    run(["issue", "close", "2"], capsys)
+    kids = json.loads(run(["issue", "view", "1", "--json", "subIssues"], capsys)[1])["subIssues"]
+    assert {n["number"]: n["state"] for n in kids["nodes"]} == {2: "CLOSED", 3: "OPEN"} and kids["totalCount"] == 2
+    blockers = json.loads(run(["issue", "view", "3", "--json", "blockedBy"], capsys)[1])["blockedBy"]
+    assert [(n["number"], n["state"]) for n in blockers["nodes"]] == [(2, "CLOSED")]
+    assert json.loads(run(["issue", "view", "3", "--json", "parent"], capsys)[1])["parent"]["number"] == 1
+    listed = json.loads(run(["issue", "list", "--json", "number,blockedBy", "--state", "all"], capsys)[1])
+    assert [[n["state"] for n in r["blockedBy"]["nodes"]] for r in listed if r["number"] == 3] == [["CLOSED"]]
+
+
+def test_issue_list_filters_by_milestone(store, capsys):
+    run(["issue", "create", "--title", "a", "--milestone", "v1.0.1"], capsys)
+    run(["issue", "create", "--title", "b", "--milestone", "v1.1.0"], capsys)
+    run(["issue", "create", "--title", "c"], capsys)
+    _, out, _ = run(["issue", "list", "--state", "open", "--milestone", "v1.0.1", "--json", "number,milestone"], capsys)
+    assert json.loads(out) == [{"number": 1, "milestone": {"title": "v1.0.1"}}]
+    assert run(["issue", "list", "-m", "v9.9.9", "--json", "number"], capsys)[1] == "[]"
+
+
+def test_issue_edit_remove_milestone_unsets_it(store, capsys):
+    run(["issue", "create", "--title", "a", "--milestone", "v1.0.0"], capsys)
+    assert run(["issue", "edit", "1", "--remove-milestone"], capsys)[0] == 0
+    assert json.loads(run(["issue", "view", "1", "--json", "milestone"], capsys)[1]) == {"milestone": None}
