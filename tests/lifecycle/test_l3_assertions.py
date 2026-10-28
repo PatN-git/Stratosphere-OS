@@ -382,6 +382,15 @@ def test_3d_fails_without_a_session_line_or_with_a_retired_field(tmp_path):
     assert any("retired" in p for p in problems)
 
 
+def test_3d_session_line_accepts_a_local_backend_id(tmp_path):
+    """The local backend's ids are `BT-LOCAL-<slug>`; a session line naming one is a session line."""
+    proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md",
+          "# STATUS\n- **Sessions:**\n  - BT-LOCAL-flag-evaluation · feature/v1.0-flags · 2026-10-28\n")
+    problems, _ = a.check("3d", ctx(proj))
+    assert not any("session line" in p for p in problems)
+
+
 def test_3d_passes_with_a_branch_and_a_commit(tmp_path):
     proj = project(tmp_path)
     write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
@@ -464,9 +473,20 @@ def test_0b_fails_when_okf_view_never_ran(tmp_path):
     before = a.snapshot(proj)
     _validator(proj, 0)
     write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
-    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD,
-                                          before=before))
+    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "ls"}'}]))
     assert any("okf_view.py" in p for p in problems)
+
+
+def test_0b_without_a_tool_stream_notes_the_okf_view_clause_instead_of_failing_it(tmp_path):
+    """A caller with no stream (a check run after the fact) cannot know okf_view ran, so it is no evidence."""
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
+    problems, notes = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before))
+    assert problems == []
+    assert any("okf_view.py" in n for n in notes)
 
 
 def test_0b_fails_if_a_single_run_promoted_a_memory_to_verified(tmp_path):

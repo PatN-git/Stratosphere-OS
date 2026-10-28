@@ -21,9 +21,9 @@ Three rules shape everything here:
 
 The surface implemented is what the TESTED CHAIN uses, found with
 `grep -rhoE '\\bgh [a-z-]+( [a-z-]+)?' src/workflows/ src/references/ src/scripts/`:
-`issue create|edit|view|list|comment|close`, `pr create|view|ready`, `api graphql`,
-`api repos/.../milestones`, `auth status`, `version`, and `repo create|delete|list`.
-`gh release view`, `gh project`, `gh label list`, `gh secret|variable set` and
+`issue create|edit|view|list|comment|close|reopen`, `pr create|view|list|edit|ready [--undo]`, `api graphql`,
+`api repos/.../milestones` (list, create), `label list|create`, `auth status`, `version`, and
+`repo create|delete|list`. `gh release view`, `gh project`, `gh secret|variable set` and
 `gh repo view` exist in the repo but only inside `stratosphere-setup` and
 `stratosphere-update`, which L3 never drives - so they are deliberately absent and
 will fail loudly if a phase reaches for one.
@@ -142,6 +142,7 @@ def positional(argv: list[str]) -> list[str]:
 
 
 _JQ = re.compile(r"^\.([A-Za-z_][A-Za-z0-9_]*)$")
+_JQ_EACH = re.compile(r"^\.\[\]\.([A-Za-z_][A-Za-z0-9_]*)$")  # `.[].name`, for a list of rows
 
 
 def apply_jq(data, expr: str):
@@ -150,6 +151,9 @@ def apply_jq(data, expr: str):
     Anything else fails by name rather than returning something plausible: a
     silently wrong node id produces a mutation against the wrong issue.
     """
+    each = _JQ_EACH.match(expr.strip())
+    if each and isinstance(data, list):
+        return "\n".join(str(row[each.group(1)]) for row in data)
     m = _JQ.match(expr.strip())
     if not m:
         raise Failure(EXIT_UNKNOWN,
@@ -306,7 +310,44 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         issue["state"] = "CLOSED"
         return f"Closed issue #{issue['number']}"
 
+    if action == "reopen":
+        issue = get(state, positional(rest)[0])
+        issue["state"] = "OPEN"
+        comment = take(rest, "--comment", "-c")
+        if comment:
+            issue["comments"].append({"body": comment})
+        return f"Reopened issue #{issue['number']}"
+
     raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh issue {action}")
+
+
+def cmd_label(state: dict, argv: list[str]) -> str:
+    """`label list` answers from the registry: created labels plus any an issue already carries
+    (the shim accepts any label on `issue create`, so those are de facto known). `label create` is
+    idempotent, as with `--force`."""
+    action, rest = argv[0], argv[1:]
+    registry = state.setdefault("labels", [])
+    if action == "create":
+        name = positional(rest)[0]
+        if not any(l["name"] == name for l in registry):
+            registry.append({"name": name, "description": take(rest, "--description", "-d") or "",
+                             "color": take(rest, "--color", "-c") or ""})
+        return f'Label "{name}" created'
+    if action == "list":
+        known = {l["name"] for l in registry}
+        rows = list(registry) + [{"name": n, "description": "", "color": ""} for n in sorted(
+            {l["name"] for i in state["issues"].values() for l in i["labels"]} - known)]
+        fields = take(rest, "--json")
+        jq = take(rest, "-q", "--jq")
+        if not fields:
+            return "\n".join(f"{r['name']}\t{r['description']}" for r in rows)
+        names = [f.strip() for f in fields.split(",") if f.strip()]
+        unknown = [f for f in names if f not in ("name", "description", "color")]
+        if unknown:
+            raise Failure(EXIT_UNKNOWN, f"unknown JSON field(s) for label: {', '.join(unknown)}")
+        data = [{f: r[f] for f in names} for r in rows]
+        return str(apply_jq(data, jq)) if jq else json.dumps(data)
+    raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh label {action}")
 
 
 def _body(argv: list[str]) -> str:
@@ -339,15 +380,76 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
         jq = take(rest, "-q", "--jq")
         if not fields:
             return f"#{pr['number']}\t{pr['title']}\t{pr['state']}"
-        data = project(pr, [f.strip() for f in fields.split(",") if f.strip()])
+        data = project(pr_record(pr), [f.strip() for f in fields.split(",") if f.strip()])
         return str(apply_jq(data, jq)) if jq else json.dumps(data)
 
-    if action == "ready":
+    if action == "list":
+        return _pr_list(state, rest)
+
+    if action == "edit":
         pr = get(state, positional(rest)[0])
-        pr["isDraft"] = False
-        return f"Pull request #{pr['number']} is marked as ready for review"
+        title = take(rest, "--title", "-t")
+        if title is not None:
+            pr["title"] = title
+        body = _body(rest)
+        if body:
+            pr["body"] = body
+        remove = set(take_all(rest, "--remove-label"))
+        names = [l["name"] for l in pr["labels"] if l["name"] not in remove]
+        names += [a for a in take_all(rest, "--add-label") if a not in names]
+        pr["labels"] = [{"name": n} for n in names]
+        return pr["url"]
+
+    if action == "ready":
+        undo = "--undo" in rest
+        pr = get(state, positional([a for a in rest if a != "--undo"])[0])
+        pr["isDraft"] = undo
+        return (f"Pull request #{pr['number']} is converted to draft" if undo
+                else f"Pull request #{pr['number']} is marked as ready for review")
 
     raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh pr {action}")
+
+
+def pr_record(pr: dict) -> dict:
+    """The PR under the names `gh pr view|list --json` uses: the store row plus the fields derived from it."""
+    refs = [{"number": int(n)} for n in dict.fromkeys(
+        re.findall(r"(?i)\b(?:closes|fixes|resolves)\s+#(\d+)", pr["body"]))]
+    return {**pr, "headRefName": pr.get("head", ""), "baseRefName": pr.get("base", ""),
+            "mergedAt": pr.get("mergedAt"), "closingIssuesReferences": refs}
+
+
+def _pr_list(state: dict, rest: list[str]) -> str:
+    """`gh pr list` with the filters the chain uses: `--state`, `--head`, and a minimal `--search`.
+
+    `closed` matches merged PRs too, as GitHub search does. `--search` understands `is:<state>`, `head:<branch>`,
+    bare words (a substring of the title or body) and ignores the date qualifiers (`closed:>=...`): the store
+    keeps no dates. Any other qualifier fails by name rather than matching everything.
+    """
+    want = (take(rest, "--state", "-s") or "open").upper()
+    head = take(rest, "--head", "-H")
+    words = []
+    for tok in (take(rest, "--search", "-S") or "").split():
+        key, sep, val = tok.partition(":")
+        if not sep:
+            words.append(tok.lower())
+        elif key == "is":
+            want = val.upper()
+        elif key == "head":
+            head = val
+        elif key not in ("closed", "merged", "created", "updated"):
+            raise Failure(EXIT_UNKNOWN, f"the shim's pr search does not implement `{key}:`")
+    rows = [p for p in state["issues"].values() if p["isPR"]]
+    if want != "ALL":
+        rows = [p for p in rows if p["state"] == want or (want == "CLOSED" and p["state"] == "MERGED")]
+    if head:
+        rows = [p for p in rows if p.get("head") == head]
+    rows = [p for p in rows if all(w in f"{p['title']} {p['body']}".lower() for w in words)]
+    rows.sort(key=lambda p: p["number"])
+    fields = take(rest, "--json")
+    if not fields:
+        return "\n".join(f"#{p['number']}\t{p['title']}\t{p['state']}" for p in rows)
+    names = [f.strip() for f in fields.split(",") if f.strip()]
+    return json.dumps([project(pr_record(p), names) for p in rows])
 
 
 _MUTATION = re.compile(r"\b(addSubIssue|addBlockedBy|removeBlockedBy)\b")
@@ -357,9 +459,24 @@ _ALIAS = re.compile(r"\b(\w+):\s*issue\(number:\s*(\d+)\)")
 def cmd_api(state: dict, argv: list[str]) -> str:
     if argv[0] == "graphql":
         return _graphql(state, argv[1:])
-    path = argv[0]
+    rest = [a for a in argv if a != "--paginate"]
+    path = rest[0].split("?", 1)[0]
     if re.match(r"^repos/[^/]+/[^/]+/milestones/?$", path):
-        return json.dumps(state["milestones"])
+        title = take(rest, "-f", "--field", "-F", "--raw-field")
+        known = {m["title"] for m in state["milestones"]}
+        if title and title.startswith("title="):
+            # create: `gh api repos/{o}/{r}/milestones -f title=vX.Y.0`
+            m = {"title": title[len("title="):], "number": len(state["milestones"]) + 1, "state": "open"}
+            if m["title"] not in known:
+                state["milestones"].append(m)
+            return json.dumps(m)
+        # list: milestones made through the shim plus any an issue already carries (seeded epics)
+        used = {i.get("milestone", {}).get("title") if isinstance(i.get("milestone"), dict) else i.get("milestone")
+                for i in state["issues"].values()}
+        rows = state["milestones"] + [{"title": t, "number": 0, "state": "open"} for t in sorted(used - known) if t]
+        if take(rest, "--jq", "-q") == ".[].title":
+            return chr(10).join(r["title"] for r in rows)
+        return json.dumps(rows)
     raise Failure(EXIT_UNKNOWN, f"unknown REST path: gh api {path}")
 
 
@@ -494,7 +611,7 @@ def dispatch(state: dict, argv: list[str]) -> tuple[str, str]:
             return "", (f"github.com\n  x Logged in to github.com as l3-harness "
                         f"(L3 shim)\n  - Active account: true\n")
         raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh auth {argv[1:]}")
-    table = {"issue": cmd_issue, "pr": cmd_pr, "api": cmd_api, "repo": cmd_repo}
+    table = {"issue": cmd_issue, "pr": cmd_pr, "api": cmd_api, "repo": cmd_repo, "label": cmd_label}
     handler = table.get(argv[0])
     if handler is None or len(argv) < 2:
         raise Failure(EXIT_UNKNOWN, f"unknown command: gh {' '.join(argv)}")

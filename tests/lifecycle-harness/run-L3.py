@@ -97,6 +97,8 @@ def parse_args(argv=None):
                          "(default none, or 600 with --handoff)")
     ap.add_argument("--model", default=session_mod.DRIVER_MODEL,
                     help="the agent under test; calibration is model-specific")
+    ap.add_argument("--effort", default=None,
+                    help="reasoning effort for the agent under test, passed to the CLI as --effort (default: the CLI's)")
     ap.add_argument("--proxy-model", default=session_mod.PROXY_MODEL)
     ap.add_argument("--auditor-model", default=session_mod.AUDITOR_MODEL)
     args = ap.parse_args(argv)
@@ -163,9 +165,9 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     before = assertions_mod.snapshot(env.project, env.bare)
     responder = responder_mod.Responder(
         fixture=(HERE / "fixture" / "topic.md").read_text(encoding="utf-8"),
-        proxy=proxy, max_questions=args.max_questions, max_rounds=args.max_rounds)
+        proxy=proxy, phase=phase, max_questions=args.max_questions, max_rounds=args.max_rounds)
     chat = session_mod.ClaudeSession(cwd=env.project, env=env.child_env,
-                                     model=args.model)
+                                     model=args.model, effort=args.effort)
 
     # Only `1b` hands in a `settle`: its sentinel is necessary but not sufficient,
     # because the first full-depth run printed it in three replies with a brief

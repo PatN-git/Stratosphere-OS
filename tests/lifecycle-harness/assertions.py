@@ -144,7 +144,7 @@ def store_state(ctx: Context) -> dict:
 
 RETIRED_STATUS_FIELDS = ("Current Branch", "Active Issue", "Current Focus", "Completed This Session",
                          "Open/Active Task Brief", "Next Immediate Step")
-SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-\d+ · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
+SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-(?:\d+|LOCAL-[\w-]+) · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
 LAST_SYNC = re.compile(r"\*\*Last Sync:\*\*\s*\d{4}-\d{2}-\d{2}")
 
 
@@ -486,7 +486,10 @@ def check_0b(ctx: Context):
     if r.returncode != 0:
         problems.append(f"validate_memory.py exits {r.returncode} after 0b "
                         f"(0b step 9): {(r.stdout or '')[-300:]}")
-    if not ran_command(ctx, "okf_view.py"):
+    if not ctx.tool_uses:
+        notes.append("no tool-use stream was given, so whether 0b ran okf_view.py (step 10) "
+                     "could not be checked")
+    elif not ran_command(ctx, "okf_view.py"):
         problems.append("0b did not run okf_view.py (step 10) - nothing in the "
                         "tool-use stream names it")
     # Promotion to `verified` needs >=2 occurrences across tasks and belongs to 0d,

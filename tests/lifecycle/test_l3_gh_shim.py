@@ -182,6 +182,92 @@ def test_body_file_is_read_from_disk(store, capsys, tmp_path):
     assert "Acceptance Criteria" in json.loads(out)["body"]
 
 
+# --- the surface the live runs found missing ---------------------------------
+
+def test_milestones_list_with_paginate_and_query_create_and_include_issue_milestones(store, capsys):
+    """`ensure_milestone` (tracker-verbs.md) lists with --paginate, a query string and --jq, then creates with -f."""
+    run(["issue", "create", "--title", "seeded", "--milestone", "v0.9.0"], capsys)
+    list_argv = ["api", "--paginate", "repos/{owner}/{repo}/milestones?state=open", "--jq", ".[].title"]
+    assert run(list_argv, capsys) == (0, "v0.9.0", "")
+    assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0
+    assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0  # not duplicated
+    assert run(list_argv, capsys)[1].splitlines() == ["v1.0.0", "v0.9.0"]
+    assert run(["issue", "create", "--title", "x", "--milestone", "v1.0.0"], capsys)[0] == 0
+
+
+def test_label_create_then_list_in_text_json_and_jq(store, capsys):
+    assert run(["label", "create", "area:fe", "--description", "front end"], capsys)[0] == 0
+    run(["issue", "create", "--title", "a", "--label", "type:bug"], capsys)
+    assert run(["label", "create", "area:fe"], capsys)[0] == 0  # idempotent
+    _, out, _ = run(["label", "list", "--json", "name"], capsys)
+    assert json.loads(out) == [{"name": "area:fe"}, {"name": "type:bug"}]
+    assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == ["area:fe", "type:bug"]
+    assert "area:fe\tfront end" in run(["label", "list"], capsys)[1]
+    assert run(["label", "list", "--json", "nope"], capsys)[0] != 0
+    assert run(["label", "delete", "area:fe"], capsys)[0] != 0
+
+
+def _prs(capsys):
+    run(["pr", "create", "--title", "Unit one", "--head", "feat/a", "--body", "Closes #7."], capsys)
+    run(["pr", "create", "--title", "Unit two", "--head", "feat/b"], capsys)
+    run(["pr", "create", "--title", "Unit three", "--head", "feat/c"], capsys)
+    run(["issue", "create", "--title", "an issue, not a PR"], capsys)
+
+
+def test_pr_list_filters_by_state_head_and_search_and_projects_json(store, capsys):
+    _prs(capsys)
+    raw = state(store)
+    raw["issues"]["2"]["state"] = "MERGED"
+    raw["issues"]["2"]["mergedAt"] = "2026-10-28T00:00:00Z"
+    raw["issues"]["3"]["state"] = "CLOSED"
+    store.write_text(json.dumps(raw), encoding="utf-8")
+
+    def numbers(*argv):
+        code, out, _ = run(["pr", "list", *argv, "--json", "number"], capsys)
+        assert code == 0
+        return [r["number"] for r in json.loads(out)]
+
+    assert numbers() == [1]                                          # open by default; the issue is not a PR
+    assert numbers("--state", "all") == [1, 2, 3]
+    assert numbers("--state", "closed") == [2, 3]                      # closed includes merged, as the search does
+    assert numbers("--state", "merged") == [2]
+    assert numbers("--state", "all", "--head", "feat/c") == [3]
+    assert numbers("--state", "closed", "--search", "closed:>=2026-10-01") == [2, 3]  # dates are ignored
+    assert numbers("--state", "all", "--search", "two") == [2]
+    _, out, _ = run(["pr", "list", "--state", "all", "--json", "number,mergedAt,closingIssuesReferences,headRefName"], capsys)
+    rows = json.loads(out)
+    assert rows[0] == {"number": 1, "mergedAt": None, "closingIssuesReferences": [{"number": 7}], "headRefName": "feat/a"}
+    assert rows[1]["mergedAt"] == "2026-10-28T00:00:00Z"
+    assert run(["pr", "list", "--search", "label:x"], capsys)[0] != 0     # an unimplemented qualifier fails loudly
+
+
+def test_pr_edit_changes_body_title_and_labels(store, capsys, tmp_path):
+    _prs(capsys)
+    body = tmp_path / "b.md"
+    body.write_text("new body", encoding="utf-8")
+    assert run(["pr", "edit", "1", "--title", "Renamed", "--body-file", str(body),
+                "--add-label", "risk:one-way"], capsys)[0] == 0
+    assert run(["pr", "edit", "1", "--add-label", "x", "--remove-label", "risk:one-way"], capsys)[0] == 0
+    _, out, _ = run(["pr", "view", "1", "--json", "title,body,labels"], capsys)
+    got = json.loads(out)
+    assert (got["title"], got["body"], got["labels"]) == ("Renamed", "new body", [{"name": "x"}])
+
+
+def test_pr_ready_undo_converts_back_to_draft(store, capsys):
+    run(["pr", "create", "--title", "p", "--draft"], capsys)
+    run(["pr", "ready", "1"], capsys)
+    assert json.loads(run(["pr", "view", "1", "--json", "isDraft"], capsys)[1]) == {"isDraft": False}
+    run(["pr", "ready", "1", "--undo"], capsys)
+    assert json.loads(run(["pr", "view", "1", "--json", "isDraft"], capsys)[1]) == {"isDraft": True}
+
+
+def test_issue_reopen_sets_the_state_back_to_open(store, capsys):
+    run(["issue", "create", "--title", "a"], capsys)
+    run(["issue", "close", "1"], capsys)
+    assert run(["issue", "reopen", "1"], capsys)[0] == 0
+    assert json.loads(run(["issue", "view", "1", "--json", "state"], capsys)[1]) == {"state": "OPEN"}
+
+
 # --- relations ---------------------------------------------------------------
 
 def _mutation(kind, a, b):

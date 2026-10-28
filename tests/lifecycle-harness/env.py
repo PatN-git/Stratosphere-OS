@@ -266,6 +266,12 @@ def lifecycle_env(repo_root: Path, keep: bool = False, scaffold: bool = True,
             "GIT_TERMINAL_PROMPT": "0",
         })
 
+        # A real project has history. Without a commit the default branch is unborn, and
+        # `git worktree add -b`, a checkout of it and a clone all fail on it. The identity
+        # comes from the temp global config, never the developer's.
+        subprocess.run(["git", "-C", str(project), "commit", "-q", "--allow-empty", "-m", "chore: init"],
+                       env=child, capture_output=True, check=True)
+
         shim_dir = install_shims(root, child)
         assert_gh_is_shimmed(child)
 
@@ -472,7 +478,14 @@ def _usable(path: Path) -> bool:
     except (OSError, ValueError):
         return False
     oauth = data.get("claudeAiOauth", data)
-    return bool(oauth.get("accessToken") or oauth.get("refreshToken"))
+    if not (oauth.get("accessToken") or oauth.get("refreshToken")):
+        return False
+    # Dead tokens look like live ones to a shape check, and the run then dies on turn 1: with the
+    # refresh token past its expiry, an access token past its own cannot be renewed either.
+    now_ms = time.time() * 1000
+    dead = [isinstance(oauth.get(k), (int, float)) and oauth[k] <= now_ms
+            for k in ("refreshTokenExpiresAt", "expiresAt")]
+    return not all(dead)
 
 
 def credentials_source(real_home: Path, store: Path = HARNESS_STORE) -> Path | None:

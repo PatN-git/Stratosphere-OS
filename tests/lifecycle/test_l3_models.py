@@ -42,3 +42,18 @@ def test_prompt_and_permissions_survive_model_wiring():
     assert cmd[cmd.index("-p") + 1] == "the prompt"
     assert "--dangerously-skip-permissions" in cmd
     assert "stream-json" in cmd
+
+
+def test_effort_is_passed_only_when_given():
+    cmd = s.build_cmd("hi", model="haiku", effort="high")
+    assert cmd[cmd.index("--effort") + 1] == "high"
+    assert "--effort" not in s.build_cmd("hi", model="haiku")
+
+
+def test_the_driver_session_carries_the_effort_into_every_turn(monkeypatch, tmp_path):
+    seen = []
+    monkeypatch.setattr(s, "_run", lambda cmd, cwd, env, timeout: (seen.append(cmd), (s.Turn(text="ok"), "sid"))[1])
+    chat = s.ClaudeSession(cwd=tmp_path, env={}, model="haiku", effort="high")
+    chat.send("one")
+    chat.send("two")
+    assert all(c[c.index("--effort") + 1] == "high" for c in seen) and len(seen) == 2

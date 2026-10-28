@@ -134,12 +134,16 @@ class Turn:
 
 
 def build_cmd(prompt: str, model: str | None = None,
-              resume: str | None = None) -> list[str]:
+              resume: str | None = None, effort: str | None = None) -> list[str]:
     """The exact argv for one headless turn. Split out so it can be asserted on."""
     cmd = _base_cmd() + ["-p", prompt, "--output-format", "stream-json",
                          "--verbose", "--dangerously-skip-permissions"]
     if model:
         cmd += ["--model", model]
+    if effort:
+        # Passed through as given: the flag name is the Claude Code CLI's `--effort <level>`, not
+        # verified against the pinned CLI version, so an unknown value surfaces as the CLI's own error.
+        cmd += ["--effort", effort]
     if resume:
         cmd += ["--resume", resume]
     return cmd
@@ -184,14 +188,15 @@ def _run(cmd: list[str], cwd, env, timeout: int) -> tuple[Turn, str | None]:
 class ClaudeSession:
     """One continuing conversation, resumed turn by turn."""
 
-    def __init__(self, cwd, env=None, timeout: int = 900, model: str = DRIVER_MODEL):
+    def __init__(self, cwd, env=None, timeout: int = 900, model: str = DRIVER_MODEL,
+                 effort: str | None = None):
         self.cwd, self.env, self.timeout = Path(cwd), env or dict(os.environ), timeout
-        self.model = model
+        self.model, self.effort = model, effort
         self.session_id: str | None = None
         self.turns: list[Turn] = []
 
     def send(self, prompt: str) -> Turn:
-        cmd = build_cmd(prompt, self.model, self.session_id)
+        cmd = build_cmd(prompt, self.model, self.session_id, self.effort)
         turn, sid = _run(cmd, self.cwd, self.env, self.timeout)
         # Only adopt the first id: --resume must keep pointing at one conversation.
         self.session_id = self.session_id or sid

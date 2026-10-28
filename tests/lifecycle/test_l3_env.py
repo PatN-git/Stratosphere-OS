@@ -135,6 +135,16 @@ def test_lifecycle_env_builds_and_tears_down():
     assert not root.exists(), "temp root survived teardown"
 
 
+def test_the_project_has_an_initial_commit_so_its_default_branch_is_born():
+    """An unborn branch fails `git worktree add -b`, a checkout of the default branch and a clone."""
+    with e.lifecycle_env(REPO, scaffold=False) as env:
+        git = ["git", "-C", str(env.project)]
+        assert subprocess.run([*git, "rev-parse", "--verify", "HEAD"], capture_output=True, env=env.child_env).returncode == 0
+        branch = subprocess.run([*git, "branch", "--show-current"], capture_output=True, text=True).stdout.strip()
+        assert branch and subprocess.run([*git, "checkout", "-q", branch], capture_output=True).returncode == 0
+        assert subprocess.run([*git, "status", "--porcelain"], capture_output=True, text=True).stdout == ""
+
+
 def test_teardown_runs_even_when_the_body_raises():
     root = None
     with pytest.raises(ValueError):
