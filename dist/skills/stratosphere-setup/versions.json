@@ -56,7 +56,7 @@
       "version": "2.2.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "f858a24acb5c1b62ac5f5accbaba587b028bd744b49c8189a670ad9d8c88e4d2",
+      "sha256": "0295108dd72c1080dfa5ab90436a0cb6a92c2cafa9540c37519f66964b4ee035",
       "timestamp": "2026-10-22",
       "version": "2.0.4"
     },
@@ -91,7 +91,7 @@
       "version": "1.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "63d2685402ab63fd25d916e1d12c60a70efcacdeb8317d4f29c40e389085f1ea",
+      "sha256": "97e5e66b8d1f86799a3ed21ca0ca45f97e1698998898467f8eb03210e75fc77c",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -116,7 +116,7 @@
       "version": "1.0.0"
     },
     "skills/0b-stop-session/references/post-merge-sync.md": {
-      "sha256": "032dd0041faf1694b49a75a65a92129a4959a9bef8a30a20c3dcec55545d79a1",
+      "sha256": "ea1eb6ed23deb88b1331b483facfd3456e2c6d210533cf6f98f909f0094137cb",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
