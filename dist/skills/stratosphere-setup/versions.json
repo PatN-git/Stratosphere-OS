@@ -56,14 +56,14 @@
       "version": "2.2.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "f858a24acb5c1b62ac5f5accbaba587b028bd744b49c8189a670ad9d8c88e4d2",
-      "timestamp": "2026-10-22",
-      "version": "2.0.4"
+      "sha256": "2818395053f95bc2edb65de60ca39c5e216f5b4c0752bab5d6652a0f5a5e5814",
+      "timestamp": "2026-10-28",
+      "version": "2.1.0"
     },
     "assets/templates/rules/output-mode.md": {
-      "sha256": "26f131434fa078b1022f731925cd24c9b7efa65925212113463969989ffcc302",
-      "timestamp": "2026-09-15",
-      "version": "2.0.0"
+      "sha256": "45b065433ae8c4e4947d7ee4c5efe019f64f6d81c065d8200187a95e32f8edcf",
+      "timestamp": "2026-10-28",
+      "version": "2.0.1"
     },
     "skills/0a-start-session/SKILL.md": {
       "sha256": "0d35a08668f81e51935403aa7545020f849beb71424297a508461c6cece8fcce",
@@ -146,8 +146,23 @@
       "version": "1.2.2"
     },
     "skills/0e-plain-english/SKILL.md": {
-      "sha256": "e3fca4c5abf5ea96b2d6697c39da4574573222eaf7476a41014074c850b4be00",
-      "timestamp": "2026-10-20",
+      "sha256": "c37f040f7daf5b890e580ef019535587d6fc3165570375d3efdb8be932895cdc",
+      "timestamp": "2026-10-28",
+      "version": "1.1.0"
+    },
+    "skills/0e-plain-english/references/plain-language.md": {
+      "sha256": "4deb380ede2adc8dbec99c6651e21707e16b542e2257dfa04777b7e6ee234030",
+      "timestamp": "2026-10-28",
+      "version": "1.0.0"
+    },
+    "skills/0f-walk-me-through/SKILL.md": {
+      "sha256": "74ba9bde032f9dd62388b30acddeec2896801e3f2047999acec9e82d8cb2b989",
+      "timestamp": "2026-10-28",
+      "version": "1.0.0"
+    },
+    "skills/0f-walk-me-through/references/plain-language.md": {
+      "sha256": "4deb380ede2adc8dbec99c6651e21707e16b542e2257dfa04777b7e6ee234030",
+      "timestamp": "2026-10-28",
       "version": "1.0.0"
     },
     "skills/1a-research/SKILL.md": {
@@ -516,7 +531,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "e8ddbfe3eed8275c6aaafbb28bb36ac8da28f8158f74ece58c21cb746e77763a",
+      "sha256": "a41d56ff491f4c21f9fd9f6c21691b1f7e3daf825868b3a46301a238431287a6",
       "timestamp": "2026-10-22",
       "version": "1.8.0"
     },
@@ -736,7 +751,7 @@
       "version": "1.3.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "b6b3df7b8b5b550135876f0efd88d7517dbae1fdbe3105277a2c5cc5aa4ec8f1",
+      "sha256": "e0f40ddb8c64568735a820731a2b5de039d9aa3bfaf88d3c4901fcf1abbb993b",
       "timestamp": "2026-10-22",
       "version": "1.6.0"
     },

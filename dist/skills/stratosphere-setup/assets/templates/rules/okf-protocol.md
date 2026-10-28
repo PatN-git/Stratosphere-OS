@@ -6,8 +6,8 @@ paths:
   - "docs/**/*"
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
-version: "2.0.4"
-timestamp: 2026-10-22
+version: "2.1.0"
+timestamp: 2026-10-28
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -96,7 +96,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `status` | `STATUS.md` | — |
 | `learnings` | `LEARNINGS.md` | — |
 | `glossary` | `GLOSSARY.md` | — |
-| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a present tracker branch means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`). `tracker_branch` (local): `<repo>/issues` |
+| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a present tracker branch means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`). `tracker_branch` (local): `<repo>/issues`. `data_read` (optional): how `/0f-walk-me-through` reads one record, e.g. `supabase, read-only role`; it names the method, never the secret (that stays in `.env`); read-only credentials only, never an admin or service-role key. Absent: illustrative traces. |
 | `database-schema` | `DATABASE_SCHEMA.md` | — |
 | `design-rules` | `DESIGN_RULES.md` | — |
 | `design` | `DESIGN.md` | conforming (tolerated by the `@google/design.md` linter) |
