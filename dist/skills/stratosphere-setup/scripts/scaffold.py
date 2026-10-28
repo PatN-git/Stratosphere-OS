@@ -373,14 +373,6 @@ def init_local_tracker(project, arch):
         os.chdir(cwd)
 
 
-def resolve_tracker(project, flag=None):
-    """'github' | 'local': the explicit flag, else the `tracker:` key in the project's ARCHITECTURE.md, else the
-    legacy default `local` (every install before the key existed holds a map)."""
-    if flag:
-        return flag
-    key = reconcile.read_tracker(Path(project) / ".memory" / "ARCHITECTURE.md")
-    return key if key in ("github", "local") else "local"
-
 def map_bundled_to_project(rel_path: str):
     parts = rel_path.split("/")
     if parts[0] == "assets" and parts[1] == "templates":
@@ -639,7 +631,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "_tracker_common.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name

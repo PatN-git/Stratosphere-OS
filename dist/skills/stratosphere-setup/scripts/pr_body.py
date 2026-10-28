@@ -48,6 +48,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _tracker_common import longer_id_globs, resolve_unit
+
 SCOPE_RE = re.compile(r"^[a-z]+\(BT-(\d+)\):\s*(.*)")
 RELEASE_RE = re.compile(r"^release: prepare")
 SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -61,10 +64,7 @@ AUDIT_COUNTS = ("spec_r1", "spec_final", "std_hard", "std_judg", "watch")
 AUDIT_TEXT = ("phase1", "std_tier")
 AUDIT_INPUTS = ("lean", "full")
 PARENT_RE = re.compile(r"BT-\d+")
-UNIT_ID_RE = re.compile(r"BT-(\d+|LOCAL-[a-z0-9-]+)")  # a GitHub number or a local-tracker id
-MILESTONE_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)")
 TYPE_RE = re.compile(r"[a-z]+")
-NONE_TOKENS = ("", "-", "—")
 NO_PARENT = "—"
 DRIFT_OK = (".memory/", "docs/", ".tmp/")  # paths allowed to be dirty (same set as 4a's clean-tree guard)
 FULL_SIMPLE = {("npm", "test"), ("yarn", "test"), ("pnpm", "test"), ("npm", "run", "test"),
@@ -321,15 +321,14 @@ def canon(bt):
 
 
 def _reconcile():
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import reconcile
+    import reconcile  # lazy: only the tracker-facts path needs it, and it imports issues.py and gh helpers
     return reconcile
 
 
 def backlog_rows():
     """Local-tracker rows from the issues.py store; {} when it is unreadable (fails open)."""
     try:
-        import issues
+        import issues  # lazy: a project with only the leaf beside this file has no store to read
     except ImportError:
         return {}
     try:
@@ -539,58 +538,9 @@ def cmd_build(args):
     return 0
 
 
-def _milestone(value, flag):
-    """(X, Y) of a `vX.Y.Z` milestone, None for a none token (None, empty, `-`, `—`); ValueError otherwise."""
-    if value is None or value.strip() in NONE_TOKENS:
-        return None
-    m = MILESTONE_RE.fullmatch(value.strip())
-    if not m:
-        raise ValueError(f"{flag} must look like v<X>.<Y>.<Z> or be none (empty, '-' or an em dash), got {value!r}")
-    return int(m.group(1)), int(m.group(2))
-
-
 def slugify(text):
     """Lower-case, non-[a-z0-9] runs -> `-`, at most 40 chars with no leading/trailing `-`."""
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40].strip("-")
-
-
-def _unit_id(bt):
-    """`BT-<padded>` for a GitHub number, the id itself for a local-tracker `BT-LOCAL-<slug>`."""
-    return f"BT-{int(bt[3:]):03d}" if bt[3:].isdigit() else bt
-
-
-def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
-    """Ship unit of a slice (or of an epic row with epic=True): {unit, kind, globs}. ValueError on bad input.
-
-    The only implementation of D1: a release `vX.Y` (own milestone, else the parent epic's), else the parent epic,
-    else the issue itself (a standalone issue never joins a release). Globs are fnmatch patterns for branch names;
-    the legacy own-epic glob comes first so a mid-flight per-epic branch keeps its epic. Pure; no I/O.
-    """
-    if not UNIT_ID_RE.fullmatch(id):
-        raise ValueError(f"--slice must look like BT-<n> or BT-LOCAL-<slug>, got {id!r}")
-    if parent is not None and parent.strip() not in NONE_TOKENS and not UNIT_ID_RE.fullmatch(parent):
-        raise ValueError(f"--parent must look like BT-<n>, BT-LOCAL-<slug> or be none, got {parent!r}")
-    own, inherited = _milestone(milestone, "--milestone"), _milestone(parent_milestone, "--parent-milestone")
-    has_parent = parent is not None and parent.strip() not in NONE_TOKENS
-    own_glob = f"*/{_unit_id(id)}-*"
-    if epic and own:
-        return {"unit": f"v{own[0]}.{own[1]}", "kind": "release", "globs": [own_glob, f"*/v{own[0]}.{own[1]}-*"]}
-    if epic or not has_parent:
-        return {"unit": _unit_id(id), "kind": "epic" if epic else "issue", "globs": [own_glob]}
-    parent_glob = f"*/{_unit_id(parent)}-*"
-    release = own or inherited
-    if release:
-        return {"unit": f"v{release[0]}.{release[1]}", "kind": "release", "globs": [parent_glob, f"*/v{release[0]}.{release[1]}-*"]}
-    return {"unit": _unit_id(parent), "kind": "epic", "globs": [parent_glob], "needs_milestone": True}
-
-
-def longer_id_globs(ids, known=None):
-    """`*/<longer>-*` globs of the store ids that extend one of `ids` with `-…`: the glob `*/BT-LOCAL-login-*` also
-    matches a branch of `BT-LOCAL-login-form`, which belongs to that longer issue. `known` defaults to the issues.py
-    store's ids (fails open: none)."""
-    known = backlog_rows() if known is None else known
-    ids = [i for i in ids if i and i.strip() not in NONE_TOKENS]
-    return [f"*/{k}-*" for k in known if any(k != i and k.startswith(i + "-") for i in ids)]
 
 
 def cmd_unit(args):
@@ -605,7 +555,7 @@ def cmd_unit(args):
             out["branch"] = f"{args.type or 'feat'}/{out['unit']}-{slug}"
         if args.branch is not None:
             names = {args.branch, args.branch.removeprefix("origin/")}
-            longer = longer_id_globs([args.slice, args.parent]) if args.slice.startswith("BT-LOCAL-") else []
+            longer = longer_id_globs([args.slice, args.parent], backlog_rows()) if args.slice.startswith("BT-LOCAL-") else []
             out["branch_ok"] = (any(fnmatch.fnmatchcase(n, g) for n in names for g in out["globs"])
                                 and not any(fnmatch.fnmatchcase(n, g) for n in names for g in longer))
     except ValueError as e:

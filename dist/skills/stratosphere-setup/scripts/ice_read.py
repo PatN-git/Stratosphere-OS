@@ -12,71 +12,16 @@ Exit: 0 ok, 1 local store unreadable, 3 GitHub unreachable after the retries (ne
 """
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import issues as local
 import reconcile
+from _tracker_common import candidates
 
-EFFORT = {'small': 1, 'medium': 2, 'large': 3}
-CANDIDATE_STATUS = ('planned', 'needs_spec')
-REQUIRED = ('type:', 'mode:', 'tier:slice', 'size:')
 LIST_FIELDS = 'number,title,labels,milestone,body'
 LIST_LIMIT = 500  # gh issue list --limit; a result this long may have dropped issues
-
-
-def _number(text):
-    """First number of a metric value: `2.0`, `100%`, `80 %`, `0.8 (reason)`. A percent is a fraction. None if absent."""
-    m = re.match(r'\s*([0-9]*\.?[0-9]+)\s*(%?)', text)
-    return None if not m else float(m.group(1)) / (100 if m.group(2) else 1)
-
-
-def parse_metrics(body):
-    """{'impact', 'confidence'} from the body's metric lines; a missing one is None. Pure."""
-    out = {}
-    for key in ('impact', 'confidence'):
-        m = re.search(rf'^[-*]\s*\*\*{key}:\*\*(.*)$', body or '', re.I | re.M)
-        out[key] = _number(m.group(1)) if m else None
-    return out
-
-
-def effort_weight(labels):
-    return next((EFFORT[l[5:]] for l in labels if l.startswith('size:') and l[5:] in EFFORT), None)
-
-
-def ice_from_body(body, labels):
-    """The ICE score (2 decimals), or None when the body or labels do not give one. Pure."""
-    m = parse_metrics(body)
-    weight = effort_weight(labels)
-    if None in (m['impact'], m['confidence'], weight):
-        return None
-    return round(m['impact'] * m['confidence'] / weight, 2)
-
-
-def _status(labels):
-    return next((l[7:] for l in labels if l.startswith('status:')), '')
-
-
-def candidates(issues):
-    """(candidate lines, [MISSING-LABELS] lines) from `gh issue list --json number,title,labels,milestone,body`. Pure."""
-    lines, missing = [], []
-    for issue in issues:
-        labels = [l['name'] for l in issue['labels']]
-        if (_status(labels) not in CANDIDATE_STATUS or 'tier:epic' in labels or 'scope:deferred' in labels
-                or any(l.startswith('concept:') for l in labels)):
-            continue
-        bt = issue.get('id') or reconcile._bt(issue['number'])
-        absent = [r for r in REQUIRED if not any(l.startswith(r) for l in labels)]
-        if absent:
-            missing.append(f"[MISSING-LABELS] {bt} - {issue['title']} ({', '.join(absent)})")
-            continue
-        ice = ice_from_body(issue.get('body') or '', labels) if _status(labels) == 'planned' else None
-        shown = ' '.join(sorted(l for l in labels if not l.startswith(('status:', 'tier:'))))
-        milestone = (issue.get('milestone') or {}).get('title') or '—'
-        score = '—' if ice is None else f"{ice:g}"
-        lines.append(f"{bt} | {_status(labels)} | {issue['title']} | {shown} | {milestone} | ICE {score}")
-    return lines, missing
 
 
 def fetch_open_issues():
@@ -99,7 +44,6 @@ def main(argv=None):
     ap.add_argument('--arch', default=reconcile.ARCH_DEFAULT)
     args = ap.parse_args(argv)
     if reconcile.resolve_backend(args.arch) == 'local':
-        import issues as local
         try:
             lines, missing = candidates(local.open_as_gh(local.Tracker(args.arch).store()))
         except local.IssuesError as e:
