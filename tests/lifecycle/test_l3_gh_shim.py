@@ -262,6 +262,13 @@ def test_pr_ready_undo_converts_back_to_draft(store, capsys):
     assert json.loads(run(["pr", "view", "1", "--json", "isDraft"], capsys)[1]) == {"isDraft": True}
 
 
+def test_adding_an_assignee_twice_keeps_one_like_real_github(store, capsys):
+    run(["issue", "create", "--title", "a"], capsys)
+    run(["issue", "edit", "1", "--add-assignee", "@me"], capsys)
+    run(["issue", "edit", "1", "--add-assignee", "@me"], capsys)
+    assert json.loads(run(["issue", "view", "1", "--json", "assignees"], capsys)[1]) == {"assignees": ["@me"]}
+
+
 def test_issue_reopen_sets_the_state_back_to_open(store, capsys):
     run(["issue", "create", "--title", "a"], capsys)
     run(["issue", "close", "1"], capsys)

@@ -107,7 +107,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
 | `roadmap` | `docs/ROADMAP.md` | — |
 | `audit-report` | `docs/audits/*.md` | — |
-| `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
+| `concept-map` | `docs/discovery/*.map.md` (v4 legacy; `issues.py migrate`) | `status`, `slug` |
 | `issue` | `docs/issues/*.md` on the `tracker_branch` (never the working tree), written only by `issues.py` | `status` (work status) and the tracker fields; no `generated` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |

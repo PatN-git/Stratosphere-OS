@@ -285,7 +285,7 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         body = _body(rest)
         if body:
             issue["body"] = body
-        issue["assignees"] += take_all(rest, "--add-assignee")
+        issue["assignees"] += [a for a in dict.fromkeys(take_all(rest, "--add-assignee")) if a not in issue["assignees"]]
         return issue["url"]
 
     if action == "view":
