@@ -898,13 +898,14 @@ def test_unit_smoke_matches_the_plan(repo):
 
 
 def test_resolve_unit_is_importable_and_pure():
-    pb = load_pr_body()
-    assert pb.resolve_unit("BT-51", "v1.2.5", "BT-12")["unit"] == "v1.2"
-    assert pb.resolve_unit("BT-51", None, "BT-12", "v1.4.0")["unit"] == "v1.4"
-    assert pb.resolve_unit("BT-51", "—", None, epic=True)["unit"] == "BT-051"
+    pb = load_pr_body()  # puts the scripts dir on sys.path
+    from _tracker_common import resolve_unit
+    assert resolve_unit("BT-51", "v1.2.5", "BT-12")["unit"] == "v1.2"
+    assert resolve_unit("BT-51", None, "BT-12", "v1.4.0")["unit"] == "v1.4"
+    assert resolve_unit("BT-51", "—", None, epic=True)["unit"] == "BT-051"
     assert pb.slugify("Offline Sync: v2!") == "offline-sync-v2"
     with pytest.raises(ValueError):
-        pb.resolve_unit("BT-51", "1.2", "BT-12")
+        resolve_unit("BT-51", "1.2", "BT-12")
 
 
 def test_epic_ids_are_padded_and_padding_variants_collapse(repo):

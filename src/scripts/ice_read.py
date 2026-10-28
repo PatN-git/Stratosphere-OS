@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import reconcile
-from _tracker_common import candidates
+from _ice import candidates
 
 LIST_FIELDS = 'number,title,labels,milestone,body'
 LIST_LIMIT = 500  # gh issue list --limit; a result this long may have dropped issues

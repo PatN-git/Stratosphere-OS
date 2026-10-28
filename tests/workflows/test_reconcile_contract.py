@@ -26,7 +26,7 @@ MAP = """\
 DELETED = ["stale_blockers", "fetch_issue", "classify", "summarize", "drift_kind", "heal", "upsert_cells",
            "gh_fix_commands", "KIND_PREFIXES", "CHRONIC_NIGHTS", "HEAL_KINDS", "HEAL_CELL", "STATE_DEFAULT",
            "_nightly_state", "_gh_state", "_cell_text", "_map_text"]
-KEPT = ["parse_backlog", "open_ids", "effective_blockers", "edge_verdict", "edges_cmd", "compare",
+KEPT = ["parse_backlog", "edges_cmd", "compare",
         "closed_on_github", "open_on_github", "pr_merge_state", "make_merged_of", "github_gate", "github_main",
         "resolve_backend", "read_tracker", "parse_expect"]
 
@@ -57,6 +57,15 @@ def test_the_map_diff_heal_and_summary_symbols_are_gone(name):
 @pytest.mark.parametrize("name", KEPT)
 def test_the_github_gate_and_local_edge_symbols_stay(name):
     assert hasattr(rec, name), f"reconcile.py lost {name}"
+
+
+LEAF = ["open_ids", "effective_blockers", "edge_verdict", "resolve_unit", "ship_unit"]  # the edge rules reconcile reads
+
+
+@pytest.mark.parametrize("name", LEAF)
+def test_the_shared_edge_rules_live_in_the_tracker_common_leaf(name):
+    import _tracker_common  # on sys.path once reconcile has loaded
+    assert hasattr(_tracker_common, name), f"_tracker_common lost {name}"
 
 
 @pytest.mark.parametrize("flag", [["--heal", "--kind", "status", "--source", "gh"], ["--summary"],

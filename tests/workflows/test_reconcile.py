@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("reconcile", ROOT / "src" / "scripts" / "reconcile.py")
 rec = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rec)
-from _tracker_common import ship_unit  # on sys.path once reconcile has loaded
+from _tracker_common import edge_verdict, effective_blockers, ship_unit  # on sys.path once reconcile has loaded
 # The map-mode checks below pass no --arch: pin the default to an absent file so the repo's own (gitignored)
 # .memory/ARCHITECTURE.md, which says `tracker: github` once StratOS dogfoods it, never changes the backend under test.
 rec.ARCH_DEFAULT = str(ROOT / "tests" / "workflows" / "_absent-architecture.md")
@@ -127,7 +127,7 @@ def _merged(table):
 def edge_checks():
     """BT-192: D3 predicate (same ship unit -> shipped; cross unit -> code on the default branch) and --edges."""
     rows = edge_rows()
-    verdict = lambda dep, blk, r=None, m=None: rec.edge_verdict(dep, blk, r or rows, m or _merged({}))
+    verdict = lambda dep, blk, r=None, m=None: edge_verdict(dep, blk, r or rows, m or _merged({}))
 
     # 1. ship_unit adapter smoke (the rule itself is tested through _tracker_common.resolve_unit)
     check("ship_unit: slices v1.2.5 and v1.2.6 share release v1.2",
@@ -149,7 +149,7 @@ def edge_checks():
     for st, want in (("in review", "OK"), ("done", "OK"), ("in progress", "UNMET"), ("planned", "UNMET"),
                      ("blocked", "UNMET")):
         m = _merged({})
-        v = rec.edge_verdict("BT-207", "BT-070", edge_rows({"BT-070": st}), m)
+        v = edge_verdict("BT-207", "BT-070", edge_rows({"BT-070": st}), m)
         check(f"same unit: blocker {st} -> {want}", v[0] == want and v[1] == "same-unit" and not m.calls)
 
     # 3. cross unit, child-slice blocker: the blocker's PR must be merged
@@ -157,29 +157,29 @@ def edge_checks():
         v = verdict("BT-301", "BT-070", m=_merged({"BT-070": state}))
         check(f"cross unit child blocker, PR {state} -> {want}", v[0] == want and v[1] == "cross-unit")
     m = _merged({"BT-070": "merged"})
-    v = rec.edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "planned"}), m)
+    v = edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "planned"}), m)
     check("cross unit child blocker not shipped -> UNMET without a PR lookup", v[0] == "UNMET" and not m.calls)
     m = _merged({"BT-070": "merged"})
     check("cross unit child blocker done + merged -> OK",
-          rec.edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "done"}), m)[0] == "OK" and m.calls == ["BT-070"])
+          edge_verdict("BT-301", "BT-070", edge_rows({"BT-070": "done"}), m)[0] == "OK" and m.calls == ["BT-070"])
 
     # 4. cross unit, epic/standalone blocker: merged <=> closed <=> done (in review = PR still open)
     for st, want in (("done", "OK"), ("in review", "UNMET"), ("in progress", "UNMET")):
         m = _merged({})
-        v = rec.edge_verdict("BT-300", "BT-051", edge_rows({"BT-051": st}), m)
+        v = edge_verdict("BT-300", "BT-051", edge_rows({"BT-051": st}), m)
         check(f"cross unit epic blocker {st} -> {want}, no PR lookup", v[0] == want and v[1] == "cross-unit" and not m.calls)
     check("blocker row absent -> UNKNOWN", verdict("BT-207", "BT-404")[0] == "UNKNOWN")
-    check("dependent with an unresolvable milestone -> UNKNOWN", rec.edge_verdict("BT-207", "BT-070", bad, _merged({}))[0] == "UNKNOWN")
+    check("dependent with an unresolvable milestone -> UNKNOWN", edge_verdict("BT-207", "BT-070", bad, _merged({}))[0] == "UNKNOWN")
 
     # 5. effective blockers = own + parent epic's, deduped, never the dependent itself
-    check("effective_blockers: inherited from the parent epic", rec.effective_blockers("BT-302", rows) == {"BT-051"})
-    check("effective_blockers: own + parent's", rec.effective_blockers("BT-301", rows) == {"BT-070", "BT-051"})
+    check("effective_blockers: inherited from the parent epic", effective_blockers("BT-302", rows) == {"BT-051"})
+    check("effective_blockers: own + parent's", effective_blockers("BT-301", rows) == {"BT-070", "BT-051"})
     both = edge_rows(blocked={"BT-302": "BT-051"})
-    check("effective_blockers: deduped", rec.effective_blockers("BT-302", both) == {"BT-051"})
+    check("effective_blockers: deduped", effective_blockers("BT-302", both) == {"BT-051"})
     selfie = edge_rows(blocked={"BT-300": "BT-051, BT-302"})
-    check("effective_blockers: a dependent never blocks itself", rec.effective_blockers("BT-302", selfie) == {"BT-051"})
+    check("effective_blockers: a dependent never blocks itself", effective_blockers("BT-302", selfie) == {"BT-051"})
     check("effective_blockers: parent row absent -> own only",
-          rec.effective_blockers("BT-310", {"BT-310": dict(rows["BT-310"], parent="BT-999", blocked_by={"BT-070"})}) == {"BT-070"})
+          effective_blockers("BT-310", {"BT-310": dict(rows["BT-310"], parent="BT-999", blocked_by={"BT-070"})}) == {"BT-070"})
     check("inherited epic blocker is UNMET while the epic is in progress", verdict("BT-302", "BT-051")[0] == "UNMET")
 
     orig_avail, orig_state = rec.gh_available, rec.pr_merge_state
