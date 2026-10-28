@@ -321,7 +321,7 @@ def canon(bt):
 
 
 def _reconcile():
-    import reconcile  # lazy: only the tracker-facts path needs it, and it imports issues.py and gh helpers
+    import reconcile  # lazy: only the tracker-facts path needs it (gh helpers)
     return reconcile
 
 

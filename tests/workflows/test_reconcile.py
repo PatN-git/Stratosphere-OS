@@ -129,7 +129,7 @@ def edge_checks():
     rows = edge_rows()
     verdict = lambda dep, blk, r=None, m=None: rec.edge_verdict(dep, blk, r or rows, m or _merged({}))
 
-    # 1. ship_unit adapter smoke (the rule itself is tested with pr_body.resolve_unit)
+    # 1. ship_unit adapter smoke (the rule itself is tested through _tracker_common.resolve_unit)
     check("ship_unit: slices v1.2.5 and v1.2.6 share release v1.2",
           ship_unit("BT-070", rows) == ship_unit("BT-207", rows) == "v1.2")
     check("ship_unit: milestone-less slice inherits its epic's release", ship_unit("BT-310", rows) == "v1.3")

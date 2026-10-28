@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import issues as local
 import reconcile
 from _tracker_common import candidates
 
@@ -44,9 +43,10 @@ def main(argv=None):
     ap.add_argument('--arch', default=reconcile.ARCH_DEFAULT)
     args = ap.parse_args(argv)
     if reconcile.resolve_backend(args.arch) == 'local':
+        import issues  # lazy: the GitHub path needs only reconcile.py and _tracker_common.py beside this file
         try:
-            lines, missing = candidates(local.open_as_gh(local.Tracker(args.arch).store()))
-        except local.IssuesError as e:
+            lines, missing = candidates(issues.open_as_gh(issues.Tracker(args.arch).store()))
+        except issues.IssuesError as e:
             print(e)
             return 1
         print("\n".join(lines + missing))
