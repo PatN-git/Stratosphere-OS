@@ -189,10 +189,12 @@ def _graphql(mutation, second, a, b):
 
 
 def _edge(mutation, second, a, b):
-    """A relation mutation over two issues given as numbers or BT ids; a BT-LOCAL id has no GitHub issue."""
+    """A removeBlockedBy hint over two issues given as numbers or BT ids; a BT-LOCAL id has no GitHub issue, so
+    the hint is the local store's own write (a = the dependent, b = its blocker)."""
     nums = [(x, x if x.isdigit() else issue_number(x)) for x in (a, b)]
-    gone = next((x for x, n in nums if n is None), None)
-    return f"# skip {gone}: no GitHub issue" if gone else _graphql(mutation, second, nums[0][1], nums[1][1])
+    if any(n is None for _, n in nums):
+        return f"python .agents/scripts/issues.py set {a} --remove-blocker {b}"
+    return _graphql(mutation, second, nums[0][1], nums[1][1])
 
 
 def edges_cmd(args, rows, ids, merged_of):

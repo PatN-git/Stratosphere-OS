@@ -27,7 +27,7 @@ One or two sentences: what the term IS in this domain, not how it is built. No c
 - Technical or framework terms with standard industry meanings
 
 ## Avoid and Source
-- `Avoid:` lists the synonyms rejected when the term was canonicalized; required whenever any were rejected (always in 1b and 1c), omitted otherwise. Plain text per memory-protocol §2.
+- `Avoid:` lists the synonyms rejected when the term was canonicalized; required whenever a synonym was rejected, omitted otherwise (never invent one). Plain text per memory-protocol §2.
 - `Source:` names where the term was agreed; never rewritten on promotion.
 
 ## Growth

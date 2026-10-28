@@ -72,6 +72,7 @@ FULL_SIMPLE = {("npm", "test"), ("yarn", "test"), ("pnpm", "test"), ("npm", "run
                ("yarn", "run", "test"), ("pnpm", "run", "test"), ("make", "test")}
 RUNNER_FLAG_RE = re.compile(r"^(?:-q|-v|-vv|-x|--run|--no-header|-n\d+|-n=\S+|--dist=\S+|--tb=\S+|--color=\S+|--reporter=\S+)$")
 RUNNER_VALUE_FLAGS = ("-n", "--dist", "-p")
+UNITTEST_VALUE_FLAGS = ("-s", "-p", "-t")
 SEGMENT_BREAKS = {";", "&&", "||", "|", "&"}
 
 
@@ -238,6 +239,18 @@ def _segment_full(t):
             if not RUNNER_FLAG_RE.match(rest[i]):
                 return False
             i += 1
+        return True
+    if head == "unittest":  # `python -m unittest [discover [-s|-p|-t X]] [-v|-q]`; a module/file/-k filter is scoped
+        rest = t[1:]
+        discover = rest[:1] == ["discover"]
+        i = int(discover)
+        while i < len(rest):
+            if discover and rest[i] in UNITTEST_VALUE_FLAGS and i + 1 < len(rest):
+                i += 2
+            elif rest[i] in ("-v", "-q"):
+                i += 1
+            else:
+                return False
         return True
     return False
 

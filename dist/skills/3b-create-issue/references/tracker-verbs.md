@@ -44,7 +44,7 @@ Branch: / Done: / Open: / Next step: / Blockers:
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: on GitHub the unit PR merge closes epics (`Closes #<n>`) with no tracker call; locally 0b closes explicitly because there is no merge.
+- `close`: on GitHub the unit PR merge closes epics (`Closes #<n>`) with no tracker call; locally no merge closes anything: 0b post-merge sync closes the epics in the merged PR's `features:` list; with no PR host the user closes them.
 - PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
 
 ## Reads
