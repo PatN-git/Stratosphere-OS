@@ -146,19 +146,21 @@ For each constitution file that has changed:
    Ensure all `.stratosphere-new` files are populated. Run `python <plugin>/scripts/scaffold.py --verify` or `python <plugin>/scripts/scaffold.py --update` (non-dry-run).
    The scaffolder will:
    - Run Level-3 invariants:
-     1. **Out-of-block byte-identity:** Compare raw bytes outside changed blocks against the original file, asserting they are identical.
-     2. **Marker integrity:** Validate exactly one ordered START/END pair per block ID, and check for unknown block IDs.
+     1. **Out-of-block byte-identity:** Raw bytes outside changed blocks equal the original.
+     2. **Marker integrity:** Exactly one ordered START/END pair per block ID; no unknown IDs.
      3. **Cheap corroborating check:** Assert the §3 Immortal Component DR-xxx ID set is unchanged.
 
 2. **Apply changes:**
-   If all invariants pass, the scaffolder will overwrite the original project files with the `.stratosphere-new` files, delete the `.stratosphere-new` files, and update `.agents/.stratosphere-lock.json` last.
+   If all invariants pass, the scaffolder overwrites the project files with the `.stratosphere-new` files, deletes them, and updates `.agents/.stratosphere-lock.json` last.
    If any validation fails, the scaffolder will abort and write nothing.
 
-3. **Design toolchain lockfile:** worklist `design_lockfile_stale: true` (scaffolder also prints `NOTE:`) → committed `.agents/scripts/design/package-lock.json` pins old `@google/design.md`; `npm ci` fails. After apply succeeds, run `npm install --prefix .agents/scripts/design` (Windows: `cmd /c "npm install --prefix .agents/scripts/design"`); include updated `package-lock.json` in update commit. No Node → skip, say so.
+3. **Design toolchain lockfile:** worklist `design_lockfile_stale: true` (scaffolder also prints `NOTE:`) → committed `.agents/scripts/design/package-lock.json` pins old `@google/design.md`; `npm ci` fails. After apply succeeds, run `npm install --prefix .agents/scripts/design` (Windows: `cmd /c "npm install --prefix .agents/scripts/design"`); include updated `package-lock.json` in update commit. No Node → skip.
 
-4. **Test gate advisory:** run `python .agents/scripts/test_gate.py status`. Exit 1 → print one line: `Optional: python .agents/scripts/test_gate.py install adds the pre-commit test gate (see stratosphere-setup Checkpoint 5.3).` Advisory only: do not install, do not ask.
+4. **Test gate advisory:** run `python .agents/scripts/test_gate.py status`. Exit 1 → print one line: `Optional: python .agents/scripts/test_gate.py install adds the pre-commit test gate (see stratosphere-setup Checkpoint 5.3).` Advisory: never install or ask.
 
 5. **v5 map migration (once):** a `.memory/BACKLOG_MAP.md` with `tracker: local` or no `tracker:` key → ask once (`AskUserQuestion` / `ask_question`) to migrate it. Yes → set `tracker: local` and `tracker_branch: <repo>/issues` in ARCHITECTURE.md's frontmatter, run `python .agents/scripts/issues.py migrate` (the map moves to `.memory/archive/`), commit both. No → the next update asks again. Never merge the map.
+
+6. **Untrack STATUS:** if `.memory/STATUS.md` is tracked: `git rm --cached` it, `git add .gitignore`, plain `git commit` (a pathspec commit re-adds it).
 
 ---
 
