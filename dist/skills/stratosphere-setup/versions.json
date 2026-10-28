@@ -146,7 +146,7 @@
       "version": "1.2.2"
     },
     "skills/0e-plain-english/SKILL.md": {
-      "sha256": "c37f040f7daf5b890e580ef019535587d6fc3165570375d3efdb8be932895cdc",
+      "sha256": "c321ff411f247d28e85831e0b2e1ae233df0054b02ab5323123d3748992c6206",
       "timestamp": "2026-10-28",
       "version": "1.1.0"
     },
@@ -156,7 +156,7 @@
       "version": "1.0.0"
     },
     "skills/0f-walk-me-through/SKILL.md": {
-      "sha256": "74ba9bde032f9dd62388b30acddeec2896801e3f2047999acec9e82d8cb2b989",
+      "sha256": "66bc341555c1edb504a028f199800fbbde7ddc18288bc58aa63a0b5995fe008d",
       "timestamp": "2026-10-28",
       "version": "1.0.0"
     },
