@@ -16,7 +16,7 @@ runs, over its issues (closed ones count as done). `--backlog F` reads a v5 map 
 --edges (read-only decision list; D3 blocker predicate): `blockers` prints each effective blocker (own + parent epic's)
 of the ids as `[BLOCKER-OK|BLOCKER-UNMET|BLOCKER-UNKNOWN D <- B] same-unit|cross-unit: reason` (exit 1 unless all OK);
 `dependents` prints each stored edge naming the ids as `[CLEAR D <- B]` + its `removeBlockedBy` cmd, or `[KEEP D <- B]`.
-Same ship unit (pr_body.resolve_unit) -> blocker shipped; else its code must be on the default branch (PR merged).
+Same ship unit (_tracker_common.resolve_unit) -> blocker shipped; else its code must be on the default branch (PR merged).
 `--all-open` (local backend) scopes `--edges` to every open issue.
 
 Usage:
