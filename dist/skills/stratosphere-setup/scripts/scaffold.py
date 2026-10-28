@@ -1363,7 +1363,9 @@ def main():
             print("=== Unresolved Conflicts / Reviews ===")
             for u in unresolved:
                 print(f"  * {u} needs merge/review")
-            raise SystemExit("Error: Cannot commit because there are unresolved conflicts or constitution changes.")
+            raise SystemExit("Error: Cannot commit because there are unresolved conflicts or constitution changes. "
+                             "Review each <file>.stratosphere-new per the update skill's Phase 3.2, or copy the workspace file "
+                             "to <file>.stratosphere-new to decline, then re-run.")
             
         for proj_path, prop_bytes in proposed_files.items():
             p = project / proj_path

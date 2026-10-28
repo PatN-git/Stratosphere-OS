@@ -518,7 +518,14 @@ def _comment_entry(text):
 
 def cmd_comment(store, a):
     issue = store.get(a.id)
-    issue['comments'].append(_comment_entry(a.body if a.body is not None else _body(a.body_file)))
+    text = a.body if a.body is not None else _body(a.body_file)
+    if text.lstrip().startswith('<!-- stratos:resume -->'):
+        # A resume note is folder state: one gitignored file per issue, replaced whole (tracker-verbs.md).
+        note = at_top('.memory/resume') / f"{a.id}.md"
+        note.parent.mkdir(parents=True, exist_ok=True)
+        note.write_text(text, encoding='utf-8')
+        return {}, a.id
+    issue['comments'].append(_comment_entry(text))
     issue['updated'] = now()
     return store.changes(issue), a.id
 
@@ -800,6 +807,8 @@ def _dump(value):
 
 
 def run(a, out):
+    if frontmatter_key(at_top(a.arch), 'tracker') == 'github':  # a stale local store must not read as the live one
+        raise IssuesError("[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs.md)")
     tracker = Tracker(a.arch)
     if a.cmd == 'branch':
         out(tracker.branch)
