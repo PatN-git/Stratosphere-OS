@@ -29,8 +29,9 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _tracker_common import (NONE_TOKENS, candidates, csv_list, edge_verdict, effective_blockers, longer_id_globs,
-                             make_row, resolve_unit)
+from _ice import candidates
+from _tracker_common import (NONE_TOKENS, csv_list, edge_verdict, effective_blockers, longer_id_globs, make_row,
+                             resolve_unit)
 
 ROOT = 'docs/issues'
 ARCHIVE = f'{ROOT}/archive'
@@ -327,7 +328,7 @@ def select(store, status=None, labels=(), milestone=None, parent=None, include_c
 
 
 def as_gh(issue):
-    """The `gh issue list --json` shape ice_read.candidates reads, keyed by `id` instead of `number`."""
+    """The `gh issue list --json` shape _ice.candidates reads, keyed by `id` instead of `number`."""
     return {'id': issue['id'], 'title': issue['title'],
             'labels': [{'name': l} for l in issue['labels']] + [{'name': f"status:{issue['status']}"}],
             'milestone': {'title': issue['milestone']} if issue['milestone'] else None, 'body': issue['body']}
@@ -345,7 +346,7 @@ def default_branch():
 
 
 def make_merged_of(store):
-    """`merged_of(bt)` for reconcile.edge_verdict without a PR host: the blocker's ship-unit branches (pr_body
+    """`merged_of(bt)` for _tracker_common.edge_verdict without a PR host: the blocker's ship-unit branches (pr_body
     globs) are merged when every local or remote-tracking one is an ancestor of the default branch, 'none' when no
     such branch exists (deleted after merge, or a Spike with no code), 'open' otherwise."""
     target = default_branch()
