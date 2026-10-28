@@ -457,6 +457,18 @@ def test_0b_passes_when_it_synced_status_and_ran_the_scripts(tmp_path):
     assert problems == []
 
 
+def test_0b_accepts_an_unchanged_last_sync_when_repo_notes_record_a_skipped_sync(tmp_path):
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md",
+          "# STATUS\n- **Last Sync:**\n- **Repo notes:** Merge sync skipped: gh unavailable.\n")
+    problems, notes = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "python okf_view.py"}'}]))
+    assert not any("Last Sync" in p for p in problems)
+    assert any("skipped the merge sync" in n for n in notes)
+
+
 def test_0b_fails_without_last_sync_or_with_a_retired_field(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)

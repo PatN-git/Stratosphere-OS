@@ -146,6 +146,8 @@ RETIRED_STATUS_FIELDS = ("Current Branch", "Active Issue", "Current Focus", "Com
                          "Open/Active Task Brief", "Next Immediate Step")
 SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-(?:\d+|LOCAL-[\w-]+) · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
 LAST_SYNC = re.compile(r"\*\*Last Sync:\*\*\s*\d{4}-\d{2}-\d{2}")
+# 0b step 2: a skipped merge sync leaves `Last Sync` unchanged and says so in `Repo notes`.
+SYNC_SKIPPED = re.compile(r"\*\*Repo notes:\*\*[^\n]*\bsync\b[^\n]*\bskipped\b", re.I)
 
 
 def retired_status_fields(text: str) -> list:
@@ -474,7 +476,9 @@ def check_0b(ctx: Context):
     if not status.exists():
         return ["STATUS.md does not exist"], notes
     text = read(status)
-    if not LAST_SYNC.search(text):
+    if SYNC_SKIPPED.search(text):
+        notes.append("0b skipped the merge sync and noted it in Repo notes; `Last Sync` left unchanged")
+    elif not LAST_SYNC.search(text):
         problems.append("0b did not set `Last Sync` in STATUS.md (0b step 2)")
     if retired_status_fields(text):
         problems.append(f"STATUS.md carries retired fields {retired_status_fields(text)} "
