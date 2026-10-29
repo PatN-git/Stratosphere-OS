@@ -4,7 +4,7 @@
 The source is the issues.py store (the `<repo>/issues` branch); a v5 `.memory/BACKLOG_MAP.md` must be migrated into
 it first (`issues.py migrate`). Default is a dry run: prints the plan and writes nothing, locally or on GitHub.
 `--apply` then:
-  1. ensures the milestones the issues use, creates a GitHub issue per `BT-LOCAL-*` issue (labels, status label,
+  1. ensures the milestones and labels the issues use, creates a GitHub issue per `BT-LOCAL-*` issue (labels, status label,
      milestone, the body; its comments as one comment; a closed issue is closed with its reason; a claimed one is
      assigned `@me`), then rewrites the `BT-LOCAL-*` ids in those bodies and comments to the new `BT-<padded>`
      (the marker keeps the old id) and links Parent and Blocked by (`gh api graphql`);
@@ -117,8 +117,22 @@ def ensure_milestones(titles):
         gh('api', 'repos/{owner}/{repo}/milestones', '-f', f'title={title}')
 
 
+def issue_labels(row):
+    return [l for l in row['labels'] if not l.startswith('status:')] + [f"status:{row['status']}"]
+
+
+def ensure_labels(names):
+    """Create each label GitHub lacks: `gh issue create --label` fails on a missing one (`could not add label`).
+    Names compare case-insensitively, as on GitHub; nothing to create -> no read either."""
+    if not names:
+        return
+    have = {n.strip().lower() for n in gh('label', 'list', '--limit', '1000', '--json', 'name', '--jq', '.[].name').splitlines()}
+    for name in sorted(n for n in names if n.lower() not in have):
+        gh('label', 'create', name)
+
+
 def create_issue(row):
-    labels = [l for l in row['labels'] if not l.startswith('status:')] + [f"status:{row['status']}"]
+    labels = issue_labels(row)
     args = ['issue', 'create', '--title', row['title']]
     for label in labels:
         args += ['--label', label]
@@ -258,6 +272,7 @@ def main(argv=None):
             return 2
         created = 0
         ensure_milestones({r['milestone'] for r in rows if numbers[r['id']] is None and r['milestone']})
+        ensure_labels({l for r in rows if numbers[r['id']] is None for l in issue_labels(r)})
         for r in rows:
             if numbers[r['id']] is None:
                 numbers[r['id']] = create_issue(r)

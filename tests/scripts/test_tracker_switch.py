@@ -233,6 +233,43 @@ def test_milestones_are_ensured_before_any_issue_is_created(project, monkeypatch
     assert len([a for a in calls if a[:1] == ["api"] and "title=v1.0.1" in a]) == 1, "an existing milestone is not created again"
 
 
+def test_missing_labels_are_created_before_any_issue(project, monkeypatch):
+    root, store = project
+    assert gh_state(store).get("labels", []) == [], "the repo starts without the taxonomy labels"
+    calls = recording_gh(monkeypatch)
+    assert ts.main(["--apply"]) == 0
+    made = {a[2] for a in calls if a[:2] == ["label", "create"]}
+    assert made == {"type:feature", "mode:AFK", "mode:HITL", "tier:epic", "tier:slice", "size:small",
+                    "status:in progress", "status:done", "status:planned"}
+    assert max(i for i, a in enumerate(calls) if a[:2] == ["label", "create"]) < min(
+        i for i, a in enumerate(calls) if a[:2] == ["issue", "create"])
+    assert {l["name"] for l in gh_state(store)["labels"]} >= made
+
+
+def test_a_label_that_exists_is_not_created_again(project, monkeypatch):
+    root, store = project
+    reconcile._gh_run(["label", "create", "type:feature"])
+    reconcile._gh_run(["label", "create", "Tier:Epic"])  # GitHub label names are case-insensitive
+    calls = recording_gh(monkeypatch)
+    assert ts.main(["--apply"]) == 0
+    created = [a[2] for a in calls if a[:2] == ["label", "create"]]
+    assert created and "type:feature" not in created and "tier:epic" not in created
+    ts.write_tracker(root / ".memory" / "ARCHITECTURE.md", "local")
+    calls.clear()
+    assert ts.main(["--apply"]) == 0
+    assert [a for a in calls if a[0] == "label"] == [], "a re-run with nothing to create reads no labels"
+
+
+def test_a_failed_label_create_stops_the_run_before_any_issue(project, monkeypatch, capsys):
+    root, store = project
+    real = reconcile._gh_run
+    monkeypatch.setattr(reconcile, "_gh_run", lambda a: (1, "", "forbidden") if a[:2] == ["label", "create"] else real(a))
+    assert ts.main(["--apply"]) == 1
+    assert "[SWITCH-FAIL: gh label create: forbidden;" in capsys.readouterr().out
+    assert len(gh_state(store)["issues"]) == 3
+    assert reconcile.read_tracker(root / ".memory" / "ARCHITECTURE.md") == "local"
+
+
 def test_created_issues_hold_the_new_ids_a_claim_is_an_assignee_and_a_rerun_edits_nothing(project, monkeypatch, capsys):
     root, store = project
     (root / ".tmp").mkdir(exist_ok=True)
