@@ -7,24 +7,25 @@ metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
 version: "1.0.0"
-timestamp: 2026-10-28
+timestamp: 2026-10-29
 ---
 
 Make the reasoning behind a result, or the behavior of a change, judgeable by someone who cannot read code. Read-only: no edits, side-effecting commands, or answers on the user's behalf. Wording per `references/plain-language.md`.
 
-**Direction:** a past result → Trace; a ticket, plan or change → Predict. `watch <n>` → Predict on the n-th Watch item of the last ship halt in this conversation: the slice's acceptance criteria, the file it names, that file's tests. Item not in the conversation → ask for it.
+**Direction:** a past result → Trace; a ticket, plan or change → Predict. `watch <n>` → Predict on the n-th Watch item of the last ship halt in this conversation: the slice's acceptance criteria, the file it names, that file's tests; stay on that item only. Item not in the conversation → ask for it.
 
 **Ground truth:**
 - Trace from the entry point that actually runs (scheduler, route, command); confirm each rule's input is passed in. A rule that cannot fire is a finding: make it a call.
 - Read the real record when a read path exists (the `data_read` key in `.memory/ARCHITECTURE.md` frontmatter): only the record asked about, never in bulk. No key or no access → an illustrative record, said in the Verdict, phrased "would".
 - Predict reads the ticket's acceptance criteria, the changed files and their tests only; over ~10 files, name what was skipped.
-- Read the line behind every rule, number, weight and condition you state. Keep its exact condition (e.g. "unless known to fail", not "if it works") and what overrides it (an earlier rule or status that wins regardless). No line → drop the claim.
+- Quote first: for every rule, number, weight and condition you state, note verbatim the line that decides it and the caller that passes its input, with file:line (not shown to the user). Keep its exact condition (e.g. "unless known to fail", not "if it works") and what overrides it (an earlier rule or status that wins regardless). No quote → drop the claim.
+- Open the body: never infer behavior from a function, variable, file or field name.
 - `Not covered by a test` only after searching the test files for that case; else say `test not checked`.
 - Examples come only from the code, tests or record read; any other is illustrative: labelled, phrased "would".
 - No "all", "every", "only", "never" or "any" unless the code says so; otherwise name the exception or narrow the claim.
 - Never state a value you did not read.
 
-**Self-check before answering:** list each claim with its file:line (not shown to the user). Re-open each line and confirm the plain wording keeps its exact condition, number and override. Fix or drop any that do not.
+**Self-check before answering:** match each claim to its quote, re-open the line and confirm the plain wording keeps its exact condition, number and override. Fix or drop any that do not.
 
 Output ≤ 300 words, in order:
 1. **Verdict:** bold, ≤ 2 sentences: what decides the outcome; for Trace, which step decided it here.
@@ -35,4 +36,4 @@ Output ≤ 300 words, in order:
 5. **Your calls:** ≤ 3, ranked by impact, each a pick between the current behavior "as built" and a plausible alternative. No such choice → `Your calls: none`.
 6. Close: `Say "more" on any step, or "pin <n>".`
 
-Never judge the code right or wrong; that is the user's call. On "pin <n>": one acceptance criterion in the user's words (Given / When / Then), for the ticket or `/3d-implement-issue`. On "more": that step only, code path named.
+Never judge the code right or wrong; that is the user's call. On "pin <n>": the option the user picked on call n (none picked → ask which) as one acceptance criterion in the user's words (Given / When / Then), for the ticket or `/3d-implement-issue`. On "more": that step only, code path named.
