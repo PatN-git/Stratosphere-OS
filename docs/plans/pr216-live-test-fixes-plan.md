@@ -4,7 +4,7 @@ title: PR 216 Live-Test Fixes Plan
 generated:
   by: claude-code session (PatN-git)
   at: 2026-10-28
-version: "1.1.0"
+version: "1.1.1"
 ---
 
 # Plan: PR #216 (v5.0.0) live-test fixes
@@ -34,7 +34,7 @@ These fix commits sit inside epic BT-194's ship unit; there is no issue of their
 | R1-2 | F15 | `pr_body.py build` accepts `BT-LOCAL-*` for `--epic`, `--parent` and `--slice`. A local id gets no `Closes` line. |
 | R1-3 | F16 | `issues.py comment` with a resume note writes `.memory/resume/<id>.md`; `load-memory` reads it there. |
 | R1-4 | F21 | `tracker_switch.py`: ensures milestones before any issue create; rewrites `BT-LOCAL-*` ids in created bodies and comments; a claim becomes an assignee; a re-run is idempotent. |
-| R1-5 | F22 | `issues.py` refuses under `tracker: github` (`migrate` excepted). |
+| R1-5 | F22 | `issues.py` refuses every command under `tracker: github`, `migrate` included (the update runs `migrate` only for `tracker: local` or no key). |
 | R1-6 | F7, F13, F18, F19, F25, F8, F9 | Docs give: the local id and milestone forms; ICE from the `**Impact:**`/`**Confidence:**` bullets; 0b `Last Sync` rules; 0a resolves to the leaf and skips the pull without an upstream; 3b reads the epic with a scoped read; the update error names its decline path; the update untracks a tracked STATUS. |
 | R1-7 | F1–F4, F10, F12, F17, F20, F24 | L3 harness: credential expiry, a phase-scoped responder, the sentinel before the budget, fake `gh` labels/milestones/`pr list`/`pr edit`/`reopen`/CI fields, a born `master`, a local session line, `check_0b` accepting a skipped merge sync. |
 
