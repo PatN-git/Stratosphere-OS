@@ -27,6 +27,7 @@ def _load(name, path):
 
 gh = _load("l3_gh_shim", HARNESS / "shims" / "gh_shim.py")
 e = _load("l3_env_shim", HARNESS / "env.py")
+seed = _load("l3_seed_shim", HARNESS / "seed.py")
 
 
 @pytest.fixture
@@ -36,6 +37,7 @@ def store(tmp_path, monkeypatch):
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)  # a PR call asks git about origin: never the developer's checkout
+    seed.seed_labels({"L3_GH_STORE": str(path)}, HARNESS / "shims")  # a repo as stratosphere-setup leaves it
     return path
 
 
@@ -198,11 +200,10 @@ def test_milestones_list_with_paginate_and_query_create_and_include_issue_milest
 
 def test_label_create_then_list_in_text_json_and_jq(store, capsys):
     assert run(["label", "create", "area:fe", "--description", "front end"], capsys)[0] == 0
-    run(["issue", "create", "--title", "a", "--label", "type:bug"], capsys)
     assert run(["label", "create", "area:fe"], capsys)[0] == 0  # idempotent
     _, out, _ = run(["label", "list", "--json", "name"], capsys)
-    assert json.loads(out) == [{"name": "area:fe"}, {"name": "type:bug"}]
-    assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == ["area:fe", "type:bug"]
+    assert json.loads(out) == [{"name": n} for n in (*seed.LABELS, "area:fe")]  # the seeded taxonomy, then the new one
+    assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == [*seed.LABELS, "area:fe"]
     assert "area:fe\tfront end" in run(["label", "list"], capsys)[1]
     assert run(["label", "list", "--json", "nope"], capsys)[0] != 0
     assert run(["label", "delete", "area:fe"], capsys)[0] != 0
@@ -248,6 +249,7 @@ def test_pr_edit_changes_body_title_and_labels(store, capsys, tmp_path):
     body.write_text("new body", encoding="utf-8")
     assert run(["pr", "edit", "1", "--title", "Renamed", "--body-file", str(body),
                 "--add-label", "risk:one-way"], capsys)[0] == 0
+    run(["label", "create", "x"], capsys)
     assert run(["pr", "edit", "1", "--add-label", "x", "--remove-label", "risk:one-way"], capsys)[0] == 0
     _, out, _ = run(["pr", "view", "1", "--json", "title,body,labels"], capsys)
     got = json.loads(out)
@@ -345,6 +347,7 @@ def _shimmed_env(tmp_path, monkeypatch):
         monkeypatch.setenv(key, child[key])
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
+    seed.seed_labels(child, tmp_path / "shims")  # the repo has its labels, as after stratosphere-setup
     return child
 
 
@@ -711,3 +714,70 @@ def test_issue_edit_remove_milestone_unsets_it(store, capsys):
     run(["issue", "create", "--title", "a", "--milestone", "v1.0.0"], capsys)
     assert run(["issue", "edit", "1", "--remove-milestone"], capsys)[0] == 0
     assert json.loads(run(["issue", "view", "1", "--json", "milestone"], capsys)[1]) == {"milestone": None}
+
+
+# --- the label registry: real gh refuses a label the repo does not have (F32) -------------------------------------
+
+def _label_names(raw):
+    return {l["name"] for l in raw.get("labels", [])}
+
+
+def test_issue_create_refuses_an_unknown_label_and_changes_nothing(store, capsys):
+    run(["label", "create", "type:feature"], capsys)
+    before = state(store)
+    code, out, err = run(["issue", "create", "--title", "a", "--label", "type:feature,nope", "--label", "also-nope"], capsys)
+    assert code == 1 and out == ""
+    assert "could not add label: 'nope' not found" in err
+    after = state(store)
+    assert after["issues"] == {} and after["next_number"] == before["next_number"]  # all-or-nothing, no number spent
+
+
+def test_issue_edit_refuses_an_unknown_added_label_and_changes_nothing(store, capsys):
+    run(["label", "create", "status:planned"], capsys)
+    run(["label", "create", "status:done"], capsys)
+    run(["issue", "create", "--title", "a", "--label", "status:planned"], capsys)
+    code, _, err = run(["issue", "edit", "1", "--remove-label", "status:planned", "--add-label", "status:done,nope"], capsys)
+    assert code == 1 and "could not add label: 'nope' not found" in err
+    assert state(store)["issues"]["1"]["labels"] == [{"name": "status:planned"}]  # the remove did not land either
+
+
+def test_pr_create_and_edit_refuse_an_unknown_label(store, capsys):
+    run(["label", "create", "risk:one-way"], capsys)
+    code, _, err = run(["pr", "create", "--title", "p", "--label", "nope"], capsys)
+    assert code == 1 and "could not add label: 'nope' not found" in err and state(store)["issues"] == {}
+    run(["pr", "create", "--title", "p", "--head", "feat/a"], capsys)
+    assert run(["pr", "edit", "1", "--add-label", "nope"], capsys)[0] == 1
+    assert state(store)["issues"]["1"]["labels"] == []
+    assert run(["pr", "edit", "1", "--add-label", "risk:one-way"], capsys)[0] == 0
+
+
+def test_label_names_match_case_insensitively_like_github(store, capsys):
+    run(["label", "create", "Area:FE"], capsys)
+    run(["label", "create", "area:fe"], capsys)
+    assert {n for n in _label_names(state(store)) if n.lower() == "area:fe"} == {"Area:FE"}
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 0
+
+
+def test_a_label_made_with_label_create_is_then_accepted(store, capsys):
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 1
+    assert run(["label", "create", "area:fe"], capsys)[0] == 0
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 0
+    assert run(["issue", "edit", "1", "--add-label", "area:fe"], capsys)[0] == 0
+
+
+def test_removing_an_absent_label_is_a_no_op(store, capsys):
+    run(["label", "create", "type:bug"], capsys)
+    run(["issue", "create", "--title", "a", "--label", "type:bug"], capsys)
+    assert run(["issue", "edit", "1", "--remove-label", "never-existed"], capsys)[0] == 0
+    assert state(store)["issues"]["1"]["labels"] == [{"name": "type:bug"}]
+
+
+def test_the_seeded_registry_is_the_label_taxonomy(store):
+    """Setup creates every canonical label (stratosphere-setup greenfield); the harness seeds the same set."""
+    sys.path.insert(0, str(REPO / "src" / "scripts"))
+    try:
+        issues = _load("l3_issues_taxonomy", REPO / "src" / "scripts" / "issues.py")
+    finally:
+        sys.path.remove(str(REPO / "src" / "scripts"))
+    canonical = {f"{k}:{v}" for k, vals in issues.CANONICAL.items() for v in vals} | {f"status:{s}" for s in issues.STATUSES}
+    assert set(seed.LABELS) == canonical

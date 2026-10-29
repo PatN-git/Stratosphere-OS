@@ -30,6 +30,9 @@ URL, branch or nothing, and `statusCheckRollup` is one green CheckRun), `api gra
 `stratosphere-update`, which L3 never drives - so they are deliberately absent and
 will fail loudly if a phase reaches for one.
 
+Labels are a registry, as on GitHub: `issue|pr create --label` and `issue|pr edit --add-label` refuse a name that
+`label create` (or the seed) has not made - `could not add label: '<n>' not found`, exit 1, nothing changed.
+
 The store lives at `$L3_GH_STORE`. There is no default: a shim that quietly invents
 a store in the current directory would split state across phases and pass anyway.
 """
@@ -67,9 +70,10 @@ def store_path() -> Path:
 
 
 class Failure(Exception):
-    def __init__(self, code: int, message: str):
+    def __init__(self, code: int, message: str, bare: bool = False):
         super().__init__(message)
         self.code = code
+        self.bare = bare  # real gh's own wording: no `[l3-shim]` prefix, and not an unknown-surface finding
 
 
 class Partial(Exception):
@@ -178,6 +182,22 @@ def by_node_id(state: dict, nid: str) -> dict | None:
     return next((i for i in state["issues"].values() if i["id"] == nid), None)
 
 
+def register_label(state: dict, name: str, description: str = "", color: str = "") -> None:
+    """Add a label to the repo's registry (idempotent, as `label create --force`)."""
+    registry = state.setdefault("labels", [])
+    if not any(l["name"].lower() == name.lower() for l in registry):
+        registry.append({"name": name, "description": description, "color": color})
+
+
+def require_labels(state: dict, names: list[str]) -> None:
+    """Real gh refuses a label the repo does not have, before it changes anything: all-or-nothing per call.
+    Names match case-insensitively, as on GitHub."""
+    known = {l["name"].lower() for l in state.get("labels", [])}
+    for n in names:
+        if n.lower() not in known:
+            raise Failure(EXIT_UNKNOWN, f"could not add label: '{n}' not found", bare=True)
+
+
 def mint(state: dict, *, title: str, body: str, labels: list[str],
          milestone: str | None, is_pr: bool = False, draft: bool = False) -> dict:
     """One monotonic counter for issues AND pull requests.
@@ -262,10 +282,12 @@ def brief(issue: dict) -> dict:
 def cmd_issue(state: dict, argv: list[str]) -> str:
     action, rest = argv[0], argv[1:]
     if action == "create":
+        labels = take_all(rest, "--label", "-l")
+        require_labels(state, labels)
         issue = mint(state,
                      title=take(rest, "--title", "-t") or "",
                      body=_body(rest),
-                     labels=take_all(rest, "--label", "-l"),
+                     labels=labels,
                      milestone=take(rest, "--milestone", "-m"))
         issue["assignees"] = take_all(rest, "--assignee", "-a")
         return issue["url"]
@@ -274,6 +296,7 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         issue = get(state, positional(rest)[0])
         remove = set(take_all(rest, "--remove-label"))
         add = take_all(rest, "--add-label")
+        require_labels(state, add)
         names = [l["name"] for l in issue["labels"] if l["name"] not in remove]
         names += [a for a in add if a not in names]
         issue["labels"] = [{"name": n} for n in names]
@@ -341,21 +364,15 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
 
 
 def cmd_label(state: dict, argv: list[str]) -> str:
-    """`label list` answers from the registry: created labels plus any an issue already carries
-    (the shim accepts any label on `issue create`, so those are de facto known). `label create` is
-    idempotent, as with `--force`."""
+    """The registry is `state["labels"]`: `label create` plus whatever the seed made. `issue|pr create|edit` refuse
+    a label outside it (`require_labels`). `label create` is idempotent, as with `--force`."""
     action, rest = argv[0], argv[1:]
-    registry = state.setdefault("labels", [])
     if action == "create":
         name = positional(rest)[0]
-        if not any(l["name"] == name for l in registry):
-            registry.append({"name": name, "description": take(rest, "--description", "-d") or "",
-                             "color": take(rest, "--color", "-c") or ""})
+        register_label(state, name, take(rest, "--description", "-d") or "", take(rest, "--color", "-c") or "")
         return f'Label "{name}" created'
     if action == "list":
-        known = {l["name"] for l in registry}
-        rows = list(registry) + [{"name": n, "description": "", "color": ""} for n in sorted(
-            {l["name"] for i in state["issues"].values() for l in i["labels"]} - known)]
+        rows = state.setdefault("labels", [])
         fields = take(rest, "--json")
         jq = take(rest, "-q", "--jq")
         if not fields:
@@ -387,10 +404,12 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
                      if p["isPR"] and p["state"] == "OPEN" and head and p.get("head") == head and p.get("base") == base), None)
         if twin:  # as real gh: one open PR per head/base pair
             raise Failure(EXIT_UNKNOWN, f"a pull request for branch {head!r} into branch {base!r} already exists: {twin['url']}")
+        labels = take_all(rest, "--label", "-l")
+        require_labels(state, labels)
         pr = mint(state,
                   title=take(rest, "--title", "-t") or "",
                   body=_body(rest),
-                  labels=take_all(rest, "--label", "-l"),
+                  labels=labels,
                   milestone=None,
                   is_pr=True,
                   draft="--draft" in rest or "-d" in rest)
@@ -419,8 +438,10 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
         if body:
             pr["body"] = body
         remove = set(take_all(rest, "--remove-label"))
+        add = take_all(rest, "--add-label")
+        require_labels(state, add)
         names = [l["name"] for l in pr["labels"] if l["name"] not in remove]
-        names += [a for a in take_all(rest, "--add-label") if a not in names]
+        names += [a for a in add if a not in names]
         pr["labels"] = [{"name": n} for n in names]
         return pr["url"]
 
@@ -750,6 +771,10 @@ def main(argv=None) -> int:
         print(exc.out)
         return EXIT_UNKNOWN
     except Failure as exc:
+        if exc.bare:  # a refusal real gh also gives (a missing label): recorded as a call, not an unknown surface
+            save(state)
+            print(exc, file=sys.stderr)
+            return exc.code
         state["unknown"].append(argv)
         save(state)
         print(f"[l3-shim] {exc}\n[l3-shim] full argv: {argv}", file=sys.stderr)

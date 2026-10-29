@@ -29,6 +29,7 @@ def _load(name, path):
 a = _load("l3_assertions", HARNESS / "assertions.py")
 e = _load("l3_env_assert", HARNESS / "env.py")
 gh = _load("l3_gh_assert", HARNESS / "shims" / "gh_shim.py")
+seed = _load("l3_seed_assert", HARNESS / "seed.py")
 
 CHILD = {"PATH": os.environ.get("PATH", ""),
          "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
@@ -297,6 +298,7 @@ def _shimmed(tmp_path, monkeypatch):
         monkeypatch.setenv(key, child[key])
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
+    seed.seed_labels(child, tmp_path / "shims")  # the repo has its labels, as after stratosphere-setup
     return child
 
 

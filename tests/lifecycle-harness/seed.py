@@ -6,6 +6,7 @@ Split out of `env.py` (one concern per file, A-003). `env.py` loads it by path a
 """
 from __future__ import annotations
 
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -52,9 +53,40 @@ def seed_upstream(project: Path, child: dict, shim_dir: Path, tracker: str = "lo
 
 EPIC_LABELS = ("status:planned", "type:feature", "tier:epic")
 
+# `references/label-taxonomy.md`: what `stratosphere-setup` (greenfield) creates in a new repo. The shim refuses any
+# label outside its registry, as real gh does, so a GitHub-mode run starts with this set. `area:*` slugs are the
+# project's own and none is used here. A test pins this equal to `issues.py` CANONICAL + STATUSES.
+LABELS = tuple(
+    [f"type:{v}" for v in ("bug", "content", "feature", "improvement", "maintenance", "research")]
+    + [f"mode:{v}" for v in ("HITL", "AFK")] + [f"tier:{v}" for v in ("epic", "slice")]
+    + [f"priority:{v}" for v in ("high", "medium", "low")] + [f"size:{v}" for v in ("large", "medium", "small")]
+    + [f"scope:{v}" for v in ("baseline", "differentiator", "deferred")]
+    + [f"status:{v}" for v in ("needs_spec", "planned", "in progress", "in review", "blocked", "done")]
+    + [f"concept:{v}" for v in ("map", "research", "grilling", "prototype", "task")] + ["risk:one-way"])
+
+
+def seed_labels(child: dict, shim_dir: Path) -> None:
+    """Fill the shim's label registry with the taxonomy, through the shim's own store functions (one author)."""
+    spec = importlib.util.spec_from_file_location("l3_gh_shim_seed", shim_dir / "gh_shim.py")
+    shim = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(shim)
+    prior = os.environ.get("L3_GH_STORE")
+    os.environ["L3_GH_STORE"] = child["L3_GH_STORE"]
+    try:
+        state = shim.load()
+        for name in LABELS:
+            shim.register_label(state, name)
+        shim.save(state)
+    finally:
+        if prior is None:
+            os.environ.pop("L3_GH_STORE")
+        else:
+            os.environ["L3_GH_STORE"] = prior
+
 
 def _mint_epic(child: dict, shim_dir: Path) -> str:
-    """`2a:30` mints the parent issue with `gh issue create`. Same path here."""
+    """`2a:30` mints the parent issue with `gh issue create`. Same path here, on a repo that already has its labels."""
+    seed_labels(child, shim_dir)
     r = subprocess.run(
         ["python", str(shim_dir / "gh_shim.py"), "issue", "create",
          "--title", "BT-001: Local feature flag evaluation",

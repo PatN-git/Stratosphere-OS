@@ -383,7 +383,8 @@ def _sibling(name: str):
 
 
 _seed = _sibling("seed")
-GITHUB, UPSTREAM, EPIC_LABELS, seed_upstream = _seed.GITHUB, _seed.UPSTREAM, _seed.EPIC_LABELS, _seed.seed_upstream
+GITHUB, UPSTREAM, EPIC_LABELS, LABELS, seed_upstream = (_seed.GITHUB, _seed.UPSTREAM, _seed.EPIC_LABELS, _seed.LABELS,
+                                                         _seed.seed_upstream)
 
 
 SHIM_SRC = Path(__file__).parent / "shims"
