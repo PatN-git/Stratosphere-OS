@@ -77,7 +77,7 @@ def test_every_command_refuses_under_tracker_github_and_runs_as_before_otherwise
     arch = repo / '.memory' / 'ARCHITECTURE.md'
     arch.parent.mkdir()
     arch.write_text('---\ntype: architecture\ntracker: github\n---\n')
-    msg = '[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs.md)'
+    msg = '[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs-github.md)'
     for argv in (('list',), ('init',), ('branch',), ('create', '--title', 'A')):
         assert run(*argv) == (1, msg), argv
     assert git(repo, 'branch', '--list', 'shop/issues') == ''
