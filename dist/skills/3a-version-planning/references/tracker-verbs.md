@@ -27,6 +27,7 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 | `add_blocker` | `addBlockedBy` per `references/github-issue-relations.md` | `issues.py set <id> --add-blocker <id>` |
 | `clear_blocker` | `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear | `issues.py set <id> --remove-blocker <id>` |
 | `close` | `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop); merging a PR with `Closes #<n>` closes too | `issues.py close <id> [--reason "not planned"]`: `done` plus date and reason, moved to `archive/` |
+| `merged` | Server-side: GitHub PR merge closes linked issues (`Closes #<n>`) | `issues.py merged [--close]`: checks ancestry of shipped branches and tip SHAs against the default branch; prints `[MERGED <id>]` (and with `--close` marks done and archives) |
 | `reopen` | `gh issue reopen <n>`, then `set_status` | `issues.py reopen <id> [--status <s>]` |
 | `comment` | `gh issue comment <n> --body …`; a resume note: `--body-file .tmp/resume-BT-<n>.md` | `issues.py comment <id> --body-file .tmp/<name>.md` (or `--body`); a resume note overwrites `.memory/resume/<id>.md` (one file per issue, gitignored); a PR-link comment is a normal comment |
 | `set_refs` | the issue body's `Refs: [[L-012]], [[A-003]]` line: replace that line through `set_body`; memory ids only, never doc paths | the same `Refs:` line, through `issues.py set <id> --body-file <f>` |
@@ -44,7 +45,8 @@ Branch: / Done: / Open: / Next step: / Blockers:
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: on GitHub the unit PR merge closes epics (`Closes #<n>`) with no tracker call; locally no merge closes anything: 0b post-merge sync closes the epics in the merged PR's `features:` list; with no PR host the user closes them.
+- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. GitHub closes natively on default branch merge via `Closes #<n>`. Locally, 0b runs `issues.py merged --close` (ancestry check against default branch and recorded tip SHAs).
+- `tracker_switch`: one-way only (local → GitHub). Reverse switch is omitted intentionally: GitHub issues with PR connections, discussions, and external links cannot be round-tripped without loss or dual-store conflict complexity; moving from GitHub to local starts a clean local store.
 - PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
 
 ## Reads
@@ -52,7 +54,8 @@ GitHub reads are scoped `--json` queries; local reads are the same-named `issues
 - `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body` (local adds `comments`)
 - `list`: `gh issue list --label … --state … --json number,title,labels,milestone`; local: `issues.py list [--status <s>] [--label <l>] [--parent <id>] [--all]` (`--all` adds closed)
 - `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens); local: `issues.py wip`
+- `board`: text kanban columns, or Markdown export; local: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`
 - `resume_note`: the task's latest resume note. GitHub: `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30); local: `.memory/resume/<id>.md`. Empty → no note yet.
 - `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label. Local `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
 - `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
-- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` (GitHub mode) per `references/terminal-sync-invariant.md`; local: `issues.py check` (exit 1 on a finding).
+- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` on both backends per `references/terminal-sync-invariant.md` (local: whole-store `issues.py check` is also available).

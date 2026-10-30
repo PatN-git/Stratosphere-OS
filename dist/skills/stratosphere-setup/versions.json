@@ -81,17 +81,17 @@
       "version": "1.0.0"
     },
     "skills/0a-start-session/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/0a-start-session/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "97e5e66b8d1f86799a3ed21ca0ca45f97e1698998898467f8eb03210e75fc77c",
+      "sha256": "ffb93f9e137da048ed296306da51f323ef0bb8c411d338c339ec2602bd55ea6e",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -116,17 +116,17 @@
       "version": "1.0.0"
     },
     "skills/0b-stop-session/references/post-merge-sync.md": {
-      "sha256": "ea1eb6ed23deb88b1331b483facfd3456e2c6d210533cf6f98f909f0094137cb",
+      "sha256": "d1dc3098a777dfca05858b5c93ad704d52c3d747d4c8d70fe23f6d9509184405",
       "timestamp": "2026-10-22",
       "version": "1.1.0"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/0b-stop-session/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -221,12 +221,12 @@
       "version": "1.0.0"
     },
     "skills/1c-concept-map/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/1c-concept-map/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -251,12 +251,12 @@
       "version": "1.0.0"
     },
     "skills/2a-write-prd/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/2a-write-prd/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -296,12 +296,12 @@
       "version": "1.0.0"
     },
     "skills/2b-interface-design/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/2b-interface-design/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -321,7 +321,7 @@
       "version": "1.1.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "c7674d35c33ab04ed8c1cf0cf8e75f77163800bb4c736017e461969635a3f6bd",
+      "sha256": "99aa7716b4b65f459b090545757745ef7d92d1deb653f6154eddc3831daeb683",
       "timestamp": "2026-10-22",
       "version": "1.4.0"
     },
@@ -341,17 +341,17 @@
       "version": "1.0.0"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3a-version-planning/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "ec8c160c723bd8da05bc928efe9ce17682bf335c339e7d7cfc11f79d4e41f4ab",
+      "sha256": "9ee7b99bc506119d71e206d55eb14b62b729b1c3bcabe52b286be8b4d003eda9",
       "timestamp": "2026-10-22",
       "version": "2.7.1"
     },
@@ -381,17 +381,17 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3b-create-issue/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "550907c6c3e9b69c3b9af4d978997264b53ce0bd452a9b342c2cbcfe32f89458",
+      "sha256": "bf64389f1d0f7a886335bea544721fbbcd0a0a5e7ab5531ca91a23781d5c4a9d",
       "timestamp": "2026-10-22",
       "version": "2.6.0"
     },
@@ -411,12 +411,12 @@
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3c-sprint-planning/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -451,12 +451,12 @@
       "version": "1.0.2"
     },
     "skills/3d-implement-issue/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3d-implement-issue/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -506,17 +506,17 @@
       "version": "1.2.0"
     },
     "skills/3z-afk-loop/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/3z-afk-loop/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "44b1f51aa2b1f41c6b0dcabe71866b343cc4c79ea02fa6e675aadeb413fd8a97",
+      "sha256": "77d39acc78524c1d33d518bc38113e353fcebce2a2a157c17d6bb540edf55012",
       "timestamp": "2026-10-22",
       "version": "1.8.0"
     },
@@ -581,12 +581,12 @@
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4a-verify-and-ship/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -636,12 +636,12 @@
       "version": "1.0.0"
     },
     "skills/4b-audit-architecture-drift/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4b-audit-architecture-drift/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -686,12 +686,12 @@
       "version": "1.0.0"
     },
     "skills/4c-codebase-health-audit/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/4c-codebase-health-audit/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
@@ -761,12 +761,12 @@
       "version": "1.0.0"
     },
     "skills/stratosphere-setup/references/terminal-sync-invariant.md": {
-      "sha256": "2f1694d5f595b62e5ca6d45d73179527329b94d9468572473596650810c9de38",
+      "sha256": "3a9aea44603fb498732deb65fc8ff03d9bb8ae4659374ef110df122c7cfc7147",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
     "skills/stratosphere-setup/references/tracker-verbs.md": {
-      "sha256": "91aa0934117087b64193a9df95698bb85812e18db0bbe9d4d01b3dfe950a3b5d",
+      "sha256": "2543efdf2d44986548c328d1c28dc310a165801ddefd657ff8bdce862205118b",
       "timestamp": "2026-10-22",
       "version": "1.0.0"
     },
