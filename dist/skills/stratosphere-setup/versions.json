@@ -41,7 +41,7 @@
       "version": "1.1.0"
     },
     "assets/templates/memory/LEARNINGS.md": {
-      "sha256": "320bf4c61fd876c44d2113e5a39ab2726f3d00cf1c09d174f1c55442f4db006a",
+      "sha256": "204f62d702ccbd8b920c2215e8a8e07eacd811de85b21a2aec015366929d51ff",
       "timestamp": "2026-09-29",
       "version": "1.0.5"
     },
@@ -51,7 +51,7 @@
       "version": "2.0.0"
     },
     "assets/templates/rules/memory-protocol.md": {
-      "sha256": "2ade76ad69d61a7f1db70f32d9dfe3c898626f2381ea898e826a2e2517b5e224",
+      "sha256": "f1dbd86e4cef1c3c1c95b434bf8dc54a21cbca26fddcebf24ee77978b75cc2bd",
       "timestamp": "2026-10-27",
       "version": "2.2.0"
     },
@@ -81,7 +81,7 @@
       "version": "1.0.0"
     },
     "skills/0a-start-session/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -126,7 +126,7 @@
       "version": "1.1.0"
     },
     "skills/0b-stop-session/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -231,7 +231,7 @@
       "version": "1.0.0"
     },
     "skills/1c-concept-map/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -266,7 +266,7 @@
       "version": "1.0.0"
     },
     "skills/2a-write-prd/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -316,7 +316,7 @@
       "version": "1.0.0"
     },
     "skills/2b-interface-design/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -366,7 +366,7 @@
       "version": "1.0.0"
     },
     "skills/3a-version-planning/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -411,7 +411,7 @@
       "version": "1.0.0"
     },
     "skills/3b-create-issue/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -446,7 +446,7 @@
       "version": "1.0.0"
     },
     "skills/3c-sprint-planning/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -491,7 +491,7 @@
       "version": "1.0.2"
     },
     "skills/3d-implement-issue/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -551,7 +551,7 @@
       "version": "1.2.0"
     },
     "skills/3z-afk-loop/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -631,7 +631,7 @@
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -691,7 +691,7 @@
       "version": "1.0.0"
     },
     "skills/4b-audit-architecture-drift/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -746,7 +746,7 @@
       "version": "1.0.0"
     },
     "skills/4c-codebase-health-audit/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },
@@ -826,7 +826,7 @@
       "version": "1.0.0"
     },
     "skills/stratosphere-setup/references/terminal-sync-invariant.md": {
-      "sha256": "38a08ccdfdf02002b54c39285709f9b1b9168721d739276360766369ad509e6c",
+      "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
       "timestamp": "2026-10-27",
       "version": "2.0.0"
     },

@@ -24,6 +24,6 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 - Output: `[MIRROR-OK ...]` or `[MIRROR-DRIFT BT-<n>: <field> expect=<x> gh=<y>]`. Non-zero exit: **HALT, do not close or ship**; re-apply missing write and re-run (max 3 retries). Exit 3 (`[GH-UNAVAILABLE]`) halts likewise: GitHub mode never falls back to local.
 
 ## Boundaries
-- **Never writes the tracker store.** `reconcile.py` only reads; fixes are `tracker-verbs.md` writes performed by the workflow.
+- **Never writes the tracker store.** `reconcile.py` only reads; fixes are tracker-verbs (`references/tracker-verbs-github.md`, local: `references/tracker-verbs-local.md`) writes performed by the workflow.
 - **An edge is stale only when `reconcile.py --edges` says CLEAR.** A `[KEEP]` edge is kept until merge via 0b.
 - **Local backend parity:** `reconcile.py` evaluates `--expect`, `--expect-file`, and `--with-edges` against `store.rows()`, reporting identical `[MIRROR-OK ...]` or `[MIRROR-DRIFT ...]` verdicts. Whole-store `issues.py check` remains available as an additional integrity check.

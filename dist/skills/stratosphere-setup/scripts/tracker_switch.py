@@ -111,7 +111,7 @@ def issue_body(row, numbers=None):
 
 
 def ensure_milestones(titles):
-    """Create each milestone GitHub lacks: `gh issue create --milestone` fails on a missing one (tracker-verbs.md)."""
+    """Create each milestone GitHub lacks: `gh issue create --milestone` fails on a missing one (tracker-verbs-github.md)."""
     have = {t.strip() for t in gh('api', '--paginate', 'repos/{owner}/{repo}/milestones?state=open', '--jq', '.[].title').splitlines()}
     for title in sorted(titles - have):
         gh('api', 'repos/{owner}/{repo}/milestones', '-f', f'title={title}')
