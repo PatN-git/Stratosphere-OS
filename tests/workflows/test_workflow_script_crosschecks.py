@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from conftest import assert_argv_accepted, write_architecture
+
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 WF = SRC / "workflows"
@@ -94,7 +96,7 @@ def test_merge_risk_paths_tag_sql_and_ci():
 
 def test_pr_body_slice_id_regex_ignores_unscoped_commits():
     subjects = ["feat(BT-12): a", "fix(BT-12): b", "feat(BT-13): c", "release: prepare v1.0.0", "fix(ci): x", "chore: y"]
-    assert sorted({pr_body.SCOPE_RE.match(s).group(1) for s in subjects if pr_body.SCOPE_RE.match(s)}) == ["12", "13"]
+    assert sorted({pr_body.SCOPE_RE.match(s).group(1) for s in subjects if pr_body.SCOPE_RE.match(s)}) == ["BT-12", "BT-13"]
 
 
 def test_4a_step5_builds_the_body_with_pr_body_script_using_real_flags():
@@ -129,6 +131,8 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
     monkeypatch.setattr(rec, "gh_available", lambda: False)
     backlog = tmp_path / "BACKLOG_MAP.md"
     backlog.write_text("", encoding="utf-8")
+    arch = tmp_path / "ARCHITECTURE.md"  # pinned local: the repo's own (gitignored) ARCHITECTURE.md may say github
+    write_architecture(arch, "local")
     call = re.compile(r"python \.agents/scripts/reconcile\.py ([^`]*--edges[^`]*)`")
     seen, from_reference = 0, 0
     paths = [WF / n for n in ("4a-verify-and-ship.md", "3d-implement-issue.md", "3z-afk-loop.md", "3c-sprint-planning.md", "0b-stop-session.md")]
@@ -141,12 +145,25 @@ def test_workflow_reconcile_edges_literals_parse_under_the_real_argparse(tmp_pat
             argv = re.sub(r"<[^>]*>", "001", args).split()
             mode = argv[argv.index("--edges") + 1]
             assert mode in {"blockers", "dependents"}, f"{name}: --edges {mode}"
-            try:
-                rec.main(argv + ["--backlog", str(backlog)])
-            except SystemExit as e:
-                assert e.code != 2, f"{name}: `{args}` rejected by reconcile.py argparse"
+            assert_argv_accepted(rec.main, argv + ["--backlog", str(backlog), "--arch", str(arch)])
     assert seen >= 5
     assert from_reference, "the --edges dependents call moved to post-merge-sync.md and is no longer found there"
+
+
+# md-crosscheck: build and ship loop issues.py literals vs issues.py's real argparse
+def test_ship_loop_issues_literals_parse_under_the_real_argparse():
+    issues = _load("issues", SRC / "scripts" / "issues.py")
+    call = re.compile(r"issues\.py ([a-z][^`)\"]*)")
+    seen = set()
+    for name in ("3b-create-issue.md", "3d-implement-issue.md", "3z-afk-loop.md", "4a-verify-and-ship.md"):
+        for args in call.findall((WF / name).read_text(encoding="utf-8")):
+            argv = re.sub(r"<[^>]*>", "BT-001", args).split()
+            try:
+                issues.parser().parse_args(argv)
+            except SystemExit:
+                raise AssertionError(f"{name}: `issues.py {args}` rejected by argparse")
+            seen.add(argv[0])
+    assert {"ready", "check", "branch"} <= seen, seen
 
 
 # --- contract_check.py ------------------------------------------------------------------------

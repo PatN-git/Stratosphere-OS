@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
-timestamp: 2026-09-24
+version: "1.3.0"
+timestamp: 2026-10-22
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -62,7 +62,7 @@ Score findings 0–100 per the **Audit scope** above and `references/confidence-
 **Intent check (before a finding scores ≥ 80):** run `git log -n 5 --format="%h %s%n%b" -- <file>` and read the matching `.memory/LEARNINGS.md` / `[[DR-xxx]]` entries. Dismiss only when a commit message or an entry states the reason for the shape and it still applies; otherwise keep the finding and cite the commit in Evidence. Dismissed findings are not reported: list `Dismissed (deliberate): <file> — <sha subject>` on the Phase 4 summary (or `[HEALTHY]`) line.
 
 ## Clean Exit Rule
-- *Collision Check:* Drop any detected issue that collides with an in-progress issue in `.memory/BACKLOG_MAP.md` (same components/directory affected).
+- *Collision Check:* Drop any detected issue that collides with a `status:in progress` issue (the `wip` read, `references/tracker-verbs.md`) affecting the same components/directory.
 - If no architectural issue meets the Confidence ≥ 80 threshold → HALT.
 - OUTPUT: `[HEALTHY] No high-confidence architectural drift detected in [target directory].` Do not generate any intermediate files.
 

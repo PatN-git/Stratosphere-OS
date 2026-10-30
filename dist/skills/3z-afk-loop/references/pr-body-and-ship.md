@@ -1,7 +1,7 @@
 ---
 description: PR body format, `pr_body.py` build flags and verdicts, suite record, risk label and closing-link read-back for 4a Phase 5 step 5.
-version: "1.1.0"
-timestamp: 2026-10-20
+version: "1.2.0"
+timestamp: 2026-10-22
 ---
 
 # PR Body & Ship Details
@@ -29,7 +29,7 @@ refs: [<only IDs that constrained the change>]
 
 ## Build
 `pr_body.py build` rebuilds the slice list from `git log` (others keep their prior verdicts; commits not yet through 4a are `PENDING`), unions follow-ups with the prior block, writes the `Closes` lines, `test:` and `risk:`.
-- **Verdicts:** `PASS` = audited clean; `WAIVED` = shipped on user authorization over gaps (Phase 4); `SKIP` = audit bypassed by the Value-Add Gate; `DROPPED` = deferred and closed not planned: a human sets it once in the prior body block (never `--verdict`), the row is kept and gets no `Closes` line. Commits scoped to any epic in `features:` (a `tier:epic` row in `.memory/BACKLOG_MAP.md`, or `--epic BT-<n>` when that file is absent, e.g. CI) are skipped, never a slice row. A `ship-only` run never audited: take verdict and rounds from the dispatcher (3z Step 3A).
+- **Verdicts:** `PASS` = audited clean; `WAIVED` = shipped on user authorization over gaps (Phase 4); `SKIP` = audit bypassed by the Value-Add Gate; `DROPPED` = deferred and closed not planned: a human sets it once in the prior body block (never `--verdict`), the row is kept and gets no `Closes` line. Commits scoped to any epic in `features:` (`tier:epic` in the tracker's labels, or `--epic BT-<n>` when it is unreadable, e.g. CI) are skipped, never a slice row. A `ship-only` run never audited: take verdict and rounds from the dispatcher (3z Step 3A).
 - **Base:** `--base`, else the remote default branch (`origin/HEAD`), else the `main`/`master` candidates (it scopes the slice list and `risk:`). None resolves → `[PR-BODY-ERROR]` (status 2), never `risk: [none]`: pass `--base <default-branch>` then.
 - **Parent flags:** `--parent` = the shipped slice's parent (joins `features:`; omit when standalone). `--close BT-<n>` (repeatable) = an epic this PR completes: adds `Closes #<n>.` after the slice lines. `--close-parent` = alias for `--close <--parent>`.
 - **Optional flags:** `--manual-qa` (`needs_manual_qa` true: 3z Step 3A dispatch, or a manual-only AC the Phase 2 table marks `[NONE]`), `--post-merge "<step>"` (also `noticed: <line>` per the 3d plan's `Noticed, not touched`; `none` → omit), `--deviation "<decision>"` (one per line of the 3d plan's `## Deviations`; `none` → omit), `--ref <ID>`.

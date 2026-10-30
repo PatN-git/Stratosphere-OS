@@ -80,6 +80,22 @@ def test_the_responder_answers_until_the_sentinel_arrives():
     assert chat.sent[1:] == ["the fixture says so", "the fixture says so"]
 
 
+def test_a_phase_that_reached_its_sentinel_in_one_long_turn_passes_despite_the_budget():
+    """The budget is checked between turns; it must not fail a phase that already finished."""
+    ticks = iter(range(0, 10_000_000, 1000))
+    chat = FakeChat([FakeTurn(f"all done. {SENTINEL}")])
+    run = d.drive("3b", "prompt", SENTINEL, chat, responder(), log=silent, budget=60, clock=lambda: next(ticks))
+    assert run.replies == 0
+
+
+def test_a_stalled_phase_still_fails_its_budget():
+    ticks = iter(range(0, 10_000_000, 1000))
+    chat = FakeChat([FakeTurn("still thinking")] * 3)
+    with pytest.raises(d.PhaseFailure) as exc:
+        d.drive("3b", "prompt", SENTINEL, chat, responder(), log=silent, budget=60, clock=lambda: next(ticks))
+    assert "budget" in str(exc.value)
+
+
 # --- the failures that used to look like success -----------------------------
 
 def test_an_error_turn_is_a_driver_failure_not_a_question():

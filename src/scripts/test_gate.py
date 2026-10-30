@@ -32,7 +32,7 @@ ZERO = "0" * 40
 MARKER = "# stratos-test-gate"
 CHECK_LINE = "python .agents/scripts/test_gate.py check"
 FIX = "python .agents/scripts/test_gate.py record -- <related-tests command>"
-SUITE_ID_RE = re.compile(r"^BT-(\d+)$")
+SUITE_ID_RE = re.compile(r"^BT-(\d+|LOCAL-[a-z0-9-]+)$")
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 COUNT_RE = re.compile(r"\d+ (?:passed|failed)")
 # Docs and framework/CI files the project's tests never cover need no test run.
@@ -147,7 +147,9 @@ def record_suite(issue, cmd, cwd):
         print("test-gate: tests passed but no suite record was written: the tree or HEAD changed during the run",
               file=sys.stderr)
         return 3
-    path = Path(".tmp") / f"3d-suite-BT-{int(SUITE_ID_RE.match(issue).group(1)):03d}.json"
+    sid = SUITE_ID_RE.match(issue).group(1)
+    name = f"{int(sid):03d}" if sid.isdigit() else sid
+    path = Path(".tmp") / f"3d-suite-BT-{name}.json"
     path.parent.mkdir(exist_ok=True)
     path.write_text(json.dumps({"head_sha": head, "cmd": shlex.join(cmd), "observed": observed_line(tail)}, indent=1),
                     encoding="utf-8")

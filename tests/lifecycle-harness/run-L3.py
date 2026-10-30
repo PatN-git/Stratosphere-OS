@@ -82,6 +82,7 @@ def parse_args(argv=None):
                     help="install the artifacts 0a-2b would have produced, so the "
                          "late chain can be driven without paying for the early one. "
                          "A seeded run does NOT test the hand-off into its first phase")
+    ap.add_argument("--tracker", choices=("local", "github"), default="local", help="tracker backend, passed to scaffold --tracker")
     ap.add_argument("--handoff", action="store_true",
                     help="test the CHAIN, not the depth of each phase: fewer turns, "
                          "one round, a per-phase wall-clock budget, and 1b's "
@@ -96,6 +97,8 @@ def parse_args(argv=None):
                          "(default none, or 600 with --handoff)")
     ap.add_argument("--model", default=session_mod.DRIVER_MODEL,
                     help="the agent under test; calibration is model-specific")
+    ap.add_argument("--effort", default=None, choices=session_mod.EFFORTS,
+                    help="reasoning effort for the agent under test, passed to the CLI as --effort (default: the CLI's)")
     ap.add_argument("--proxy-model", default=session_mod.PROXY_MODEL)
     ap.add_argument("--auditor-model", default=session_mod.AUDITOR_MODEL)
     args = ap.parse_args(argv)
@@ -162,9 +165,9 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     before = assertions_mod.snapshot(env.project, env.bare)
     responder = responder_mod.Responder(
         fixture=(HERE / "fixture" / "topic.md").read_text(encoding="utf-8"),
-        proxy=proxy, max_questions=args.max_questions, max_rounds=args.max_rounds)
+        proxy=proxy, phase=phase, max_questions=args.max_questions, max_rounds=args.max_rounds)
     chat = session_mod.ClaudeSession(cwd=env.project, env=env.child_env,
-                                     model=args.model)
+                                     model=args.model, effort=args.effort)
 
     # Only `1b` hands in a `settle`: its sentinel is necessary but not sufficient,
     # because the first full-depth run printed it in three replies with a brief
@@ -195,7 +198,7 @@ def run_phase(phase: str, env, args, proxy, auditor) -> list[str]:
     ctx = assertions_mod.Context(
         project=env.project, child_env=env.child_env,
         store=Path(env.child_env["L3_GH_STORE"]), bare=env.bare,
-        tool_uses=tool_uses, before=before, handoff=args.handoff,
+        tool_uses=tool_uses, before=before, handoff=args.handoff, tracker=args.tracker,
         final_text=run.last.text if run.last else "",
         phase_text="\n".join(t.text for t in run.turns))
     problems, notes = assertions_mod.check(phase, ctx)
@@ -330,7 +333,7 @@ def main(argv=None) -> int:
         # it runs when that phase is in the run and not otherwise.
         with env_mod.lifecycle_env(repo_root, keep=args.keep,
                                    vendor="3d" in phases,
-                                   seed=args.seed) as env:
+                                   seed=args.seed, tracker=args.tracker) as env:
             print(f"[env]  root    {env.root}")
             print(f"[env]  project {env.project}")
             print(f"[env]  origin  {env.bare}")

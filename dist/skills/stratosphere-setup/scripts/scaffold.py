@@ -24,6 +24,7 @@ Antigravity, Cursor, Codex, Devin and OpenClaw; Claude Code reads the same tree
 from `.claude/skills/`. There is no separate workflows/ or commands/ channel.
 """
 import argparse
+import os
 import hashlib
 import json
 import re
@@ -33,7 +34,6 @@ from pathlib import Path
 
 # MUST match the block ids in memory-templates/*.md — enforced by test_known_block_ids_drift_guard
 KNOWN_BLOCK_IDS = {
-    "backlog-rules", "label-canonical", "backlog-header",
     "design-principles", "design-reference-rules",
     "arch-vocabulary", "arch-guidance",
     "learnings-guidance", "glossary-guidance", "dbschema-rules"
@@ -231,32 +231,7 @@ def verify_invariants(orig_text, prop_text, changed_block_ids):
 
 def check_cheap_corroborations(file_path: Path, orig_text, prop_text):
     name = file_path.name
-    if name == "BACKLOG_MAP.md":
-        bt_pattern = re.compile(r'\b(BT-\d{3,})\b')
-        orig_bts = set(bt_pattern.findall(orig_text))
-        prop_bts = set(bt_pattern.findall(prop_text))
-        if orig_bts != prop_bts:
-            raise ValueError(f"BT-id set changed. Original: {orig_bts}, Proposed: {prop_bts}")
-            
-        def get_backlog_rows(text):
-            lines = text.split("\n")
-            in_backlog = False
-            rows = []
-            for line in lines:
-                if line.strip().startswith("## Backlog"):
-                    in_backlog = True
-                    continue
-                if in_backlog and line.strip().startswith("##"):
-                    in_backlog = False
-                if in_backlog and line.strip().startswith("|") and "BT-" in line:
-                    if "ID" not in line and ":---" not in line:
-                        rows.append(line)
-            return len(rows)
-            
-        if get_backlog_rows(orig_text) != get_backlog_rows(prop_text):
-            raise ValueError(f"Backlog row count changed. Original: {get_backlog_rows(orig_text)}, Proposed: {get_backlog_rows(prop_text)}")
-            
-    elif name == "DESIGN_RULES.md":
+    if name == "DESIGN_RULES.md":
         dr_pattern = re.compile(r'\[\[(DR-\w+)\]\]')
         def get_immortal_drs(text):
             lines = text.split("\n")
@@ -323,6 +298,9 @@ try:
     import _versioning
 except ImportError:
     _versioning = None
+import reconcile
+import issues
+import tracker_switch
 
 
 
@@ -363,9 +341,37 @@ SKILL_TARGETS = [".agents/skills"]
 # `.agents/skills/.gitignore`, which sync_skills.py regenerates from its lockfile.
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
-                     "*.work.md", "*.stratosphere-new"]
+                     "*.work.md", "*.stratosphere-new",
+                     ".memory/STATUS.md", ".memory/resume/"]
 
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
+
+def skips_map(proj_path):
+    """True for the retired v5 map store on either backend: it is never placed, merged or locked. The
+    local tracker lives on the `<repo>/issues` branch (issues.py); a leftover map is migrated by `issues.py migrate`."""
+    return proj_path == issues.MAP_DEFAULT
+
+
+def init_local_tracker(project, arch):
+    """Fresh `tracker: local` install: record `tracker_branch: <repo>/issues` and create that branch (issues.py init).
+    Outside a git repository the key is still recorded (named after the folder) and setup is told to run
+    `issues.py init` after `git init`."""
+    cwd = Path.cwd()
+    try:
+        os.chdir(project)
+        try:
+            name = issues.repo_name()
+        except issues.IssuesError:  # not a git repository yet
+            name = Path(project).resolve().name
+        tracker_switch.write_key(arch, "tracker_branch", f"{name}/issues")
+        lines = []
+        if issues.main(["--arch", str(arch), "init"], out=lines.append):  # 1 = refused, the message is in `lines`
+            print(f"NOTE: local tracker not initialised ({' '.join(lines)}); after `git init` run `python .agents/scripts/issues.py init`.")
+        else:
+            print(f"Local tracker: {' '.join(lines)}")
+    finally:
+        os.chdir(cwd)
+
 
 def map_bundled_to_project(rel_path: str):
     parts = rel_path.split("/")
@@ -625,7 +631,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "_tracker_common.py", "_ice.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name
@@ -695,6 +701,7 @@ def main():
     ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")
+    ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend, recorded as `tracker:` in ARCHITECTURE.md; local also records `tracker_branch:` and creates that branch")
     args = ap.parse_args()
 
     project = Path.cwd()
@@ -733,7 +740,7 @@ def main():
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
-            if proj_path.startswith(".github/workflows/"):
+            if proj_path.startswith(".github/workflows/") or skips_map(proj_path):
                 continue
             
             p = project / proj_path
@@ -837,6 +844,7 @@ def main():
             "needs_review_constitution": [],
             "preserved_files": {},
             "design_lockfile_stale": False,
+            "tracker_advisory": False,
             "refreshed_scripts": [],
             "created_scripts": [],
             "needs_review_scripts": [],
@@ -849,7 +857,7 @@ def main():
         
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
-            if not proj_path:
+            if not proj_path or skips_map(proj_path):
                 continue
                 
             p = project / proj_path
@@ -1256,6 +1264,12 @@ def main():
             print(f"NOTE: design toolchain lockfile pins {drift[0]} but package.json pins {drift[1]}; "
                   "run `npm install --prefix .agents/scripts/design` and commit package-lock.json (`npm ci` fails until then).")
 
+        if (project / issues.MAP_DEFAULT).is_file() and reconcile.read_tracker(project / ".memory" / "ARCHITECTURE.md") != "github":
+            worklist["tracker_advisory"] = True
+            print(f"NOTE: the local tracker moved from {issues.MAP_DEFAULT} to one file per issue on the `<repo>/issues` branch in v5.0.0. "
+                  "Run `python .agents/scripts/issues.py migrate` once and set `tracker: local`; to use GitHub issues instead, "
+                  "migrate first, then run `python .agents/scripts/tracker_switch.py` (dry run) and `--apply`.")
+
         tmp_dir = project / ".tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
         worklist_file = tmp_dir / "stratosphere-update-worklist.json"
@@ -1349,7 +1363,9 @@ def main():
             print("=== Unresolved Conflicts / Reviews ===")
             for u in unresolved:
                 print(f"  * {u} needs merge/review")
-            raise SystemExit("Error: Cannot commit because there are unresolved conflicts or constitution changes.")
+            raise SystemExit("Error: Cannot commit because there are unresolved conflicts or constitution changes. "
+                             "Review each <file>.stratosphere-new per the update skill's Phase 3.2, or copy the workspace file "
+                             "to <file>.stratosphere-new to decline, then re-run.")
             
         for proj_path, prop_bytes in proposed_files.items():
             p = project / proj_path
@@ -1492,7 +1508,14 @@ def main():
 
     # 3. Memory templates -> .memory/
     for src in sorted((ASSETS / "memory").glob("*.md")):
+        if skips_map(f".memory/{src.name}"):
+            continue
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
+    arch = project / ".memory" / "ARCHITECTURE.md"
+    if args.tracker and not dry and arch in res["created"]:
+        tracker_switch.write_tracker(arch, args.tracker)
+        if args.tracker == "local":
+            init_local_tracker(project, arch)
 
     # 4. Rules -> .agents/rules/ (Antigravity-native: reads trigger/globs here).
     #    glob-triggered rules ALSO -> .claude/rules/ so Claude Code activates them

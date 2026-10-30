@@ -82,6 +82,11 @@ KEEP_GOING = ("Not yet - we have not explored this enough. Keep asking; I would 
 _OPTION = re.compile(r"^\s*(?:\*\*)?(?:option\s*)?([1-3])[.):]", re.I | re.M)
 _ICE = re.compile(r"\bimpact\b.*\bconfidence\b|\bconfidence\b.*\bimpact\b", re.I | re.S)
 _CONFIRM = re.compile(r"\bproceed\?|\bconfirm\b|\bshall i\b|\bok to\b|\bshould i continue\b", re.I)
+# 3b's approval gate lists numbered drafts with their ICE scores: a menu and an ICE prompt by shape, an approval
+# by intent, so it is matched first.
+_NUMBERED = re.compile(r"^\s*(?:\*\*)?(\d+)[.):]", re.M)
+_APPROVAL = re.compile(r"\bapprove\b|\bapproval\b|\bmint\b", re.I)
+APPROVE = "Approved — mint every drafted slice as drafted."
 
 
 def _is_pick(text: str) -> bool:
@@ -95,6 +100,9 @@ class Responder:
 
     fixture: str
     proxy: Proxy
+    # The "Not yet" push-back is 1b's: its grill is unbounded and the user ends it. Any other
+    # phase's confirm gate is answered yes.
+    phase: str = "1b"
     # Counts agent TURNS, not individual questions. `1b` batches - a single turn
     # in the first good run carried a numbered series (the proxy's answers refer
     # to "Q41" and "Q54"), so 7 turns covered dozens of questions. The CLI flag
@@ -130,13 +138,16 @@ class Responder:
             return Answer(STOP, "policy:budget")
 
         self.asked += 1
+        if (_APPROVAL.search(agent_text) and re.search(r"\bICE\b", agent_text)
+                and len(set(_NUMBERED.findall(agent_text))) >= 2):
+            return Answer(APPROVE, "policy:approve")
         if _is_pick(agent_text):
             return Answer("1", "policy:pick-first")
         if _ICE.search(agent_text):
             return Answer("Impact 1.0, Confidence 80%, size:small, mode:AFK", "policy:ice")
         if _CONFIRM.search(agent_text):
             # Consent only once the budget is spent; until then, push back.
-            if self.asked < self.max_questions:
+            if self.phase == "1b" and self.asked < self.max_questions:
                 return Answer(KEEP_GOING, "policy:not-yet")
             return Answer("Yes, proceed.", "policy:confirm")
 

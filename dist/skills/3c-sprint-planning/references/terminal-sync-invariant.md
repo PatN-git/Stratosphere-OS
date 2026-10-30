@@ -1,34 +1,29 @@
 ---
-description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a). Closes the completion-bias gap where the high-salience GitHub write lands but the low-salience BACKLOG_MAP mirror / label transition drops. Backed by the deterministic gate `.agents/scripts/reconcile.py`.
-version: "1.2.0"
-timestamp: 2026-10-20
+description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a, 0b). Closes the completion-bias gap where one write of a multi-write phase silently drops. Gate: `.agents/scripts/reconcile.py`.
+version: "2.0.0"
+timestamp: 2026-10-27
 ---
 
 # Terminal Sync Invariant
 
-A workflow that writes **both** GitHub and `.memory/BACKLOG_MAP.md` in its terminal phase must leave them in agreement. Completion bias makes the trailing mirror write drop silently after the GitHub call succeeds; the corruption then propagates to every downstream reader. The gate below is **deterministic** — a script exit code, not a self-attested checkbox (the same bias that skips the write skips a prose check).
+A workflow that makes several GitHub writes in its terminal phase must leave GitHub in the state the phase intended. Completion bias makes a trailing write (a label transition, a link, a blocker edge) drop silently after the high-salience one succeeds, and the corruption reaches every downstream reader. The gate is **deterministic**: a script exit code, not a self-attested checkbox.
 
-## Gate
-At the end of the sync phase, over the ids this phase touched:
+## Gate (`tracker: github`)
+At the end of the sync phase, state the intended end state, then run it over the ids the phase touched:
 
 ```bash
-python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>] [--fields <subset>]
+python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>] [--fields <subset>] \
+    --expect "BT-<n>:<field>=<value>;..." | --expect-file <F> [--with-edges blockers|dependents]
 ```
 
-- Non-zero exit → **HALT. Do not close/ship.** The output lists each `[MIRROR-DRIFT BT-<n>: <field> map=<x> gh=<y>]`.
-- **Pass every id this phase wrote**, not just the primary one — e.g. 4a passes the shipped slice **plus** each dependent whose `Blocked by` it cleared (slice or epic id) **plus** each epic it flipped to `in review`.
-- `--fields` = only the mirror fields this phase wrote (default: all 5 — `status,milestone,labels,parent,blocked_by`). Scoping keeps a gate from false-blocking on drift in a field outside its concern (e.g. 3a passes `--fields milestone,blocked_by`, never `status`).
-- With `--fields status` the gate also asserts closed ≡ done: a `done` row whose issue is still open on GitHub is drift (`open on GitHub, map=done`).
-- `--pr-id` = the single id that must carry a PR-link comment (the shipped slice); co-passed ids are not required to carry it. A PR-link comment is one whose body contains the full `/pull/` URL (`https://github.com/<owner>/<repo>/pull/<n>`); a bare `#<n>` does not count.
-
-## Heal
-For each `[MIRROR-DRIFT]`, apply the missing write as an **upsert keyed by `BT-<padded>`** — find-or-replace the row/field. **Never append** (appending double-writes the row). A stale blocker is healed on both sides: remove the id from the map cell **and** the GitHub edge (`removeBlockedBy`). Then **re-run `reconcile.py` until it exits 0.** Log each fix as `[HEALED <field> BT-<n>]`.
-
-Batch heal (0d, after the user approves): `reconcile.py --heal --kind <status|milestone|labels|parent|blocked_by> --source gh (--ids … | --all-open)` is that upsert for one kind, from GitHub, on the map only. When GitHub is the side to fix (the map is right), `--source map` prints the exact `gh`/GraphQL commands; run them only after the user approves. `open on GitHub, map=done` heals by `gh issue close <n> --reason completed` (a GitHub write: in-band in 4a; after user approval in 0d). Manual kinds (stale_blocker, closed, pr_link, absent, not_found, other) heal by hand. After a batch heal, re-run `reconcile.py --ids <healed> --fields <kind>` once; no loop.
+- `--expect` / `--expect-file` (one item per line, `#` comments): the phase's own intended state. Fields: `status, milestone, labels, parent, blocked_by`; `labels` and `blocked_by` take comma lists. The gate never imposes a target state: conditional transitions (4a's epic flip only when all siblings are `in review`) are decided by the workflow.
+- `--fields` = only the fields this phase wrote, so a gate never false-blocks on a field outside its concern (3a passes `milestone,blocked_by`, never `status`). With `status` the gate also asserts closed = done (`open on GitHub, expect=done`).
+- **Pass every id this phase wrote**, not just the primary one: 4a passes the shipped slice, each epic it flipped to `in review`, and the dependents whose blocker edge it cleared.
+- `--pr-id` = the single id that must carry a PR-link comment (the shipped slice). A PR-link comment contains the full `/pull/` URL (`https://github.com/<owner>/<repo>/pull/<n>`); a bare `#<n>` does not count.
+- `--with-edges blockers|dependents` adds the D3 edge verdicts from the same single batched fetch (4a's ship gate: slice, flipped epics and dependents in one call).
+- Output: `[MIRROR-OK ...]` or one `[MIRROR-DRIFT BT-<n>: <field> expect=<x> gh=<y>]` per drift. Non-zero exit: **HALT, do not close or ship**; re-apply the missing write and re-run, at most 3 attempts. Exit 3 (`[GH-UNAVAILABLE]`, after three retries) halts the same way: GitHub mode never falls back to a local copy.
 
 ## Boundaries
-- **End-state is the citing workflow's, not this file's.** The gate asserts only that GitHub and BACKLOG *agree* for the touched ids — it never imposes a target status. Conditional transitions (e.g. 4a's epic-flip only when all siblings are `in review`) are decided by the workflow; only pass ids to reconcile once the phase's intended writes are done.
-- **Offline / no `gh`** → the script checks BACKLOG internal consistency and exits 0 with `[local-only]`. There is no GitHub to cross-check, so this case is inherently self-attested — eyeball the row you wrote.
-- **Never writes GitHub.** `reconcile.py` only reads it. `--heal` writes `.memory/BACKLOG_MAP.md` only (see Heal); fixes that belong on GitHub are printed as commands, never run.
-- **An edge is stale only when `reconcile.py --edges` says CLEAR.** A `[KEEP]` edge is never removed; a map missing a KEEP edge that GitHub has is `blocked_by` drift (heal from gh).
-- `/0d` runs the same audit nightly across all rows as a human-facing backstop — it is advisory, not an in-band substitute for this gate.
+- **Never writes GitHub.** `reconcile.py` only reads it; a fix that belongs on GitHub is a `tracker-verbs.md` write the workflow performs.
+- **An edge is stale only when `reconcile.py --edges` says CLEAR.** A `[KEEP]` edge is never removed; it clears at merge via 0b.
+- **Local: no `--expect` gate.** `issues.py` validates each write and commits it atomically; after a multi-write phase run `issues.py check` (exit 1: HALT). `reconcile.py --edges` reads the local store.

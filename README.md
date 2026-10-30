@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-4.10.1-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -41,8 +41,7 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 ├── AGENTS.md / CLAUDE.md / GEMINI.md  ← Core constitution and layer rules
 ├── .agents/                          ← Orchestration engine (rules, workflows, skills)
 ├── .memory/                          ← Authoritative project memory
-│   ├── STATUS.md                     ← Active session health and build status
-│   ├── BACKLOG_MAP.md                ← Feature slices and issue tracking
+│   ├── STATUS.md                     ← Folder state: last sync, one session line per task
 │   ├── LEARNINGS.md                  ← Accumulated architectural traps and fixes
 │   ├── GLOSSARY.md                   ← Project domain vocabulary
 │   ├── ARCHITECTURE.md               ← System structural invariants
@@ -50,6 +49,8 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 │   └── DESIGN.md / DESIGN_RULES.md   ← UI design tokens and structural contracts
 └── docs/                             ← Product Requirement Documents (PRDs) and research
 ```
+
+Issues live in GitHub, or, under `tracker: local`, one file per issue (`docs/issues/<id>.md`) on a dedicated `<repo>/issues` git branch that every branch and worktree reads.
 
 ---
 
@@ -63,12 +64,12 @@ StratosphereOS provides structured lifecycle skills spanning the entire developm
 | **1. Discovery** | `/1a-research`<br/>`/1b-concept-framing`<br/>`/1c-concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
 | **2. Design** | `/2a-write-prd`<br/>`/2b-interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
 | **2z. Spec Orchestration** | `/2z-write-spec` | Chains `/2a-write-prd` → `/2b-interface-design` → `/2c-reconcile-specs` in one invocation with a single memory load and a decision log; resumes after a Path A pause. | Discovery brief, `.memory/*` | PRD doc, design doc, reconciled specs |
-| **3. Planning** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
+| **3. Planning** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, issues | Release roadmap, sprint plan, vertical issues |
 | **3d. Execution** | `/3d-implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
-| **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
+| **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | Issues, `STATUS` | Automated PRs and synced status |
 | **4. Ship & Audit** | `/4a-verify-and-ship`<br/>`/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, audit reports (docs/audits/) + slice proposals |
 | **0. Anytime** | `/0e-plain-english` | Restates the agent's last message or question in plain, non-technical English; say "more" to elaborate. | Last agent message | Plain-language explanation |
-| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
+| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Resume note on the issue, updated `STATUS.md`, clean handoff |
 | **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
 
 ---

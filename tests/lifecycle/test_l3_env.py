@@ -127,12 +127,22 @@ def test_lifecycle_env_builds_and_tears_down():
         assert env.home.exists()
         # origin resolves into the temp root, never to GitHub
         remotes = e.git_remotes(env.project / ".git")
-        assert remotes and all(str(root) in r for r in remotes)
+        assert remotes and all(Path(r).resolve().is_relative_to(root.resolve()) for r in remotes)
         # tokens never reach the child
         assert not any(k.startswith(("GH_", "GITHUB_")) for k in env.child_env)
         assert env.child_env["HOME"] == str(env.home)
         assert str(root) in env.child_env["GIT_CONFIG_GLOBAL"]
     assert not root.exists(), "temp root survived teardown"
+
+
+def test_the_project_has_an_initial_commit_so_its_default_branch_is_born():
+    """An unborn branch fails `git worktree add -b`, a checkout of the default branch and a clone."""
+    with e.lifecycle_env(REPO, scaffold=False) as env:
+        git = ["git", "-C", str(env.project)]
+        assert subprocess.run([*git, "rev-parse", "--verify", "HEAD"], capture_output=True, env=env.child_env).returncode == 0
+        branch = subprocess.run([*git, "branch", "--show-current"], capture_output=True, text=True).stdout.strip()
+        assert branch and subprocess.run([*git, "checkout", "-q", branch], capture_output=True).returncode == 0
+        assert subprocess.run([*git, "status", "--porcelain"], capture_output=True, text=True).stdout == ""
 
 
 def test_teardown_runs_even_when_the_body_raises():

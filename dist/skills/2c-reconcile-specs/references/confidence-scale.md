@@ -1,7 +1,7 @@
 ---
 description: Generic confidence scale and scoring rubric shared by StratOS audits (4a verify-and-ship, 4b audit-architecture-drift). The invoking workflow declares its audit scope; this file defines how to score against it.
-version: "1.1.0"
-timestamp: 2026-06-22
+version: "1.2.0"
+timestamp: 2026-10-28
 ---
 
 # Confidence Scale
@@ -16,11 +16,12 @@ Score every finding 0–100 against the **audit scope declared by the invoking w
 
 ## Banding Anchors
 - **0–39: Discard** — Speculative, stylistic, pre-existing without current impact, already tracked, or out of scope. Do not mention in output.
-- **40–69: Weak Signal** — Possibly valid, but evidence is incomplete, impact is low, or it rests on unstated assumptions. Do not report unless exploratory findings are explicitly requested.
-- **70–79: Near Miss** — Likely valid and in scope, but missing direct evidence, clear impact, or immediate actionability. Use internally only; do not report.
+- **40–59: Weak Signal** — Possibly valid, but evidence is incomplete, impact is low, or it rests on unstated assumptions. Do not report unless exploratory findings are explicitly requested.
+- **60–79: Watch** — Likely valid and in scope, but missing direct evidence, clear impact, or immediate actionability. Report it as a Watch item when the workflow has a Watch list (4a); otherwise do not report. Watch never blocks and never triggers a retry.
 - **80–89: Report** — Strong, directly-evidenced finding that a stated in-scope rule or criterion is unmet, with clear practical impact. Include in output.
 - **90–100: Critical / Confirmed** — Directly proven violation of a stated in-scope rule or criterion, likely to cause a serious or repeated failure. Include in output.
 
 ## Threshold Rule
-- **Only report findings with confidence ≥ 80.**
-- When in doubt, lower the score and discard.
+- **Only report findings with confidence ≥ 80** as gaps or violations (Watch above is the one exception).
+- When in doubt, lower the score.
+- **Ambiguity is never a gap:** a finding the spec, PRD or design does not settle scores at most 79; at 60–79 report it as Watch, marked as a decision for the user.

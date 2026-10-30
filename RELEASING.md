@@ -72,3 +72,46 @@ tree (sparing user-authored files), and migrates the project's own `.memory/` an
 `migrate_agent_to_agents.py`, which only renames a file, this one deletes, so the
 safe default is inverted. It spares user-authored workflow files and reports
 anything it leaves behind.
+
+## v5.0.0 — breaking release
+
+v5.0.0 makes GitHub the only store of issue state when `tracker: github` (BT-194). There is no
+`BACKLOG_MAP.md` in that mode: workflows read through scoped `gh --json` queries and a post-condition
+gate (`reconcile.py --expect`) checks each multi-write phase against the phase's own intended state.
+The local backend (`tracker: local`) **never touches GitHub** and no longer uses `BACKLOG_MAP.md` (BT-221):
+each issue is one markdown file (frontmatter plus the full body, Acceptance Criteria included, plus comments)
+on the `<repo>/issues` branch, never in a feature branch, so every branch and worktree sees one state.
+`python .agents/scripts/issues.py` is its only reader and writer (`get`, `list`, `wip`, `ready`, `create`, `set`,
+`comment`, `claim`, `close`, `check`, `sync`); `ice_read.py candidates` runs on both backends.
+
+**Removed, no shims:** the map-vs-GitHub diff, `reconcile.py --heal`, `--summary`, `--all-open --summary`
+and `--require-gh`; `nightly_state.py drift` and the `drift` key of `.last-run.json`; 0d's backlog drift
+check and heal; the local `--ids ... --fields` gate clauses in 3a, 3b, 3c, 4a and `post-merge-sync.md`.
+`STATUS.md` is now folder state only (session lines; a task's progress is a resume note on its issue).
+
+**What an existing project must do** (`stratosphere-update` alone is not enough):
+- A project with a `BACKLOG_MAP.md` (and no `tracker: github`) must migrate it once: `stratosphere-update`
+  offers it, or run from the project root, after updating:
+
+```bash
+python .agents/scripts/issues.py migrate           # map -> <repo>/issues branch; the map moves to .memory/archive/
+```
+
+  Then set `tracker: local` in `.memory/ARCHITECTURE.md` to stay local. To use GitHub issues instead, migrate
+  first, then:
+
+```bash
+python .agents/scripts/tracker_switch.py          # dry run (default)
+python .agents/scripts/tracker_switch.py --apply  # creates the issues with their bodies and comments, rewrites BT-LOCAL ids, sets tracker: github
+```
+
+  It is safe to re-run and writes `tracker: github` last. `scaffold --update` prints a NOTE for exactly this
+  case (`tracker_advisory` in the worklist). Migrated issues carry the map row's fields, ICE metrics and
+  `Refs:` line; bodies the map never stored cannot be recovered.
+- A local project with a remote pushes `<repo>/issues` with the 4a ship push; `0a` runs `issues.py sync`.
+- `scaffold --update` flags the constitution (`needs_review_constitution`: the 0a branch rule in
+  AGENTS.md section 4 changed) and the STATUS template (unmarked): accept the trimmed STATUS file that
+  0b proposes (an old-format STATUS keeps working; `validate_memory.py` warns when it is over 3,000
+  characters or tracked by git). `.memory/STATUS.md` and `.memory/resume/` are now
+  in the managed `.gitignore` entries; untrack a tracked STATUS with `git rm --cached .memory/STATUS.md`.
+- The `BACKLOG_MAP.md` template is gone; `scaffold --update` neither places nor merges a map.

@@ -2,8 +2,8 @@
 trigger: always_on
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-10-14
-version: "2.1.1"
+timestamp: 2026-10-27
+version: "2.2.0"
 ---
 
 # Memory Protocol
@@ -35,7 +35,7 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 ### Promotion rules
 
 - **New entries default to `[ASSUMED]`.**
-- **`[ASSUMED] → [PATTERN]`**: cite ≥2 occurrences across distinct tasks. Agent may self-promote with evidence.
+- **`[ASSUMED] → [PATTERN]`**: ≥2 distinct tasks whose `Ref` cites the ID; name them in the 0d report or promotion commit, never in the entry. Agent may self-promote with evidence.
 - **`[PATTERN] → [LAW]`**: explicit human confirmation required. Agent NEVER self-promotes to `[LAW]`. `GLOSSARY.md` entries never reach `[LAW]` — vocabulary is not architectural law.
 
 ### Demotion / challenge
@@ -48,7 +48,6 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 
 | ID | Lives in |
 |:---|:---|
-| `BT-xxx` | `BACKLOG_MAP.md` |
 | `[[L-xxx]]` | `LEARNINGS.md` |
 | `[[A-xxx]]` | `ARCHITECTURE.md` |
 | `[[DR-xxx]]` | `DESIGN_RULES.md` |
@@ -56,7 +55,7 @@ Every entry in `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEM
 
 **ID Format:** Real entries use numeric IDs (`[[L-001]]`); `-XXX` suffixes are reserved placeholders the validator ignores. Never ship a real entry with a non-numeric ID.
 
-- `[[ID]]` is ONLY for memory-to-memory links (L/A/DR/G ↔ L/A/DR/G), which the validator resolves and checks for reciprocity. BT/issue IDs are always BARE — first column, the `Parent`/`Blocked by` columns, and the `Source:` field (e.g. `Source: BT-007`, never `Source: [[BT-007]]`) — because provenance is a one-directional external pointer, not a peer concept-link.
+- `[[ID]]` is ONLY for memory-to-memory links (L/A/DR/G ↔ L/A/DR/G), which the validator resolves and checks for reciprocity. BT/issue IDs are always BARE (`Source: BT-007`, never `Source: [[BT-007]]`): provenance is a one-way external pointer, not a peer concept-link.
 
 ### EXAMPLES Bidirectional linking
 
@@ -88,7 +87,7 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - Never deletes to supersede — moves to `## Superseded` with tag.
 - Never silently rewrites memory during crystallization or lint.
 - Never reads `## Superseded` unless explicitly asked.
-- Never writes to any `.memory/` file without proposing and awaiting user confirmation. (Note: BACKLOG_MAP Ref/status updates performed by a lifecycle workflow (2a/2b/3a/3b/3c/4a Publish & Sync steps) are pre-authorized and need no per-write confirmation; this confirmation rule applies to content entries in LEARNINGS/ARCHITECTURE/DESIGN_RULES/GLOSSARY).
+- Never writes to any `.memory/` file without proposing and awaiting user confirmation; tracker writes by a lifecycle workflow are pre-authorized.
 - Never write secrets, API keys, tokens, or PII to any `.memory/*` file. Redact before recording a learning.
 
 ## 6. Retrieval & Scale
@@ -99,12 +98,10 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - **Never delete structural headings, comments, or guidelines:** When populating or updating any memory file during project setup or ongoing development, you MUST PRESERVE all of the following; they must remain in place as placeholders and guidance until needed or replaced by real domain content:
   - Section headings (even if empty, such as `## Major Feature Areas`, `## State / Data Flow`, `## Backend / Database Boundaries`, `## Shapes`, `## Components`, `## Do's and Don'ts`).
   - HTML/markdown comments (e.g., `<!-- shadcn variable names... -->`).
-  - Guidance text (e.g., `<Rationale...>`, `Avoid:` instructions).
+  - Guidance text (e.g., `<Rationale...>`).
   - Governance rules/bullet points.
   - The format example lines under `## Superseded`.
 - **What to remove:** When writing real active content into a memory file, remove ONLY the dummy active items in that section (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.
 
 ## 8. Backlog ID Minting (Late Binding)
-- **Pre-creation (`/1b` briefs, draft PRDs):** Identify strictly by semantic slug (`docs/discovery/<slug>.md`). Never guess or assign `BT-<n>` before creation.
-- **Creation (`/2a`, `/3b`):** Never compute `MAX(BT_ID) + 1` (GitHub shares IDs with PRs). Bind `BT-<padded>` strictly from `gh issue create` output (or `BT-LOCAL-<n>` if offline).
-- **Flat IDs only:** Backlog IDs must be zero-padded flat integers (matching `^BT-[0-9]{3,}$` or `BT-LOCAL-\w+`). Hierarchical sub-numbering (`BT-059-01`) is strictly forbidden; parent-child hierarchy is tracked exclusively via the `Parent` column (single-valued, on the child only), and blocking relations via the separate `Blocked by` column.
+- Never guess a `BT-<n>`: bind it from `gh issue create` output (local backend: `BT-LOCAL-<slug>`). IDs are flat (`BT-007`); hierarchy is `Parent`. Verbs: `references/tracker-verbs.md`.

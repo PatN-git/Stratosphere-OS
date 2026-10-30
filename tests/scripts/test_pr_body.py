@@ -6,6 +6,7 @@ it never calls `gh`; the prior PR body arrives as a file.
 import importlib.util
 import json
 import re
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -242,6 +243,24 @@ def test_commit_scoped_to_the_parent_is_not_a_slice_or_closes_line(repo):
     assert "Closes #10." in build(repo, "BT-11", "--close-parent")
 
 
+def test_local_backend_ids_build_a_body_and_keep_prior_rows(repo, tmp_path):
+    commit(repo, "feat(BT-LOCAL-a): first")
+    commit(repo, "fix(BT-LOCAL-e): touches the epic itself")
+    first = build(repo, "BT-LOCAL-a", "--epic", "BT-LOCAL-e", parent="BT-LOCAL-e")
+    assert field(first, "features") == "[BT-LOCAL-e]" and "Closes" not in first  # a local issue has no number to close
+    assert re.findall(r"^  - \{id: (\S+), parent: (\S+), ", block(first), re.M) == [("BT-LOCAL-a", "BT-LOCAL-e")]
+    prior = tmp_path / "prior.md"
+    prior.write_text(first, encoding="utf-8")
+    commit(repo, "feat(BT-LOCAL-b): second")
+    second = build(repo, "BT-LOCAL-b", "--epic", "BT-LOCAL-e", prior=prior, parent="BT-LOCAL-e")
+    assert re.findall(r"^  - \{id: (\S+), parent: \S+, summary: \".*?\", verdict: (\w+)", block(second), re.M) == [
+        ("BT-LOCAL-a", "PASS"), ("BT-LOCAL-b", "PASS")]
+    assert field(second, "features") == "[BT-LOCAL-e]"
+    bad = build_raw(repo, "--parent", "BT-LOCAL-", suite=write_suite(repo))
+    assert_clean_error(bad)
+    assert "--parent" in bad.stderr
+
+
 def test_parent_differing_from_prior_feature_joins_features_without_a_warning(repo):
     commit(repo, "feat(BT-11): first")
     prior = repo / ".tmp" / "prior.md"
@@ -451,6 +470,8 @@ SCOPED_CMDS = [
     "pytest tests/x.py::test_y", "pytest -k foo", "pytest -kfoo", "pytest -m slow", "pytest --ignore=tests/a",
     "pytest --last-failed", "vitest run --changed", "npx vitest run ingestion", "npm run test:ingestion",
     "pytest tests", "npm test -- src/lib", "bash -c 'npx vitest run src/lib'",
+    "python -m unittest tests.test_x", "python -m unittest tests/test_x.py", "python -m unittest discover -k foo",
+    "python -m unittest -k foo", "python -m unittest discover -s",
 ]
 FULL_CMDS = [
     "pytest", "pytest -q", "python -m pytest -n 6 --dist worksteal", "python -m pytest -n auto -q -p no:cacheprovider",
@@ -460,6 +481,9 @@ FULL_CMDS = [
     "bash scripts/check.sh && python -m pytest tests/jules -q",
     "npm test && python .agents/scripts/validate_memory.py --path .memory",
     'bash -c "python -m pytest -q; bash scripts/check.sh"',
+    "python -m unittest", "python -m unittest discover", "python3 -m unittest discover -v", "py -m unittest -q",
+    "python -m unittest discover -s tests -p 'test_*.py' -t .",
+    "python .agents/scripts/test_gate.py record --suite BT-5 -- python -m unittest discover -s tests",
 ]
 
 
@@ -545,11 +569,23 @@ def test_pr_body_is_registered_like_contract_check():
 
 
 def write_backlog(repo, *rows):
-    """Throwaway .memory/BACKLOG_MAP.md; each row is (id, labels[, parent])."""
-    (repo / ".memory").mkdir(exist_ok=True)
-    lines = ["| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | PR |", "|---|---|---|---|---|---|---|---|---|"]
-    lines += [f"| {i} | t | open | {labels} | — | {(parent or ['—'])[0]} | — | — | — |" for i, labels, *parent in rows]
-    (repo / ".memory" / "BACKLOG_MAP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    """Throwaway local-tracker store (the `<repo>/issues` branch, issues.py); each row is (id, labels[, parent])."""
+    sys.path.insert(0, str(SCRIPT.parent))
+    import issues
+    files = {}
+    for i, labels, *parent in rows:
+        issue = {k: None for k in issues.FIELDS} | {
+            "type": "issue", "id": i, "title": "t", "status": "planned", "blocked_by": [], "body": "", "comments": [],
+            "labels": [l.strip() for l in labels.split(",")], "parent": parent[0] if parent else None}
+        files[issues.path_of(issue)] = issues.render_issue(issue)
+    cwd = Path.cwd()
+    try:
+        os.chdir(repo)
+        ref = f"refs/heads/{issues.branch_name()}"
+        old = issues.head(ref)
+        assert issues.update_ref(ref, issues.commit([old] if old else [], None, files, "fixture"), old)
+    finally:
+        os.chdir(cwd)
 
 
 def test_dropped_prior_row_is_kept_without_a_closes_line(repo):
@@ -602,7 +638,7 @@ def test_non_numeric_epic_ids_are_ignored_and_unreadable_map_fails_open(repo):
     commit(repo, "docs(BT-7): plan doc")
     write_backlog(repo, ("BT-LOCAL-1", "tier:epic"))
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
-    (repo / ".memory" / "BACKLOG_MAP.md").write_bytes(b"\xff\xfe\x00bad")
+    subprocess.run(["git", "branch", "-D", f"{repo.name}/issues"], cwd=repo, check=True, capture_output=True)
     assert [s[0] for s in slices(build(repo, "BT-11"))] == ["BT-7", "BT-11"]
 
 
@@ -860,6 +896,24 @@ def test_unit_branch_ok(repo, branch, ok):
     assert unit_ok(repo, *BASE_UNIT, "--branch", branch)["branch_ok"] is ok
 
 
+def test_unit_branch_ok_rejects_a_branch_of_a_longer_local_id(repo):
+    write_backlog(repo, ("BT-LOCAL-login", "tier:slice"), ("BT-LOCAL-login-form", "tier:slice"))
+    args = ["--slice", "BT-LOCAL-login", "--milestone", NONE]
+    assert unit_ok(repo, *args, "--branch", "feature/BT-LOCAL-login-x")["branch_ok"] is True
+    assert unit_ok(repo, *args, "--branch", "origin/feature/BT-LOCAL-login-form-x")["branch_ok"] is False
+    assert unit_ok(repo, "--slice", "BT-LOCAL-login-form", "--milestone", NONE,
+                   "--branch", "feature/BT-LOCAL-login-form-x")["branch_ok"] is True
+
+
+def test_unit_branch_ok_guards_the_parent_epics_glob_and_fails_open_without_a_store(repo):
+    args = ["--slice", "BT-LOCAL-s", "--parent", "BT-LOCAL-auth", "--milestone", NONE, "--branch"]
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-v2-x")["branch_ok"] is True  # no store: the glob alone
+    write_backlog(repo, ("BT-LOCAL-auth", "tier:epic"), ("BT-LOCAL-auth-v2", "tier:epic"),
+                  ("BT-LOCAL-s", "tier:slice", "BT-LOCAL-auth"))
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-v2-x")["branch_ok"] is False
+    assert unit_ok(repo, *args, "feature/BT-LOCAL-auth-x")["branch_ok"] is True
+
+
 def test_unit_smoke_matches_the_plan(repo):
     out = unit_ok(repo, "--slice", "BT-070", "--milestone", "v1.2.5", "--parent", "BT-051", "--type", "feat",
                   "--slug", "Offline sync", "--branch", "feat/BT-051-old")
@@ -867,13 +921,14 @@ def test_unit_smoke_matches_the_plan(repo):
 
 
 def test_resolve_unit_is_importable_and_pure():
-    pb = load_pr_body()
-    assert pb.resolve_unit("BT-51", "v1.2.5", "BT-12")["unit"] == "v1.2"
-    assert pb.resolve_unit("BT-51", None, "BT-12", "v1.4.0")["unit"] == "v1.4"
-    assert pb.resolve_unit("BT-51", "—", None, epic=True)["unit"] == "BT-051"
+    pb = load_pr_body()  # puts the scripts dir on sys.path
+    from _tracker_common import resolve_unit
+    assert resolve_unit("BT-51", "v1.2.5", "BT-12")["unit"] == "v1.2"
+    assert resolve_unit("BT-51", None, "BT-12", "v1.4.0")["unit"] == "v1.4"
+    assert resolve_unit("BT-51", "—", None, epic=True)["unit"] == "BT-051"
     assert pb.slugify("Offline Sync: v2!") == "offline-sync-v2"
     with pytest.raises(ValueError):
-        pb.resolve_unit("BT-51", "1.2", "BT-12")
+        resolve_unit("BT-51", "1.2", "BT-12")
 
 
 def test_epic_ids_are_padded_and_padding_variants_collapse(repo):
@@ -1026,3 +1081,102 @@ def test_a_malformed_prior_audit_line_warns_and_keeps_the_rest(repo):
     r = build_raw(repo, "--prior-body-file", prior, "--parent", "BT-10", suite=write_suite(repo))
     assert r.returncode == 0 and "[PR-BODY-WARN]" in r.stderr and "audit" in r.stderr
     assert json.loads(field(r.stdout, "post_merge")) == ["keep"] and "audit:" not in r.stdout
+
+
+# --- tracker: github: epic detection and parents come from GitHub, and fail closed (BT-195) -----------------
+
+def _load_pr_body():
+    sys.path.insert(0, str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location("pr_body_gh_mode", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _node(num, tags, parent=None):
+    return {"number": num, "state": "OPEN", "milestone": None, "labels": {"nodes": [{"name": t} for t in tags]},
+            "parent": {"number": parent, "state": "OPEN", "milestone": None, "labels": {"nodes": []}} if parent else None,
+            "blockedBy": {"nodes": []}}
+
+
+def _tracker(repo, key):
+    (repo / ".memory").mkdir(exist_ok=True)
+    (repo / ".memory" / "ARCHITECTURE.md").write_text(f"---\ntype: architecture\ntracker: {key}\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+
+
+def _build_in_process(mod, repo, capsys, slice_id, *extra):
+    suite = write_suite(repo, f"3d-suite-{slice_id}.json")
+    code = mod.main(["build", "--slice", slice_id, "--summary", "did a thing", "--verdict", "PASS", "--audit-rounds", "1",
+                     "--base", "main", "--risk-paths", str(RISK_PATHS), "--suite-json", str(suite), "--parent", "BT-10", *extra])
+    out = capsys.readouterr()
+    return code, out.out, out.err
+
+
+def test_github_mode_reads_epics_and_parents_from_github_with_no_map(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    commit(repo, "feat(BT-12): pending sibling")
+    _tracker(repo, "github")
+    asked = []
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda nums, comments=False, edges=False: asked.append(sorted(nums)) or {
+        7: _node(7, ["tier:epic", "status:in progress"]), 11: _node(11, ["tier:slice"], parent=7),
+        12: _node(12, ["tier:slice"], parent=9)})
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 0, err
+    assert [s[0] for s in slices(out)] == ["BT-11", "BT-12"] and "Closes #7." not in out
+    assert slice_parents(out)["BT-12"] == "BT-009"
+    assert asked == [[7, 11, 12]], "one batched fetch for every commit-scoped id"
+    assert not (repo / ".memory" / "BACKLOG_MAP.md").exists()
+
+
+def test_github_mode_fails_closed_when_github_is_unreachable(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc for the epic")
+    _tracker(repo, "github")
+    monkeypatch.chdir(repo)
+
+    def down(nums, comments=False, edges=False):
+        raise reconcile.GhError("gh api graphql failed after 4 attempts: HTTP 502")
+    monkeypatch.setattr(reconcile, "fetch_nodes", down)
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "HTTP 502" in err
+
+
+def test_local_tracker_still_fails_open_and_never_asks_github(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "local")
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda *a, **k: pytest.fail("local mode must not ask GitHub"))
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 0 and {s[0]: s[2] for s in slices(out)}["BT-7"] == "PENDING"
+
+
+def test_github_mode_still_honors_the_epic_flag(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    import reconcile
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "github")
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(reconcile, "fetch_nodes", lambda nums, comments=False, edges=False: {
+        7: _node(7, ["tier:slice"]), 11: _node(11, ["tier:slice"])})
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11", "--epic", "BT-7")
+    assert code == 0 and [s[0] for s in slices(out)] == ["BT-11"]
+
+
+def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatch, capsys):
+    mod = _load_pr_body()
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-7): plan doc")
+    _tracker(repo, "gitlab")
+    monkeypatch.chdir(repo)
+    code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
+    assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err
