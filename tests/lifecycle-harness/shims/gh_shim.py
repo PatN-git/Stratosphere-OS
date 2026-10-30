@@ -586,6 +586,8 @@ def cmd_api(state: dict, argv: list[str]) -> str:
         return _graphql(state, argv[1:])
     rest = [a for a in argv if a != "--paginate"]
     path = rest[0].split("?", 1)[0]
+    owner, _, repo = state.get("repo", REPO).partition("/")
+    path = path.replace("{owner}", owner).replace(":owner", owner).replace("{repo}", repo).replace(":repo", repo)
     if re.match(r"^repos/[^/]+/[^/]+/milestones/?$", path):
         title = take(rest, "-f", "--field", "-F", "--raw-field")
         known = {m["title"] for m in state["milestones"]}
@@ -711,6 +713,11 @@ def _graphql(state: dict, argv: list[str]) -> str:
 def cmd_repo(state: dict, argv: list[str]) -> str:
     """Enough for Slice 6's shape to be exercised without a real repo."""
     action, rest = argv[0], argv[1:]
+    if action == "view":
+        name = positional(rest)[0] if positional(rest) else state["repo"]
+        if name in state.get("repos", []):
+            return f"https://github.com/{name}"
+        raise Failure(EXIT_UNKNOWN, f"GraphQL: Could not resolve to a Repository with the name '{name}'. (repository)", bare=True)
     if action == "create":
         name = positional(rest)[0] if positional(rest) else state["repo"]
         state["repos"].append(name)
@@ -726,6 +733,24 @@ def cmd_repo(state: dict, argv: list[str]) -> str:
 
 def dispatch(state: dict, argv: list[str]) -> tuple[str, str]:
     """Return (stdout, stderr) for one invocation."""
+    repo_override = take(argv, "-R", "--repo")
+    if repo_override:
+        filtered = []
+        i = 0
+        while i < len(argv):
+            if argv[i] in ("-R", "--repo") and i + 1 < len(argv):
+                i += 2
+                continue
+            if argv[i].startswith("--repo="):
+                i += 1
+                continue
+            filtered.append(argv[i])
+            i += 1
+        argv = filtered
+        state["repo"] = repo_override
+
+    if not argv:
+        return VERSION, ""
     if argv[0] in ("version", "--version"):
         return VERSION, ""
     if argv[0] == "auth":

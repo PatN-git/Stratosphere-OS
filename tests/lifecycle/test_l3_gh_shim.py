@@ -781,3 +781,43 @@ def test_the_seeded_registry_is_the_label_taxonomy(store):
         sys.path.remove(str(REPO / "src" / "scripts"))
     canonical = {f"{k}:{v}" for k, vals in issues.CANONICAL.items() for v in vals} | {f"status:{s}" for s in issues.STATUSES}
     assert set(seed.LABELS) == canonical
+
+
+def test_repo_view_succeeds_for_created_repo_and_fails_with_graphql_error_for_unknown(store, capsys):
+    """B2: gh repo view matches real GitHub GraphQL not found error and URL on success."""
+    code, _, err = run(["repo", "view", "owner/nonexistent-repo"], capsys)
+    assert code != 0
+    assert "GraphQL: Could not resolve to a Repository with the name 'owner/nonexistent-repo'." in err
+
+    run(["repo", "create", "owner/real-repo"], capsys)
+    code, out, _ = run(["repo", "view", "owner/real-repo"], capsys)
+    assert code == 0
+    assert out.strip() == "https://github.com/owner/real-repo"
+
+
+def test_root_flag_repo_and_owner_expansion_in_api(store, capsys):
+    """B2: -R root flag overrides repo and repos/{owner}/{repo}/milestones expands cleanly."""
+    code, out, _ = run(["-R", "custom-org/custom-repo", "api", "repos/{owner}/{repo}/milestones", "-f", "title=v2.0.0"], capsys)
+    assert code == 0
+    assert "v2.0.0" in out
+    code, out, _ = run(["api", "repos/:owner/:repo/milestones", "--jq", ".[].title"], capsys)
+    assert code == 0
+    assert "v2.0.0" in out.splitlines()
+
+
+def test_ci_gate_status_with_no_workflows_rollup_is_empty(clone, store, tmp_path, monkeypatch, capsys):
+    """B2: Real GitHub returns statusCheckRollup: [] when repo has no workflows, producing verdict none."""
+    _shimmed_env(tmp_path, monkeypatch)
+    sha = _push_branch(clone, "feat/no-ci")
+    run(["pr", "create", "--title", "test-no-ci"], capsys)
+    # Clear rollup as on real repo with no CI workflows
+    raw = state(Path(os.environ["L3_GH_STORE"]))
+    raw["issues"]["1"]["statusCheckRollup"] = []
+    Path(os.environ["L3_GH_STORE"]).write_text(json.dumps(raw), encoding="utf-8")
+
+    r = subprocess.run([sys.executable, str(REPO / "src" / "scripts" / "ci_gate.py"), "status", "--pr", "1",
+                        "--sha", sha, "--wait", "5"], cwd=str(clone), capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    res = json.loads(r.stdout)
+    assert res["verdict"] == "none"
+    assert res["failing"] == []
