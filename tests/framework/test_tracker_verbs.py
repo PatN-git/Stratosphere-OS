@@ -105,7 +105,33 @@ def test_local_reads_are_issues_py_commands_and_candidates_is_one_command():
 
 @pytest.mark.parametrize("rel", WRITERS)
 def test_writers_cite_the_verbs_reference(rel):
-    assert "references/tracker-verbs.md" in read_src(rel)
+    text = read_src(rel)
+    assert "references/tracker-verbs-github.md" in text
+    assert "references/tracker-verbs-local.md" in text
+
+
+def test_projected_tracker_verbs_in_sync_with_master():
+    """Build-time projection: tracker-verbs-github.md and tracker-verbs-local.md must match master."""
+    sys.path.insert(0, str(SRC.parent / "build"))
+    from build import generate_projected_verbs
+    master = read_src("references/tracker-verbs.md")
+    exp_gh, exp_local = generate_projected_verbs(master)
+    assert read_src("references/tracker-verbs-github.md") == exp_gh
+    assert read_src("references/tracker-verbs-local.md") == exp_local
+
+
+def test_projected_verbs_contain_all_canonical_verbs():
+    gh_text = read_src("references/tracker-verbs-github.md")
+    local_text = read_src("references/tracker-verbs-local.md")
+    for verb in VERBS:
+        assert f"- `{verb}`:" in gh_text, f"verb `{verb}` missing from tracker-verbs-github.md"
+        assert f"- `{verb}`:" in local_text, f"verb `{verb}` missing from tracker-verbs-local.md"
+
+
+def test_projected_local_verbs_commands_match():
+    local_text = read_src("references/tracker-verbs-local.md")
+    for verb, cmd in LOCAL_COMMAND.items():
+        assert f"issues.py {cmd}" in local_text, f"{verb}: command issues.py {cmd} missing in local verbs"
 
 
 def test_there_is_no_provisional_milestone_outside_the_local_backend():
@@ -156,5 +182,5 @@ def test_the_learnings_todo_sink_points_to_the_tracker():
 
 
 def test_the_relations_and_template_references_cite_the_new_references():
-    assert "references/tracker-verbs.md" in read_src("references/github-issue-relations.md")
+    assert "references/tracker-verbs-github.md" in read_src("references/github-issue-relations.md")
     assert "references/label-taxonomy.md" in read_src("references/issue-templates.md")

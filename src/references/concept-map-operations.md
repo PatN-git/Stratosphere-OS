@@ -7,7 +7,7 @@ version: "1.1.0"
 
 # Concept Map Tracker Operations
 
-The operations (reusing `3b` primitives) for charting, working, and querying a concept map issue tree, in GitHub and local (`tracker: local`, `references/tracker-verbs.md`) form. Both backends hold the same issues: the map issue and its decision tickets.
+The operations (reusing `3b` primitives) for charting, working, and querying a concept map issue tree, in GitHub and local (`tracker: local`, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) form. Both backends hold the same issues: the map issue and its decision tickets.
 
 ## Issue relations
 Wire sub-issue and blocked-by relations via `github-issue-relations.md` (native `gh api graphql`). Local: `--parent` and `--blocked-by` on `issues.py create`.
