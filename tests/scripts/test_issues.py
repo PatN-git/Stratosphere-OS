@@ -533,3 +533,109 @@ def test_merged_of_ignores_a_longer_parent_id_sharing_the_prefix(repo):
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
     assert issues.make_merged_of(issues.Tracker().store())(db) == 'none'
+
+
+def test_merged_reports_no_merges_when_branches_unmerged(repo):
+    ok('init')
+    epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    (repo / 'f.txt').write_text('f\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'f')
+    git(repo, 'checkout', '-q', 'main')
+    code, text = run('merged')
+    assert code == 0 and text == '[NO-MERGES]'
+
+
+def test_merged_detects_ancestor_branch_and_closes_with_flag(repo):
+    ok('init')
+    epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    (repo / 'f.txt').write_text('f\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'f')
+    git(repo, 'checkout', '-q', 'main')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+
+    code, text = run('merged')
+    assert code == 0 and f'[MERGED {epic}]' in text
+    issue = json.loads(ok('get', epic))
+    assert issue['status'] == 'in review' and not issue['closed']
+
+    code, text = run('merged', '--close')
+    assert code == 0 and f'[MERGED {epic}]' in text
+    issue = json.loads(ok('get', epic))
+    assert issue['status'] == 'done' and issue['closed'] == '2026-10-27'
+
+
+def test_merged_detects_recorded_sha_after_branch_deletion(repo):
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-billing-work')
+    (repo / 'b.txt').write_text('b\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'b')
+    tip = git(repo, 'rev-parse', 'HEAD').strip()
+    git(repo, 'checkout', '-q', 'main')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+
+    ok('comment', epic, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+
+    code, text = run('merged')
+    assert code == 0 and f'[MERGED {epic}]' in text
+
+
+def test_merged_squash_commit_is_advisory_and_not_auto_closed(repo):
+    ok('init')
+    item = ok('create', '--title', 'Search', '--label', 'type:feature,tier:slice,size:small,mode:AFK')
+    ok('set', item, '--status', 'in review')
+    (repo / 's.txt').write_text('s\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', f"feat({item}): squash commit directly on main")
+
+    code, text = run('merged')
+    assert code == 0 and f'[PROBABLY-MERGED {item}]' in text
+
+    code, text = run('merged', '--close')
+    assert code == 0 and f'[PROBABLY-MERGED {item}]' in text
+    issue = json.loads(ok('get', item))
+    assert issue['status'] == 'in review' and not issue['closed']
+
+
+def test_board_text_kanban(repo):
+    ok('init')
+    p = ok('create', '--title', 'Setup DB', '--label', 'type:feature,tier:slice,size:small,mode:AFK')
+    w = ok('create', '--title', 'API routes', '--label', 'type:feature,tier:slice,size:medium,mode:AFK')
+    ok('set', w, '--status', 'in progress')
+    d = ok('create', '--title', 'Docs', '--label', 'type:documentation,tier:slice,size:small,mode:AFK')
+    ok('set', d, '--status', 'done')
+    ok('close', d)
+
+    code, text = run('board')
+    assert code == 0
+    assert '=== Planned (1) ===' in text
+    assert f'{p}  Setup DB  [size:small]' in text
+    assert '=== In Progress (1) ===' in text
+    assert f'{w}  API routes  [size:medium]' in text
+    assert '=== Done (1) ===' in text
+    assert f'{d}  Docs  [size:small]' in text
+
+
+def test_board_markdown_export(repo, tmp_path):
+    ok('init')
+    p = ok('create', '--title', 'Setup DB', '--label', 'type:feature,tier:slice,size:small,mode:AFK')
+    md_file = tmp_path / "board.md"
+
+    code, text = run('board', '--md', str(md_file))
+    assert code == 0
+    assert f"[BOARD] wrote {md_file}" in text
+    assert md_file.exists()
+    content = md_file.read_text(encoding='utf-8')
+    assert '## Planned (1)' in content
+    assert f'- **{p}** Setup DB `size:small`' in content
+
+

@@ -66,6 +66,14 @@ def open_on_github(row, gh):
     return None
 
 
+def _canon_id(val):
+    if val is None:
+        return None
+    if isinstance(val, int) or (isinstance(val, str) and val.isdigit()):
+        return bt_id(val)
+    return _padded(str(val))
+
+
 def compare(row, gh, fields, check_pr):
     """Return a list of drift descriptions for one issue. Pure — unit-tested.
 
@@ -100,18 +108,18 @@ def compare(row, gh, fields, check_pr):
         bb = gh.get('blockedBy') or []
         if isinstance(bb, dict):
             bb = bb.get('nodes') or []
-        gh_bb = {bt_id(i['number']) for i in bb}
+        gh_bb = {_canon_id(i.get('number')) for i in bb}
         if row['blocked_by'] != gh_bb:
             drift.append(f"blocked_by expect={sorted(row['blocked_by'])} gh={sorted(gh_bb)}")
 
     if 'parent' in fields and 'parent' in gh:
         p = gh.get('parent')
-        gh_parent = bt_id(p['number']) if p else None
+        gh_parent = _canon_id(p.get('number')) if p else None
         if gh_parent != norm(row['parent']):
             drift.append(f"parent expect={norm(row['parent'])} gh={gh_parent}")
 
     if check_pr:
-        if not any('/pull/' in (c.get('body') or '') for c in (gh.get('comments') or [])):
+        if not any(('/pull/' in (c.get('body') or '') or 'Shipped on ' in (c.get('body') or '')) for c in (gh.get('comments') or [])):
             drift.append("pr-link absent from issue comments")
 
     return drift
@@ -412,7 +420,7 @@ def parse_expect(text):
         head, eq, value = item.partition('=')
         ident, colon, field = head.partition(':')
         field, value = field.strip(), value.strip()
-        if not (eq and colon and re.fullmatch(r'BT-\d+', ident.strip())) or field not in EXPECT_FIELDS:
+        if not (eq and colon and re.fullmatch(r'BT-(\d+|LOCAL-[\w-]+)', ident.strip())) or field not in EXPECT_FIELDS:
             raise ValueError(f"bad expectation {item!r}: want BT-<n>:<field>=<value> with field one of {', '.join(EXPECT_FIELDS)}")
         if field in ('labels', 'blocked_by'):
             vals = set(csv_list(value))
@@ -421,6 +429,33 @@ def parse_expect(text):
             value = _padded(value)
         out.setdefault(_padded(ident), {})[field] = value
     return out
+
+
+def local_gate(ids, store, expect, fields, pr_id):
+    """The post-condition gate for local backend: compare expected fields (and PR link comment on `pr_id`)
+    against the local issue store. Returns (exit code, lines). Pure."""
+    lines, drifted = [], []
+    for bt in ids:
+        issue = store.issues.get(bt)
+        if issue is None:
+            drifted.append(f"[MIRROR-DRIFT {bt}: issue not found in local store]")
+            continue
+        want = {k: v for k, v in expect.get(bt, {}).items() if k in fields}
+        target_gh = {
+            'state': 'CLOSED' if issue['closed'] or issue['status'] == 'done' else 'OPEN',
+            'labels': [{'name': l} for l in issue['labels']] + [{'name': f"status:{issue['status']}"}],
+            'milestone': {'title': issue['milestone']} if issue['milestone'] else None,
+            'blockedBy': {'nodes': [{'number': b} for b in issue['blocked_by']]},
+            'parent': {'number': issue['parent']} if issue['parent'] else None,
+            'comments': [{'body': c} for c in issue.get('comments', [])],
+        }
+        closed = (closed_on_github(want, target_gh) or open_on_github(want, target_gh)) if 'status' in want else None
+        drift = [closed] if closed else compare(want, target_gh, set(want), check_pr=(bt == pr_id))
+        drifted += [f"[MIRROR-DRIFT {bt}: {d}]" for d in drift]
+    if not drifted:
+        lines.append(f"[MIRROR-OK {','.join(ids)}]")
+    return (1 if drifted else 0), lines + drifted
+
 
 
 def github_gate(ids, nodes, expect, fields, pr_id):
@@ -479,10 +514,10 @@ def main(argv=None):
                          "blocker of the ids; dependents = each stored edge naming the ids (CLEAR or KEEP)")
     ap.add_argument('--arch', default=ARCH_DEFAULT,
                     help="ARCHITECTURE.md whose `tracker: github|local` frontmatter key picks the backend")
-    ap.add_argument('--expect', help="tracker: github only. The intended state: "
+    ap.add_argument('--expect', help="The intended state: "
                                      "`BT-7:status=in review;BT-7:blocked_by=BT-6,BT-8` (fields: " + ', '.join(ALL_FIELDS) + ")")
     ap.add_argument('--with-edges', choices=('blockers', 'dependents'),
-                    help="tracker: github only. Combined mode: the --ids gate plus the --edges verdicts from ONE fetch")
+                    help="Combined mode: the --ids gate plus the --edges verdicts from ONE fetch")
     ap.add_argument('--expect-file', help="--expect read from a file (`;` or one item per line, `#` comments)")
     args = ap.parse_args(argv)
     if args.edges and (args.pr_id or args.fields is not None):
@@ -500,21 +535,20 @@ def main(argv=None):
     github = backend == 'github'
     if github and args.all_open:
         ap.error("--all-open is a local-backend run: not with `tracker: github`")
-    if not github and (args.expect or args.expect_file or args.with_edges):
-        ap.error("--expect/--expect-file/--with-edges need `tracker: github`")
-    if not github and not args.edges:
-        ap.error("local backend: only --edges is supported (issues.py validates every write; there is no gate to run)")
-    if github:
-        gate = not args.edges
-        args.edges = args.edges or args.with_edges
+    gate = bool(args.expect or args.expect_file) or (not args.edges)
+    args.edges = args.edges or args.with_edges
+    expect = {}
+    if args.expect or args.expect_file:
         try:
             text = (args.expect or '') + ';' + (Path(args.expect_file).read_text(encoding='utf-8') if args.expect_file else '')
             expect = parse_expect(text)
         except (OSError, ValueError) as e:
             ap.error(f"--expect/--expect-file: {e}")
+    if github:
         return github_main(args, [_padded(i) for i in args.ids.split(',') if i.strip()], expect, fields, gate)
     if args.backlog:
         rows, merged_of = parse_backlog(args.backlog), make_merged_of()
+        store = None
     else:
         import issues  # lazy: local backend only (the GitHub gate stands alone)
         try:
@@ -523,8 +557,16 @@ def main(argv=None):
             print(e)
             return 3
         rows, merged_of = store.rows(), issues.make_merged_of(store)
-    ids = open_ids(rows) if args.all_open else [i.strip() for i in args.ids.split(',') if i.strip()]
-    return edges_cmd(args, rows, ids, merged_of)
+    ids = open_ids(rows) if args.all_open else [_padded(i) for i in args.ids.split(',') if i.strip()]
+    code = 0
+    if gate:
+        if args.backlog:
+            ap.error("--expect is not supported with --backlog")
+        code, lines = local_gate(ids, store, expect, fields, args.pr_id)
+        print("\n".join(lines))
+    if args.edges:
+        code = max(code, edges_cmd(args, rows, ids, merged_of))
+    return code
 
 
 if __name__ == '__main__':

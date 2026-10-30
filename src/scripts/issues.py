@@ -400,6 +400,104 @@ def candidate_ids(store):
     return {l.split(' |', 1)[0] for l in lines} | {m.split(' ')[1] for m in missing}
 
 
+def _detect_merged(store, bt):
+    """Return ('merged', reason) | ('advisory', reason) | None for an open issue."""
+    issue = store.issues.get(bt)
+    if not issue:
+        return None
+    target = default_branch()
+    if not target:
+        return None
+
+    # 1. Check recorded tip SHA in issue comments
+    for c in issue.get('comments', []):
+        m = re.search(r'Shipped.*?@\s*([0-9a-f]{7,40})', c)
+        if not m:
+            m = re.search(r'Shipped\s+([0-9a-f]{7,40})', c)
+        if m:
+            sha = m.group(1)
+            rc, _ = _git('merge-base', '--is-ancestor', sha, target, check=False)
+            if rc == 0:
+                return ('merged', f"tip {sha[:7]} is ancestor of {target}")
+
+    # 2. Check branch ancestry via make_merged_of logic
+    merged_of = make_merged_of(store)
+    state = merged_of(bt)
+    if state == 'merged':
+        return ('merged', f"branch is ancestor of {target}")
+
+    # 3. Squash commit fallback (advisory only)
+    rc, out = _git('log', target, '--grep', f"({bt})", '-n', '1', '--format=%h', check=False)
+    if rc == 0 and out.strip():
+        return ('advisory', f"squash commit {out.strip()} matches id in {target}")
+
+    return None
+
+
+def cmd_merged(store, a):
+    candidates = [i for i in store.issues.values() if not i['closed'] and i['status'] == 'in review']
+    changes = {}
+    lines = []
+    for issue in sorted(candidates, key=lambda x: x['id']):
+        bt = issue['id']
+        res = _detect_merged(store, bt)
+        if not res:
+            continue
+        kind, reason = res
+        if kind == 'merged':
+            if getattr(a, 'close', False):
+                issue.update(status='done', closed=today(), close_reason='completed', claimed_by=None, updated=now())
+                changes.update(store.changes(issue))
+            lines.append(f"[MERGED {bt}]")
+        elif kind == 'advisory':
+            lines.append(f"[PROBABLY-MERGED {bt}] ({reason}; confirm before close)")
+
+    out_text = '\n'.join(lines) if lines else '[NO-MERGES]'
+    return changes, out_text
+
+
+def cmd_board(store, a):
+    issues_list = list(store.issues.values())
+    if getattr(a, 'milestone', None):
+        issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
+    if getattr(a, 'parent', None):
+        issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+
+    lines = []
+    as_md = bool(getattr(a, 'md', None))
+    for st in STATUSES:
+        group = [i for i in issues_list if (i['status'] == st or (st == 'done' and i['closed']))]
+        if not group:
+            continue
+        title = st.replace('_', ' ').title()
+        if as_md:
+            lines.append(f"## {title} ({len(group)})")
+        else:
+            lines.append(f"=== {title} ({len(group)}) ===")
+        for i in sorted(group, key=lambda x: x['id']):
+            size = next((l.split(':')[1] for l in i['labels'] if l.startswith('size:')), None)
+            size_txt = f"  [size:{size}]" if (size and not as_md) else (f" `size:{size}`" if size else "")
+            blk_txt = ""
+            if i['blocked_by']:
+                blk = ','.join(sorted(i['blocked_by']))
+                blk_txt = f" [BLOCKED by {blk}]" if not as_md else f" *(blocked by {blk})*"
+            if as_md:
+                lines.append(f"- **{i['id']}** {i['title']}{size_txt}{blk_txt}")
+            else:
+                lines.append(f"{i['id']}  {i['title']}{size_txt}{blk_txt}")
+        lines.append("")
+
+    text = '\n'.join(lines).strip()
+    if getattr(a, 'md', None):
+        path = Path(a.md)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text + '\n', encoding='utf-8')
+        return f"[BOARD] wrote {path}"
+    return text or "[BOARD-EMPTY]"
+
+
+
+
 # --- writes ---------------------------------------------------------------------------------------------------------
 
 def slug(title):
@@ -795,6 +893,11 @@ def parser():
     sub.add_parser('check')
     p = sub.add_parser('sync'); p.add_argument('--remote', default='origin')
     p = sub.add_parser('migrate'); p.add_argument('--map', default=MAP_DEFAULT)
+    p = sub.add_parser('merged'); p.add_argument('--close', action='store_true')
+    p = sub.add_parser('board')
+    p.add_argument('--milestone')
+    p.add_argument('--parent')
+    p.add_argument('--md', nargs='?', const='.tmp/board.md', default=None)
     return ap
 
 
@@ -820,6 +923,14 @@ def run(a, out):
         out(cmd_sync(tracker, a.remote))
     elif a.cmd == 'migrate':
         out(cmd_migrate(tracker, a.map))
+    elif a.cmd == 'merged':
+        if getattr(a, 'close', False):
+            out(tracker.write(lambda s: cmd_merged(s, a), "issues: merged --close"))
+        else:
+            _, text = cmd_merged(tracker.store(), a)
+            out(text)
+    elif a.cmd == 'board':
+        out(cmd_board(tracker.store(), a))
     elif a.cmd in WRITES:
         out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '')}"))
     else:

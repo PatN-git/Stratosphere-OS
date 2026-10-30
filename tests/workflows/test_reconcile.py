@@ -629,12 +629,71 @@ def main():
 
     edge_checks()
     github_checks()
+    local_gate_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
         return False
     print("\nAll reconcile tests PASSED.")
     return True
+
+
+def local_gate_checks():
+    """A4: local backend accepts --expect, --expect-file and --with-edges against store.rows()."""
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "ARCHITECTURE.md"
+        p.write_text("---\ntype: architecture\ntracker: local\ntracker_branch: test-gate-issues\nversion: \"1.0.0\"\n---\n# A\n",
+                     encoding="utf-8")
+        base = ["--arch", str(p)]
+        import issues
+        tracker = issues.Tracker(str(p))
+        i_auth = {
+            'type': 'issue', 'id': 'BT-LOCAL-auth', 'title': 'Auth',
+            'status': 'in review', 'labels': ['type:feature', 'tier:epic'],
+            'milestone': 'v1.0.0', 'parent': None, 'blocked_by': ['BT-LOCAL-db'],
+            'claimed_by': None, 'created': '2026-10-27', 'updated': '2026-10-27',
+            'closed': None, 'close_reason': None, 'body': '',
+            'comments': ['- 2026-10-27: Shipped on feature/auth @ 1234567'],
+        }
+        i_db = {
+            'type': 'issue', 'id': 'BT-LOCAL-db', 'title': 'DB',
+            'status': 'done', 'labels': ['type:feature', 'tier:slice', 'size:small', 'mode:AFK'],
+            'milestone': 'v1.0.0', 'parent': 'BT-LOCAL-auth', 'blocked_by': [],
+            'claimed_by': None, 'created': '2026-10-27', 'updated': '2026-10-27',
+            'closed': '2026-10-27', 'close_reason': 'completed', 'body': '',
+            'comments': [],
+        }
+        try:
+            tracker.write(lambda s: ({
+                issues.README: issues.README_TEXT,
+                issues.path_of(i_auth): issues.render_issue(i_auth),
+                issues.path_of(i_db): issues.render_issue(i_db),
+            }, True), "init test store", allow_new=True)
+
+            # 1. Matching expect
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--pr-id", "BT-LOCAL-auth",
+                                     "--expect", "BT-LOCAL-auth:status=in review;BT-LOCAL-auth:blocked_by=BT-LOCAL-db"])
+            check("local: matching expectation -> OK, exit 0", code == 0 and "[MIRROR-OK BT-LOCAL-auth]" in out)
+
+            # 2. Status drift
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect", "BT-LOCAL-auth:status=planned"])
+            check("local: status drift -> exit 1", code == 1 and "[MIRROR-DRIFT BT-LOCAL-auth: status expect=planned" in out)
+
+            # 3. Open-but-done drift
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect", "BT-LOCAL-auth:status=done"])
+            check("local: open-but-done drift -> exit 1", code == 1 and "expect=done" in out)
+
+            # 4. Missing issue
+            code, out = _run(base + ["--ids", "BT-LOCAL-absent", "--expect", "BT-LOCAL-absent:status=done"])
+            check("local: missing issue -> exit 1", code == 1 and "[MIRROR-DRIFT BT-LOCAL-absent: issue not found in local store]" in out)
+
+            # 5. Combined with-edges
+            code, out = _run(base + ["--ids", "BT-LOCAL-db", "--expect", "BT-LOCAL-db:status=done",
+                                     "--with-edges", "dependents"])
+            check("local: combined gate + edges exit 0", code == 0 and "[MIRROR-OK BT-LOCAL-db]" in out
+                  and "[CLEAR BT-LOCAL-auth <- BT-LOCAL-db]" in out)
+        finally:
+            issues._git('update-ref', '-d', 'refs/heads/test-gate-issues', check=False)
 
 
 def test_reconcile():
