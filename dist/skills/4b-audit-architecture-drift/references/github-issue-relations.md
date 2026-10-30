@@ -6,7 +6,7 @@ timestamp: 2026-10-13
 
 # GitHub Issue Relations
 
-No native `gh sub-issue` subcommand or `--blocked-by` flag exists; no extension. Write via `gh api graphql`, read via `--json`. These are the GitHub forms of the `set_parent`, `add_blocker` and `clear_blocker` verbs (`references/tracker-verbs.md`). Mutations take node IDs: `ID=$(gh issue view <n> --json id -q .id)`.
+No native `gh sub-issue` subcommand or `--blocked-by` flag exists; no extension. Write via `gh api graphql`, read via `--json`. These are the GitHub forms of the `set_parent`, `add_blocker` and `clear_blocker` verbs (`references/tracker-verbs-github.md`). Mutations take node IDs: `ID=$(gh issue view <n> --json id -q .id)`.
 
 **Add sub-issue** (`<child>` under `<parent>`):
 `gh api graphql -f query='mutation($p:ID!,$c:ID!){addSubIssue(input:{issueId:$p,subIssueId:$c}){issue{number}}}' -f p="$(gh issue view <parent> --json id -q .id)" -f c="$(gh issue view <child> --json id -q .id)"`

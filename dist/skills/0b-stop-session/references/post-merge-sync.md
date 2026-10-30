@@ -6,7 +6,7 @@ timestamp: 2026-10-22
 
 # Post-merge sync
 
-Verbs (`set_status`, `close`, `reopen`, `clear_blocker`, `create`) and the backend rule are in `references/tracker-verbs.md`; local-only steps are marked.
+Verbs (`set_status`, `close`, `reopen`, `clear_blocker`, `create`) and the backend rule are in `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); local-only steps are marked.
 
 - **Done detection (no forcing):** an epic or standalone issue is `done` only once its PR has **merged** and the issue auto-closed. A child slice is already `done` + closed at 4a ship.
   - For each epic/standalone issue **merged** in the window of 0b's PR query (`closed:>=<Last Sync date>`; no date → its newest 30 closed PRs): `set_status` `done` (the merge closed it).
