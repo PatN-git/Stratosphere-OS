@@ -535,6 +535,8 @@ def main(argv=None):
     github = backend == 'github'
     if github and args.all_open:
         ap.error("--all-open is a local-backend run: not with `tracker: github`")
+    if not github and not (args.expect or args.expect_file or args.edges or args.with_edges):
+        ap.error("local backend: only --edges is supported (issues.py validates every write; there is no gate to run)")
     gate = bool(args.expect or args.expect_file) or (not args.edges)
     args.edges = args.edges or args.with_edges
     expect = {}
