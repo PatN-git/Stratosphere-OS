@@ -343,6 +343,22 @@ else:
     except Exception as e:
         errs.append(f"ERROR reading {SETUP}/versions.json: {e}")
 
+# Validate dist/plugin.json schema and version alignment
+p_file = root / "dist/plugin.json"
+if p_file.exists():
+    try:
+        p_data = json.loads(p_file.read_text(encoding="utf-8"))
+        for req in ("name", "displayName", "version", "description", "author", "suggestedPrompts"):
+            if req not in p_data:
+                errs.append(f"MISSING {req} in dist/plugin.json")
+        prompts = p_data.get("suggestedPrompts", [])
+        if len(prompts) > 3:
+            errs.append(f"dist/plugin.json suggestedPrompts ({len(prompts)}) exceeds maximum 3")
+        if build_version and p_data.get("version") != build_version:
+            errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != dist/plugin.json version ({p_data.get('version')})")
+    except Exception as e:
+        errs.append(f"ERROR reading dist/plugin.json: {e}")
+
 # 2.95 Experimental source must NEVER leak into dist. The jules-dispatch pack lives
 # under src/experimental/ and ships on demand via sync-skills, not the plugin bundle.
 for p in (root / BUNDLE).rglob("*"):

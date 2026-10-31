@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-10-08
+version: "1.8.0"
+timestamp: 2026-10-31
 ---
 
 # StratosphereOS Update Flow
@@ -27,7 +27,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
 1. **Locate Installed Plugin:**
    Locate the installed `stratosphere-setup` skill directory `<plugin>` (it carries the scaffolder payload: `scripts/`, `assets/`, `versions.json`) using the first of these that contains `scripts/scaffold.py`. Check the running host's own group first; only if none matches, try the other group:
    - **Claude Code:** `./.claude/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — newest version directory)
-   - **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
+   - **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/*/skills/stratosphere-setup/` (glob — newest directory if multiple match), `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
 
 2. **Read Installed Version:**
    Read and parse `<plugin>/versions.json`. Extract the `"plugin_version"` field. Let this be `<installed_version>`.
@@ -54,7 +54,7 @@ Before running the local scaffolding update, verify if the installed Stratospher
      | `<plugin>` path | reference |
      |---|---|
      | starts with `~/.claude/plugins/cache/` | `references/update-claude-marketplace.md` |
-     | is `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` | `references/update-antigravity-plugin.md` |
+     | is under `~/.gemini/config/plugins/` | `references/update-antigravity-plugin.md` |
      | is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` | `references/update-copied-skills.md` |
 
      First match wins: the rows in order, then the two bullets below. Read and follow the matching reference exactly: its confirm-once gate and HALT are mandatory; no path continues to Phase 1 except an explicit user override that the reference names.
