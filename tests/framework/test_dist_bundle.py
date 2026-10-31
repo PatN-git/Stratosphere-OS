@@ -1,4 +1,4 @@
-"""BT-118: the canonical `dist/skills/` bundle — one host-agnostic tree, 28 self-contained
+"""BT-118: the canonical `dist/skills/` bundle — one host-agnostic tree, 27 self-contained
 skills, HITL sidecars intact — replacing the per-host dist/claude-code + dist/antigravity trees.
 Asserts on the committed bundle (drift-guarded by check.sh) and on build.py's fatal paths.
 """
@@ -17,8 +17,8 @@ from conftest import REPO_ROOT
 
 DIST_SKILLS = REPO_ROOT / "dist" / "skills"
 SETUP = DIST_SKILLS / "stratosphere-setup"
-EXPECTED_SKILLS = 28
-EXPECTED_LIFECYCLE = 24
+EXPECTED_SKILLS = 27
+EXPECTED_LIFECYCLE = 23
 
 
 def _skill_dirs():

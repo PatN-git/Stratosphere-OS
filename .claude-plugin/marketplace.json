@@ -33,7 +33,6 @@
         "./dist/skills/3b-create-issue",
         "./dist/skills/3c-sprint-planning",
         "./dist/skills/3d-implement-issue",
-        "./dist/skills/3x-jules-dispatch",
         "./dist/skills/3z-afk-loop",
         "./dist/skills/4a-verify-and-ship",
         "./dist/skills/4b-audit-architecture-drift",

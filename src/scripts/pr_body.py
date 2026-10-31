@@ -264,7 +264,7 @@ def is_scoped(cmd):
 
     An allowlist on purpose: an unknown command shape counts as scoped, which costs one re-run and can
     never reuse a partial run as "the suite". A command is full when any of its `;`/`&&`/`||` segments is
-    (so `bash scripts/check.sh && pytest tests/jules` is full). The recorder writes `shlex.join(argv)` so the
+    (so `bash scripts/check.sh && pytest tests/framework` is full). The recorder writes `shlex.join(argv)` so the
     same string gets the same verdict at record and read time.
     """
     return not _command_full(shlex.join(cmd) if isinstance(cmd, (list, tuple)) else cmd)
