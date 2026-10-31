@@ -1,4 +1,5 @@
 {
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "stratosphere-os",
   "displayName": "StratosphereOS",
   "version": "5.1.0",
@@ -7,5 +8,13 @@
   "author": {
     "name": "Gravity Technologies",
     "url": "https://github.com/PatN-git/Stratosphere-OS"
-  }
+  },
+  "homepage": "https://github.com/PatN-git/Stratosphere-OS",
+  "repository": "https://github.com/PatN-git/Stratosphere-OS",
+  "license": "MIT",
+  "suggestedPrompts": [
+    "/stratosphere-setup",
+    "/0a-start-session",
+    "/2a-write-prd"
+  ]
 }

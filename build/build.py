@@ -327,6 +327,7 @@ def write_plugin_manifest():
     """dist/ is the plugin root: the manifest sits beside dist/skills, so a host that installs a
     plugin directory picks up the one canonical skill tree (no per-host copy)."""
     manifest = {
+        "$schema": "https://antigravity.google/schemas/v1/plugin.json",
         "name": "stratosphere-os",
         "displayName": "StratosphereOS",
         "version": VERSION,
@@ -335,7 +336,15 @@ def write_plugin_manifest():
         "author": {
             "name": AUTHOR,
             "url": "https://github.com/PatN-git/Stratosphere-OS"
-        }
+        },
+        "homepage": "https://github.com/PatN-git/Stratosphere-OS",
+        "repository": "https://github.com/PatN-git/Stratosphere-OS",
+        "license": "MIT",
+        "suggestedPrompts": [
+            "/stratosphere-setup",
+            "/0a-start-session",
+            "/2a-write-prd"
+        ]
     }
     write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
