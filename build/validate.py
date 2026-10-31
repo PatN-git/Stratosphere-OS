@@ -343,8 +343,8 @@ else:
     except Exception as e:
         errs.append(f"ERROR reading {SETUP}/versions.json: {e}")
 
-# 2.95 Experimental source must NEVER leak into dist. The jules-dispatch pack lives
-# under src/experimental/ and ships on demand via sync-skills, not the plugin bundle.
+# 2.95 Experimental source must NEVER leak into dist. Any experimental packs live
+# under src/experimental/ and ship on demand via sync-skills, not the plugin bundle.
 for p in (root / BUNDLE).rglob("*"):
     if "experimental" in p.relative_to(root / BUNDLE).parts:
         errs.append(f"EXPERIMENTAL PATH LEAKED INTO {BUNDLE}: {p.relative_to(root)}")

@@ -29,8 +29,8 @@ nmd()     { local n; n=$(find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l)
 
 assert_bundle_tree() { # $1 skills dir  $2 label prefix
   local base="$1" t="$2"
-  assert "$t: 28 skills" "$([ "$(ls -1 "$base"/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "28" ] && echo 1 || echo 0)"
-  assert "$t: 24 HITL sidecars" "$([ "$(ls -1 "$base"/*/agents/openai.yaml 2>/dev/null | wc -l | tr -d " ")" = "24" ] && echo 1 || echo 0)"
+  assert "$t: 27 skills" "$([ "$(ls -1 "$base"/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "27" ] && echo 1 || echo 0)"
+  assert "$t: 23 HITL sidecars" "$([ "$(ls -1 "$base"/*/agents/openai.yaml 2>/dev/null | wc -l | tr -d " ")" = "23" ] && echo 1 || echo 0)"
   assert "$t: micro-tdd skill" "$(exists "$base/micro-tdd/SKILL.md")"
   assert "$t: no legacy commands/workflows dir" "$([ -d "$base/commands" ] || [ -d "$base/workflows" ] && echo 0 || echo 1)"
   assert "$t: setup carries scaffold.py" "$(exists "$base/stratosphere-setup/scripts/scaffold.py")"
@@ -45,7 +45,7 @@ assert_scaffold_tree() { # $1 proj
   done
   assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"
   assert "scaffold: .agents/rules 3 md" "$([ "$(nmd "$p/.agents/rules")" = "3" ] && echo 1 || echo 0)"
-  assert "scaffold: .agents/skills 27 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "28" ] && echo 1 || echo 0)"
+  assert "scaffold: .agents/skills 27 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "27" ] && echo 1 || echo 0)"
   assert "scaffold: no legacy .agents/workflows" "$([ -d "$p/.agents/workflows" ] && echo 0 || echo 1)"
   assert "scaffold: no .github/copilot/skills twin" "$([ -e "$p/.github/copilot/skills" ] && echo 0 || echo 1)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"
@@ -134,7 +134,7 @@ run_trackD_cell() {
   bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >"$root/bridge.out" 2>&1
   rc=$?
   assert "trackD: bridge exit 0" "$([ "$rc" = 0 ] && echo 1 || echo 0)"
-  grep -q 'Copied 28 skills' "$root/bridge.out" && assert "trackD: bridge reports 28 copied" 1 || assert "trackD: bridge reports 28 copied" 0
+  grep -q 'Copied 27 skills' "$root/bridge.out" && assert "trackD: bridge reports 27 copied" 1 || assert "trackD: bridge reports 27 copied" 0
   assert_bundle_tree "$tgt" "trackD"
   mkdir -p "$tgt/foreign-skill"; echo x > "$tgt/foreign-skill/SKILL.md"; echo x > "$tgt/micro-tdd/stale.txt"
   bash "$REPO/scripts/install-antigravity-bridge.sh" --target "$tgt" >/dev/null 2>&1

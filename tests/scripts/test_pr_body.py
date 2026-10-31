@@ -447,7 +447,7 @@ def test_build_default_suite_lookup_exits_no_suite_on_a_dirty_tree(repo):
 
 SCOPED_CMDS = [
     "npx vitest run tests/ingestion/BT235_IngestionOfflineFallback.test.js tests/ingestion/BT164_StuttgartShootoutIngest.test.js",
-    "python .agents/scripts/test_gate.py record -- python -m pytest -q tests/workflows tests/jules",
+    "python .agents/scripts/test_gate.py record -- python -m pytest -q tests/workflows tests/framework",
     "pytest tests/x.py::test_y", "pytest -k foo", "pytest -kfoo", "pytest -m slow", "pytest --ignore=tests/a",
     "pytest --last-failed", "vitest run --changed", "npx vitest run ingestion", "npm run test:ingestion",
     "pytest tests", "npm test -- src/lib", "bash -c 'npx vitest run src/lib'",
@@ -457,7 +457,7 @@ FULL_CMDS = [
     "bash scripts/check.sh", "npm test", "make test", "npx vitest run", "py -m pytest -q",
     "python .agents/scripts/test_gate.py record -- python -m pytest -q",
     "python .agents/scripts/test_gate.py record --suite BT-5 -- bash scripts/check.sh",
-    "bash scripts/check.sh && python -m pytest tests/jules -q",
+    "bash scripts/check.sh && python -m pytest tests/framework -q",
     "npm test && python .agents/scripts/validate_memory.py --path .memory",
     'bash -c "python -m pytest -q; bash scripts/check.sh"',
 ]

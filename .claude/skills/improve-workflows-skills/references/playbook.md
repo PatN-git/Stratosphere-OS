@@ -59,7 +59,7 @@ A reference used by several skills is authored **once** in `src/references/` and
 - **Bundled skills** live in `src/skills/` → build → `dist/*/skills/`; they ship with the plugin and register globally.
 - **On-demand packs** (opt-in / experimental) live in `src/experimental/<name>/`, are registered in `external-skills.json`, and are fetched by **`sync-skills`** into `.agents/skills/<name>/`. `build/validate.py` guards that no `experimental/` path leaks into `dist/`.
 - **`sync_skills.py` installs by *name* under `.agents/skills/<name>/`** — the same namespace bundled lifecycle skills occupy. A fetched pack is therefore `/<name>`-invocable on every host, including Antigravity. `sync_skills.py` carries a **reserved-name guard**: it must never overwrite a bundled skill directory.
-- **A bundled launcher is now optional, not structural.** An on-demand pack is directly invocable once fetched, so a launcher earns its place only by existing when the pack does **not** — e.g. `3x-jules-dispatch`, which tells the user to run `/sync-skills`. Name it distinctly from the pack it fronts.
+- **A bundled launcher is now optional, not structural.** An on-demand pack is directly invocable once fetched, so a launcher earns its place only by existing when the pack does **not** (e.g. to guide the user to run `/sync-skills`). Name it distinctly from the pack it fronts.
 
 ## 2. Shared components over duplication — propose the refactor
 
