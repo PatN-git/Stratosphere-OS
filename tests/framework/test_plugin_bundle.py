@@ -45,6 +45,7 @@ def test_setup_update_and_sync_find_the_antigravity_plugin_install(rel):
 LOCATE_SKILLS = [SETUP_SKILL, UPDATE_SKILL, SYNC_SKILL]
 HOST_GROUPS = {"claude": "- **Claude Code:**", "agents": "- **Antigravity and other hosts:**"}
 MARKETPLACE_GLOB = "~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/"
+AGENTS_MARKETPLACE_GLOB = "~/.gemini/config/plugins/*/skills/stratosphere-setup/"
 
 
 def group(rel: str, host: str) -> list:
@@ -58,6 +59,7 @@ def group(rel: str, host: str) -> list:
 def test_plugin_lookup_is_grouped_by_running_host(rel):
     claude, agents = group(rel, "claude"), group(rel, "agents")
     assert claude and all(".claude" in p for p in claude) and MARKETPLACE_GLOB in claude
+    assert AGENTS_MARKETPLACE_GLOB in agents
     assert PLUGIN_SETUP_DIR in agents and "~/.gemini/config/skills/stratosphere-setup/" in agents
     assert not any(".claude" in p for p in agents)
     assert "running host's own group first" in read(rel)
@@ -87,6 +89,23 @@ def test_both_copies_present_each_host_resolves_its_own(rel, tmp_path):
 
     assert resolve("agents") == home / ".gemini" / "config" / "skills" / "stratosphere-setup"
     assert resolve("claude") == home / ".claude" / "skills" / "stratosphere-setup"
+
+
+def test_antigravity_marketplace_install_resolves_when_present(tmp_path):
+    home, project = tmp_path / "home", tmp_path / "proj"
+    marketplace_setup = home / ".gemini" / "config" / "plugins" / "-1870732469773246571" / "skills" / "stratosphere-setup"
+    f = marketplace_setup / "scripts" / "scaffold.py"
+    f.parent.mkdir(parents=True)
+    f.touch()
+
+    for p in group(SETUP_SKILL, "agents"):
+        base = home if p.startswith("~/") else project
+        hits = sorted(glob.glob(str(base / p[2:])), reverse=True)
+        hit = next((Path(h) for h in hits if (Path(h) / "scripts" / "scaffold.py").is_file()), None)
+        if hit:
+            assert hit == marketplace_setup
+            return
+    pytest.fail("Marketplace install did not resolve via agents group")
 
 
 def test_releasing_lists_both_plugin_validators():

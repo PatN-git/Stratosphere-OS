@@ -150,10 +150,16 @@ def test_plugin_manifest_is_the_dist_root():
     """BT-150: dist/ is itself the plugin root (`agy plugin install dist`): the manifest sits beside
     dist/skills and no per-host directory stands next to them."""
     dist = REPO_ROOT / "dist"
-    assert sorted(p.name for p in dist.iterdir()) == ["plugin.json", "skills"]
+    assert sorted(p.name for p in dist.iterdir()) == ["assets", "plugin.json", "skills"]
     manifest = json.loads((dist / "plugin.json").read_text(encoding="utf-8"))
+    assert manifest.get("logo") == "assets/logo.png"
+    assert (dist / manifest["logo"]).is_file()
     assert manifest["name"] == "stratosphere-os"
+    assert manifest["displayName"] == "StratosphereOS"
     assert manifest["version"] == _load_build().VERSION
+    assert len(manifest.get("suggestedPrompts", [])) <= 3
+    assert len(manifest.get("suggestedPrompts", [])) >= 1
+    assert manifest.get("repository") == "https://github.com/PatN-git/Stratosphere-OS"
     assert len(_skill_dirs()) == EXPECTED_SKILLS, "agy reports one processed skill per dist/skills directory"
 
 
@@ -230,6 +236,7 @@ def test_sync_skills_global_elsewhere_targets_a_directory_the_host_reads(tmp_pat
     (".agents/skills", "home", "global skills"),
     (".gemini/config/skills", "home", "global Antigravity"),
     (".gemini/config/plugins/stratosphere-os/skills", "home", "global Antigravity plugin"),
+    (".gemini/config/plugins/-1870732469773246571/skills", "home", "global Antigravity plugin"),
 ])
 def test_scaffold_labels_a_skills_dir_install_instead_of_custom_path(tmp_path, host_dir, scope_root, label):
     """The scope label compared against retired plugins/stratosphere-os paths, so every

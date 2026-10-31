@@ -44,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "4.10.1"
+VERSION = "4.11.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
@@ -278,7 +278,26 @@ def write_versions_manifest():
 def write_plugin_manifest():
     """dist/ is the plugin root: the manifest sits beside dist/skills, so a host that installs a
     plugin directory picks up the one canonical skill tree (no per-host copy)."""
-    manifest = {"name": "stratosphere-os", "version": VERSION, "description": DESCRIPTION, "author": AUTHOR}
+    manifest = {
+        "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+        "name": "stratosphere-os",
+        "displayName": "StratosphereOS",
+        "version": VERSION,
+        "description": DESCRIPTION,
+        "logo": "assets/logo.png",
+        "author": {
+            "name": AUTHOR,
+            "url": "https://github.com/PatN-git/Stratosphere-OS"
+        },
+        "homepage": "https://github.com/PatN-git/Stratosphere-OS",
+        "repository": "https://github.com/PatN-git/Stratosphere-OS",
+        "license": "MIT",
+        "suggestedPrompts": [
+            "/stratosphere-setup",
+            "/0a-start-session",
+            "/2a-write-prd"
+        ]
+    }
     write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
 
@@ -312,6 +331,9 @@ def main():
     force_rmtree(DIST / "antigravity")
     build_bundle()
     print(f"[built] {BUNDLE.relative_to(ROOT)}")
+    if (SRC / "assets").exists():
+        copytree(SRC / "assets", DIST / "assets")
+        print("[built] dist/assets")
     write_plugin_manifest()
     print("[built] dist/plugin.json")
     write_marketplace()

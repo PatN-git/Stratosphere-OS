@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-20
+version: "1.6.0"
+timestamp: 2026-10-31
 ---
 
 # Instantiate StratosphereOS
@@ -90,7 +90,7 @@ The skills are **already installed** (skills.sh, marketplace, direct copy, or th
 Find `<plugin>` by checking these locations in order and using the first that contains `scripts/scaffold.py`. Check the running host's own group first; only if none matches, try the other group:
 
 - **Claude Code:** `./.claude/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — newest version directory)
-- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
+- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/*/skills/stratosphere-setup/` (glob — newest directory if multiple match), `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 

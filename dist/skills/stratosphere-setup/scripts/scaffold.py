@@ -675,6 +675,7 @@ def main():
     cwd = Path.cwd().resolve()
 
     claude_cache = (home / ".claude" / "plugins" / "cache").resolve()
+    gemini_plugins = (home / ".gemini" / "config" / "plugins").resolve()
     # The bundle installs as <skills dir>/stratosphere-setup, so the scope is read off the skills dir.
     scopes = {
         (home / ".claude" / "skills").resolve(): "global Claude Code",
@@ -686,6 +687,8 @@ def main():
     }
     if plugin_root_resolved.is_relative_to(claude_cache):
         scope = "marketplace Claude Code"
+    elif plugin_root_resolved.is_relative_to(gemini_plugins):
+        scope = "global Antigravity plugin"
     else:
         scope = scopes.get(plugin_root_resolved.parent, "custom path")
     print(f"Resolved plugin root: {plugin_root_resolved} ({scope})")

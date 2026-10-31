@@ -1,13 +1,13 @@
 ---
 description: stratosphere-update path for a copied-skills install (Antigravity or Claude Code) - confirm once, refresh from a tag-pinned clone via the bridge, then HALT.
-version: "1.0.1"
-timestamp: 2026-10-14
+version: "1.1.0"
+timestamp: 2026-10-31
 ---
 
 # Update path: Antigravity / copied-skills install
 
 - **Antigravity / copied-skills Install** (path is under `~/.gemini/config/skills/`, `./.agents/skills/`, `~/.agents/skills/`, `~/.claude/skills/` or `./.claude/skills/` — Antigravity and Claude Code copies alike):
-  The installed skills are a copy (bridge, Track A or Track B), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills`, `~/.claude/skills` or `<project>/.agents/skills`).
+  The installed skills are a copy (Track A or Track D), not a git checkout — **self-update them from the canonical repo** so the user never re-installs by hand. `<skills-dir>` is the parent directory of `<plugin>` (e.g. `~/.gemini/config/skills`, `~/.claude/skills` or `<project>/.agents/skills`).
   1. **Confirm once** (single HITL gate — this replaces framework code): ask `Update the StratOS skills to v<latest_version>? This refreshes <skills-dir> from https://github.com/PatN-git/Stratosphere-OS. [y/N]`. On decline → HALT.
   2. **Refresh the skill bytes from a throwaway clone** (never mutate the user's own clone; deterministic and tag-pinned):
      - `git clone --depth 1 --branch v<latest_version> https://github.com/PatN-git/Stratosphere-OS.git <tmp>`, then run its bridge against the same directory: `bash <tmp>/scripts/install-antigravity-bridge.sh --target <skills-dir>` (on Windows use `powershell -File <tmp>/scripts/install-antigravity-bridge.ps1 --target <skills-dir>`).

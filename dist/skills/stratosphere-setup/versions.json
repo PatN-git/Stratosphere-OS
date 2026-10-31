@@ -526,9 +526,9 @@
       "version": "1.2.0"
     },
     "skills/stratosphere-setup/SKILL.md": {
-      "sha256": "bcbf4e037c9069061df58d016b5fe461372960ffd29676397f7b26056d27294b",
-      "timestamp": "2026-10-20",
-      "version": "1.5.0"
+      "sha256": "8b7c54aa497c01706c694b647ae84be50bddcabe7b12dbdc2660f28433bb3689",
+      "timestamp": "2026-10-31",
+      "version": "1.6.0"
     },
     "skills/stratosphere-setup/references/design-brief-guide.md": {
       "sha256": "29bbfbfd5aef8ce5cbdbb9dd47620c4666079574c5e3660a48508860a03c2cb5",
@@ -536,14 +536,14 @@
       "version": "1.0.2"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "7bea218e735b8fd8759eb22237bd81e3476284bc0794c4089d38b296e752ad9d",
-      "timestamp": "2026-10-08",
-      "version": "1.7.0"
+      "sha256": "455ad8c6a367823ded2cd7661a3a92839dd107d35fee075ebe57e17f3413f694",
+      "timestamp": "2026-10-31",
+      "version": "1.8.0"
     },
     "skills/stratosphere-update/references/update-antigravity-plugin.md": {
-      "sha256": "a7c2a0cfbf8ddf1be6298267ed6608b12e97fa6c68e75530b640018a84f58991",
-      "timestamp": "2026-10-07",
-      "version": "1.0.0"
+      "sha256": "fa558e48059cd4d919bb0947d37d81a0a5edbf51cb8979749ca395568679ed0f",
+      "timestamp": "2026-10-31",
+      "version": "1.1.0"
     },
     "skills/stratosphere-update/references/update-claude-marketplace.md": {
       "sha256": "e96cd36861137508d1536c38ada9fdd70534b90e350d24ef67b65df8e294f734",
@@ -551,15 +551,15 @@
       "version": "1.0.0"
     },
     "skills/stratosphere-update/references/update-copied-skills.md": {
-      "sha256": "c56947399505d21b223a2889a11e6d15222130312695fc199953cf65eaa541ca",
-      "timestamp": "2026-10-14",
-      "version": "1.0.1"
+      "sha256": "5820737de8468e2068d6ed5aa9fb60521e05f775162fa06fdd18201e3e23a08e",
+      "timestamp": "2026-10-31",
+      "version": "1.1.0"
     },
     "skills/sync-skills/SKILL.md": {
-      "sha256": "a29f9f2426c7bb34c60b9644b5e971a5c297c740072a7fc152c7d9c47cd81c16",
-      "timestamp": "2026-10-08",
-      "version": "1.1.0"
+      "sha256": "b5bfb41021b4968f9bde70d7935b25ef11cfa4e3957b5b1b30545b1c41c31d75",
+      "timestamp": "2026-10-31",
+      "version": "1.2.0"
     }
   },
-  "plugin_version": "4.10.1"
+  "plugin_version": "4.11.0"
 }

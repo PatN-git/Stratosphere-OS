@@ -1,7 +1,7 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-4.10.1-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-4.11.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
@@ -82,11 +82,10 @@ StratosphereOS ships as one canonical bundle, `dist/skills/` (28 skills, with HI
 
 | Your situation | Use |
 |:---|:---|
+| Any host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track A](#track-a--skillssh-npx) |
+| Google Antigravity (native 1-click install or CLI) | [Track B](#track-b--google-antigravity-marketplace) |
 | Claude Code, want auto-updating skills | [Track C](#track-c--claude-code-marketplace) |
-| Any other host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track A](#track-a--skillssh-npx) |
-| Offline, air-gapped, or no Node.js | [Track B](#track-b--direct-copy-offline--no-nodejs) |
-| Global Google Antigravity install | [Track D](#track-d--antigravity-bridge) |
-| Antigravity, native plugin install (`agy plugin install`) | [Track E](#track-e--antigravity-plugin-install) |
+| Offline, air-gapped, or no Node.js | [Track D](#track-d--direct-copy-offline--no-nodejs) |
 
 ### Track A — skills.sh (`npx`)
 ```bash
@@ -106,7 +105,23 @@ npx skills update
 - **Keep `-y`** so all 28 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
 - No network? Run it against a local clone: `npx skills add ./dist/skills -a <agent> --copy -y`.
 
-### Track B — Direct copy (offline / no Node.js)
+### Track B — Google Antigravity Marketplace
+Install with a single click inside the Google Antigravity App, or via the command line:
+
+- **Antigravity App UI:** Open the left sidebar, navigate to **Customizations > Marketplace**, search for `stratosphere-os`, and click **Install**.
+- **Antigravity CLI:**
+  ```text
+  /plugin install stratosphere-os
+  ```
+All 28 skills are immediately discoverable via progressive disclosure. Project setup (`/stratosphere-setup`) and updates (`/stratosphere-update`) automatically resolve their bundled templates and scripts.
+
+### Track C — Claude Code marketplace
+```text
+/plugin marketplace add PatN-git/Stratosphere-OS
+/plugin install stratosphere-os@stratosphere-os
+```
+
+### Track D — Direct copy (offline / no Node.js)
 Needs only a copy of this repo's `dist/skills/` — from `git clone https://github.com/PatN-git/Stratosphere-OS.git`, a release/ZIP download, or a USB stick. It works fully offline and air-gapped: no Node.js, `npx`, network or shell scripts required. Run the block for your shell from your **project root**, replacing `<repo>` with the path to that copy:
 
 ```bash
@@ -124,32 +139,6 @@ New-Item -ItemType Directory -Force -Path .claude\skills
 Copy-Item -Recurse -Force <repo>\dist\skills\* .claude\skills\
 ```
 Copy the whole folders — each skill's `agents/` sidecar and `references/` are what keep lifecycle skills user-invoked only.
-
-### Track C — Claude Code marketplace
-```text
-/plugin marketplace add PatN-git/Stratosphere-OS
-/plugin install stratosphere-os@stratosphere-os
-```
-
-### Track D — Antigravity bridge
-`skills.sh` installs Antigravity skills globally to a directory Antigravity does not read ([vercel-labs/skills#633](https://github.com/vercel-labs/skills/issues/633)). Until that is fixed upstream, this bridge physically copies `dist/skills/` (no symlinks) into `~/.gemini/config/skills/`:
-```bash
-git clone https://github.com/PatN-git/Stratosphere-OS.git && cd Stratosphere-OS
-bash scripts/install-antigravity-bridge.sh
-# Windows: powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-bridge.ps1
-```
-Pass `--target <skills-dir>` to install elsewhere (for example a project's `.agents/skills`). Restart Antigravity afterwards. For per-project Antigravity installs, Track A or B into `.agents/skills` works without the bridge.
-
-Checked on `agy` 1.3.0 (one run each): the Antigravity CLI listed a throwaway skill placed in `~/.gemini/config/skills/` and did not list one placed in `~/.gemini/antigravity-cli/skills/`, so this target works for the CLI too, whatever its docs say. Re-check after a major `agy` upgrade.
-
-### Track E — Antigravity plugin install
-`dist/` is also a plugin root for Antigravity: `dist/plugin.json` sits beside the 28 bundled skills in `dist/skills/`. From a clone of this repository:
-```bash
-agy plugin install dist
-```
-`agy` copies it to `~/.gemini/config/plugins/stratosphere-os/`; `agy plugin list` shows it (the source reads `antigravity`, not the clone path). `/stratosphere-setup` and `/stratosphere-update` find the installed copy there. To update, pull the clone and run `agy plugin install dist` again, which overwrites the plugin in place (`/stratosphere-update` does the same from a release-tag clone). Plugins do not auto-update, and the plugin carries only the bundled skills: external skills still arrive through `/sync-skills`. Track D stays available. Verified on `agy` 1.3.0 only.
-
-Use Track D or Track E, not both: they register the same skills, and `/stratosphere-update` follows the first copy it finds (the Track D one), so the plugin copy is never refreshed. Untested.
 
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**
@@ -189,9 +178,10 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 
 > [!TIP]
 > **Keeping the Plugin Fresh**
-> - **Claude Code users:** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
+> - **Claude Code users (Track C):** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
 > - **Track A users:** `npx skills update`.
-> - **Google Antigravity users (Track D):** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
+> - **Google Antigravity users (Track B):** updates arrive automatically or can be installed via the **Customizations > Marketplace** tab in the Antigravity App or `/plugin install stratosphere-os`.
+> - **Track D users:** copy updated skills from the new release into your skills directory.
 
 ---
 
