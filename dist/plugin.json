@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "stratosphere-os",
   "displayName": "StratosphereOS",
-  "version": "4.10.1",
+  "version": "4.11.0",
   "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
   "author": {
     "name": "Gravity Technologies",
