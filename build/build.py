@@ -284,6 +284,7 @@ def write_plugin_manifest():
         "displayName": "StratosphereOS",
         "version": VERSION,
         "description": DESCRIPTION,
+        "logo": "assets/logo.png",
         "author": {
             "name": AUTHOR,
             "url": "https://github.com/PatN-git/Stratosphere-OS"
@@ -330,6 +331,9 @@ def main():
     force_rmtree(DIST / "antigravity")
     build_bundle()
     print(f"[built] {BUNDLE.relative_to(ROOT)}")
+    if (SRC / "assets").exists():
+        copytree(SRC / "assets", DIST / "assets")
+        print("[built] dist/assets")
     write_plugin_manifest()
     print("[built] dist/plugin.json")
     write_marketplace()

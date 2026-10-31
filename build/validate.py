@@ -356,6 +356,10 @@ if p_file.exists():
             errs.append(f"dist/plugin.json suggestedPrompts ({len(prompts)}) exceeds maximum 3")
         if build_version and p_data.get("version") != build_version:
             errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != dist/plugin.json version ({p_data.get('version')})")
+        if "logo" in p_data:
+            logo_path = root / "dist" / p_data["logo"]
+            if not logo_path.is_file():
+                errs.append(f"dist/plugin.json logo '{p_data['logo']}' does not exist on disk")
     except Exception as e:
         errs.append(f"ERROR reading dist/plugin.json: {e}")
 

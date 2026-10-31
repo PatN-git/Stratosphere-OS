@@ -4,6 +4,7 @@
   "displayName": "StratosphereOS",
   "version": "4.11.0",
   "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
+  "logo": "assets/logo.png",
   "author": {
     "name": "Gravity Technologies",
     "url": "https://github.com/PatN-git/Stratosphere-OS"
