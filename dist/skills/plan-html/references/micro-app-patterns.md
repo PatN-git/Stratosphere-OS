@@ -1,8 +1,8 @@
 ---
 name: micro-app-patterns
 description: Protocol and patterns for interactive round-trip editing micro-apps.
-version: "1.3.0"
-timestamp: 2026-06-24
+version: "1.3.1"
+timestamp: 2026-11-02
 ---
 
 # Micro-App Protocol & Patterns
@@ -88,5 +88,12 @@ A domain-agnostic layout for cards moving between columns. Extremely useful for 
 ### 2. Constraints & Seam Rules
 - **Domain Agnostic**: The board template itself must contain zero domain-specific words (like "release", "milestone", "sprint"). It only understands `columns` and `cards`.
 - **Ephemeral Editor**: The HTML board is an editor only, not a datastore. The source of truth remains the tracker or the codebase files (like task.md). The invoking workflow (e.g. `3a`) reads the source files, projects them onto columns/cards, invokes the skill to write the HTML, receives the pasted change payload, and maps the moves back to rewrite the source files; the skill itself only emits the board and receives the change payload.
+- **Filtering & Shortcuts**:
+  - `/` or `Ctrl+K`: focus search filter.
+  - Tag pills: quick multi-label toggle and count refinement.
+  - `j`/`k` (or `Down`/`Up`): card navigation.
+  - `h`/`l` (or `Left`/`Right`): column navigation.
+  - `1`-`9`: move selected card to column N.
+  - `Escape`: deselect card or reset search.
 - **Copy-Paste Only**: Works offline/hermetically in both Claude Code and Antigravity.
 - **Robust Parser**: The parser on the agent side must validate each change line, reject malformed rows, and ignore lines with no changes.

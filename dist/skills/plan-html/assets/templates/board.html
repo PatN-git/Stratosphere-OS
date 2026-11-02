@@ -1,4 +1,4 @@
-<!-- TEMPLATE: board | slots: {{title}}, {{columns[]:{id,label}}}, {{cards[]:{id,label,column,meta?}}} -->
+<!-- TEMPLATE: board | slots: {{title}}, {{columns[]:{id,label}}}, {{cards[]:{id,label,column,meta?,labels?,url?}}} -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +40,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);padding:2rem 1.5rem;line-height:1.5}
 .wrap{max-width:1200px;margin:0 auto}
-header{display:flex;flex-direction:column;gap:0.75rem;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem;}
+header{display:flex;flex-direction:column;gap:0.75rem;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem;}
 .header-title-area{display:flex;flex-direction:column;}
 h1{font-size:1.75rem;font-weight:700}
 .meta{font-size:.875rem;opacity:.6;margin-top:.25rem}
@@ -48,15 +48,25 @@ h1{font-size:1.75rem;font-weight:700}
 button, select{font-family:var(--font);font-size:.8rem;font-weight:500;padding:.4rem .875rem;border-radius:.375rem;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s;outline:none}
 button:hover, select:hover{background:var(--card)}
 
-.board-layout { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1.5rem; margin-top: 1rem; align-items: flex-start; }
+.board-filters { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.search-bar-wrap { display: flex; gap: 0.5rem; align-items: center; }
+#search-input { width: 100%; max-width: 380px; padding: 0.4rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: var(--font); font-size: 0.85rem; outline: none; }
+#search-input:focus { border-color: var(--accent); }
+.tag-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
+.tag-pill { font-size: 0.72rem; font-weight: 500; padding: 0.15rem 0.55rem; border-radius: 9999px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; user-select: none; transition: all 0.15s; }
+.tag-pill:hover { border-color: var(--accent); }
+.tag-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.board-layout { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1.5rem; margin-top: 0.5rem; align-items: flex-start; }
 .board-column { flex: 1; min-width: 280px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; min-height: 450px; transition: background 0.2s; }
 .board-column.dragover { background: var(--accent-muted); border-color: var(--accent); }
 .column-header { font-weight: 700; font-size: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 0.25rem; display: flex; justify-content: space-between; align-items: center; }
 .column-count { font-size: 0.75rem; background: var(--border); padding: 0.15rem 0.5rem; border-radius: 9999px; opacity: 0.8; }
 .cards-container { display: flex; flex-direction: column; gap: 0.75rem; min-height: 400px; }
-.board-card { background: var(--bg); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.875rem; cursor: grab; user-select: none; box-shadow: var(--shadow); transition: transform 0.1s, box-shadow 0.1s; }
+.board-card { background: var(--bg); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.875rem; cursor: grab; user-select: none; box-shadow: var(--shadow); transition: transform 0.1s, box-shadow 0.1s, outline 0.1s; }
 .board-card:active { cursor: grabbing; }
 .board-card.dragging { opacity: 0.4; }
+.board-card.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
 .card-label { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.25rem; }
 .card-meta { font-size: 0.75rem; opacity: 0.6; }
 
@@ -99,6 +109,13 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       <button onclick="copyState()">Copy State for Agent (JSON)</button>
     </div>
   </header>
+
+  <div class="board-filters">
+    <div class="search-bar-wrap">
+      <input type="text" id="search-input" placeholder="Search cards... (Press '/' to focus)" oninput="onSearch(this.value)" autocomplete="off">
+    </div>
+    <div id="tag-filters" class="tag-pills"></div>
+  </div>
   
   <div class="board-layout">
     <!-- columns rendered here -->
@@ -127,11 +144,17 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 <div class="toast" id="toast"></div>
 <script id="plan-data" type="application/json">{}</script>
 <script>
+let activeTag = 'all';
+let searchQuery = '';
+let selectedCardId = null;
+const originalColumns = {};
+
 function planData(){return JSON.parse(document.getElementById('plan-data').textContent||'{}');}
 function esc(s){return(s===null||s===undefined)?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function copyState(){navigator.clipboard.writeText(JSON.stringify(planData(),null,2)).then(()=>showToast('JSON state copied'));}
 function exportMd(){navigator.clipboard.writeText(toMarkdown(planData())).then(()=>showToast('Markdown copied'));}
+
 function initTheme(){
   let saved = 'system';
   try { saved = localStorage.getItem('plan-theme') || 'system'; } catch(e) {}
@@ -170,8 +193,82 @@ function toggleNotesPanel() {
     panel.style.display = isHidden ? 'flex' : 'none';
   }
 }
+
+function onSearch(val) {
+  searchQuery = (val || '').toLowerCase().trim();
+  applyFilters();
+}
+
+function filterByTag(tag) {
+  activeTag = tag;
+  document.querySelectorAll('.tag-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.tag === tag);
+  });
+  applyFilters();
+}
+
+function applyFilters() {
+  const cards = document.querySelectorAll('.board-card');
+  cards.forEach(card => {
+    const text = (card.textContent || '').toLowerCase();
+    const matchesSearch = !searchQuery || text.includes(searchQuery);
+    let matchesTag = (activeTag === 'all');
+    if (!matchesTag) {
+      const labels = Array.from(card.querySelectorAll('.card-label-badge')).map(b => b.textContent.trim());
+      matchesTag = labels.includes(activeTag);
+    }
+    card.style.display = (matchesSearch && matchesTag) ? '' : 'none';
+  });
+
+  document.querySelectorAll('.board-column').forEach(col => {
+    const visibleCount = col.querySelectorAll('.board-card:not([style*="display: none"])').length;
+    const countEl = col.querySelector('.column-count');
+    if (countEl) countEl.textContent = visibleCount;
+  });
+}
+
+function selectCard(cardId) {
+  selectedCardId = cardId;
+  document.querySelectorAll('.board-card').forEach(c => {
+    const isSel = String(c.dataset.cardId) === String(cardId);
+    c.classList.toggle('selected', isSel);
+    if (isSel) c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+}
+
+function deselectCard() {
+  selectedCardId = null;
+  document.querySelectorAll('.board-card.selected').forEach(c => c.classList.remove('selected'));
+}
+
+function moveCard(cardId, targetColId) {
+  const data = planData();
+  const card = (data.cards || []).find(c => String(c.id) === String(cardId));
+  if (card && card.column !== targetColId) {
+    card.column = targetColId;
+    renderBody(data);
+    applyFilters();
+    selectCard(cardId);
+  }
+}
+
+function navigateColumn(dir) {
+  const cols = Array.from(document.querySelectorAll('.board-column'));
+  if (!cols.length) return;
+  const currentCard = selectedCardId ? document.getElementById(`card-${selectedCardId}`) : null;
+  const currentCol = currentCard ? currentCard.closest('.board-column') : cols[0];
+  const curIdx = cols.indexOf(currentCol);
+  let nextIdx = curIdx + dir;
+  if (nextIdx < 0) nextIdx = cols.length - 1;
+  if (nextIdx >= cols.length) nextIdx = 0;
+  
+  const targetColCards = Array.from(cols[nextIdx].querySelectorAll('.board-card:not([style*="display: none"])'));
+  if (targetColCards.length > 0) {
+    selectCard(targetColCards[0].dataset.cardId);
+  }
+}
+
 function bootPlan(){
-  // Record original column states
   const data = planData();
   (data.cards || []).forEach(c => {
     if (!originalColumns[c.id]) {
@@ -212,18 +309,78 @@ function bootPlan(){
         e.preventDefault();
         col.classList.remove('dragover');
         const cardId = e.dataTransfer.getData('text/plain');
-        const pData = planData();
-        const card = (pData.cards || []).find(c => String(c.id) === String(cardId));
-        if (card && card.column !== col.dataset.colId) {
-          card.column = col.dataset.colId;
-          renderBody(pData);
-        }
+        moveCard(cardId, col.dataset.colId);
       }
     });
   }
-}
 
-const originalColumns = {};
+  document.addEventListener('keydown', e => {
+    const activeEl = document.activeElement;
+    const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+
+    if (isInput) {
+      if (e.key === 'Escape') {
+        activeEl.blur();
+      }
+      return;
+    }
+
+    if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+      e.preventDefault();
+      const search = document.getElementById('search-input');
+      if (search) {
+        search.focus();
+        search.select();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      const search = document.getElementById('search-input');
+      if (search && search.value) {
+        search.value = '';
+        onSearch('');
+      }
+      deselectCard();
+      return;
+    }
+
+    const visibleCards = Array.from(document.querySelectorAll('.board-card:not([style*="display: none"])'));
+    if (!visibleCards.length) return;
+
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!selectedCardId) {
+        selectCard(visibleCards[0].dataset.cardId);
+      } else {
+        const idx = visibleCards.findIndex(c => c.dataset.cardId === selectedCardId);
+        const nextIdx = idx < visibleCards.length - 1 ? idx + 1 : 0;
+        selectCard(visibleCards[nextIdx].dataset.cardId);
+      }
+    } else if (e.key === 'k' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!selectedCardId) {
+        selectCard(visibleCards[visibleCards.length - 1].dataset.cardId);
+      } else {
+        const idx = visibleCards.findIndex(c => c.dataset.cardId === selectedCardId);
+        const prevIdx = idx > 0 ? idx - 1 : visibleCards.length - 1;
+        selectCard(visibleCards[prevIdx].dataset.cardId);
+      }
+    } else if (e.key === 'h' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateColumn(-1);
+    } else if (e.key === 'l' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateColumn(1);
+    } else if (e.key >= '1' && e.key <= '9') {
+      const colIdx = parseInt(e.key, 10) - 1;
+      const data = planData();
+      if (selectedCardId && data.columns && colIdx >= 0 && colIdx < data.columns.length) {
+        moveCard(selectedCardId, data.columns[colIdx].id);
+      }
+    }
+  });
+}
 
 function copyChanges() {
   const txt = document.getElementById('change-payload').value;
@@ -253,7 +410,7 @@ function renderBody(data) {
         </div>
         <div class="cards-container">
           ${colCards.map(c => `
-            <div class="board-card" id="card-${esc(c.id)}" data-card-id="${esc(c.id)}" draggable="true">
+            <div class="board-card ${selectedCardId === String(c.id) ? 'selected' : ''}" id="card-${esc(c.id)}" data-card-id="${esc(c.id)}" draggable="true" onclick="selectCard('${esc(c.id)}')">
               <div class="card-label">${esc(c.label)}</div>
               ${c.labels && c.labels.length > 0 ? `
                 <div class="card-labels-container" style="display:flex;gap:0.25rem;flex-wrap:wrap;margin:0.25rem 0;">
@@ -261,7 +418,7 @@ function renderBody(data) {
                 </div>
               ` : ''}
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;font-size:0.75rem;opacity:0.6;">
-                ${c.meta && c.meta.priority ? `<div>Priority: ${esc(c.meta.priority)}</div>` : '<div></div>'}
+                ${c.meta && c.meta.priority ? `<div>Priority: ${esc(c.meta.priority)}</div>` : (c.meta && c.meta.parent ? `<div>Parent: ${esc(c.meta.parent)}</div>` : '<div></div>')}
                 ${c.url ? `<a href="${esc(c.url)}" target="_blank" class="card-link" style="color:var(--accent);text-decoration:none;font-weight:500;" onclick="event.stopPropagation()">Link ↗</a>` : ''}
               </div>
             </div>
@@ -272,6 +429,20 @@ function renderBody(data) {
   });
   
   container.innerHTML = html;
+  
+  // Render tag pills
+  const allLabels = new Set();
+  cards.forEach(c => (c.labels || []).forEach(l => allLabels.add(l)));
+  const tagFiltersEl = document.getElementById('tag-filters');
+  if (tagFiltersEl && allLabels.size > 0) {
+    let pillsHtml = `<span class="tag-pill ${activeTag === 'all' ? 'active' : ''}" data-tag="all" onclick="filterByTag('all')">All</span>`;
+    Array.from(allLabels).sort().forEach(tag => {
+      pillsHtml += `<span class="tag-pill ${activeTag === tag ? 'active' : ''}" data-tag="${esc(tag)}" onclick="filterByTag('${esc(tag)}')">${esc(tag)}</span>`;
+    });
+    tagFiltersEl.innerHTML = pillsHtml;
+  } else if (tagFiltersEl) {
+    tagFiltersEl.innerHTML = '';
+  }
   
   // Re-sync script tag
   document.getElementById('plan-data').textContent = JSON.stringify(data, null, 2);
@@ -292,8 +463,6 @@ function renderBody(data) {
     notesTextarea.value = data.notes || '';
   }
 }
-
-
 
 function toMarkdown(data) {
   let md = '# ' + (data.title || 'Generic Board') + '\n\n';

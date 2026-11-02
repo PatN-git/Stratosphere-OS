@@ -32,6 +32,7 @@ The backend is `tracker: local` in `.memory/ARCHITECTURE.md`. Labels and milesto
 - `set_ice`: the same: nothing stored
 - `set_body`: `issues.py set <id> --body-file .tmp/<name>.md`
 - `claim`: `issues.py claim <id>` (compare-and-set: `in progress`, `claimed_by` = the branch); `[CLAIMED <id> by <x>]` → halt
+- `apply_moves`: `issues.py apply-moves [<file>] [--force]` (atomic batch status updater for moves emitted by `board --web`)
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:

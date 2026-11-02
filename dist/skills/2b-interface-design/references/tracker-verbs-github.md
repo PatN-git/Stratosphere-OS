@@ -31,6 +31,7 @@ The backend is `tracker: github` in `.memory/ARCHITECTURE.md`. Workflows state a
 - `set_ice`: nothing stored: ICE is computed on read from the body's `- **Impact:** N` / `- **Confidence:** N%` bullets (the issue template) and the `size:` label
 - `set_body`: `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here)
 - `claim`: `gh issue edit <n> --add-assignee @me`
+- `apply_moves`: — (use individual `set_status` edits)
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
