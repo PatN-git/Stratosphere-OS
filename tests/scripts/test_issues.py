@@ -639,3 +639,135 @@ def test_board_markdown_export(repo, tmp_path):
     assert f'- **{p}** Setup DB `size:small`' in content
 
 
+def test_board_web_generation(repo, tmp_path):
+    ok('init')
+    p = ok('create', '--title', 'Setup DB', '--label', 'type:feature,tier:slice,size:small,mode:AFK')
+    w = ok('create', '--title', 'API routes', '--label', 'type:feature,tier:slice,size:medium,mode:AFK', '--parent', p)
+    ok('set', w, '--status', 'in progress')
+    out_html = tmp_path / "custom_board.html"
+
+    code, text = run('board', '--web', '--no-open', '--out', str(out_html))
+    assert code == 0
+    assert f"[BOARD] wrote {out_html}" in text
+    assert "(2 card(s))" in text
+    assert out_html.exists()
+
+    content = out_html.read_text(encoding='utf-8')
+    assert '<script id="plan-data" type="application/json">' in content
+    assert 'Backlog Board' in content
+
+    # Extract and verify JSON payload
+    m = re.search(r'<script id="plan-data" type="application/json">\s*(.*?)\s*</script>', content, re.DOTALL)
+    assert m is not None
+    data = json.loads(m.group(1))
+    assert len(data['columns']) == 6
+    assert len(data['cards']) == 2
+
+    # Check cards
+    card_p = next(c for c in data['cards'] if c['id'] == p)
+    assert card_p['column'] == 'planned'
+    assert 'type:feature' in card_p['labels']
+
+    card_w = next(c for c in data['cards'] if c['id'] == w)
+    assert card_w['column'] == 'in progress'
+    assert card_w['meta']['parent'] == p
+
+
+def test_board_web_empty_store(repo, tmp_path):
+    ok('init')
+    out_html = tmp_path / "empty_board.html"
+    code, text = run('board', '--web', '--no-open', '--out', str(out_html))
+    assert code == 0
+    assert "(0 card(s))" in text
+    assert out_html.exists()
+    content = out_html.read_text(encoding='utf-8')
+    m = re.search(r'<script id="plan-data" type="application/json">\s*(.*?)\s*</script>', content, re.DOTALL)
+    assert m is not None
+    data = json.loads(m.group(1))
+    assert data['cards'] == []
+
+
+def test_apply_moves_atomic(repo, tmp_path):
+    ok('init')
+    b1 = ok('create', '--title', 'Task 1', '--label', SLICE)
+    b2 = ok('create', '--title', 'Task 2', '--label', SLICE)
+    b3 = ok('create', '--title', 'Task 3', '--label', SLICE)
+
+    payload = f"""# Kanban Move Batch
+{b1}: Task 1 -> in progress
+{b2} -> done
+{b3} -> blocked
+"""
+    move_file = tmp_path / "moves.txt"
+    move_file.write_text(payload, encoding='utf-8')
+
+    code, text = run('apply-moves', str(move_file))
+    assert code == 0
+    assert "[APPLY-MOVES] applied 3 move(s)" in text
+
+    # Verify statuses
+    i1 = json.loads(ok('get', b1))
+    assert i1['status'] == 'in progress'
+
+    i2 = json.loads(ok('get', b2))
+    assert i2['status'] == 'done'
+    assert i2['closed'] == '2026-10-27'
+    assert i2['close_reason'] == 'completed'
+
+    i3 = json.loads(ok('get', b3))
+    assert i3['status'] == 'blocked'
+
+
+def test_apply_moves_unarchive_and_reopen(repo, tmp_path):
+    ok('init')
+    b1 = ok('create', '--title', 'Task 1', '--label', SLICE)
+    # First close it to done
+    ok('apply-moves', body(tmp_path, f"{b1} -> done\n", "m1.txt"))
+    i1 = json.loads(ok('get', b1))
+    assert i1['status'] == 'done' and i1['closed'] is not None
+
+    # Move back to planned
+    ok('apply-moves', body(tmp_path, f"{b1} -> planned\n", "m2.txt"))
+    i2 = json.loads(ok('get', b1))
+    assert i2['status'] == 'planned'
+    assert i2['closed'] is None
+    assert i2['close_reason'] is None
+
+
+def test_apply_moves_claim_protection(repo, tmp_path):
+    ok('init')
+    b1 = ok('create', '--title', 'Task 1', '--label', SLICE)
+    ok('claim', b1, '--by', 'feature/other-branch')
+
+    # Attempt move without --force
+    code, text = run('apply-moves', body(tmp_path, f"{b1} -> done\n", "claim_move.txt"))
+    assert code != 0
+    assert f"[CLAIMED {b1} by feature/other-branch]" in text
+
+    # Move with --force
+    code, text = run('apply-moves', body(tmp_path, f"{b1} -> done\n", "claim_move.txt"), '--force')
+    assert code == 0
+    i1 = json.loads(ok('get', b1))
+    assert i1['status'] == 'done'
+
+
+def test_apply_moves_validation_failure(repo, tmp_path):
+    ok('init')
+    b1 = ok('create', '--title', 'Task 1', '--label', SLICE)
+
+    # Invalid status
+    code, text = run('apply-moves', body(tmp_path, f"{b1} -> non_existent_status\n", "bad1.txt"))
+    assert code != 0
+    assert "not one of" in text
+
+    # Non-existent issue
+    code, text = run('apply-moves', body(tmp_path, "BT-999 -> done\n", "bad2.txt"))
+    assert code != 0
+    assert "issue BT-999 not found" in text
+
+    # Ensure b1 remained untouched (planned)
+    i1 = json.loads(ok('get', b1))
+    assert i1['status'] == 'planned'
+
+
+

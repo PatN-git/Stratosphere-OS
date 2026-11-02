@@ -456,12 +456,97 @@ def cmd_merged(store, a):
     return changes, out_text
 
 
+def _find_board_template():
+    candidates = [
+        at_top('.agents/skills/plan-html/assets/templates/board.html'),
+        at_top('src/skills/plan-html/assets/templates/board.html'),
+        at_top('dist/skills/plan-html/assets/templates/board.html'),
+        Path(__file__).resolve().parent.parent / 'skills/plan-html/assets/templates/board.html'
+    ]
+    for p in candidates:
+        if p.is_file():
+            return p
+    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, or dist/skills")
+
+
+def _render_board_html(store, issues_list, a):
+    tpl_path = _find_board_template()
+    tpl_text = tpl_path.read_text(encoding='utf-8')
+
+    STATUS_LABELS = {
+        'needs_spec': 'Needs Spec',
+        'planned': 'Planned',
+        'in progress': 'In Progress',
+        'in review': 'In Review',
+        'blocked': 'Blocked',
+        'done': 'Done'
+    }
+    columns = [{'id': st, 'label': STATUS_LABELS.get(st, st.replace('_', ' ').title())} for st in STATUSES]
+
+    def effective_status(issue):
+        return 'done' if issue.get('closed') else issue.get('status')
+
+    cards = []
+    for issue in sorted(issues_list, key=lambda x: x['id']):
+        st = effective_status(issue)
+        labels = [l for l in issue.get('labels', []) if not l.startswith('status:')]
+        priority = next((l.split(':')[1] for l in labels if l.startswith('priority:')), None)
+        tier = next((l.split(':')[1] for l in labels if l.startswith('tier:')), None)
+        meta = {}
+        if priority:
+            meta['priority'] = priority
+        if issue.get('parent'):
+            meta['parent'] = issue['parent']
+        if tier:
+            meta['tier'] = tier
+        if issue.get('blocked_by'):
+            meta['blocked_by'] = ','.join(sorted(issue['blocked_by']))
+
+        cards.append({
+            'id': issue['id'],
+            'label': issue['title'],
+            'column': st,
+            'labels': labels,
+            'meta': meta
+        })
+
+    title = f"{repo_name()} Backlog Board"
+    data = {
+        'title': title,
+        'columns': columns,
+        'cards': cards
+    }
+
+    html = tpl_text.replace('{{title}}', title)
+    data_json = json.dumps(data, indent=2, ensure_ascii=False)
+    html = re.sub(r'<script id="plan-data" type="application/json">.*?</script>',
+                  f'<script id="plan-data" type="application/json">\\n{data_json}\\n</script>',
+                  html, flags=re.DOTALL)
+
+    out_file = at_top(getattr(a, 'out', None) or '.tmp/render/board.html')
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(html, encoding='utf-8')
+
+    is_headless = not sys.stdout.isatty() or os.environ.get("CI") == "true" or os.environ.get("HEADLESS") == "1"
+    if not getattr(a, 'no_open', False) and not is_headless:
+        try:
+            import webbrowser
+            webbrowser.open(f"file://{out_file.resolve().as_posix()}")
+        except Exception:
+            pass
+
+    return f"[BOARD] wrote {out_file} ({len(cards)} card(s))"
+
+
 def cmd_board(store, a):
     issues_list = list(store.issues.values())
     if getattr(a, 'milestone', None):
         issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
     if getattr(a, 'parent', None):
         issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+
+    if getattr(a, 'web', False):
+        return _render_board_html(store, issues_list, a)
 
     lines = []
     as_md = bool(getattr(a, 'md', None))
@@ -672,6 +757,68 @@ def cmd_label(store, a):
     if a.name in store.areas:
         return {}, a.name
     return {README: store.files.get(README, README_TEXT).rstrip('\n') + f"\n- {a.name}\n"}, a.name
+
+
+def cmd_apply_moves(store, a):
+    source = getattr(a, 'file', '-')
+    if source == '-' or not source:
+        text = sys.stdin.read()
+    else:
+        p = at_top(source)
+        if not p.is_file():
+            raise IssuesError(f"[ERROR] file not found: {source}")
+        text = p.read_text(encoding='utf-8')
+
+    moves = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or line.startswith('Please apply'):
+            continue
+        m = re.match(r'^\s*([A-Za-z0-9_-]+)(?::\s*[^->]+)?\s*->\s*([A-Za-z0-9_ -]+?)\s*$', line)
+        if m:
+            bt, target = m.group(1).strip(), m.group(2).strip()
+            moves.append((bt, target))
+
+    if not moves:
+        return {}, "[APPLY-MOVES] no moves found"
+
+    changes = {}
+    applied = []
+    cur_branch = current_branch()
+
+    def effective_status(issue):
+        return 'done' if issue.get('closed') else issue.get('status')
+
+    for bt, target_st in moves:
+        if bt not in store.issues:
+            raise IssuesError(f"[ERROR] issue {bt} not found")
+        if target_st not in STATUSES:
+            raise IssuesError(f"[ERROR] status {target_st!r} is not one of {', '.join(STATUSES)}")
+        issue = store.get(bt)
+        cur_st = effective_status(issue)
+        if cur_st == target_st:
+            continue
+
+        if issue.get('claimed_by') and issue['claimed_by'] != cur_branch:
+            if not getattr(a, 'force', False):
+                raise IssuesError(f"[CLAIMED {bt} by {issue['claimed_by']}] use --force to move")
+
+        if target_st == 'done':
+            issue.update(status='done', closed=today(), close_reason='completed', claimed_by=None)
+        else:
+            if issue.get('closed'):
+                issue.update(closed=None, close_reason=None)
+            if issue.get('status') == 'in progress' and target_st != 'in progress':
+                issue['claimed_by'] = None
+            issue['status'] = target_st
+
+        issue['updated'] = now()
+        changes.update(store.changes(issue))
+        applied.append(f"{bt} -> {target_st}")
+
+    if not applied:
+        return {}, "[APPLY-MOVES] 0 moves applied"
+    return changes, f"[APPLY-MOVES] applied {len(applied)} move(s): {', '.join(applied)}"
 
 
 # --- check ----------------------------------------------------------------------------------------------------------
@@ -901,11 +1048,17 @@ def parser():
     p.add_argument('--milestone')
     p.add_argument('--parent')
     p.add_argument('--md', nargs='?', const='.tmp/board.md', default=None)
+    p.add_argument('--web', action='store_true', help='render interactive HTML board')
+    p.add_argument('--out', default='.tmp/render/board.html', help='output HTML path')
+    p.add_argument('--no-open', action='store_true', help='do not launch browser')
+    p = sub.add_parser('apply-moves')
+    p.add_argument('file', nargs='?', default='-', help='file with moves (default: stdin)')
+    p.add_argument('--force', action='store_true', help='force move on claimed issues')
     return ap
 
 
 WRITES = {'create': cmd_create, 'set': cmd_set, 'comment': cmd_comment, 'claim': cmd_claim, 'close': cmd_close,
-          'reopen': cmd_reopen, 'label': cmd_label}
+          'reopen': cmd_reopen, 'label': cmd_label, 'apply-moves': cmd_apply_moves}
 
 
 def _dump(value):
@@ -935,7 +1088,7 @@ def run(a, out):
     elif a.cmd == 'board':
         out(cmd_board(tracker.store(), a))
     elif a.cmd in WRITES:
-        out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '')}"))
+        out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '') or getattr(a, 'file', '')}".strip()))
     else:
         store = tracker.store()
         if a.cmd == 'get':

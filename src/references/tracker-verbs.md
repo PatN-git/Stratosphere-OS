@@ -34,6 +34,7 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 | `set_ice` | nothing stored: ICE is computed on read from the body's `- **Impact:** N` / `- **Confidence:** N%` bullets (the issue template) and the `size:` label | the same: nothing stored |
 | `set_body` | `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here) | `issues.py set <id> --body-file .tmp/<name>.md` |
 | `claim` | `gh issue edit <n> --add-assignee @me` | `issues.py claim <id>` (compare-and-set: `in progress`, `claimed_by` = the branch); `[CLAIMED <id> by <x>]` → halt |
+| `apply_moves` | — (use individual `set_status` edits) | `issues.py apply-moves [<file>] [--force]` (atomic batch status updater for moves emitted by `board --web`) |
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
@@ -54,7 +55,7 @@ GitHub reads are scoped `--json` queries; local reads are the same-named `issues
 - `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body` (local adds `comments`)
 - `list`: `gh issue list --label … --state … --json number,title,labels,milestone`; local: `issues.py list [--status <s>] [--label <l>] [--parent <id>] [--all]` (`--all` adds closed)
 - `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens); local: `issues.py wip`
-- `board`: text kanban columns, or Markdown export; local: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`
+- `board`: text kanban columns, Markdown export, or standalone interactive HTML projection; local: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]] [--web] [--out <path>] [--no-open]`
 - `resume_note`: the task's latest resume note. GitHub: `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30); local: `.memory/resume/<id>.md`. Empty → no note yet.
 - `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label. Local `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
 - `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
