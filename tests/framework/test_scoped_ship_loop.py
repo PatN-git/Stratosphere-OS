@@ -122,6 +122,16 @@ def test_micro_tdd_carve_out_covers_a_guard_the_code_already_satisfies():
     assert "guard" in carve and "mutation" in carve, "a guard that passes on arrival records a mutation as its RED"
 
 
+def test_faa_verdict_is_the_word_clean_or_gaps_with_no_bracket_token():
+    verdict = read_src("references/feature-acceptance-audit.md").split("## Verdict", 1)[1]
+    assert "no bracket token" in verdict, "the FAA verdict is prose; without this an agent invents `[FEATURE-PASS]`"
+
+
+def test_3z_ci_gate_runs_inside_ship_only_after_the_audit_and_the_dispatch_does_not_order_it():
+    line = next(l for l in read_src("workflows/3z-afk-loop.md").splitlines() if l.lstrip().startswith("- **CI gate**"))
+    assert "Phase 5 step 8" in line and "after the Feature Acceptance Audit" in line, "ship-only runs the gate; the dispatch must not order it"
+
+
 @pytest.mark.parametrize("rel", sorted(str(p.relative_to(SRC)).replace("\\", "/") for p in SRC.rglob("*.md")))
 def test_no_artifact_hands_the_agent_a_posix_only_rm_f(rel):
     assert "rm -f" not in read_src(rel), f"{rel}: `rm -f` fails on Windows PowerShell 5.1; say 'delete <files> (ignore absent)'"

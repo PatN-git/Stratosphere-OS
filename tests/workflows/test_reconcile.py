@@ -710,6 +710,13 @@ def local_gate_checks():
                                      "--with-edges", "dependents"])
             check("local: combined gate + edges exit 0", code == 0 and "[MIRROR-OK BT-LOCAL-db]" in out
                   and "[CLEAR BT-LOCAL-auth <- BT-LOCAL-db]" in out)
+
+            # 6. --expect-file whose first line is a `#` comment (joined to --expect text, it must stay a comment line)
+            ef = Path(td) / "gate-expect.txt"
+            ef.write_text("# gate for auth; db\nBT-LOCAL-auth:status=in review\n", encoding="utf-8")
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect-file", str(ef)])
+            check("local: --expect-file with a leading `#` comment line -> OK, exit 0",
+                  code == 0 and "[MIRROR-OK BT-LOCAL-auth]" in out)
         finally:
             issues._git('update-ref', '-d', 'refs/heads/test-gate-issues', check=False)
 
