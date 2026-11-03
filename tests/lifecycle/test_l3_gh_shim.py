@@ -636,6 +636,18 @@ def test_pr_view_with_no_argument_or_a_branch_name_finds_the_pr(clone, store, ca
     assert code != 0 and "feat/none" in err
 
 
+def test_pr_view_of_a_branch_without_a_pr_is_real_ghs_refusal_not_an_unknown_surface(clone, store, capsys):
+    """An existence probe by branch before the first PR exists is routine (4a does it); real gh answers
+    `no pull requests found for branch "x"` and exits 1. The shim must give that wording and record the call,
+    not log it under `unknown`, which L3 reads as an undocumented GitHub surface."""
+    code, _, err = run(["pr", "view", "feat/none", "--json", "number,url,isDraft,body,state"], capsys)
+    assert code == 1
+    assert err == 'no pull requests found for branch "feat/none"'
+    raw = state(store)
+    assert raw["unknown"] == []
+    assert ["pr", "view", "feat/none", "--json", "number,url,isDraft,body,state"] in raw["invocations"]
+
+
 def test_pr_view_by_branch_prefers_the_open_pr(clone, store, capsys):
     _push_branch(clone, "feat/x")
     def set_states(*states):

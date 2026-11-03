@@ -88,3 +88,40 @@ def test_4a_clears_dependents_through_the_verb_and_rechecks_once():
     assert "`clear_blocker`" in text and "--edges dependents" in text
     assert re.search(r"re-run[^\n]*--edges dependents[^\n]*no `\[CLEAR\]`", text), \
         "4a must re-run `--edges dependents` once and require no [CLEAR] left"
+
+
+# --- BT-194 live-test round 2: pins for the FAA, 4a audit-only, 3d globs, micro-tdd and shell-free cleanup ---
+
+def test_faa_is_handed_the_confidence_scale_and_has_one_scope_and_a_watch_home():
+    faa = read_src("references/feature-acceptance-audit.md")
+    assert "confidence-scale.md" in faa, "the FAA auditor must be handed the scale, as 4a hands it to slice auditors"
+    assert "already mapped PASS" not in faa, "a per-slice ship-only dispatch holds no shipped slices' coverage maps"
+    output = next(l for l in faa.splitlines() if l.startswith("- **Output:**"))
+    assert "Watch" in output and "40-59" in output, "the FAA output needs a home for Watch and the withheld footnote"
+
+
+def test_4a_audit_only_stops_before_the_hitl_halt_and_defines_its_verdict():
+    gate = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "Named gate" in l)
+    assert re.search(r"Phases 1[-\u2013]3", gate) and "Phase 4" in gate, "audit-only ends before the Phase 4 HITL halt"
+    assert all(v in gate for v in ("[PASS]", "[UNCOVERED]", "[SKIP]")), "audit-only must define its three verdicts"
+
+
+def test_audit_only_return_contract_names_the_3z_json_with_verdict_and_coverage_map():
+    line = next(l for l in read_src("references/pr-body-and-ship.md").splitlines() if "`audit-only` returns" in l)
+    assert "Step 2B" in line, "the audit-only return is the 3z Step 2B JSON, verdict and coverage_map included"
+
+
+def test_3d_finds_an_active_branch_through_any_globs_entry():
+    text = read_src("workflows/3d-implement-issue.md")
+    assert "first `globs` entry" not in text, "a release-unit branch matches only the second glob"
+    assert "any `globs` entry" in text
+
+
+def test_micro_tdd_carve_out_covers_a_guard_the_code_already_satisfies():
+    carve = next(l for l in read_src("skills/micro-tdd/SKILL.md").splitlines() if "Characterization Carve-out" in l)
+    assert "guard" in carve and "mutation" in carve, "a guard that passes on arrival records a mutation as its RED"
+
+
+@pytest.mark.parametrize("rel", sorted(str(p.relative_to(SRC)).replace("\\", "/") for p in SRC.rglob("*.md")))
+def test_no_artifact_hands_the_agent_a_posix_only_rm_f(rel):
+    assert "rm -f" not in read_src(rel), f"{rel}: `rm -f` fails on Windows PowerShell 5.1; say 'delete <files> (ignore absent)'"

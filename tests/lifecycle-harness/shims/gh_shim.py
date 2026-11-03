@@ -519,7 +519,8 @@ def find_pr(state: dict, ref: str | None) -> dict:
     branch = ref.split(":", 1)[-1]
     hits = [p for p in state["issues"].values() if p["isPR"] and branch and p.get("head") == branch]
     if not hits:
-        raise Failure(EXIT_UNKNOWN, f"no pull requests found for branch {branch or '<none: detached or no repo>'!r}")
+        # real gh's own refusal (an existence probe before the first PR): a call, not an unknown surface
+        raise Failure(EXIT_UNKNOWN, f'no pull requests found for branch "{branch or "<none: detached or no repo>"}"', bare=True)
     return max([p for p in hits if p["state"] == "OPEN"] or hits, key=lambda p: p["number"])
 
 
