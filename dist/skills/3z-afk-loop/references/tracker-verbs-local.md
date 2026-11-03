@@ -1,12 +1,12 @@
 ---
-description: The single write surface for local issue state. Local issues.py form for each write kind, runtime halt rule, misfits and read forms.
+description: The single write surface for issue state: the runtime halt rule, each write kind as a verb, the misfits and the read forms. Workflows name a verb; this file says how the backend does it.
 version: "5.0.0"
-timestamp: 2026-10-30
+timestamp: 2026-10-22
 ---
 
 # Tracker verbs (Local)
 
-The backend is `tracker: local` in `.memory/ARCHITECTURE.md`. Labels and milestones: `references/label-taxonomy.md`.
+The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a tracker branch (or a v5 map still to migrate) means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
 
 ## Runtime rule
 - GitHub is not touched. One file per issue, `docs/issues/<id>.md` (closed: `archive/`), on the `<repo>/issues` branch (`tracker_branch:` in ARCHITECTURE.md), never in the working tree, so every branch sees one state.
@@ -32,7 +32,7 @@ The backend is `tracker: local` in `.memory/ARCHITECTURE.md`. Labels and milesto
 - `set_ice`: the same: nothing stored
 - `set_body`: `issues.py set <id> --body-file .tmp/<name>.md`
 - `claim`: `issues.py claim <id>` (compare-and-set: `in progress`, `claimed_by` = the branch); `[CLAIMED <id> by <x>]` → halt
-- `apply_moves`: `issues.py apply-moves [<file>] [--force]` (atomic batch status updater for moves emitted by `board --web`)
+- `apply_moves`: `issues.py apply-moves [<file>] [--dry-run] [--force]` (no file: stdin): the batch status writer for a person's moves, the payload copied from `board --web` (`<id> … -> <status>` lines, a `Please apply` header ignored). One bad line, unknown id or status, or refused move applies nothing and exits 1. `done` is `close`, away from it `reopen`; an `in review` epic or standalone issue moves to `done` only once `merged`, else `--force`
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
@@ -44,7 +44,7 @@ Branch: / Done: / Open: / Next step: / Blockers:
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. Locally, 0b runs `issues.py merged --close` (ancestry check against default branch and recorded tip SHAs).
+- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. Locally, 0b runs `issues.py merged --close` (ancestry check against the default branch and the newest recorded tip SHA of the issue and of each child slice).
 - `tracker_switch`: one-way only (local → GitHub). Reverse switch is omitted intentionally: GitHub issues with PR connections, discussions, and external links cannot be round-tripped without loss or dual-store conflict complexity; moving from GitHub to local starts a clean local store.
 - PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
 
@@ -53,9 +53,10 @@ Local reads are the same-named `issues.py` command (JSON).
 - `get`: `issues.py get <id>` (includes comments)
 - `list`: `issues.py list [--status <s>] [--label <l>] [--parent <id>] [--all]` (`--all` adds closed)
 - `wip`: `issues.py wip`
-- `board`: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`
+- `board`: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`: text kanban columns, or a Markdown export; `issues.py board --web [--out <f>] [--open]`: an interactive HTML page (a browser opens only with `--open`) whose copied payload is the `apply_moves` input.
 - `resume_note`: the task's latest resume note: `.memory/resume/<id>.md`. Empty → no note yet.
-- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label. `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
-- `children`: `issues.py get <id>` (sub-issues)
-- `blockers`: `issues.py get <id>` (blockers)
+- `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label.
+- `ready`: `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
+- `children`: `issues.py children <id>` (`get` lists no sub-issues).
+- `blockers`: `issues.py blockers <id>`.
 - Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` per `references/terminal-sync-invariant.md` (whole-store `issues.py check` is also available).

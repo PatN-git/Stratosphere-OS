@@ -1,12 +1,12 @@
 ---
-description: The single write surface for GitHub issue state. GitHub form for each write kind, runtime halt rule, misfits and read forms.
+description: The single write surface for issue state: the runtime halt rule, each write kind as a verb, the misfits and the read forms. Workflows name a verb; this file says how the backend does it.
 version: "5.0.0"
-timestamp: 2026-10-30
+timestamp: 2026-10-22
 ---
 
 # Tracker verbs (GitHub)
 
-The backend is `tracker: github` in `.memory/ARCHITECTURE.md`. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
+The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a tracker branch (or a v5 map still to migrate) means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
 
 ## Runtime rule
 - GitHub is the only store. Never write a local copy: no issue file, no `BT-LOCAL-*` id, no mirror file.
@@ -31,7 +31,7 @@ The backend is `tracker: github` in `.memory/ARCHITECTURE.md`. Workflows state a
 - `set_ice`: nothing stored: ICE is computed on read from the body's `- **Impact:** N` / `- **Confidence:** N%` bullets (the issue template) and the `size:` label
 - `set_body`: `gh issue edit <n> --body-file .tmp/<name>.md` (doc links, `Refs:`, acceptance criteria live here)
 - `claim`: `gh issue edit <n> --add-assignee @me`
-- `apply_moves`: — (use individual `set_status` edits)
+- `apply_moves`: n/a: the Projects board moves cards natively (a script uses `set_status`)
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:
@@ -52,8 +52,8 @@ GitHub reads are scoped `--json` queries.
 - `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body`
 - `list`: `gh issue list --label … --state … --json number,title,labels,milestone`
 - `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens)
-- `board`: text kanban columns, or Markdown export
 - `resume_note`: the task's latest resume note. `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30). Empty → no note yet.
-- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label.
-- `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
+- `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label.
+- `children`: `gh issue view <n> --json subIssues`; a connection: read `.nodes`.
+- `blockers`: `gh issue view <n> --json blockedBy`; a connection: read `.nodes`.
 - Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` per `references/terminal-sync-invariant.md`.

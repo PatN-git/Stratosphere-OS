@@ -20,7 +20,7 @@ timestamp: 2026-10-22
 Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Value-Add Gate
-*Input:* slice issue + parent PRD §8 (`BT-<parentPadded>` resolved as in Phase 2).
+*Input:* slice issue + parent PRD §8 (`<parentId>` resolved as in Phase 2).
 0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue (a loosening needs a human-merged Floor exceptions row)`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below.
    Record the decision below as `phase1` per `references/pr-body-and-ship.md` § Audit findings: `bypass` for steps 1 and 3, `trigger:<name>` for step 2.
 1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
@@ -32,7 +32,7 @@ Run the `load-memory` skill to restore session context (read-only).
 > **Named gate — `audit-only`:** Phases 1–4. Produces the coverage map and verdict; touches no branch, commit, or PR. This is the contract `3z-afk-loop` dispatches against; keep the name stable even if the phase numbers move. After each audit, record the findings per `references/pr-body-and-ship.md` § Audit findings.
 - **Resolve targets first:** in the parent, compute the changed-file set and pass explicit paths; **the subagent must never run repo-wide discovery** (`grep -r`, dir sweeps) to locate inputs.
   - Base ref = first that resolves: upstream merge-base (`git diff --name-only "$(git merge-base HEAD origin/<default>)"...HEAD`) → local default branch → files changed on this branch. Never abort if unresolvable — use the best available list. Host-adapt `<default>` (`main`/`master`).
-  - Also resolve spec inputs: `BT-<parentPadded>` = the slice's Parent (`get`); pass `docs/prds/BT-<parentPadded>-*.md`, `docs/design/BT-<parentPadded>-interface.md` and the `## Deviations` of `.tmp/3d-plan-BT-<padded>.md` when they exist (no PRD/design doc at that path (standalone slice) → the issue only).
+  - Also resolve spec inputs: `<parentId>` = the slice's Parent as `get` returns it (`BT-012` or `BT-LOCAL-<slug>`, so the globs match both id forms); pass `docs/prds/<parentId>*.md`, `docs/design/<parentId>-interface.md` and the `## Deviations` of `.tmp/3d-plan-BT-<padded>.md` when they exist (no PRD/design doc at that path (standalone slice) → the issue only).
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d-implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
