@@ -37,6 +37,7 @@ Do not modify files without user approval, except the report, `.last-run.json` (
     | `[PATTERN]` cited ≥3 times | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (Not for `GLOSSARY.md`) |
     | `[ASSUMED]` cited in `Ref` by ≥2 distinct tasks | Promote to `[PATTERN]`? |
     | `[ASSUMED]` older than 7 days by its inline `[YYYY-MM-DD]`, unvalidated | Supersede with a `[REMOVED]` tombstone? |
+- Citations are the `Refs:` lines of tracker issues (`issues.py list --all`, then `get`) plus `[[ID]]` mentions in `.memory/`.
 - A removal is a tombstone under `## Superseded`, never a deletion (memory-protocol §3, §5): deleting leaves an ID gap.
 - **Avoid-list reconciliation:** Migrate or retire `Avoid:` synonyms for superseded terms.
 - Adjust plan if proposals surface. No-op audits (promotion, avoid-list, retention with nothing qualifying) collapse into one status line in the report (same line as Phase 4 step 1), never a section.

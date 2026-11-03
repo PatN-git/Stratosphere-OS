@@ -146,7 +146,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "97d6d2b0b487073cf4b1993515c9b6c2a9232a8320a87f1b60c0e1ea272a5fc5",
+      "sha256": "618832e3813bdb8cd39367eeeb9e7ac1c5ccb9e1f053936e119c484d18061a44",
       "timestamp": "2026-10-27",
       "version": "1.4.0"
     },
@@ -246,7 +246,7 @@
       "version": "5.0.0"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "a1fcb112e24fbf784282839aecf1844e1b9f1fc9fbe0bf5d6dba4850ed826db1",
+      "sha256": "4c9643af14b3e5f4a3e6f244fd722d432a06195e90b3028988ec354bec41f5b7",
       "timestamp": "2026-10-22",
       "version": "1.7.1"
     },
@@ -511,7 +511,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "ea0fe764248e10e145b4acd9c957af16a45f2f6f2c2f40d43cc50fba0d3dfc6f",
+      "sha256": "f7c31cd2e80be171783c5a253d2341340c5e213c5be53d135b56d9b3991ab5e6",
       "timestamp": "2026-10-22",
       "version": "1.9.0"
     },
@@ -546,7 +546,7 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/pr-body-and-ship.md": {
-      "sha256": "f7e213ca578933a0be824fcc018564920ea3d3053a3f5184634966d4accd13a8",
+      "sha256": "0d6408acbba6dd6cfc4a5262e425b9126f35d45ed21ad5e0326c9b051611def4",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
@@ -566,7 +566,7 @@
       "version": "5.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "ddb951d7b5b31c5b9bfdc90ea95d5038b9bbedfef69092888c429d173ea95403",
+      "sha256": "082cebf5031717b9eda755c03fc1c6e62adc66e2c74541b82e87d29f628b3f8e",
       "timestamp": "2026-10-22",
       "version": "1.8.0"
     },
@@ -601,7 +601,7 @@
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
-      "sha256": "b06d3583fd9244094aa2cdc219d7bb5ea8edc491a40c0b54b2f12775d98b447a",
+      "sha256": "c7a3815c360ec77bda5e5091bd3b66a2ffaee82af28a006939d9463bd9d0d0ae",
       "timestamp": "2026-11-03",
       "version": "1.1.2"
     },
@@ -626,7 +626,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "f7e213ca578933a0be824fcc018564920ea3d3053a3f5184634966d4accd13a8",
+      "sha256": "0d6408acbba6dd6cfc4a5262e425b9126f35d45ed21ad5e0326c9b051611def4",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
