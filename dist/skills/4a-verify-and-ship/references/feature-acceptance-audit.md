@@ -22,6 +22,7 @@ One **Strict Business-Logic Auditor** subagent under the Phase 2 guardrail: audi
 - **Output:** the Phase 3 §1 table, one row per item (Status PASS | FAIL | UNVERIFIED), gaps ≥ 80 only as FAIL; then `Watch` (60-79, one line each, user decisions, never halt the ship) and a footnote count of withheld 40-59 findings.
 
 ## Verdict
+The word **Clean** (no FAIL row ≥ 80) or **Gaps**, in prose: no bracket token.
 - **Clean** → continue Step 8 (`gh pr ready`); Watch lines go in the ship output.
 - **Gaps** → halt. Leave the PR in draft, leave the epic at `status:in progress`, surface the table, and route to `/3b-create-issue` (new slice) or `/3d-implement-issue` (extend).
 

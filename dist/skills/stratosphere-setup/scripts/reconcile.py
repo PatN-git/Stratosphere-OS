@@ -549,7 +549,7 @@ def main(argv=None):
     expect = {}
     if args.expect or args.expect_file:
         try:
-            text = (args.expect or '') + ';' + (Path(args.expect_file).read_text(encoding='utf-8') if args.expect_file else '')
+            text = (args.expect or '') + '\n' + (Path(args.expect_file).read_text(encoding='utf-8') if args.expect_file else '')
             expect = parse_expect(text)
         except (OSError, ValueError) as e:
             ap.error(f"--expect/--expect-file: {e}")
