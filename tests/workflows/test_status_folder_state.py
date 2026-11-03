@@ -85,10 +85,11 @@ def test_tracker_verbs_defines_the_resume_note_for_both_backends():
     text = read_src("references/tracker-verbs.md")
     assert "<!-- stratos:resume -->" in text
     reads = re.search(r"^## Reads\n(.*?)(?=^## |\Z)", text, re.M | re.S).group(1)
-    line = next(l for l in reads.splitlines() if l.startswith("- `resume_note`"))
-    assert "gh issue view" in line and "--json comments" in line and "startswith" in line
-    assert ".memory/resume/" in line
-    assert "gh api" not in line, "the REST form returns only the first 30 comments"
+    gh, local = (next(l for l in reads.splitlines() if l.startswith("- `resume_note`") and l.endswith(tag))
+                 for tag in ("<!-- github -->", "<!-- local -->"))
+    assert "gh issue view" in gh and "--json comments" in gh and "startswith" in gh
+    assert ".memory/resume/" in local
+    assert "gh api" not in gh, "the REST form returns only the first 30 comments"
     comment = next(l for l in text.splitlines() if l.startswith("| `comment`"))
     assert ".memory/resume/" in comment and "--body-file" in comment
 

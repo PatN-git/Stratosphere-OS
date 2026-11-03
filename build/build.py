@@ -181,104 +181,40 @@ policy:
 """
 
 
+BACKEND_TAG = re.compile(r"\s*<!-- (github|local|master) -->\s*$")
+
+
+def project_backend(master_text: str, backend: str) -> str:
+    """One backend's view of the master tracker-verbs.md: a line ending in `<!-- github -->` / `<!-- local -->` is kept
+    only for that backend, an untagged line for both, a `<!-- master -->` line for neither; a Verbs table row becomes
+    one `- verb: form` bullet. Front matter: the master's description and timestamp, the build VERSION."""
+    fm, body = split_frontmatter(master_text)
+    meta = {k: v.strip() for k, v in re.findall(r"^(description|timestamp):\s*(.*)$", fm or "", re.M)}
+    col = {"github": 1, "local": 2}[backend]
+    out, in_verbs, titled = [], False, False
+    for line in body.splitlines():
+        m = BACKEND_TAG.search(line)
+        if m:
+            if m.group(1) != backend:
+                continue
+            line = line[:m.start()]
+        if line.startswith("## "):
+            in_verbs = line == "## Verbs"
+        elif in_verbs and line.startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) == 3 and cells[0].startswith("`"):
+                out.append(f"- {cells[0]}: {cells[col]}")
+            continue
+        elif not titled and line.startswith("# "):
+            line, titled = f"{line} ({'GitHub' if backend == 'github' else 'Local'})", True
+        out.append(line)
+    head = f'---\ndescription: {meta["description"]}\nversion: "{VERSION}"\ntimestamp: {meta["timestamp"]}\n---\n\n'
+    return head + re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
+
+
 def generate_projected_verbs(master_text: str) -> tuple[str, str]:
-    """Compile single authoritative tracker-verbs.md table into backend-specific references."""
-    def section(text, heading):
-        m = re.search(rf"^## {re.escape(heading)}\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-        return m.group(1).strip() if m else ""
-
-    verbs_sec = section(master_text, "Verbs")
-    verbs_gh = []
-    verbs_local = []
-    for line in verbs_sec.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) == 3 and cells[0].startswith("`"):
-            verb = cells[0]
-            gh_form = cells[1]
-            local_form = cells[2]
-            verbs_gh.append(f"- {verb}: {gh_form}")
-            verbs_local.append(f"- {verb}: {local_form}")
-
-    resume_note = section(master_text, "Resume note")
-
-    gh_text = f"""---
-description: The single write surface for GitHub issue state. GitHub form for each write kind, runtime halt rule, misfits and read forms.
-version: "{VERSION}"
-timestamp: 2026-10-30
----
-
-# Tracker verbs (GitHub)
-
-The backend is `tracker: github` in `.memory/ARCHITECTURE.md`. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
-
-## Runtime rule
-- GitHub is the only store. Never write a local copy: no issue file, no `BT-LOCAL-*` id, no mirror file.
-- A `gh` failure is retried 3 times with backoff (the scripts do it; by hand, retry the same way). Then halt and say so. Never fall back to a local write.
-
-## Verbs
-{chr(10).join(verbs_gh)}
-
-## Resume note
-{resume_note}
-
-## Misfits
-These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. GitHub closes natively on default branch merge via `Closes #<n>`.
-- `tracker_switch`: one-way only (local → GitHub). Reverse switch is omitted intentionally: GitHub issues with PR connections, discussions, and external links cannot be round-tripped without loss or dual-store conflict complexity; moving from GitHub to local starts a clean local store.
-- PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
-
-## Reads
-GitHub reads are scoped `--json` queries.
-- `get`: `gh issue view <n> --json number,state,labels,milestone,parent,blockedBy,body`
-- `list`: `gh issue list --label … --state … --json number,title,labels,milestone`
-- `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens)
-- `board`: text kanban columns, or Markdown export
-- `resume_note`: the task's latest resume note. `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\\\"`); it reads every comment page (the REST comments list returns only the first 30). Empty → no note yet.
-- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label.
-- `children`: `gh issue view <n> --json subIssues`; `blockers`: `gh issue view <n> --json blockedBy`. Both are connections: read `.nodes`.
-- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` per `references/terminal-sync-invariant.md`.
-"""
-
-    local_text = f"""---
-description: The single write surface for local issue state. Local issues.py form for each write kind, runtime halt rule, misfits and read forms.
-version: "{VERSION}"
-timestamp: 2026-10-30
----
-
-# Tracker verbs (Local)
-
-The backend is `tracker: local` in `.memory/ARCHITECTURE.md`. Labels and milestones: `references/label-taxonomy.md`.
-
-## Runtime rule
-- GitHub is not touched. One file per issue, `docs/issues/<id>.md` (closed: `archive/`), on the `<repo>/issues` branch (`tracker_branch:` in ARCHITECTURE.md), never in the working tree, so every branch sees one state.
-- Ids are `BT-LOCAL-<slug>`: wherever a workflow or template writes `BT-<padded>` (ids, commit scope, branch, suite file, Parent/Blocked by), local mode uses the full `BT-LOCAL-<slug>`.
-- `python .agents/scripts/issues.py` does every read and write; never edit an issue file, never check out the tracker branch. A refused write exits 1: halt and say so.
-
-## Verbs
-{chr(10).join(verbs_local)}
-
-## Resume note
-{resume_note}
-
-## Misfits
-These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. Locally, 0b runs `issues.py merged --close` (ancestry check against default branch and recorded tip SHAs).
-- `tracker_switch`: one-way only (local → GitHub). Reverse switch is omitted intentionally: GitHub issues with PR connections, discussions, and external links cannot be round-tripped without loss or dual-store conflict complexity; moving from GitHub to local starts a clean local store.
-- PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
-
-## Reads
-Local reads are the same-named `issues.py` command (JSON).
-- `get`: `issues.py get <id>` (includes comments)
-- `list`: `issues.py list [--status <s>] [--label <l>] [--parent <id>] [--all]` (`--all` adds closed)
-- `wip`: `issues.py wip`
-- `board`: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`
-- `resume_note`: the task's latest resume note: `.memory/resume/<id>.md`. Empty → no note yet.
-- `candidates`: `python .agents/scripts/ice_read.py candidates`: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label. `issues.py ready` prints the same lines for the leaves whose blockers cleared, plus `[BLOCKED <id> <- <blocker>]`.
-- `children`: `issues.py get <id>` (sub-issues)
-- `blockers`: `issues.py get <id>` (blockers)
-- Post-condition check after a multi-write phase: `reconcile.py --ids … --expect …` per `references/terminal-sync-invariant.md` (whole-store `issues.py check` is also available).
-"""
-    return gh_text, local_text
+    """Compile the single master tracker-verbs.md into the (GitHub, local) backend references."""
+    return project_backend(master_text, "github"), project_backend(master_text, "local")
 
 
 def project_tracker_verbs(ref_dir: Path):

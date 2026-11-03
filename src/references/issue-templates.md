@@ -60,7 +60,7 @@ Must cite the governing design/architectural laws violated (e.g. violates `[[A-x
 ### Dependencies
 - **Parent:** `BT-<padded>` (local: `BT-LOCAL-<slug>`) — the epic this slice belongs to (bare ID; `—` if standalone). Written once with `set_parent`.
 - **Blocked by:** `BT-<padded>, …` (local: `BT-LOCAL-<slug>`) — slices that must land first (bare IDs; `—` if none). Written once with `add_blocker`.
-- **Design:** `docs/design/BT-<parentPadded>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
+- **Design:** `docs/design/<parentId>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
 
 ### Notes
 Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.

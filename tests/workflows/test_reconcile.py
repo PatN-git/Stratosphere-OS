@@ -393,6 +393,11 @@ def expect_checks():
     check("expect: set fields are padded id / label sets", exp["BT-007"]["blocked_by"] == {"BT-006", "BT-008"}
           and exp["BT-009"]["labels"] == {"a", "b"})
     check("expect: none tokens make an empty set", rec.parse_expect("BT-7:blocked_by=—")["BT-007"]["blocked_by"] == set())
+    check("expect: `none` in any case is the empty value of the list and nullable fields",
+          rec.parse_expect("BT-7:blocked_by=none;BT-7:labels=None;BT-7:milestone=NONE;BT-7:parent=none")["BT-007"]
+          == {"blocked_by": set(), "labels": set(), "milestone": "—", "parent": "—"})
+    check("expect: only a whole `none` value is empty; inside a longer list it is an ordinary item",
+          rec.parse_expect("BT-7:labels=none,type:bug")["BT-007"]["labels"] == {"none", "type:bug"})
     for bad in ("BT-7", "BT-7:status", "BT-7:colour=red", "X-7:status=done"):
         try:
             rec.parse_expect(bad)
@@ -623,6 +628,12 @@ def main():
           any("pr-link" in x for x in rec.compare(r7, gh_issue(comments=[]), ALL, True)))
     check("check_pr=True + PR link present -> ok",
           rec.compare(r7, gh_issue(comments=[{"body": "https://github.com/o/r/pull/42"}]), ALL, True) == [])
+
+    shipped = gh_issue(comments=[{"body": "Shipped on feature/x @ 1234567"}])
+    check("github: `Shipped on` is not a PR link, only a /pull/ URL is",
+          any("pr-link" in x for x in rec.compare(r7, shipped, ALL, True)))
+    check("local: a `Shipped on <branch> @ <sha>` comment is the PR link",
+          rec.compare(r7, shipped, ALL, True, local=True) == [])
 
     check("issue_number strips padding", rec.issue_number("BT-007") == "7")
     check("issue_number local -> None", rec.issue_number("BT-LOCAL-x") is None)

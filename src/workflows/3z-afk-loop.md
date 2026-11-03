@@ -59,8 +59,8 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 _Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) upserts the slice's session line in `.memory/STATUS.md` (`BT-<padded> · <branch> · <date>`, `branch` from the JSON; own line only), then runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch** (`BT-<parentPadded>` = the slice's Parent from the queue read, else `get` the slice):
-   > "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/BT-<parentPadded>-interface.md` (no PRD/design doc at that path (standalone slice) → omit the path).
+1. **Dispatch** (`<parentId>` = the slice's Parent as `get` returns it, from the queue read else `get` the slice; `BT-012` or `BT-LOCAL-<slug>`):
+   > "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/<parentId>-interface.md` (no PRD/design doc at that path (standalone slice) → omit the path).
    > Keep the auditor independent (fresh context) and give it the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (inline diff, ACs, named tests; no broad re-reads). On attempt > 1 also pass the previous `coverage_map`, the round-1 gap list with each gap's stated bar (its suggested fix, from the `Gaps` entries) and the diff since the last audited head: the auditor applies that reference's frozen-gap delta rule.
    > Run the Standards auditor with `auditor_model: small` (`references/auditor-model-tiers.md`); the Spec auditor stays on the default. Return the tier as `std_tier`.
    > Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate.

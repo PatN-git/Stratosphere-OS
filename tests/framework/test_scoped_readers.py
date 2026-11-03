@@ -25,7 +25,7 @@ RETIRED = re.compile(r"BACKLOG_MAP|map row|Ref cell|Status cell|BT-LOCAL Fallbac
 
 def _issues_commands():
     out = subprocess.run([sys.executable, str(SRC / "scripts" / "issues.py"), "--help"], capture_output=True, text=True).stdout
-    return set(re.search(r"\{([a-z,]+)\}", out).group(1).split(","))
+    return set(re.search(r"\{([a-z,-]+)\}", out).group(1).split(","))
 
 
 def _reads_section():
@@ -42,7 +42,7 @@ def test_no_reader_names_the_retired_local_store(rel):
 
 @pytest.mark.parametrize("rel", READERS)
 def test_every_local_command_is_one_issues_py_accepts(rel):
-    used = set(re.findall(r"issues\.py ([a-z]+)", read_src(rel)))
+    used = set(re.findall(r"issues\.py ([a-z][a-z-]*)", read_src(rel)))
     assert used <= _issues_commands(), f"{rel}: {used - _issues_commands()} is not an issues.py command"
 
 

@@ -589,6 +589,78 @@ def test_merged_detects_recorded_sha_after_branch_deletion(repo):
     assert code == 0 and f'[MERGED {epic}]' in text
 
 
+def _ship(repo, branch, name):
+    """Commit `name` on `branch` (created or reused), return the tip SHA, end on main."""
+    rc = subprocess.run(['git', 'rev-parse', '--verify', '-q', branch], cwd=repo, capture_output=True).returncode
+    git(repo, 'checkout', '-q' if rc == 0 else '-qb', branch)
+    (repo / name).write_text(name + '\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', name)
+    tip = git(repo, 'rev-parse', 'HEAD').strip()
+    git(repo, 'checkout', '-q', 'main')
+    return tip
+
+
+def test_merged_detects_epic_via_the_closed_child_slices_tip_after_branch_deletion(repo):
+    """4a posts `Shipped on <branch> @ <sha>` on the shipped SLICE (then closes it), never on the epic."""
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
+    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+    ok('comment', child, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    ok('set', child, '--status', 'done')
+    ok('close', child)
+
+    code, text = run('merged')
+    assert code == 0 and f'[MERGED {epic}]' in text
+    run('merged', '--close')
+    assert json.loads(ok('get', epic))['status'] == 'done'
+
+
+def test_merged_epic_with_one_unmerged_child_tip_is_not_merged(repo):
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    c1 = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
+    c2 = ok('create', '--title', 'Refunds', '--label', SLICE, '--parent', epic)
+    t1 = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b1.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
+    t2 = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b2.txt')  # second slice, not merged
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+    ok('comment', c1, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {t1}")
+    ok('comment', c2, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {t2}")
+
+    code, text = run('merged', '--close')
+    assert code == 0 and '[MERGED' not in text
+    assert json.loads(ok('get', epic))['status'] == 'in review'
+
+
+def test_merged_uses_only_the_newest_tip_a_reshipped_issue_is_not_merged(repo):
+    """An older tip that merged must not hide a newer, unmerged re-ship (the branch is still open)."""
+    ok('init')
+    item = ok('create', '--title', 'Search', '--label', SLICE)
+    ok('set', item, '--status', 'in review')
+    t1 = _ship(repo, 'feature/BT-LOCAL-search', 's1.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge search', 'feature/BT-LOCAL-search')
+    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {t1}")
+    t2 = _ship(repo, 'feature/BT-LOCAL-search', 's2.txt')  # re-shipped, not merged, branch alive
+    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {t2}")
+
+    code, text = run('merged')
+    assert code == 0 and '[MERGED' not in text and f'[STALE-TIP {item}]' in text
+    code, text = run('merged', '--close')
+    assert code == 0 and '[MERGED' not in text
+    issue = json.loads(ok('get', item))
+    assert issue['status'] == 'in review' and not issue['closed']
+
+    git(repo, 'merge', '--no-ff', '-qm', 'merge search again', 'feature/BT-LOCAL-search')
+    code, text = run('merged')
+    assert f'[MERGED {item}]' in text and 'STALE-TIP' not in text
+
+
 def test_merged_squash_commit_is_advisory_and_not_auto_closed(repo):
     ok('init')
     item = ok('create', '--title', 'Search', '--label', 'type:feature,tier:slice,size:small,mode:AFK')
@@ -604,6 +676,98 @@ def test_merged_squash_commit_is_advisory_and_not_auto_closed(repo):
     assert code == 0 and f'[PROBABLY-MERGED {item}]' in text
     issue = json.loads(ok('get', item))
     assert issue['status'] == 'in review' and not issue['closed']
+
+
+def test_merged_squash_advisory_ignores_the_docs_commit_that_names_an_open_epic(repo):
+    """2a/2b commit `docs(<epic>): PRD` to the default branch; an `in review` epic with an open PR is not squash-merged."""
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    ok('set', epic, '--status', 'in review')
+    child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
+    git(repo, 'commit', '--allow-empty', '-qm', f"docs({epic}): PRD")
+    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')  # shipped, branch alive, PR open
+    ok('comment', child, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    ok('set', child, '--status', 'done')
+    ok('close', child)
+    assert run('merged') == (0, '[NO-MERGES]')
+
+
+def test_merged_squash_advisory_never_matches_a_docs_commit_even_without_a_recorded_tip(repo):
+    ok('init')
+    item = ok('create', '--title', 'Search', '--label', SLICE)
+    ok('set', item, '--status', 'in review')
+    git(repo, 'commit', '--allow-empty', '-qm', f"docs({item}): interface design")
+    assert run('merged') == (0, '[NO-MERGES]')
+
+
+def test_merged_squash_advisory_counts_only_commits_after_the_recorded_ship(repo, monkeypatch):
+    ok('init')
+    item = ok('create', '--title', 'Search', '--label', SLICE)
+    ok('set', item, '--status', 'in review')
+    monkeypatch.setenv('GIT_COMMITTER_DATE', '2020-01-01T00:00:00')
+    git(repo, 'commit', '--allow-empty', '-qm', f"chore({item}): groundwork, long before the ship")
+    monkeypatch.delenv('GIT_COMMITTER_DATE')
+    tip = _ship(repo, 'feature/BT-LOCAL-search', 's.txt')
+    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {tip}")
+    assert run('merged') == (0, '[NO-MERGES]')
+
+    git(repo, 'merge', '--squash', 'feature/BT-LOCAL-search')
+    git(repo, 'commit', '-qm', f"feat({item}): search")
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-search')
+    code, text = run('merged', '--close')
+    assert code == 0 and f'[PROBABLY-MERGED {item}]' in text and '[MERGED' not in text
+    assert json.loads(ok('get', item))['status'] == 'in review'
+
+
+def _blocker_with_tip_and_deleted_branch(repo, merge):
+    """An epic `Billing` whose slice `db` shipped one tip on a unit branch that is then deleted (merged or not)."""
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    db = ok('create', '--title', 'DB', '--label', SLICE, '--parent', epic)
+    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
+    ok('comment', db, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    ok('set', db, '--status', 'done')
+    ok('close', db)
+    if merge:
+        git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+    return epic, db
+
+
+def test_merged_of_a_deleted_unmerged_branch_with_a_recorded_tip_is_open(repo, tmp_path, capsys):
+    import reconcile
+    (repo / '.memory').mkdir()
+    arch = repo / '.memory' / 'ARCHITECTURE.md'
+    arch.write_text('---\ntracker: local\n---\n')
+    epic, db = _blocker_with_tip_and_deleted_branch(repo, merge=False)
+    ui = ok('create', '--title', 'UI', '--label', SLICE, '--blocked-by', db)
+    assert issues.make_merged_of(issues.Tracker().store())(db) == 'open'
+    reconcile.main(['--edges', 'dependents', '--all-open', '--arch', str(arch)])
+    assert f'[KEEP {ui} <- {db}]' in capsys.readouterr().out
+
+
+def test_merged_of_a_deleted_merged_branch_with_a_recorded_tip_is_merged(repo, capsys):
+    import reconcile
+    (repo / '.memory').mkdir()
+    arch = repo / '.memory' / 'ARCHITECTURE.md'
+    arch.write_text('---\ntracker: local\n---\n')
+    epic, db = _blocker_with_tip_and_deleted_branch(repo, merge=True)
+    ui = ok('create', '--title', 'UI', '--label', SLICE, '--blocked-by', db)
+    assert issues.make_merged_of(issues.Tracker().store())(db) == 'merged'
+    reconcile.main(['--edges', 'dependents', '--all-open', '--arch', str(arch)])
+    assert f'[CLEAR {ui} <- {db}]' in capsys.readouterr().out
+
+
+def test_merged_of_an_epic_blocker_reads_its_child_slices_tip(repo):
+    epic, db = _blocker_with_tip_and_deleted_branch(repo, merge=False)
+    assert issues.make_merged_of(issues.Tracker().store())(epic) == 'open'
+
+
+def test_merged_of_with_no_recorded_tip_and_no_branch_stays_none(repo):
+    ok('init')
+    spike = ok('create', '--title', 'Spike', '--label', 'type:research,tier:slice,mode:HITL,size:medium')
+    ok('close', spike)
+    assert issues.make_merged_of(issues.Tracker().store())(spike) == 'none'
 
 
 def test_board_text_kanban(repo):
@@ -758,16 +922,254 @@ def test_apply_moves_validation_failure(repo, tmp_path):
     # Invalid status
     code, text = run('apply-moves', body(tmp_path, f"{b1} -> non_existent_status\n", "bad1.txt"))
     assert code != 0
-    assert "not one of" in text
+    assert "line 1: unknown status 'non_existent_status'" in text
 
     # Non-existent issue
     code, text = run('apply-moves', body(tmp_path, "BT-999 -> done\n", "bad2.txt"))
     assert code != 0
-    assert "issue BT-999 not found" in text
+    assert "line 1: unknown id BT-999" in text
 
     # Ensure b1 remained untouched (planned)
     i1 = json.loads(ok('get', b1))
     assert i1['status'] == 'planned'
 
 
+# --- board --web: data is data, never markup; a browser only on --open --------------------------------------------
+
+NASTY_TITLES = ['Fix C:\\path\\n handling', 'Evil </script><img src=x onerror=alert(1)>', "Quote ' and \" here",
+                'Amp & <b>bold</b> &lt;', 'Sep \u2028 and \u2029 end']
+NASTY_LABEL = "area:it's<b>"
+
+
+def _data_block(content):
+    m = re.search(r'<script id="plan-data" type="application/json">(.*?)</script>', content, re.DOTALL)
+    assert m is not None
+    return m
+
+
+def test_board_web_embeds_nasty_titles_and_labels_as_inert_json(repo, tmp_path):
+    ok('init')
+    ids = {}
+    for t in NASTY_TITLES:
+        ids[ok('create', '--title', t, '--label', f'{SLICE},{NASTY_LABEL}')] = t
+    out_html = tmp_path / 'nasty.html'
+    assert run('board', '--web', '--out', str(out_html))[0] == 0
+    content = out_html.read_text(encoding='utf-8')
+
+    m = _data_block(content)
+    block = m.group(1)
+    assert '<' not in block and '>' not in block and '&' not in block   # escaped as \u003c \u003e \u0026
+    assert '\u2028' not in block and '\u2029' not in block
+    data = json.loads(block)
+    assert {c['id']: c['label'] for c in data['cards']} == ids
+    assert all(NASTY_LABEL in c['labels'] for c in data['cards'])
+
+    outside = content[:m.start()] + content[m.end():]
+    assert content.count('</script>') == content.count('<script')       # only the data block and the page script
+    assert not re.search(r'\son[a-z]+\s*=', outside, re.I)              # no inline onclick=/onerror=/...
+    assert '<img src=x' not in content
+
+
+def test_board_web_data_block_holds_the_apply_command_for_the_payload(repo, tmp_path):
+    ok('init')
+    ok('create', '--title', 'One', '--label', SLICE)
+    out_html = tmp_path / 'b.html'
+    ok('board', '--web', '--out', str(out_html))
+    data = json.loads(_data_block(out_html.read_text(encoding='utf-8')).group(1))
+    assert data['apply_cmd'] == 'python .agents/scripts/issues.py apply-moves -'
+
+
+def test_board_web_opens_a_browser_only_with_open(repo, tmp_path, monkeypatch):
+    import webbrowser
+    opened = []
+    monkeypatch.setattr(webbrowser, 'open', lambda url, *a, **k: opened.append(url))
+    monkeypatch.setattr(issues.sys.stdout, 'isatty', lambda: True, raising=False)
+    ok('init')
+    ok('create', '--title', 'One', '--label', SLICE)
+    out_html = tmp_path / 'b.html'
+    text = ok('board', '--web', '--out', str(out_html))
+    assert opened == [] and str(out_html) in text
+    ok('board', '--web', '--no-open', '--out', str(out_html))
+    assert opened == []
+    ok('board', '--web', '--open', '--out', str(out_html))
+    assert len(opened) == 1 and opened[0].startswith('file://')
+
+
+# --- apply-moves: strict, atomic, same invariants as the other writers --------------------------------------------
+
+def _tip(repo):
+    return git(repo, 'rev-parse', 'shop/issues').strip()
+
+
+def test_apply_moves_mixed_good_and_bad_file_applies_nothing_and_lists_every_bad_line(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    b = ok('create', '--title', 'Beta', '--label', SLICE)
+    before = _tip(repo)
+    moves = (f"Please apply these moves:\n{a} -> in progress\n"          # good
+             "BT-LOCAL-ghost -> done\n"                                   # line 3: unknown id
+             f"{b} -> sideways\n"                                         # line 4: unknown status
+             "this line is not a move\n"                                  # line 5: unparseable
+             f"{b} -> blocked\n")                                         # good
+    code, text = run('apply-moves', body(tmp_path, moves, 'mixed.txt'))
+    assert code == 1 and _tip(repo) == before
+    assert 'nothing applied' in text
+    assert 'line 3: unknown id BT-LOCAL-ghost' in text
+    assert "line 4: unknown status 'sideways'" in text
+    assert 'line 5:' in text and 'line 2:' not in text and 'line 6:' not in text
+    assert json.loads(ok('get', a))['status'] == 'planned'
+
+
+def test_apply_moves_with_no_moves_is_an_error(repo, tmp_path):
+    ok('init')
+    before = _tip(repo)
+    for i, text in enumerate(('', '\n\n', '# just a comment\n', 'Please apply these moves:\n')):
+        code, out_text = run('apply-moves', body(tmp_path, text, f'empty{i}.txt'))
+        assert code == 1 and 'no moves' in out_text, repr(text)
+    assert _tip(repo) == before
+
+
+def test_apply_moves_titles_may_contain_hyphens_and_arrows_and_the_header_is_ignored(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    b = ok('create', '--title', 'Beta', '--label', SLICE)
+    c = ok('create', '--title', 'Gamma', '--label', SLICE)
+    moves = ("Please apply the following board card moves to the source and rebuild the board:\n"
+             "# a comment\n\n"
+             f"{a}: add-thing -> in progress\n"
+             f"{b} Fix a>b handling -> blocked\n"
+             f"{c} x -> y -> needs_spec\n")                                # the LAST arrow separates the status
+    code, text = run('apply-moves', body(tmp_path, moves, 'titles.txt'))
+    assert code == 0, text
+    assert json.loads(ok('get', a))['status'] == 'in progress'
+    assert json.loads(ok('get', b))['status'] == 'blocked'
+    assert json.loads(ok('get', c))['status'] == 'needs_spec'
+
+
+def test_apply_moves_accepts_the_board_status_spellings(repo, tmp_path):
+    ok('init')
+    ids = [ok('create', '--title', t, '--label', SLICE) for t in ('A1', 'A2', 'A3', 'A4')]
+    moves = (f"{ids[0]} -> Needs Spec\n{ids[1]} -> IN_PROGRESS\n{ids[2]} ->   in   review\n"
+             f"{ids[3]} -> needs_spec\n")
+    code, text = run('apply-moves', body(tmp_path, moves, 'spell.txt'))
+    assert code == 0, text
+    assert [json.loads(ok('get', i))['status'] for i in ids] == ['needs_spec', 'in progress', 'in review', 'needs_spec']
+
+
+def test_apply_moves_to_done_is_exactly_close_and_away_from_done_is_reopen(repo, tmp_path):
+    ok('init')
+    ref = ok('create', '--title', 'Ref', '--label', SLICE)
+    mv = ok('create', '--title', 'Mv', '--label', SLICE)
+    for i in (ref, mv):
+        ok('claim', i, '--by', 'main')
+    ok('close', ref)
+    ok('apply-moves', body(tmp_path, f"{mv} -> done\n", 'd.txt'))
+    keys = ('status', 'closed', 'close_reason', 'claimed_by', 'state')
+    r, m = json.loads(ok('get', ref)), json.loads(ok('get', mv))
+    assert {k: r[k] for k in keys} == {k: m[k] for k in keys}
+    assert m['claimed_by'] is None and m['close_reason'] == 'completed'
+    tree = git(repo, 'ls-tree', '-r', '--name-only', 'shop/issues')
+    assert f'docs/issues/archive/{mv}.md' in tree and f'docs/issues/{mv}.md' not in tree
+
+    ok('reopen', ref, '--status', 'planned')
+    ok('apply-moves', body(tmp_path, f"{mv} -> planned\n", 'r.txt'))
+    r, m = json.loads(ok('get', ref)), json.loads(ok('get', mv))
+    assert {k: r[k] for k in keys} == {k: m[k] for k in keys}
+    assert m['closed'] is None and m['state'] == 'OPEN'
+    tree = git(repo, 'ls-tree', '-r', '--name-only', 'shop/issues')
+    assert f'docs/issues/{mv}.md' in tree and f'docs/issues/archive/{mv}.md' not in tree
+
+
+def test_apply_moves_other_moves_are_set_status(repo, tmp_path):
+    ok('init')
+    ref = ok('create', '--title', 'Ref', '--label', SLICE)
+    mv = ok('create', '--title', 'Mv', '--label', SLICE)
+    ok('claim', ref, '--by', 'main')
+    ok('claim', mv, '--by', 'main')
+    ok('set', ref, '--status', 'blocked')
+    ok('apply-moves', body(tmp_path, f"{mv} -> blocked\n", 'b.txt'))
+    r, m = json.loads(ok('get', ref)), json.loads(ok('get', mv))
+    for k in ('status', 'claimed_by', 'closed', 'labels'):
+        assert r[k] == m[k], k
+    assert m['status'] == 'blocked'
+
+
+def test_apply_moves_twice_to_one_issue_in_one_batch_keeps_the_last(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    code, text = run('apply-moves', body(tmp_path, f"{a} -> done\n{a} -> blocked\n", 'twice.txt'))
+    assert code == 0, text
+    issue = json.loads(ok('get', a))
+    assert issue['status'] == 'blocked' and issue['closed'] is None
+    tree = git(repo, 'ls-tree', '-r', '--name-only', 'shop/issues')
+    assert f'docs/issues/{a}.md' in tree and f'docs/issues/archive/{a}.md' not in tree
+
+
+def test_apply_moves_in_review_to_done_needs_a_merge_for_epics_and_standalone_issues(repo, tmp_path):
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
+    solo = ok('create', '--title', 'Solo', '--label', 'type:bug,mode:AFK,size:small')
+    for i in (epic, child, solo):
+        ok('set', i, '--status', 'in review')
+    before = _tip(repo)
+
+    code, text = run('apply-moves', body(tmp_path, f"{epic} -> done\n", 'e.txt'))
+    assert code == 1 and f'{epic}' in text and 'not merged' in text and _tip(repo) == before
+    code, text = run('apply-moves', body(tmp_path, f"{solo} -> done\n", 's.txt'))
+    assert code == 1 and 'not merged' in text and _tip(repo) == before
+    # a refused move refuses the whole batch, a slice or --force goes through
+    code, text = run('apply-moves', body(tmp_path, f"{child} -> done\n{epic} -> done\n", 'both.txt'))
+    assert code == 1 and json.loads(ok('get', child))['status'] == 'in review'
+    code, text = run('apply-moves', body(tmp_path, f"{child} -> done\n", 'c.txt'))
+    assert code == 0 and json.loads(ok('get', child))['status'] == 'done'
+    code, text = run('apply-moves', body(tmp_path, f"{epic} -> done\n{solo} -> done\n", 'f.txt'), '--force')
+    assert code == 0 and json.loads(ok('get', epic))['closed'] and json.loads(ok('get', solo))['closed']
+
+
+def test_apply_moves_in_review_epic_to_done_is_allowed_once_merged_and_other_statuses_are_free(repo, tmp_path):
+    ok('init')
+    merged_epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
+    wip_epic = ok('create', '--title', 'Search', '--label', 'type:feature,tier:epic')
+    ok('set', merged_epic, '--status', 'in review')
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    (repo / 'f.txt').write_text('f\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'f')
+    git(repo, 'checkout', '-q', 'main')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+    ok('set', wip_epic, '--status', 'in progress')
+    code, text = run('apply-moves', body(tmp_path, f"{merged_epic} -> done\n{wip_epic} -> done\n", 'm.txt'))
+    assert code == 0, text
+    assert json.loads(ok('get', merged_epic))['closed'] and json.loads(ok('get', wip_epic))['closed']
+
+
+def test_apply_moves_dry_run_validates_and_writes_nothing(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    before = _tip(repo)
+    code, text = run('apply-moves', body(tmp_path, f"{a} -> blocked\n", 'dry.txt'), '--dry-run')
+    assert code == 0 and _tip(repo) == before
+    assert f'{a}: planned -> blocked' in text and 'dry run' in text
+    code, text = run('apply-moves', body(tmp_path, f"{a} -> sideways\n", 'dry2.txt'), '--dry-run')
+    assert code == 1 and "unknown status 'sideways'" in text and _tip(repo) == before
+
+
+def test_apply_moves_prints_one_line_per_applied_move_and_a_summary(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    b = ok('create', '--title', 'Beta', '--label', SLICE)
+    code, text = run('apply-moves', body(tmp_path, f"{a} -> blocked\n{b} -> planned\n", 'out.txt'))
+    lines = text.splitlines()
+    assert code == 0 and f'{a}: planned -> blocked' in lines[0]
+    assert lines[-1] == '[APPLY-MOVES] applied 1 move(s)' and len(lines) == 2    # b is already planned: no line
+
+
+def test_apply_moves_reads_stdin(repo, monkeypatch):
+    import io
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(f"{a} -> blocked\n"))
+    assert run('apply-moves', '-')[0] == 0
+    assert json.loads(ok('get', a))['status'] == 'blocked'
 
