@@ -546,7 +546,7 @@ def reconcile_gitignore(project_dir, dry_run):
 
 def reconcile_gitattributes(project_dir, dry_run):
     ga = project_dir / ".gitattributes"
-    required_lines = ["docs/okf-view.html linguist-generated=true -diff"]
+    required_lines = ["docs/okf-view.html linguist-generated=true -diff", ".memory/** text eol=lf"]
     if not ga.exists():
         if dry_run:
             new_p = project_dir / ".gitattributes.stratosphere-new"
