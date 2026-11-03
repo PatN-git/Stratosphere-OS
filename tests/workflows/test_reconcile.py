@@ -398,6 +398,13 @@ def expect_checks():
           == {"blocked_by": set(), "labels": set(), "milestone": "—", "parent": "—"})
     check("expect: only a whole `none` value is empty; inside a longer list it is an ordinary item",
           rec.parse_expect("BT-7:labels=none,type:bug")["BT-007"]["labels"] == {"none", "type:bug"})
+    try:
+        got = rec.parse_expect("# no Spikes; x\nBT-1:status=done;BT-2:status=planned\n  # tail; note")
+    except ValueError:
+        got = None
+    check("expect: a `;` inside a `#` comment line is ignored, real `;` items still parse",
+          got == {"BT-001": {"status": "done"}, "BT-002": {"status": "planned"}})
+    check("expect: comment-only text is empty", rec.parse_expect("# a; b") == {})
     for bad in ("BT-7", "BT-7:status", "BT-7:colour=red", "X-7:status=done"):
         try:
             rec.parse_expect(bad)

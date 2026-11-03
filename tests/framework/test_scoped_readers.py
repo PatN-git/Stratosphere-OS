@@ -51,7 +51,8 @@ def test_0a_syncs_the_tracker_branch_and_only_the_4a_ship_push_pushes_it():
     assert "issues.py sync" in read_src("workflows/0a-start-session.md")
     assert "git push origin" not in read_src("workflows/0b-stop-session.md")
     ship = read_src("workflows/4a-verify-and-ship.md")
-    assert "issues.py sync`, then `git push origin \"$(python .agents/scripts/issues.py branch)\"`" in ship
+    push = 'git push origin "$(python .agents/scripts/issues.py branch)"'
+    assert "issues.py sync" in ship and push in ship and ship.index("issues.py sync") < ship.index(push)
 
 
 def test_load_memory_reads_the_local_store_through_issues_py():

@@ -418,8 +418,9 @@ def parse_expect(text):
     blocked_by take comma lists (sets); a none token (empty, `-`, `—`, or `none` in any case as the whole value)
     means empty, for milestone and parent too. ValueError on a malformed item. Pure."""
     out = {}
-    for item in (i.strip() for i in re.split(r'[;\n]', text)):
-        if not item or item.startswith('#'):
+    lines = (ln for ln in text.split('\n') if not ln.strip().startswith('#'))
+    for item in (i.strip() for ln in lines for i in ln.split(';')):
+        if not item:
             continue
         head, eq, value = item.partition('=')
         ident, colon, field = head.partition(':')

@@ -45,9 +45,10 @@ def test_4a_auditor_reads_acceptance_criteria_with_get():
     assert re.search(r"Acceptance Criteria[^\n]*`get`", line), "the auditor reads the AC with the `get` read"
 
 
-def test_4a_ship_push_also_pushes_the_tracker_branch():
-    push = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "Release bump + push" in l)
-    assert "git push origin" in push and "issues.py branch" in push, "4a's ship push must push the tracker branch"
+def test_4a_ship_pushes_the_tracker_branch_after_the_terminal_gate():
+    ship = read_src("workflows/4a-verify-and-ship.md")
+    push = next(l for l in ship.splitlines() if "git push origin" in l and "issues.py branch" in l)
+    assert ship.index("Terminal sync gate") < ship.index(push) < ship.index("**Cleanup:**"), "tracker push follows the gate"
 
 
 @pytest.mark.parametrize("rel", ["workflows/3d-implement-issue.md", "workflows/3z-afk-loop.md", "workflows/4a-verify-and-ship.md"])
