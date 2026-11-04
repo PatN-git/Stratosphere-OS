@@ -243,6 +243,11 @@ def path_of(issue):
     return f"{ARCHIVE if issue.get('closed') else ROOT}/{issue['id']}.md"
 
 
+def effective_status(issue):
+    """The board/move status: a closed issue is `done` whatever its stored status says."""
+    return 'done' if issue.get('closed') else issue.get('status')
+
+
 class Store:
     """The issues at one commit of the tracker branch: {id: issue}, plus the README's area slugs."""
 
@@ -467,7 +472,7 @@ def _detect_merged(store, bt):
                  if t.isdigit()), default=None)
     rc, out = _git('log', target, '--grep', f"({bt})", '--format=%h%x09%ct%x09%s', check=False)
     for line in (out.splitlines() if rc == 0 else []):
-        sha, ct, subject = (line.split('	', 2) + ['', ''])[:3]
+        sha, ct, subject = (line.split('\t', 2) + ['', ''])[:3]
         if not subject.startswith('docs(') and (since is None or int(ct) >= since):
             return ('advisory', f"squash commit {sha} matches id in {target}")
 
@@ -485,7 +490,7 @@ def cmd_merged(store, a):
             continue
         kind, reason = res
         if kind == 'merged':
-            if getattr(a, 'close', False):
+            if a.close:
                 issue.update(status='done', closed=today(), close_reason='completed', claimed_by=None, updated=now())
                 changes.update(store.changes(issue))
             lines.append(f"[MERGED {bt}]")
@@ -525,9 +530,6 @@ def _render_board_html(store, issues_list, a):
     }
     columns = [{'id': st, 'label': STATUS_LABELS.get(st, st.replace('_', ' ').title())} for st in STATUSES]
 
-    def effective_status(issue):
-        return 'done' if issue.get('closed') else issue.get('status')
-
     cards = []
     for issue in sorted(issues_list, key=lambda x: x['id']):
         st = effective_status(issue)
@@ -564,7 +566,7 @@ def _render_board_html(store, issues_list, a):
     # Titles, labels and ids are data: one JSON blob, with every character that could end the script element or the
     # line (`<`, `>`, `&`, U+2028/9) written as a \u escape. str.replace only, never a re replacement template.
     data_json = json.dumps(data, indent=2, ensure_ascii=False)
-    for ch in '<>&  ':
+    for ch in '<>&\u2028\u2029':
         data_json = data_json.replace(ch, f'\\u{ord(ch):04x}')
     block = '<script id="plan-data" type="application/json">'
     placeholder = f'{block}{{}}</script>'
@@ -572,12 +574,12 @@ def _render_board_html(store, issues_list, a):
         raise IssuesError("[ERROR] board.html template has no empty plan-data block")
     html = tpl_text.replace('{{title}}', html_escape(title)).replace(placeholder, f'{block}\n{data_json}\n</script>', 1)
 
-    out_file = at_top(getattr(a, 'out', None) or '.tmp/render/board.html')
+    out_file = at_top(a.out or '.tmp/render/board.html')
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(html, encoding='utf-8')
 
     # a browser is launched only on request: an agent run must never pop a window
-    if getattr(a, 'open', False):
+    if a.open:
         try:
             import webbrowser
             webbrowser.open(out_file.resolve().as_uri())
@@ -589,19 +591,16 @@ def _render_board_html(store, issues_list, a):
 
 def cmd_board(store, a):
     issues_list = list(store.issues.values())
-    if getattr(a, 'milestone', None):
+    if a.milestone:
         issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
-    if getattr(a, 'parent', None):
+    if a.parent:
         issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
 
-    if getattr(a, 'web', False):
+    if a.web:
         return _render_board_html(store, issues_list, a)
 
     lines = []
-    as_md = bool(getattr(a, 'md', None))
-    def effective_status(issue):
-        return 'done' if issue.get('closed') else issue.get('status')
-
+    as_md = bool(a.md)
     for st in STATUSES:
         group = [i for i in issues_list if effective_status(i) == st]
         if not group:
@@ -625,7 +624,7 @@ def cmd_board(store, a):
         lines.append("")
 
     text = '\n'.join(lines).strip()
-    if getattr(a, 'md', None):
+    if a.md:
         path = Path(a.md)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text + '\n', encoding='utf-8')
@@ -823,7 +822,7 @@ def cmd_apply_moves(store, a):
     not parse, an unknown id or status, or a refused move applies nothing (exit 1, every offending line listed)."""
     text = getattr(a, '_moves_text', None)  # a lost write race re-runs this function; stdin can be read only once
     if text is None:
-        source = getattr(a, 'file', '-')
+        source = a.file
         if source == '-' or not source:
             text = sys.stdin.read()
         else:
@@ -835,11 +834,8 @@ def cmd_apply_moves(store, a):
 
     spellings = {st.replace('_', ' '): st for st in STATUSES}
     cur_branch = current_branch()
-    force = getattr(a, 'force', False)
+    force = a.force
     problems, applied, touched, merged_ok = [], [], {}, {}
-
-    def effective_status(issue):
-        return 'done' if issue.get('closed') else issue.get('status')
 
     def merged(bt):
         if bt not in merged_ok:
@@ -892,7 +888,7 @@ def cmd_apply_moves(store, a):
     if problems:
         raise IssuesError("[ERROR] apply-moves refused, nothing applied:\n" + '\n'.join(f"  {p}" for p in problems))
 
-    dry = getattr(a, 'dry_run', False)
+    dry = a.dry_run
     summary = (f"[APPLY-MOVES] dry run: {len(applied)} move(s) would apply, nothing written" if dry
                else f"[APPLY-MOVES] applied {len(applied)} move(s)" + ('' if applied else ' (already in place)'))
     changes = {}
@@ -1162,7 +1158,7 @@ def run(a, out):
     elif a.cmd == 'migrate':
         out(cmd_migrate(tracker, a.map))
     elif a.cmd == 'merged':
-        if getattr(a, 'close', False):
+        if a.close:
             out(tracker.write(lambda s: cmd_merged(s, a), "issues: merged --close"))
         else:
             _, text = cmd_merged(tracker.store(), a)

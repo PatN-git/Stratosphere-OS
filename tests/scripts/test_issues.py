@@ -851,6 +851,16 @@ def test_board_web_empty_store(repo, tmp_path):
     assert data['cards'] == []
 
 
+def test_board_web_puts_a_closed_issue_in_the_done_column(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Closed one', '--label', SLICE)
+    ok('close', a)
+    out_html = tmp_path / 'closed_board.html'
+    ok('board', '--web', '--out', str(out_html))
+    data = json.loads(_data_block(out_html.read_text(encoding='utf-8')).group(1))
+    assert next(c for c in data['cards'] if c['id'] == a)['column'] == 'done'
+
+
 def test_apply_moves_atomic(repo, tmp_path):
     ok('init')
     b1 = ok('create', '--title', 'Task 1', '--label', SLICE)
