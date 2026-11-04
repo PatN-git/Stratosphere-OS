@@ -156,7 +156,7 @@ _JQ_EACH = re.compile(r"^\.\[\]\.([A-Za-z_][A-Za-z0-9_]*)$")  # `.[].name`, for 
 
 
 def apply_jq(data, expr: str):
-    """The only jq the chain uses is `-q .id`, from github-issue-relations.md:9.
+    """The jq the chain uses: `-q .<field>` (github-issue-relations.md:9), `.[].<field>` and the resume_note read.
 
     Anything else fails by name rather than returning something plausible: a
     silently wrong node id produces a mutation against the wrong issue.
@@ -174,7 +174,8 @@ def apply_jq(data, expr: str):
                       f"the shim implements only `-q .<field>`, not {expr!r}")
     if not isinstance(data, dict) or m.group(1) not in data:
         raise Failure(EXIT_UNKNOWN, f"no field {m.group(1)!r} to select")
-    return data[m.group(1)]
+    value = data[m.group(1)]
+    return {True: "true", False: "false"}.get(value, value) if isinstance(value, bool) else value  # jq prints JSON booleans
 
 
 # --- the issue store ---------------------------------------------------------
@@ -714,6 +715,8 @@ def _graphql(state: dict, argv: list[str]) -> str:
 
     if name in ("addSubIssue", "removeSubIssue"):
         parent, child = resolve("p"), resolve("c")
+        if name == "removeSubIssue" and (child["parent"] or {}).get("number") != parent["number"]:
+            raise Failure(EXIT_UNKNOWN, f"{name}: #{child['number']} is not a sub-issue of #{parent['number']}")
         parent["subIssues"] = [s for s in parent["subIssues"] if s["number"] != child["number"]]
         if name == "addSubIssue":
             parent["subIssues"].append(brief(child))

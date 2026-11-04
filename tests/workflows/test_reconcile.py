@@ -512,6 +512,12 @@ def github_checks():
             code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
             check("github: --edges blockers counts a closed blocker with a stale status label as done",
                   "[BLOCKER-UNMET" not in out and code == 0)
+            closed_dep = gh_node(7, blocking=((8, None),))
+            closed_dep["blocking"]["nodes"][0].update(state="CLOSED")  # status:planned label kept after a native merge-close
+            serve({7: closed_dep})
+            code, out = _run(base + ["--ids", "BT-007", "--edges", "dependents"])
+            check("github: --edges dependents skips a closed dependent (done, nothing left to unblock)",
+                  "BT-008" not in out and code == 0)
 
             # failure handling: retried, then a clear halt; never a local fallback
             rec.fetch_nodes = orig[1]

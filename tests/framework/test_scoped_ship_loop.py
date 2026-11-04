@@ -214,3 +214,12 @@ def test_pr_body_closing_link_recheck_waits_for_github_to_catch_up():
     """Found live (smoke repo, twice): `closingIssuesReferences` read right after a body edit omits the new `Closes`."""
     line = _line("references/pr-body-and-ship.md", "NO-AUTOCLOSE")
     assert "re-check **once**, after ~5 s" in line, "an instant re-check reads the stale link and falsely reports NO-AUTOCLOSE"
+
+
+def test_ci_fix_commits_before_the_suite_record_and_none_means_no_checks_without_expect():
+    """Found live (smoke repo): `record --suite` refuses a dirty tree; `--expect-checks` with no checks is `pending`, not `none`."""
+    text = read_src("references/ci-gate.md")
+    fix = text.split("## 3. Fix", 1)[1].split("## 4.", 1)[0]
+    assert fix.index("2. commit") < fix.index("3. `test_gate.py record --suite"), "the suite record needs the clean HEAD the commit makes"
+    line = _line("references/ci-gate.md", "`none` = ")
+    assert "without `--expect-checks`" in line and "`pending`" in line, "with --expect-checks, no checks after the grace is pending"

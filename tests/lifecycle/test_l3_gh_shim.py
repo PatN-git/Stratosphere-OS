@@ -314,6 +314,14 @@ def test_blocked_by_can_be_added_and_removed(store, capsys):
     assert json.loads(out)["blockedBy"] == {"nodes": [], "totalCount": 0}
 
 
+def test_jq_prints_json_booleans_lowercase_like_real_gh(store, capsys):
+    """Found live (smoke repo): `gh pr view --json isDraft -q .isDraft` prints `true`, not Python's `True`."""
+    run(["pr", "create", "--title", "p", "--draft"], capsys)
+    assert run(["pr", "view", "1", "--json", "isDraft", "-q", ".isDraft"], capsys) == (0, "true", "")
+    run(["pr", "ready", "1"], capsys)
+    assert run(["pr", "view", "1", "--json", "isDraft", "-q", ".isDraft"], capsys) == (0, "false", "")
+
+
 def test_remove_sub_issue_clears_both_ends(store, capsys):
     run(["issue", "create", "--title", "epic"], capsys)
     run(["issue", "create", "--title", "slice"], capsys)
@@ -323,9 +331,12 @@ def test_remove_sub_issue_clears_both_ends(store, capsys):
     _, kids, _ = run(["issue", "view", "1", "--json", "subIssues"], capsys)
     assert json.loads(parent)["parent"] is None
     assert json.loads(kids)["subIssues"]["nodes"] == []
+    run(["issue", "create", "--title", "other"], capsys)
+    code, _, err = run(_mutation("removeSubIssue", gh.node_id(1), gh.node_id(3)), capsys)
+    assert code == 1 and "not a sub-issue" in err, "real GitHub refuses removing a child from a parent it is not under"
 
 
-def test_an_unknown_milestone_is_refused_on_create_and_edit_like_real_gh(store, capsys):
+def test_an_unknown_milestone_is_refused_on_edit_like_real_gh(store, capsys):
     """Found live (smoke repo): real `gh issue edit --milestone v9.9.9` exits 1 `'v9.9.9' not found` and changes nothing."""
     run(["issue", "create", "--title", "a"], capsys)
     code, _, err = run(["issue", "edit", "1", "--milestone", "v9.9.9"], capsys)
@@ -333,6 +344,7 @@ def test_an_unknown_milestone_is_refused_on_create_and_edit_like_real_gh(store, 
     assert state(store)["issues"]["1"]["milestone"] is None
     run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)
     assert run(["issue", "edit", "1", "--milestone", "v1.0.0"], capsys)[0] == 0
+    assert run(["issue", "create", "--title", "b", "--milestone", "v9.9.9"], capsys)[0] == 0  # create stays lenient: seeds mint epics
 
 
 def test_jq_reads_the_latest_resume_note_and_prints_an_empty_line_without_one(store, capsys):
