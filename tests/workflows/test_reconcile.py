@@ -74,13 +74,14 @@ def _run(argv):
     return code, buf.getvalue()
 
 
-def _arg_error(argv):
-    """True when argparse rejects argv (SystemExit 2)."""
+def _arg_error(argv, msg=""):
+    """True when argparse rejects argv (SystemExit 2), with `msg` in its stderr text."""
+    err = io.StringIO()
     try:
-        with contextlib.redirect_stderr(io.StringIO()):
+        with contextlib.redirect_stderr(err):
             rec.main(argv)
     except SystemExit as e:
-        return e.code == 2
+        return e.code == 2 and msg in err.getvalue()
     return False
 
 
@@ -478,9 +479,9 @@ def github_checks():
             with tempfile.TemporaryDirectory() as td2:
                 map_run = ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007"]
                 check("local: the gate (--with-edges) is refused on a --backlog map run",
-                      _arg_error(map_run + ["--with-edges", "dependents"]))
+                      _arg_error(map_run + ["--with-edges", "dependents"], "--with-edges is not supported"))
                 check("local: the gate (--expect) is refused on a --backlog map run",
-                      _arg_error(map_run + ["--expect", "BT-7:status=in review"]))
+                      _arg_error(map_run + ["--expect", "BT-7:status=in review"], "--expect is not supported"))
             check("github: --edges stays a separate run", _arg_error(base + ["--ids", "BT-007", "--edges", "dependents", "--pr-id", "BT-007"]))
             check("github: --all-open is a local-backend run and is refused", _arg_error(base + ["--all-open"]))
             check("github: a malformed --expect is an argument error", _arg_error(base + ["--ids", "BT-001", "--expect", "BT-1"]))

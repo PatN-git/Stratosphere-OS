@@ -17,7 +17,7 @@ The lead resolves the targets and passes them inline:
 Report `input: lean` in the audit findings record. An audit that read full files instead (the diff is too large to pass inline, or the lead chose to) reports `input: full`.
 
 ## Delta re-audit (round 2 and later)
-After a gap fix the re-audit is handed the round-1 gap list (the previous coverage map's gap rows, each with its stated bar: its suggested fix), the previous coverage map and the fix diff (`git diff <last audited head>..HEAD`). The gap list is frozen:
+After a gap fix the re-audit is handed the round-1 gap list (the previous gap rows (3z: `gaps`), each with its stated `bar`: its suggested fix), the previous coverage map and the fix diff (`git diff <last audited head>..HEAD`). The gap list is frozen:
 1. Re-check each open gap only against the bar its round-1 entry stated. Never widen it; a wider concern is a new finding (point 2).
 2. A new ≥ 80 gap only on lines changed since the last audited head (in the fix diff). Anything else, including a first-seen concern on unchanged lines, is Watch (`confidence-scale.md`).
 3. Carry every other row forward unchanged.

@@ -570,7 +570,7 @@ def main(argv=None):
     code = 0
     if gate:
         if args.backlog:
-            ap.error("--expect is not supported with --backlog")
+            ap.error(f"{'--with-edges' if args.with_edges else '--expect'} is not supported with --backlog")
         code, lines = local_gate(ids, store, expect, fields, args.pr_id)
         print("\n".join(lines))
     if args.edges:
