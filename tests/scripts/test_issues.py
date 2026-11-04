@@ -841,6 +841,29 @@ def test_board_markdown_export(repo, tmp_path):
     assert f'- **{p}** Setup DB `size:small`' in content
 
 
+def test_board_text_and_markdown_keep_their_blocked_by_wording(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'DB', '--label', SLICE)
+    b = ok('create', '--title', 'API', '--label', SLICE, '--blocked-by', a)
+    assert f'{b}  API  [size:medium] [BLOCKED by {a}]' in run('board')[1].splitlines()
+    md_file = tmp_path / 'board.md'
+    ok('board', '--md', str(md_file))
+    assert f'- **{b}** API `size:medium` *(blocked by {a})*' in md_file.read_text(encoding='utf-8').splitlines()
+
+
+def test_board_web_card_meta_carries_blocked_by_and_the_page_renders_a_badge(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'DB', '--label', SLICE)
+    b = ok('create', '--title', 'API', '--label', SLICE, '--blocked-by', a)
+    out_html = tmp_path / 'blocked.html'
+    ok('board', '--web', '--out', str(out_html))
+    content = out_html.read_text(encoding='utf-8')
+    data = json.loads(_data_block(content).group(1))
+    assert next(c for c in data['cards'] if c['id'] == b)['meta']['blocked_by'] == a
+    assert 'blocked_by' not in next(c for c in data['cards'] if c['id'] == a)['meta']
+    assert 'meta.blocked_by' in content and 'blocked by ' in content
+
+
 def test_board_web_generation(repo, tmp_path):
     ok('init')
     p = ok('create', '--title', 'Setup DB', '--label', 'type:feature,tier:slice,size:small,mode:AFK')

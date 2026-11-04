@@ -70,6 +70,7 @@ button:hover, select:hover{background:var(--card)}
 .board-card.filtered-out { display: none; }
 .card-label { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.25rem; }
 .card-meta { font-size: 0.75rem; opacity: 0.6; }
+.card-blocked { font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-top: 0.25rem; }
 
 .payload-box { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
 .payload-box h3 { font-size: 1rem; margin-bottom: 0.5rem; }
@@ -457,6 +458,7 @@ function renderBody(data) {
                   ${c.labels.map(l => `<span class="card-label-badge" style="font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:0.25rem;background:var(--border);color:var(--text);opacity:0.85;">${esc(l)}</span>`).join('')}
                 </div>
               ` : ''}
+              ${c.meta && c.meta.blocked_by ? `<div class="card-blocked">blocked by ${esc(c.meta.blocked_by)}</div>` : ''}
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;font-size:0.75rem;opacity:0.6;">
                 ${c.meta && c.meta.priority ? `<div>Priority: ${esc(c.meta.priority)}</div>` : (c.meta && c.meta.parent ? `<div>Parent: ${esc(c.meta.parent)}</div>` : '<div></div>')}
                 ${safeUrl(c.url) ? `<a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener" class="card-link" style="color:var(--accent);text-decoration:none;font-weight:500;">Link ↗</a>` : ''}
