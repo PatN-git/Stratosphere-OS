@@ -208,3 +208,9 @@ def test_3z_audit_rounds_counts_audits_not_attempts_and_the_delta_needs_a_prior_
     line = _line("workflows/3z-afk-loop.md", "`--audit-rounds`")
     assert re.search(r"Step 2B", line) and "final `attempt`" not in line, "`--audit-rounds` = audits run, not the attempt counter"
     assert "On attempt > 1 also pass" not in text, "an attempt that skipped 2B leaves no earlier audit to delta against"
+
+
+def test_pr_body_closing_link_recheck_waits_for_github_to_catch_up():
+    """Found live (smoke repo, twice): `closingIssuesReferences` read right after a body edit omits the new `Closes`."""
+    line = _line("references/pr-body-and-ship.md", "NO-AUTOCLOSE")
+    assert "re-check **once**, after ~5 s" in line, "an instant re-check reads the stale link and falsely reports NO-AUTOCLOSE"

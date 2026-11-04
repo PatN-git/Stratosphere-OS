@@ -619,7 +619,7 @@ def cmd_api(state: dict, argv: list[str]) -> str:
         # list: milestones made through the shim plus any an issue already carries (seeded epics)
         used = {i.get("milestone", {}).get("title") if isinstance(i.get("milestone"), dict) else i.get("milestone")
                 for i in state["issues"].values()}
-        rows = state["milestones"] + [{"title": t, "number": 0, "state": "open"} for t in sorted(used - known) if t]
+        rows = state["milestones"] + [{"title": t, "number": 0, "state": "open"} for t in sorted(t for t in used - known if t)]
         if take(rest, "--jq", "-q") == ".[].title":
             return chr(10).join(r["title"] for r in rows)
         return json.dumps(rows)

@@ -189,9 +189,10 @@ def test_body_file_is_read_from_disk(store, capsys, tmp_path):
 
 def test_milestones_list_with_paginate_and_query_create_and_include_issue_milestones(store, capsys):
     """`ensure_milestone` (tracker-verbs.md) lists with --paginate, a query string and --jq, then creates with -f."""
+    run(["issue", "create", "--title", "no milestone"], capsys)
     run(["issue", "create", "--title", "seeded"], capsys)
     seeded = state(store)
-    seeded["issues"]["1"]["milestone"] = {"title": "v0.9.0"}  # a seeded epic: carries a milestone the registry never saw
+    seeded["issues"]["2"]["milestone"] = {"title": "v0.9.0"}  # a seeded epic: carries a milestone the registry never saw
     store.write_text(json.dumps(seeded), encoding="utf-8")
     list_argv = ["api", "--paginate", "repos/{owner}/{repo}/milestones?state=open", "--jq", ".[].title"]
     assert run(list_argv, capsys) == (0, "v0.9.0", "")
