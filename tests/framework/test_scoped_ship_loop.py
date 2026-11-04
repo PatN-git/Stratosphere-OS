@@ -163,7 +163,9 @@ def _ship_step(n):
 def test_4a_with_no_pr_skips_the_ci_gate_instead_of_halting_on_it():
     step8 = _ship_step(8)
     assert re.search(r"no PR[^\n]*skip[^\n]*CI gate", step8), "a ship that made no PR must skip the CI gate (exit 2 on `--pr 0` is not a verdict)"
-    assert re.search(r"no PR[^\n]*skip", read_src("references/ci-gate.md").split("## 2.")[0]), "ci-gate.md §1 states the same scope"
+    scope = _line("references/ci-gate.md", "no PR (`gh` not connected, none made)")  # the §1 scope line
+    assert scope in read_src("references/ci-gate.md").split("## 2.")[0], "the scope line belongs to ci-gate.md §1"
+    assert "skip and say so, never fail, never `status --pr 0`" in scope, "ci-gate.md §1 states the same scope: skip, say so, never `--pr 0`"
     assert re.search(r"no PR[^\n]*skip", _ship_step(7)), "the standalone CI-gate twin (step 7) skips with no PR too"
     assert "standalone issue or no PR" in _ship_step(9), "the draft rule skips with no PR"
     assert "draft statement" in step8, "a ship with no PR makes no draft claim"
@@ -195,12 +197,13 @@ def test_0b_names_the_confirmation_for_a_probably_merged_squash():
 def test_3z_step_2b_return_carries_the_gaps_and_their_bars_the_retry_passes():
     text = read_src("workflows/3z-afk-loop.md")
     ret = _line("workflows/3z-afk-loop.md", "Return JSON:", "verdict")
-    assert re.search(r'\\"gaps\\"', ret) and "bar" in ret, "the retry passes each gap's stated bar; the audit return must carry it"
+    assert re.search(r'\\"gaps\\"', ret) and "`{ac, confidence, bar}`" in ret, "the retry passes each gap's stated bar; the audit return must carry it"
     assert "`Gaps` entries" not in text, "no `Gaps` entries exist in the return contract"
     keep = _line("workflows/3z-afk-loop.md", "Findings (every Step 2B return)")
     assert "`coverage_map`" in keep and "`gaps`" in keep, "2C keeps what the delta re-audit is handed"
     table = read_src("workflows/4a-verify-and-ship.md").split("### 1.", 1)[1].split("### 2.", 1)[0]
-    assert "bar" in table, "the Phase 3 Spec table carries the bar the delta rule freezes"
+    assert "| Gap / Security Risk / Bar |" in table, "the Phase 3 Spec table header names the Bar column"
+    assert "**bar** = the fix that would close it" in table, "the Spec table row defines the bar the delta rule freezes"
 
 
 def test_3z_audit_rounds_counts_audits_not_attempts_and_the_delta_needs_a_prior_audit():

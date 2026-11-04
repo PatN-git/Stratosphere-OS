@@ -186,6 +186,7 @@ def test_apply_moves_and_the_web_board_reach_only_the_local_projection():
     assert "board --web" not in gh and "apply-moves" not in gh
     line = next(l for l in local.splitlines() if l.startswith("- `apply_moves`"))
     assert "issues.py apply-moves" in line and "--dry-run" in line and "board --web" in line
+    assert "blocker" in line and "--force" in line
     board = next(l for l in local.splitlines() if l.startswith("- `board`"))
     assert "issues.py board --web" in board and "--md" in board and "apply_moves" in board
 

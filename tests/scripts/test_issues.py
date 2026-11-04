@@ -1254,3 +1254,181 @@ def test_apply_moves_reads_stdin(repo, monkeypatch):
     assert run('apply-moves', '-')[0] == 0
     assert json.loads(ok('get', a))['status'] == 'blocked'
 
+
+# --- apply-moves: a guarded move (in progress / in review / done) is refused while a blocker is open (BT-241) ----------
+
+SOLO = 'type:bug,mode:AFK,size:small'    # a standalone issue: its own ship unit, merged only once done
+
+
+def _gated(label=SOLO):
+    """(blocker, dependent): two standalone issues, the dependent created `--blocked-by` the blocker."""
+    blocker = ok('create', '--title', 'Blocker', '--label', label)
+    return blocker, ok('create', '--title', 'Dependent', '--label', SLICE, '--blocked-by', blocker)
+
+
+def _moves(tmp_path, text, name='m.txt'):
+    return body(tmp_path, text, name)
+
+
+@pytest.mark.parametrize('target', ['in progress', 'in review', 'done'])
+def test_apply_moves_refuses_a_guarded_target_while_a_blocker_is_open(repo, tmp_path, target):
+    ok('init')
+    blocker, dep = _gated()
+    before = _tip(repo)
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> {target}\n"))
+    assert code == 1 and _tip(repo) == before
+    assert 'nothing applied' in text and f'line 1: [BLOCKED {dep} <- {blocker}]' in text and '--force' in text
+    assert json.loads(ok('get', dep))['status'] == 'planned'
+
+
+@pytest.mark.parametrize('target', ['in progress', 'in review', 'done'])
+def test_apply_moves_force_moves_past_an_open_blocker_and_keeps_the_edge(repo, tmp_path, target):
+    ok('init')
+    blocker, dep = _gated()
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> {target}\n"), '--force')
+    assert code == 0, text
+    moved = json.loads(ok('get', dep))
+    assert moved['status'] == target and moved['blocked_by'] == [blocker]
+
+
+def test_apply_moves_to_unguarded_statuses_is_never_refused_and_set_stays_unguarded(repo, tmp_path, monkeypatch):
+    ok('init')
+    blocker, dep = _gated()
+    monkeypatch.setattr(issues, 'make_merged_of', lambda store: pytest.fail('merged_of built without a guarded move'))
+    for target in ('blocked', 'needs_spec', 'planned'):
+        code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> {target}\n", f'{target}.txt'))
+        assert code == 0, (target, text)
+        assert json.loads(ok('get', dep))['status'] == target
+    ok('set', dep, '--status', 'in progress')          # set, close, reopen, claim are not guarded
+    ok('close', dep)
+    ok('reopen', dep, '--status', 'planned')
+
+
+def test_apply_moves_a_done_standalone_blocker_allows_the_move_an_in_review_one_does_not(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    ok('set', blocker, '--status', 'in review')
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"))
+    assert code == 1 and f'[BLOCKED {dep} <- {blocker}]' in text      # cross-unit: merged only when done
+    ok('close', blocker)
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"))
+    assert code == 0, text
+    assert json.loads(ok('get', dep))['status'] == 'in progress'
+
+
+@pytest.mark.parametrize('blocker_status', ['in progress', 'in review', 'done'])
+def test_apply_moves_a_same_unit_blocker_clears_once_in_review_or_done(repo, tmp_path, blocker_status):
+    ok('init')
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
+    first = ok('create', '--title', 'DB', '--label', SLICE, '--parent', epic)
+    second = ok('create', '--title', 'UI', '--label', SLICE, '--parent', epic, '--blocked-by', first)
+    ok('set', first, '--status', blocker_status)
+    code, text = run('apply-moves', _moves(tmp_path, f"{second} -> in progress\n"))
+    if blocker_status == 'in progress':
+        assert code == 1 and f'[BLOCKED {second} <- {first}]' in text
+    else:
+        assert code == 0, text
+        assert json.loads(ok('get', second))['status'] == 'in progress'
+
+
+def test_apply_moves_a_parent_epics_open_blocker_refuses_a_child_slice(repo, tmp_path):
+    ok('init')
+    gate = ok('create', '--title', 'Gate', '--label', SOLO)
+    epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic', '--blocked-by', gate)
+    child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
+    code, text = run('apply-moves', _moves(tmp_path, f"{child} -> in progress\n"))
+    assert code == 1 and f'[BLOCKED {child} <- {gate}]' in text
+    ok('close', gate)
+    assert run('apply-moves', _moves(tmp_path, f"{child} -> in progress\n"))[0] == 0
+
+
+def test_apply_moves_a_cross_unit_slice_blocker_done_but_unmerged_refuses_until_merged(repo, tmp_path):
+    (repo / '.memory').mkdir()
+    (repo / '.memory' / 'ARCHITECTURE.md').write_text('---\ntracker: local\n---\n')
+    epic, db = _blocker_with_tip_and_deleted_branch(repo, merge=False)
+    ui = ok('create', '--title', 'UI', '--label', SLICE, '--blocked-by', db)
+    code, text = run('apply-moves', _moves(tmp_path, f"{ui} -> in progress\n"))
+    assert code == 1 and f'[BLOCKED {ui} <- {db}]' in text and 'not merged' in text
+
+
+def test_apply_moves_a_cross_unit_slice_blocker_clears_once_merged(repo, tmp_path):
+    (repo / '.memory').mkdir()
+    (repo / '.memory' / 'ARCHITECTURE.md').write_text('---\ntracker: local\n---\n')
+    epic, db = _blocker_with_tip_and_deleted_branch(repo, merge=True)
+    ui = ok('create', '--title', 'UI', '--label', SLICE, '--blocked-by', db)
+    code, text = run('apply-moves', _moves(tmp_path, f"{ui} -> in progress\n"))
+    assert code == 0, text
+    assert json.loads(ok('get', ui))['status'] == 'in progress'
+
+
+@pytest.mark.parametrize('order', ['blocker first', 'dependent first'])
+def test_apply_moves_judges_the_batch_end_state_so_line_order_is_free(repo, tmp_path, order):
+    ok('init')
+    blocker, dep = _gated()
+    lines = [f"{blocker} -> done\n", f"{dep} -> in progress\n"]
+    code, text = run('apply-moves', _moves(tmp_path, ''.join(lines if order == 'blocker first' else lines[::-1])))
+    assert code == 0, text
+    assert json.loads(ok('get', blocker))['closed'] and json.loads(ok('get', dep))['status'] == 'in progress'
+
+
+def test_apply_moves_moving_only_the_dependent_refuses_where_the_pair_passes(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"))
+    assert code == 1 and f'[BLOCKED {dep} <- {blocker}]' in text
+
+
+def test_apply_moves_a_refused_batch_applies_nothing_and_lists_every_bad_line(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    other_blocker, other_dep = _gated()
+    fine = ok('create', '--title', 'Fine', '--label', SLICE)
+    before = _tip(repo)
+    moves = (f"{fine} -> in progress\n"                      # line 1: good
+             f"{dep} -> in progress\n"                       # line 2: blocked
+             "BT-LOCAL-ghost -> done\n"                      # line 3: unknown id
+             f"{other_dep} -> done\n")                       # line 4: blocked
+    code, text = run('apply-moves', _moves(tmp_path, moves))
+    assert code == 1 and _tip(repo) == before and 'nothing applied' in text
+    assert f'line 2: [BLOCKED {dep} <- {blocker}]' in text and f'line 4: [BLOCKED {other_dep} <- {other_blocker}]' in text
+    assert 'line 3: unknown id BT-LOCAL-ghost' in text and 'line 1:' not in text
+    assert json.loads(ok('get', fine))['status'] == 'planned'
+
+
+def test_apply_moves_dry_run_shows_the_same_refusal_and_force_dry_run_passes(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    before = _tip(repo)
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"), '--dry-run')
+    assert code == 1 and f'[BLOCKED {dep} <- {blocker}]' in text and _tip(repo) == before
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"), '--dry-run', '--force')
+    assert code == 0 and 'dry run' in text and _tip(repo) == before
+
+
+def test_apply_moves_a_card_already_in_the_target_is_not_refused_when_the_board_resends_it(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    ok('set', dep, '--status', 'in progress')
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"))
+    assert code == 0 and '(already in place)' in text
+
+
+def test_apply_moves_reopening_a_done_card_into_in_progress_is_refused_while_a_blocker_is_open(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    ok('close', dep)
+    before = _tip(repo)
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n"))
+    assert code == 1 and f'[BLOCKED {dep} <- {blocker}]' in text and _tip(repo) == before
+    assert json.loads(ok('get', dep))['closed']
+
+
+def test_apply_moves_reports_the_line_of_the_last_move_of_a_card(repo, tmp_path):
+    ok('init')
+    blocker, dep = _gated()
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n\n{dep} -> in review\n"))
+    assert code == 1 and f'line 3: [BLOCKED {dep} <- {blocker}]' in text and 'line 1:' not in text
+    # a card moved into a guarded status and on to an unguarded one ends unguarded: the end state decides
+    code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n{dep} -> blocked\n", 'back.txt'))
+    assert code == 0, text
+

@@ -46,6 +46,7 @@ MAP_DEFAULT = '.memory/BACKLOG_MAP.md'
 FIELDS = ('type', 'id', 'title', 'status', 'labels', 'milestone', 'parent', 'blocked_by', 'claimed_by',
           'created', 'updated', 'closed', 'close_reason')
 STATUSES = ('needs_spec', 'planned', 'in progress', 'in review', 'blocked', 'done')
+GUARDED = ('in progress', 'in review', 'done')   # apply-moves refuses a move into these while a blocker is open
 REASONS = ('completed', 'not planned')
 # The canonical label vocabulary of references/label-taxonomy.md (a test pins the two equal); `area:*` slugs are the
 # project's own and live in the store's README.
@@ -819,7 +820,8 @@ def cmd_apply_moves(store, a):
     """Batch status writer for human-driven moves (the board's payload). Grammar, one move per line: `<id> [anything]
     -> <status>`; blank lines, `#` comments and the board's `Please apply ...` header are ignored; the status is what
     follows the LAST `->`, in any case, with `_` or spaces (`Needs Spec`, `in_progress`). Atomic: any line that does
-    not parse, an unknown id or status, or a refused move applies nothing (exit 1, every offending line listed)."""
+    not parse, an unknown id or status, or a refused move applies nothing (exit 1, every offending line listed). A card
+    that ends the batch in `in progress`, `in review` or `done` with an open blocker (as `ready` judges) is refused."""
     text = getattr(a, '_moves_text', None)  # a lost write race re-runs this function; stdin can be read only once
     if text is None:
         source = a.file
@@ -835,7 +837,7 @@ def cmd_apply_moves(store, a):
     spellings = {st.replace('_', ' '): st for st in STATUSES}
     cur_branch = current_branch()
     force = a.force
-    problems, applied, touched, merged_ok = [], [], {}, {}
+    problems, applied, touched, moved_at, merged_ok = [], [], {}, {}, {}
 
     def merged(bt):
         if bt not in merged_ok:
@@ -880,8 +882,21 @@ def cmd_apply_moves(store, a):
             _reopen_issue(issue, target)
         else:
             issue.update(status=target, updated=now())
-        touched[bt] = issue
+        touched[bt], moved_at[bt] = issue, n
         applied.append(f"{bt}: {old} -> {target}")
+
+    # a blocker is judged on the batch end state, so a blocker moved to done in the same payload clears its dependent
+    if not force:
+        rows, merged_of = store.rows(), None
+        for bt, issue in touched.items():
+            if effective_status(issue) not in GUARDED:
+                continue
+            for blk in sorted(effective_blockers(bt, rows)):
+                if merged_of is None:  # make_merged_of reads git: only once a guarded move needs it
+                    merged_of = make_merged_of(store)
+                verdict, _, why = edge_verdict(bt, blk, rows, merged_of)
+                if verdict != 'OK':
+                    problems.append(f"line {moved_at[bt]}: [BLOCKED {bt} <- {blk}] {why}; use --force to move")
 
     if not n_moves and not problems:
         raise IssuesError("[ERROR] apply-moves: no moves found (expected lines `<id> ... -> <status>`)")
@@ -1130,7 +1145,7 @@ def parser():
     p.add_argument('--open', action='store_true', help='launch the browser on the page (never done by default)')
     p = sub.add_parser('apply-moves')
     p.add_argument('file', nargs='?', default='-', help='file with moves (default: stdin)')
-    p.add_argument('--force', action='store_true', help='move claimed issues; close an unmerged epic or standalone issue')
+    p.add_argument('--force', action='store_true', help='move claimed issues; close an unmerged epic or standalone issue; move past an open blocker')
     p.add_argument('--dry-run', action='store_true', help='parse and validate, print the moves, write nothing')
     return ap
 
