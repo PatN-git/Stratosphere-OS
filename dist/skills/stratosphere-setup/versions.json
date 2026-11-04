@@ -56,8 +56,8 @@
       "version": "2.2.0"
     },
     "assets/templates/rules/okf-protocol.md": {
-      "sha256": "0295108dd72c1080dfa5ab90436a0cb6a92c2cafa9540c37519f66964b4ee035",
-      "timestamp": "2026-10-22",
+      "sha256": "58bfdc51179cd1ee369362c0ec9abafdcb93eadceeb34067058c1f6677b9d6e2",
+      "timestamp": "2026-10-31",
       "version": "2.0.4"
     },
     "assets/templates/rules/output-mode.md": {
@@ -504,11 +504,6 @@
       "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
-    },
-    "skills/3x-jules-dispatch/SKILL.md": {
-      "sha256": "04a9bd15de3343eaa9a806f4fec43e398397d7d517c0c83a0d8dd293fbc88399",
-      "timestamp": "2026-07-17",
-      "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
       "sha256": "dd4192c9573d05f00ded9f0a4f4963fd9885c8b4e75974462ad1c8e1524ee6b1",

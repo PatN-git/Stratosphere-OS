@@ -12,10 +12,9 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-JULES = "src/experimental/jules-dispatch"
 CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + this repo's installed copy
 HOST_MATRIX = "src/dev-skills/improve-workflows-skills/references/host-matrix.md"
-HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "Jules", "OpenClaw")
+HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "OpenClaw")
 HOST_SECTION_BUDGET = 700  # chars, ~175 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
 OKF_PROTOCOL = "src/rules/okf-protocol.md"
 
@@ -104,13 +103,3 @@ def test_plan_html_hooks_json_removed():
         dead = REPO_ROOT / root / "skills" / "plan-html" / "hooks.json"
         assert not dead.exists(), f"{dead.relative_to(REPO_ROOT).as_posix()} must stay deleted (rebuild dist after removing the source)"
 
-
-def test_jules_contract_is_current():
-    api = read(f"{JULES}/jules_api.py")
-    contract = read(f"{JULES}/CONTRACT.md")
-    assert 'query["createTime"]' not in api, "activities.list takes no createTime parameter (discovery doc 20261004)"
-    assert "createTime=" not in contract, "poll row must not advertise a createTime parameter"
-    assert "/activities?pageSize=" in contract, "poll row must list pageSize only"
-    # ":archive" does not match ":unarchive" (unlike a bare "archive", which "archived" already satisfies)
-    for needle in ("headRef", "baseRef", "workingBranch", "archived", ":archive", ":unarchive", "DELETE"):
-        assert needle in contract, f"CONTRACT.md does not pin {needle!r}"

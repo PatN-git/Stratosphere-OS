@@ -17,7 +17,7 @@ As of 2026-10-06. Evidence and sources: `docs/research/upstream-watch-2026-10-06
 ## AGENTS.md loading and pointer files
 | Host | Loads `AGENTS.md` | Pointer file | Trust |
 |---|---|---|---|
-| Cursor, Devin, Copilot, Jules | natively | none | — |
+| Cursor, Devin, Copilot | natively | none | — |
 | Antigravity | natively | `GEMINI.md` (kept; shared with Gemini CLI) | — |
 | Codex | natively | none | >= 0.150.0 loads project `AGENTS.md` only once the project is trusted |
 | Claude Code | only when the project has no `CLAUDE.md` (>= 2.1.277; a user setting) | `CLAUDE.md` (`@AGENTS.md`) | — |
