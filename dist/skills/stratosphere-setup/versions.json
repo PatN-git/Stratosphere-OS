@@ -96,7 +96,7 @@
       "version": "5.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "7a581b8f39d04c51b21c3fec6120cd10eecc84f5e3ec3ba87240f155b3c10168",
+      "sha256": "127ff14d1b293f3466e5d221c680ed4560e034f534ac8dc20df6b0f205bdd917",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -466,7 +466,7 @@
       "version": "2.8.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "d640b5f19219fdb05798d5540beb477089b74a4a207105494a832e62aa1a7aba",
+      "sha256": "3efbe9bdca40b0351928083702c38af6bed76015c5246b088b2ae2553fe75aa0",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -511,7 +511,7 @@
       "version": "0.1.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "d56292991acd0e446a885f229639d3eff80b25352d861b1e775a155bf4b4ac9b",
+      "sha256": "c61c9c8a99e534d04c25070a9dc0e05fc0b5a29615bbdd01773d56f91ed88e9b",
       "timestamp": "2026-10-22",
       "version": "1.9.0"
     },
@@ -526,7 +526,7 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "d640b5f19219fdb05798d5540beb477089b74a4a207105494a832e62aa1a7aba",
+      "sha256": "3efbe9bdca40b0351928083702c38af6bed76015c5246b088b2ae2553fe75aa0",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -566,7 +566,7 @@
       "version": "5.0.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "75954bcdb6d97f73c52d43d37e2fad2a68ec74bc30bbdf2a2eaf82548862693c",
+      "sha256": "4954544111fb351edc30ba5e778840b627a74c09b9a3330dbc5d5db6ea3e04b0",
       "timestamp": "2026-10-22",
       "version": "1.8.0"
     },
@@ -586,7 +586,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "d640b5f19219fdb05798d5540beb477089b74a4a207105494a832e62aa1a7aba",
+      "sha256": "3efbe9bdca40b0351928083702c38af6bed76015c5246b088b2ae2553fe75aa0",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -601,7 +601,7 @@
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
-      "sha256": "10ccf494ad546f71d02b3ee55e4dfd7873a5edce61c60b674dcad9cd7c20581c",
+      "sha256": "c95a2ebb9b27aea821dc5e0bedb55efdc95e9d0c20c19beefd4420fd36e3e577",
       "timestamp": "2026-11-03",
       "version": "1.1.2"
     },
