@@ -142,3 +142,51 @@ def test_0b_fetches_origin_non_fatally_before_the_local_merged_close():
     fetch, close = line.index("git fetch -q origin"), line.index("issues.py merged --close")
     assert fetch < close, "the fetch runs before the check"
     assert re.search(r"non-fatal|ignore a failure", line[fetch:], re.I), "a failed fetch (offline, no origin) must not stop the sync"
+
+
+# --- BT-194 live-test round 3: the no-PR ship path, audit-only gaps and rounds wording ---
+
+def _ship_step(n):
+    ship = read_src("workflows/4a-verify-and-ship.md").split("## Phase 5", 1)[1]
+    return re.search(rf"^{n}\. .*?(?=^{n + 1}\. |\Z)", ship, re.M | re.S).group(0)
+
+
+def test_4a_with_no_pr_skips_the_ci_gate_instead_of_halting_on_it():
+    step8 = _ship_step(8)
+    assert re.search(r"no PR[^\n]*skip[^\n]*CI gate", step8), "a ship that made no PR must skip the CI gate (exit 2 on `--pr 0` is not a verdict)"
+    assert re.search(r"no PR[^\n]*skip", read_src("references/ci-gate.md").split("## 2.")[0]), "ci-gate.md §1 states the same scope"
+
+
+def test_4a_pushes_only_with_an_origin_remote_and_says_so_otherwise():
+    assert re.search(r"origin[^\n]*stay local", _ship_step(4)), "step 4 pushes the unit branch only when an `origin` remote exists"
+    tracker = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "issues.py branch" in l and "git push" in l)
+    assert re.search(r"origin[^\n]*stay local|stay local[^\n]*origin", tracker), "the tracker-branch push is conditional on an origin too"
+
+
+def test_4a_ship_line_has_a_no_pr_form():
+    step11 = _ship_step(11)
+    assert re.search(r"no PR", step11) and "<sha>" in step11, "a no-PR ship needs its own `[SHIPPED]` line"
+
+
+def test_faa_has_an_input_for_an_epic_with_no_prd_and_no_source_line():
+    run = read_src("references/feature-acceptance-audit.md").split("## Run", 1)[1].split("## Verdict", 1)[0]
+    assert re.search(r"no PRD[^\n]*no `Source:`|neither", run, re.I),"an epic with neither a PRD nor a `Source:` line needs an input rule"
+
+
+def test_0b_names_the_confirmation_for_a_probably_merged_squash():
+    line = next(l for l in read_src("workflows/0b-stop-session.md").splitlines() if "merged --close" in l and "Local backend" in l)
+    assert re.search(r"PROBABLY-MERGED[^\n]*confirm[^\n]*issues\.py close", line), "0b must say how a `[PROBABLY-MERGED]` squash is confirmed and closed"
+
+
+def test_3z_step_2b_return_carries_the_gaps_and_their_bars_the_retry_passes():
+    text = read_src("workflows/3z-afk-loop.md")
+    ret = next(l for l in text.splitlines() if "Return JSON:" in l and "verdict" in l)
+    assert re.search(r'\\"gaps\\"', ret) and "bar" in ret,"the retry passes each gap's stated bar; the audit return must carry it"
+    assert "`Gaps` entries" not in text, "no `Gaps` entries exist in the return contract"
+
+
+def test_3z_audit_rounds_counts_audits_not_attempts_and_the_delta_needs_a_prior_audit():
+    text = read_src("workflows/3z-afk-loop.md")
+    line = next(l for l in text.splitlines() if "`--audit-rounds`" in l)
+    assert re.search(r"Step 2B", line) and "final `attempt`" not in line, "`--audit-rounds` = audits run, not the attempt counter"
+    assert "On attempt > 1 also pass" not in text, "an attempt that skipped 2B leaves no earlier audit to delta against"
