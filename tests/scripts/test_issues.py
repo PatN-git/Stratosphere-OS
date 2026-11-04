@@ -1027,6 +1027,19 @@ def test_board_web_data_block_holds_the_apply_command_for_the_payload(repo, tmp_
     assert data['apply_cmd'] == 'python .agents/scripts/issues.py apply-moves -'
 
 
+def test_board_web_hides_filtered_cards_by_class_not_inline_style(repo, tmp_path):
+    ok('init')
+    ok('create', '--title', 'One', '--label', SLICE)
+    out_html = tmp_path / 'b.html'
+    ok('board', '--web', '--out', str(out_html))
+    content = out_html.read_text(encoding='utf-8')
+    assert '[style*="display: none"]' not in content
+    assert 'card.style.display' not in content
+    assert content.count(".board-card:not(.filtered-out)") == 3
+    assert '.board-card.filtered-out { display: none; }' in content
+    assert "card.classList.toggle('filtered-out'" in content
+
+
 def test_board_web_opens_a_browser_only_with_open(repo, tmp_path, monkeypatch):
     import webbrowser
     opened = []
