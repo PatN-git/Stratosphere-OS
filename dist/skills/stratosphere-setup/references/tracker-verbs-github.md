@@ -23,7 +23,7 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 - `set_parent`: `addSubIssue` (`removeSubIssue` to unlink), per `references/github-issue-relations.md`
 - `add_blocker`: `addBlockedBy` per `references/github-issue-relations.md`
 - `clear_blocker`: `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear
-- `close`: `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop); merging a PR with `Closes #<n>` closes too
+- `close`: `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop). One rule, both backends: the merge closes; a workflow never closes an unmerged epic. GitHub closes natively when a PR with `Closes #<n>` merges
 - `merged`: Server-side: GitHub PR merge closes linked issues (`Closes #<n>`)
 - `reopen`: `gh issue reopen <n>`, then `set_status`
 - `comment`: `gh issue comment <n> --body …`; a resume note: `--body-file .tmp/resume-BT-<n>.md`
@@ -43,7 +43,6 @@ Branch: / Done: / Open: / Next step: / Blockers:
 
 ## Misfits
 These have no clean equal on the other backend; each is a named, accepted gap, not a bug.
-- `close`: one rule, both backends: the merge closes; a workflow never closes an unmerged epic. GitHub closes natively on default branch merge via `Closes #<n>`.
 - `tracker_switch`: one-way only (local → GitHub). Reverse switch is omitted intentionally: GitHub issues with PR connections, discussions, and external links cannot be round-tripped without loss or dual-store conflict complexity; moving from GitHub to local starts a clean local store.
 - PR operations (`gh pr create/edit/ready`, the `risk:one-way` label) are a VCS-host concept and not a tracker verb.
 
