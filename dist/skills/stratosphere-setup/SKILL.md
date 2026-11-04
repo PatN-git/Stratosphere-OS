@@ -38,7 +38,7 @@ All templates ship **bundled inside this skill** under its `assets/templates/` d
 - `assets/templates/memory/` → `STATUS.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-All 23 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
+All 22 bundled skills (`0a`–`4c` and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
 - One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`.
 - All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert.
 - Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
@@ -121,7 +121,7 @@ python <plugin>/scripts/scaffold.py --update
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md` (`tracker:` is written into ARCHITECTURE.md's frontmatter)
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
-- All 23 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
+- All 22 bundled skills (`0a`–`4c`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
 - `.gitignore` (only if missing)
 

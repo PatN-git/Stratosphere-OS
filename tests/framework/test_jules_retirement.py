@@ -180,3 +180,10 @@ def test_marketplace_manifest_clean():
     assert "./dist/skills/micro-tdd" in skills
     assert "./dist/skills/plan-html" in skills
     assert "./dist/skills/concept-brainstorm" in skills
+
+
+def test_no_workflow_or_setup_text_still_names_the_removed_3x_dispatch():
+    """The 3x workflow is gone: no bundled-skill count or runnable-by list may still name it."""
+    for rel in ("src/commands/stratosphere-setup/SKILL.md", "src/workflows/3c-sprint-planning.md"):
+        assert not re.search(r"`/?3x`", read_text(rel)), f"{rel} still mentions 3x"
+    assert "All 23 bundled skills" not in read_text("src/commands/stratosphere-setup/SKILL.md")
