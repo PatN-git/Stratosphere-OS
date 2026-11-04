@@ -157,10 +157,12 @@ def test_4a_with_no_pr_skips_the_ci_gate_instead_of_halting_on_it():
     assert re.search(r"no PR[^\n]*skip", read_src("references/ci-gate.md").split("## 2.")[0]), "ci-gate.md §1 states the same scope"
 
 
-def test_4a_pushes_only_with_an_origin_remote_and_says_so_otherwise():
-    assert re.search(r"origin[^\n]*stay local", _ship_step(4)), "step 4 pushes the unit branch only when an `origin` remote exists"
+def test_4a_pushes_only_when_gh_is_connected_and_says_so_otherwise():
+    """AGENTS.md section 4 (Git Protocol 4): a push needs `gh` connected, an `origin` alone is not enough."""
+    assert re.search(r"`gh` is connected[^\n]*stay local", _ship_step(4)), "step 4 pushes the unit branch only when `gh` is connected"
     tracker = next(l for l in read_src("workflows/4a-verify-and-ship.md").splitlines() if "issues.py branch" in l and "git push" in l)
-    assert re.search(r"origin[^\n]*stay local|stay local[^\n]*origin", tracker), "the tracker-branch push is conditional on an origin too"
+    assert re.search(r"`gh` is connected[^\n]*stay local[^\n]*step-11", tracker), "the tracker-branch push is conditional on `gh` too, and says so in the ship line"
+    assert "`origin` remote exists" not in read_src("workflows/4a-verify-and-ship.md"), "no push is gated on a bare origin remote"
 
 
 def test_4a_ship_line_has_a_no_pr_form():
