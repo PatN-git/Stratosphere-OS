@@ -93,7 +93,8 @@ on the `<repo>/issues` branch, never in a feature branch, so every branch and wo
   `[MERGED]`; a squash commit that merely names the id is advisory (`[PROBABLY-MERGED]`, never closed), so merge the release PR with a merge commit, not a squash.
 - `board [--md [file]]` prints the kanban columns; `board --web [--out <f>] [--open]` renders an interactive HTML page
   (a browser opens only with `--open`). Its copied payload is the input of `apply-moves [<file>] [--dry-run] [--force]`
-  (file or stdin), the batch status writer for a person's drag-and-drop moves.
+  (file or stdin), the batch status writer for a person's drag-and-drop moves; it refuses a move into `in progress`,
+  `in review` or `done` while a blocker is open (the verdict `ready` uses) unless `--force`.
 - A ship with no PR host (a local project without `gh`) records `Shipped on <branch> @ <sha>` on each shipped slice,
   skips the CI gate and `gh pr ready`, and pushes only when `gh` is connected: without it the tracker branch stays local
   and `merged --close` reads local ancestry.
@@ -102,6 +103,9 @@ on the `<repo>/issues` branch, never in a feature branch, so every branch and wo
 and `--require-gh`; `nightly_state.py drift` and the `drift` key of `.last-run.json`; 0d's backlog drift
 check and heal; the local `--ids ... --fields` gate clauses in 3a, 3b, 3c, 4a and `post-merge-sync.md`.
 `STATUS.md` is now folder state only (session lines; a task's progress is a resume note on its issue).
+
+**Removed, no shims (Google Jules):** the `3x-jules-dispatch` workflow, the Jules dispatch pack (`src/experimental/jules-dispatch/`),
+its tests and fixtures, its `external-skills.json` entry and its release stamping; there is no replacement (folded PR #231, BT-229).
 
 **What an existing project must do** (`stratosphere-update` alone is not enough):
 - A project with a `BACKLOG_MAP.md` (and no `tracker: github`) must migrate it once: `stratosphere-update`
