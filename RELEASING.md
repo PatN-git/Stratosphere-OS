@@ -30,6 +30,9 @@ This document describes how to release a new version of the StratosphereOS plugi
     git add .
     git commit -m "release: prepare vX.Y.Z"
     ```
+    **Manual checks before merging:** merge with a merge commit (not a squash: the local tracker's `merged --close`
+    reads ancestry), and put the breaking marker in the PR title (for v5.0.0: `BREAKING v5.0.0`), because
+    `release.yml` generates the GitHub Release notes from PR titles only.
 
  4. **Automated Validation and Publishing:**
     Upon pushing to `main`, the "Release on main" GitHub Action (`.github/workflows/release.yml`) automatically triggers. It will:
@@ -81,8 +84,19 @@ gate (`reconcile.py --expect`) checks each multi-write phase against the phase's
 The local backend (`tracker: local`) **never touches GitHub** and no longer uses `BACKLOG_MAP.md` (BT-221):
 each issue is one markdown file (frontmatter plus the full body, Acceptance Criteria included, plus comments)
 on the `<repo>/issues` branch, never in a feature branch, so every branch and worktree sees one state.
-`python .agents/scripts/issues.py` is its only reader and writer (`get`, `list`, `wip`, `ready`, `create`, `set`,
-`comment`, `claim`, `close`, `check`, `sync`); `ice_read.py candidates` runs on both backends.
+`python .agents/scripts/issues.py` is its only reader and writer (`get`, `list`, `wip`, `children`, `blockers`, `ready`,
+`branch`, `create`, `set`, `comment`, `claim`, `close`, `reopen`, `label`, `init`, `check`, `sync`, `migrate`, `merged`,
+`board`, `apply-moves`); `ice_read.py candidates` runs on both backends.
+
+- `merged [--close]` finds the in-review issues whose shipped work reached the default branch. It closes by git ancestry
+  only: the recorded ship tip (or the unit branch) being an ancestor of the default branch, which a merge commit gives, is
+  `[MERGED]`; a squash commit that merely names the id is advisory (`[PROBABLY-MERGED]`, never closed), so merge the release PR with a merge commit, not a squash.
+- `board [--md [file]]` prints the kanban columns; `board --web [--out <f>] [--open]` renders an interactive HTML page
+  (a browser opens only with `--open`). Its copied payload is the input of `apply-moves [<file>] [--dry-run] [--force]`
+  (file or stdin), the batch status writer for a person's drag-and-drop moves.
+- A ship with no PR host (a local project without `gh`) records `Shipped on <branch> @ <sha>` on each shipped slice,
+  skips the CI gate and `gh pr ready`, and pushes only when `gh` is connected: without it the tracker branch stays local
+  and `merged --close` reads local ancestry.
 
 **Removed, no shims:** the map-vs-GitHub diff, `reconcile.py --heal`, `--summary`, `--all-open --summary`
 and `--require-gh`; `nightly_state.py drift` and the `drift` key of `.last-run.json`; 0d's backlog drift
@@ -108,10 +122,15 @@ python .agents/scripts/tracker_switch.py --apply  # creates the issues with thei
   It is safe to re-run and writes `tracker: github` last. `scaffold --update` prints a NOTE for exactly this
   case (`tracker_advisory` in the worklist). Migrated issues carry the map row's fields, ICE metrics and
   `Refs:` line; bodies the map never stored cannot be recovered.
-- A local project with a remote pushes `<repo>/issues` with the 4a ship push; `0a` runs `issues.py sync`.
+- A local project with `gh` connected pushes `<repo>/issues` with the 4a ship push; `0a` runs `issues.py sync`.
 - `scaffold --update` flags the constitution (`needs_review_constitution`: the 0a branch rule in
   AGENTS.md section 4 changed) and the STATUS template (unmarked): accept the trimmed STATUS file that
   0b proposes (an old-format STATUS keeps working; `validate_memory.py` warns when it is over 3,000
   characters or tracked by git). `.memory/STATUS.md` and `.memory/resume/` are now
   in the managed `.gitignore` entries; untrack a tracked STATUS with `git rm --cached .memory/STATUS.md`.
 - The `BACKLOG_MAP.md` template is gone; `scaffold --update` neither places nor merges a map.
+
+**Upgrade order for a consumer** (CleanTechHub first, StratOS's own install before it): (1) `scaffold --update`:
+expect the `needs_review_constitution` notice and the AGENTS.md merge review; (2) `issues.py migrate` for a project with
+a `BACKLOG_MAP.md`; (3) `tracker_switch.py` dry run, then `--apply`; (4) the CleanTechHub cleanup
+`PatN-git/cleantech_jobs#267`, which runs after `scaffold --update` (recorded as `post_merge` in PR #216).

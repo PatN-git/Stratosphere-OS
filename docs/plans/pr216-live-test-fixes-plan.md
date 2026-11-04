@@ -9,7 +9,9 @@ version: "1.1.1"
 
 # Plan: PR #216 (v5.0.0) live-test fixes
 
-**Status:** implemented on `improvement/BT-194-tracker-backend-no-map` in the 15 local commits `e41d23a` … `d07679c`. Nothing is pushed.
+**Status:** implemented in PR #216 (2026-11-03), on `improvement/BT-194-tracker-backend-no-map` (originally the 15 local commits `e41d23a` … `d07679c`).
+**Evidence:** live L1 33/33, L2 29/29, L3 49/51 (local tracker, Haiku, fake gh); B4/F35 round-2 convergence and negative control 2/2; Part A no-PR flow; board drag-and-drop 5/5.
+**Where:** the maintainer's `.tmp/l3live/` reports (not committed); see also `docs/proposals/v5-completion-plan.md` section 1.
 
 - **v1.0.0:** the docs findings, F27 and F35.
 - **v1.1.0, revised:** adds the follow-up rounds (0b wording, okf row, F38, F32) and the product bug F32 exposed (F32b).

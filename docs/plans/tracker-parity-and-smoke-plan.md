@@ -9,7 +9,9 @@ version: "0.1.0"
 
 # Plan: close the local/GitHub tracker gaps, and prove v5 on real GitHub
 
-**Status:** draft v0.1, not yet reviewed. An independent review (Sonnet 5.5 high) runs after the weekly-limit reset.
+**Status:** implemented in PR #216 (2026-11-03). Original status: draft v0.1, not yet reviewed.
+**Evidence:** live L1 33/33, L2 29/29, L3 49/51 (local tracker, Haiku, fake gh); B4/F35 round-2 convergence and negative control 2/2; Part A no-PR flow; board drag-and-drop 5/5.
+**Where:** the maintainer's `.tmp/l3live/` reports (not committed); see also `docs/proposals/v5-completion-plan.md` section 1.
 
 **Inputs:**
 - research `.tmp/v5fix/parity-research.md` in the bt221 worktree, with cited sources: Backlog.md, Beads, Task Master, git-bug, spec-kit, and the public roadmap skills;
