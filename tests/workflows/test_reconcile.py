@@ -505,6 +505,14 @@ def github_checks():
             code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
             check("github: --edges blockers reads the blockers from GitHub", "[BLOCKER-UNMET BT-010 <- BT-007]" in out and code == 1)
 
+            # closed = done: a blocker closed natively (merged PR) keeps its stale status label, still met
+            closed_blk = gh_node(10, blocked=(7,), parent=None)
+            closed_blk["blockedBy"]["nodes"][0].update(state="CLOSED", labels={"nodes": [{"name": "tier:slice"}, {"name": "status:planned"}]})
+            serve({10: closed_blk})
+            code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
+            check("github: --edges blockers counts a closed blocker with a stale status label as done",
+                  "[BLOCKER-UNMET" not in out and code == 0)
+
             # failure handling: retried, then a clear halt; never a local fallback
             rec.fetch_nodes = orig[1]
             attempts = []

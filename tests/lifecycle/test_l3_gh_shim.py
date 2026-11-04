@@ -189,7 +189,10 @@ def test_body_file_is_read_from_disk(store, capsys, tmp_path):
 
 def test_milestones_list_with_paginate_and_query_create_and_include_issue_milestones(store, capsys):
     """`ensure_milestone` (tracker-verbs.md) lists with --paginate, a query string and --jq, then creates with -f."""
-    run(["issue", "create", "--title", "seeded", "--milestone", "v0.9.0"], capsys)
+    run(["issue", "create", "--title", "seeded"], capsys)
+    seeded = state(store)
+    seeded["issues"]["1"]["milestone"] = {"title": "v0.9.0"}  # a seeded epic: carries a milestone the registry never saw
+    store.write_text(json.dumps(seeded), encoding="utf-8")
     list_argv = ["api", "--paginate", "repos/{owner}/{repo}/milestones?state=open", "--jq", ".[].title"]
     assert run(list_argv, capsys) == (0, "v0.9.0", "")
     assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0
@@ -282,7 +285,7 @@ def test_issue_reopen_sets_the_state_back_to_open(store, capsys):
 
 def _mutation(kind, a, b):
     query = f"mutation($x:ID!,$y:ID!){{{kind}(input:{{...}}){{issue{{number}}}}}}"
-    keys = {"addSubIssue": ("p", "c")}.get(kind, ("i", "b"))
+    keys = {"addSubIssue": ("p", "c"), "removeSubIssue": ("p", "c")}.get(kind, ("i", "b"))
     return ["api", "graphql", "-f", f"query={query}",
             "-f", f"{keys[0]}={a}", "-f", f"{keys[1]}={b}"]
 
@@ -308,6 +311,38 @@ def test_blocked_by_can_be_added_and_removed(store, capsys):
     run(_mutation("removeBlockedBy", gh.node_id(2), gh.node_id(1)), capsys)
     _, out, _ = run(["issue", "view", "2", "--json", "blockedBy"], capsys)
     assert json.loads(out)["blockedBy"] == {"nodes": [], "totalCount": 0}
+
+
+def test_remove_sub_issue_clears_both_ends(store, capsys):
+    run(["issue", "create", "--title", "epic"], capsys)
+    run(["issue", "create", "--title", "slice"], capsys)
+    run(_mutation("addSubIssue", gh.node_id(1), gh.node_id(2)), capsys)
+    assert run(_mutation("removeSubIssue", gh.node_id(1), gh.node_id(2)), capsys)[0] == 0
+    _, parent, _ = run(["issue", "view", "2", "--json", "parent"], capsys)
+    _, kids, _ = run(["issue", "view", "1", "--json", "subIssues"], capsys)
+    assert json.loads(parent)["parent"] is None
+    assert json.loads(kids)["subIssues"]["nodes"] == []
+
+
+def test_an_unknown_milestone_is_refused_on_create_and_edit_like_real_gh(store, capsys):
+    """Found live (smoke repo): real `gh issue edit --milestone v9.9.9` exits 1 `'v9.9.9' not found` and changes nothing."""
+    run(["issue", "create", "--title", "a"], capsys)
+    code, _, err = run(["issue", "edit", "1", "--milestone", "v9.9.9"], capsys)
+    assert code == 1 and "'v9.9.9' not found" in err
+    assert state(store)["issues"]["1"]["milestone"] is None
+    run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)
+    assert run(["issue", "edit", "1", "--milestone", "v1.0.0"], capsys)[0] == 0
+
+
+def test_jq_reads_the_latest_resume_note_and_prints_an_empty_line_without_one(store, capsys):
+    """The `resume_note` read of tracker-verbs-github.md; real gh answers an empty line when no comment matches."""
+    run(["issue", "create", "--title", "a"], capsys)
+    jq = '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'
+    argv = ["issue", "view", "1", "--json", "comments", "--jq", jq]
+    assert run(argv, capsys) == (0, "", "")
+    for body in ("<!-- stratos:resume -->\nfirst", "plain", "<!-- stratos:resume -->\nsecond"):
+        run(["issue", "comment", "1", "--body", body], capsys)
+    assert run(argv, capsys) == (0, "<!-- stratos:resume -->\nsecond", "")
 
 
 def test_an_unknown_mutation_fails_by_name(store, capsys):

@@ -374,9 +374,10 @@ def node_gh(node):
 
 
 def node_row(node):
-    """A node as a parse_backlog row. A closed issue without a status label counts as done (closed = done). Pure."""
+    """A node as a parse_backlog row. A closed issue counts as done whatever its status label says (closed = done;
+    a native merge-close leaves the old label). Pure."""
     names = _names(node)
-    status = next((m.group(1) for n in names if (m := STATUS_RE.match(n))), '') or ('done' if node['state'] == 'CLOSED' else '')
+    status = 'done' if node['state'] == 'CLOSED' else next((m.group(1) for n in names if (m := STATUS_RE.match(n))), '')
     parent = node.get('parent')
     return make_row(status, names, (node.get('milestone') or {}).get('title'),
                     bt_id(parent['number']) if parent else None, {bt_id(b['number']) for b in _conn(node, 'blockedBy')})

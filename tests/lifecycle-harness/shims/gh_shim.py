@@ -151,6 +151,7 @@ def positional(argv: list[str]) -> list[str]:
 
 
 _JQ = re.compile(r"^\.([A-Za-z_][A-Za-z0-9_]*)$")
+_JQ_LAST_COMMENT = re.compile(r'^\[\.comments\[\]\s*\|\s*select\(\.body\s*\|\s*startswith\("([^"]*)"\)\)\]\s*\|\s*last\s*\|\s*\.body$')
 _JQ_EACH = re.compile(r"^\.\[\]\.([A-Za-z_][A-Za-z0-9_]*)$")  # `.[].name`, for a list of rows
 
 
@@ -160,6 +161,10 @@ def apply_jq(data, expr: str):
     Anything else fails by name rather than returning something plausible: a
     silently wrong node id produces a mutation against the wrong issue.
     """
+    note = _JQ_LAST_COMMENT.match(expr.strip())
+    if note and isinstance(data, dict):  # the resume_note read; real gh prints an empty line when nothing matches
+        hits = [c["body"] for c in data.get("comments", []) if c["body"].startswith(note.group(1))]
+        return hits[-1] if hits else ""
     each = _JQ_EACH.match(expr.strip())
     if each and isinstance(data, list):
         return "\n".join(str(row[each.group(1)]) for row in data)
@@ -196,6 +201,17 @@ def require_labels(state: dict, names: list[str]) -> None:
     for n in names:
         if n.lower() not in known:
             raise Failure(EXIT_UNKNOWN, f"could not add label: '{n}' not found", bare=True)
+
+
+def require_milestone(state: dict, title: str | None) -> None:
+    """Real gh refuses a milestone the repo does not have (`'v9.9.9' not found`, exit 1, nothing changed). Known = made
+    through the shim or already carried by a (seeded) issue."""
+    if not title:
+        return
+    known = {m["title"] for m in state["milestones"]}
+    known |= {(i.get("milestone") or {}).get("title") for i in state["issues"].values() if isinstance(i.get("milestone"), dict)}
+    if title not in known:
+        raise Failure(EXIT_UNKNOWN, f"'{title}' not found", bare=True)
 
 
 def mint(state: dict, *, title: str, body: str, labels: list[str],
@@ -284,11 +300,12 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
     if action == "create":
         labels = take_all(rest, "--label", "-l")
         require_labels(state, labels)
+        milestone = take(rest, "--milestone", "-m")  # not refused here: seeds mint epics with milestones no registry made
         issue = mint(state,
                      title=take(rest, "--title", "-t") or "",
                      body=_body(rest),
                      labels=labels,
-                     milestone=take(rest, "--milestone", "-m"))
+                     milestone=milestone)
         issue["assignees"] = take_all(rest, "--assignee", "-a")
         return issue["url"]
 
@@ -297,10 +314,11 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         remove = set(take_all(rest, "--remove-label"))
         add = take_all(rest, "--add-label")
         require_labels(state, add)
+        ms = take(rest, "--milestone", "-m")
+        require_milestone(state, ms)
         names = [l["name"] for l in issue["labels"] if l["name"] not in remove]
         names += [a for a in add if a not in names]
         issue["labels"] = [{"name": n} for n in names]
-        ms = take(rest, "--milestone", "-m")
         if ms is not None:
             issue["milestone"] = {"title": ms} if ms else None
         if "--remove-milestone" in rest:
@@ -578,7 +596,7 @@ def _pr_list(state: dict, rest: list[str]) -> str:
     return json.dumps([project(pr_record(p, names), names, state) for p in rows])
 
 
-_MUTATION = re.compile(r"\b(addSubIssue|addBlockedBy|removeBlockedBy)\b")
+_MUTATION = re.compile(r"\b(addSubIssue|removeSubIssue|addBlockedBy|removeBlockedBy)\b")
 _ALIAS = re.compile(r"\b(\w+):\s*issue\(number:\s*(\d+)\)")
 
 
@@ -694,11 +712,14 @@ def _graphql(state: dict, argv: list[str]) -> str:
                           f"{name}: no issue with node id {nid!r} in the store")
         return issue
 
-    if name == "addSubIssue":
+    if name in ("addSubIssue", "removeSubIssue"):
         parent, child = resolve("p"), resolve("c")
-        if not any(s["number"] == child["number"] for s in parent["subIssues"]):
+        parent["subIssues"] = [s for s in parent["subIssues"] if s["number"] != child["number"]]
+        if name == "addSubIssue":
             parent["subIssues"].append(brief(child))
-        child["parent"] = brief(parent)
+            child["parent"] = brief(parent)
+        else:
+            child["parent"] = None
         subject = parent
     else:
         issue, blocker = resolve("i"), resolve("b")
