@@ -15,6 +15,7 @@ Runs after the PR opens; no PR (`gh` not connected, none made), no PR workflow o
 `ci_gate.py status --pr <n> --sha <head> [--attempt N] [--wait S] [--expect-checks]`
 - Run once per PR, when it goes ready (every epic in it complete; standalone: after step 7). Never per intermediate slice.
 - `--expect-checks` when `.github/workflows/` holds a `pull_request` workflow.
+- `--wait` does not shorten the 60 s grace for checks not yet registered under `--expect-checks`: with a smaller `--wait` the script still waits the full grace, then returns `pending`, `checks not registered yet`.
 - Tool timeout: host max (Claude Code Bash `timeout: 600000`) or `--wait` below host limit; script ends its own wait (default 480 s), never by kill.
 - Exit: 0 green|pending|conflict|none (`none` = no `gh`, or no checks without `--expect-checks`; with it, none registered after a 60 s grace → `pending`, `checks not registered yet`); 1 red; 2 `cannot_run` (crash, expired login, malformed output). Exit 2 from `status` or `cap` → HALT `[CI-RED] could not check`, never read as not red.
 - Output: `{verdict: green|pending|red|conflict|none|cannot_run, failing: [{workflow, check, step, log_tail}], base_stale, class: small|big|null, reason, sha}`.

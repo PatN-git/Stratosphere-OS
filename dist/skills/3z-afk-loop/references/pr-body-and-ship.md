@@ -54,3 +54,5 @@ Pass the object with `--audit-file <F>` (`--audit-json '<json>'` is the same pay
 
 ## Closing-link read-back
 Local backend: skip (local ids carry no `Closes` line; `issues.py merged --close` closes after merge). Otherwise, after `gh pr create` / `gh pr edit`, run `gh pr view <pr> --json closingIssuesReferences` and confirm the slice issue **and each closed epic** are listed. Not listed → correct the closing lines and re-check **once**, after ~5 s (GitHub lags a few seconds after an edit); still unlisted → report `[NO-AUTOCLOSE #<n>]` in the ship output and leave it to `/0b` done-detection to close after merge (GitHub only auto-closes what is linked; #128/#129 were not, whatever the wording). Never loop.
+
+Never write a closing keyword followed by an issue number in free prose (Notes): GitHub parses `<keyword> #<n>` anywhere in the body, even inside backticks, and closes the issue on merge.

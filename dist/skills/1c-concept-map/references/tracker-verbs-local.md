@@ -32,7 +32,7 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 - `set_ice`: the same: nothing stored
 - `set_body`: `issues.py set <id> --body-file .tmp/<name>.md`
 - `claim`: `issues.py claim <id>` (compare-and-set: `in progress`, `claimed_by` = the branch); `[CLAIMED <id> by <x>]` → halt
-- `apply_moves`: `issues.py apply-moves [<file>] [--dry-run] [--force]` (no file: stdin): the batch status writer for a person's moves, the payload copied from `board --web` (`<id> … -> <status>` lines, a `Please apply` header ignored). One bad line, unknown id or status, or refused move applies nothing and exits 1. `done` is `close`, away from it `reopen`; an `in review` epic or standalone issue moves to `done` only once `merged`, else `--force`
+- `apply_moves`: `issues.py apply-moves [<file>] [--dry-run] [--force]` (no file: stdin): the batch status writer for a person's moves, the payload copied from `board --web` (`<id> … -> <status>` lines, a `Please apply` header ignored). One bad line, unknown id or status, or refused move applies nothing and exits 1. `done` is `close`, away from it `reopen`; an `in review` epic or standalone issue moves to `done` only once `merged`, else `--force`. A move into `in progress`, `in review` or `done` is refused while a blocker is open (the `ready` verdict, judged on the batch end state), else `--force`; `set`, `close` and `reopen` are not guarded
 
 ## Resume note
 Per-task progress and next step, written by 0b with `comment` and read by `load-memory` with `resume_note`. A fixed block, replaced whole on each write:

@@ -91,7 +91,7 @@
       "version": "5.0.0"
     },
     "skills/0a-start-session/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -136,7 +136,7 @@
       "version": "5.0.0"
     },
     "skills/0b-stop-session/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -241,7 +241,7 @@
       "version": "5.0.0"
     },
     "skills/1c-concept-map/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -276,7 +276,7 @@
       "version": "5.0.0"
     },
     "skills/2a-write-prd/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -326,7 +326,7 @@
       "version": "5.0.0"
     },
     "skills/2b-interface-design/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -376,7 +376,7 @@
       "version": "5.0.0"
     },
     "skills/3a-version-planning/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -421,7 +421,7 @@
       "version": "5.0.0"
     },
     "skills/3b-create-issue/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -456,7 +456,7 @@
       "version": "5.0.0"
     },
     "skills/3c-sprint-planning/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -466,7 +466,7 @@
       "version": "2.8.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
-      "sha256": "257f66504ead84b1a5aa807cb779f700fb4f8262a69e34291d578f7cadf0198d",
+      "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -501,7 +501,7 @@
       "version": "5.0.0"
     },
     "skills/3d-implement-issue/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -521,7 +521,7 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
-      "sha256": "257f66504ead84b1a5aa807cb779f700fb4f8262a69e34291d578f7cadf0198d",
+      "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -541,7 +541,7 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/pr-body-and-ship.md": {
-      "sha256": "62258b7759e7c81d81dd00d132d49b05fd92409a45f8c53c607b6fa2a06fd660",
+      "sha256": "e60296a78a1a7a0578d12b95add8281f7ecee2e599730a558b892b69e18da3ce",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
@@ -556,7 +556,7 @@
       "version": "5.0.0"
     },
     "skills/3z-afk-loop/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -581,7 +581,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
-      "sha256": "257f66504ead84b1a5aa807cb779f700fb4f8262a69e34291d578f7cadf0198d",
+      "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
       "timestamp": "2026-10-22",
       "version": "1.0.2"
     },
@@ -621,7 +621,7 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "62258b7759e7c81d81dd00d132d49b05fd92409a45f8c53c607b6fa2a06fd660",
+      "sha256": "e60296a78a1a7a0578d12b95add8281f7ecee2e599730a558b892b69e18da3ce",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
@@ -636,7 +636,7 @@
       "version": "5.0.0"
     },
     "skills/4a-verify-and-ship/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -696,7 +696,7 @@
       "version": "5.0.0"
     },
     "skills/4b-audit-architecture-drift/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -751,7 +751,7 @@
       "version": "5.0.0"
     },
     "skills/4c-codebase-health-audit/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -831,7 +831,7 @@
       "version": "5.0.0"
     },
     "skills/stratosphere-setup/references/tracker-verbs-local.md": {
-      "sha256": "7f239a62a70930c4aea66f562d6541f74cc80c2e398ace836ce34f58e7327101",
+      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
