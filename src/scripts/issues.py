@@ -491,7 +491,7 @@ def cmd_merged(store, a):
         kind, reason = res
         if kind == 'merged':
             if a.close:
-                issue.update(status='done', closed=today(), close_reason='completed', claimed_by=None, updated=now())
+                _close_issue(issue, 'completed')
                 changes.update(store.changes(issue))
             lines.append(f"[MERGED {bt}]")
         elif kind == 'stale':

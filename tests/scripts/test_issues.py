@@ -570,6 +570,44 @@ def test_merged_detects_ancestor_branch_and_closes_with_flag(repo):
     assert issue['status'] == 'done' and issue['closed'] == '2026-10-27'
 
 
+def test_merged_close_sets_the_full_closed_state_on_a_claimed_epic_and_a_merged_slice(repo, monkeypatch):
+    monkeypatch.setattr(issues, 'now', lambda: '2026-10-27T10:00:00+00:00')
+    ok('init')
+    epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
+    ok('claim', epic, '--by', 'feat/auth')
+    ok('set', epic, '--status', 'in review')
+    assert json.loads(ok('get', epic))['claimed_by'] == 'feat/auth'
+    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    (repo / 'f.txt').write_text('f\n')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-qm', 'f')
+    git(repo, 'checkout', '-q', 'main')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+    slice_id = ok('create', '--title', 'Billing', '--label', SLICE)
+    ok('set', slice_id, '--status', 'in review')
+    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+    ok('comment', slice_id, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+
+    code, text = run('merged', '--close')
+    assert code == 0 and text.splitlines() == [f'[MERGED {epic}]', f'[MERGED {slice_id}]']
+    for bt in (epic, slice_id):
+        issue = json.loads(ok('get', bt))
+        assert issue['status'] == 'done' and issue['closed'] == '2026-10-27'
+        assert issue['close_reason'] == 'completed' and issue['claimed_by'] is None
+        assert issue['updated'] == '2026-10-27T10:00:00+00:00'
+    files = git(repo, 'ls-tree', '-r', '--name-only', 'shop/issues').split()
+    for bt in (epic, slice_id):
+        assert f'docs/issues/archive/{bt}.md' in files and f'docs/issues/{bt}.md' not in files
+    assert git(repo, 'show', f'shop/issues:docs/issues/archive/{epic}.md') == (
+        '---\ntype: issue\nid: BT-LOCAL-auth\ntitle: Auth\nstatus: done\nlabels: [type:feature, tier:epic]\nmilestone: null\n'
+        'parent: null\nblocked_by: []\nclaimed_by: null\ncreated: 2026-10-27\nupdated: 2026-10-27T10:00:00+00:00\n'
+        'closed: 2026-10-27\nclose_reason: completed\n---\n\n')
+    assert git(repo, 'show', f'shop/issues:docs/issues/archive/{slice_id}.md').endswith(
+        f'close_reason: completed\n---\n\n\n<!-- issues.py: comments -->\n## Comments\n- 2026-10-27: Shipped on feature/BT-LOCAL-billing-work @ {tip}\n')
+
+
 def test_merged_detects_recorded_sha_after_branch_deletion(repo):
     ok('init')
     epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
