@@ -48,7 +48,7 @@ B goes first: it tests what v5.0.0 ships. A is new behaviour and needs its own e
 - No post-merge hook: it only fires on the merging client.
 
 **A3 notes:**
-- Read-only text kanban: one column per status, cards `id title [labels]`, about 40 lines.
+- Read-only text kanban: one column per status, cards `id title [size:x] [BLOCKED by ...]`, about 40 lines.
 - `--md <file>` writes the same as Markdown, like Backlog.md's `board export`.
 - Deterministic, no model call. `plan-html` stays the human-facing renderer when someone wants HTML; it can read `--md`.
 

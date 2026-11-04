@@ -22,8 +22,8 @@ VERBS = ["create", "set_status", "set_labels", "ensure_label", "set_milestone", 
 LOCAL_COMMAND = {"create": "create", "set_status": "set", "set_labels": "set", "set_milestone": "set", "set_parent": "set",
                  "add_blocker": "set", "clear_blocker": "set", "set_body": "set", "ensure_label": "label", "close": "close",
                  "reopen": "reopen", "comment": "comment", "claim": "claim", "apply_moves": "apply-moves"}
-MISFITS = ["close"]
-GONE_MISFITS = ["set_ice", "set_body", "claim", "set_refs"]
+MISFITS = ["tracker_switch"]
+GONE_MISFITS = ["set_ice", "set_body", "claim", "set_refs", "close"]
 WRITERS = ["workflows/2a-write-prd.md", "workflows/2b-interface-design.md", "workflows/3b-create-issue.md"]
 
 
@@ -76,6 +76,13 @@ def test_the_misfits_are_named_and_pull_requests_are_not_a_tracker_verb():
     for verb in GONE_MISFITS:
         assert f"`{verb}`" not in misfits, f"{verb} is no longer a misfit: the local issue file matches GitHub"
     assert re.search(r"pull request|PR operations", misfits, re.I) and "not a tracker verb" in misfits
+
+
+def test_close_is_a_normal_verb_row_that_states_the_merge_closes_rule_on_both_backends():
+    github, local = _verb_rows()["close"]
+    for form in (github, local):
+        assert "merge closes" in form and "unmerged epic" in form, form
+    assert "Closes #<n>" in github and "merged --close" in local
 
 
 def test_the_runtime_halt_rule_lives_in_the_verbs_reference():

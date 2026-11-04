@@ -326,7 +326,8 @@ function bootPlan(){
       return;
     }
 
-    if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+    const mod = e.ctrlKey || e.metaKey || e.altKey;
+    if ((!mod && e.key === '/') || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k')) {
       e.preventDefault();
       const search = document.getElementById('search-input');
       if (search) {
@@ -335,6 +336,9 @@ function bootPlan(){
       }
       return;
     }
+
+    // browser and OS shortcuts (Ctrl+L, Ctrl+1..9, Alt+Left ...) are not the board's: Ctrl/Cmd+K above is the only modified key
+    if (mod) return;
 
     if (e.key === 'Escape') {
       const search = document.getElementById('search-input');

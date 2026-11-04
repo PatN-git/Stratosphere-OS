@@ -580,7 +580,7 @@ def _render_board_html(store, issues_list, a):
     if getattr(a, 'open', False):
         try:
             import webbrowser
-            webbrowser.open(f"file://{out_file.resolve().as_posix()}")
+            webbrowser.open(out_file.resolve().as_uri())
         except Exception:
             pass
 
@@ -1132,7 +1132,6 @@ def parser():
     p.add_argument('--web', action='store_true', help='render interactive HTML board')
     p.add_argument('--out', default='.tmp/render/board.html', help='output HTML path')
     p.add_argument('--open', action='store_true', help='launch the browser on the page (never done by default)')
-    p.add_argument('--no-open', action='store_true', help='no-op alias: the browser is only launched with --open')
     p = sub.add_parser('apply-moves')
     p.add_argument('file', nargs='?', default='-', help='file with moves (default: stdin)')
     p.add_argument('--force', action='store_true', help='move claimed issues; close an unmerged epic or standalone issue')

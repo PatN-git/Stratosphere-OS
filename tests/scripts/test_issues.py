@@ -810,7 +810,7 @@ def test_board_web_generation(repo, tmp_path):
     ok('set', w, '--status', 'in progress')
     out_html = tmp_path / "custom_board.html"
 
-    code, text = run('board', '--web', '--no-open', '--out', str(out_html))
+    code, text = run('board', '--web', '--out', str(out_html))
     assert code == 0
     assert f"[BOARD] wrote {out_html}" in text
     assert "(2 card(s))" in text
@@ -840,7 +840,7 @@ def test_board_web_generation(repo, tmp_path):
 def test_board_web_empty_store(repo, tmp_path):
     ok('init')
     out_html = tmp_path / "empty_board.html"
-    code, text = run('board', '--web', '--no-open', '--out', str(out_html))
+    code, text = run('board', '--web', '--out', str(out_html))
     assert code == 0
     assert "(0 card(s))" in text
     assert out_html.exists()
@@ -983,16 +983,13 @@ def test_board_web_opens_a_browser_only_with_open(repo, tmp_path, monkeypatch):
     import webbrowser
     opened = []
     monkeypatch.setattr(webbrowser, 'open', lambda url, *a, **k: opened.append(url))
-    monkeypatch.setattr(issues.sys.stdout, 'isatty', lambda: True, raising=False)
     ok('init')
     ok('create', '--title', 'One', '--label', SLICE)
     out_html = tmp_path / 'b.html'
     text = ok('board', '--web', '--out', str(out_html))
     assert opened == [] and str(out_html) in text
-    ok('board', '--web', '--no-open', '--out', str(out_html))
-    assert opened == []
     ok('board', '--web', '--open', '--out', str(out_html))
-    assert len(opened) == 1 and opened[0].startswith('file://')
+    assert opened == [out_html.resolve().as_uri()] and opened[0].startswith('file:///')
 
 
 # --- apply-moves: strict, atomic, same invariants as the other writers --------------------------------------------

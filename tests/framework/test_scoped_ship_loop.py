@@ -135,3 +135,10 @@ def test_3z_ci_gate_runs_inside_ship_only_after_the_audit_and_the_dispatch_does_
 @pytest.mark.parametrize("rel", sorted(str(p.relative_to(SRC)).replace("\\", "/") for p in SRC.rglob("*.md")))
 def test_no_artifact_hands_the_agent_a_posix_only_rm_f(rel):
     assert "rm -f" not in read_src(rel), f"{rel}: `rm -f` fails on Windows PowerShell 5.1; say 'delete <files> (ignore absent)'"
+
+
+def test_0b_fetches_origin_non_fatally_before_the_local_merged_close():
+    line = next(l for l in read_src("workflows/0b-stop-session.md").splitlines() if "merged --close" in l and "Local backend" in l)
+    fetch, close = line.index("git fetch -q origin"), line.index("issues.py merged --close")
+    assert fetch < close, "the fetch runs before the check"
+    assert re.search(r"non-fatal|ignore a failure", line[fetch:], re.I), "a failed fetch (offline, no origin) must not stop the sync"

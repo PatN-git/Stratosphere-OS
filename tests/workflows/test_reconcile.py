@@ -476,8 +476,11 @@ def github_checks():
             check("github: --expect-file works like --expect", _run(base + ["--ids", "BT-001", "--expect-file",
                   str(_expect_file(td, "BT-1:status=in review\n"))])[0] == 0)
             with tempfile.TemporaryDirectory() as td2:
-                check("local: --with-edges / --expect need tracker github", _arg_error(
-                    ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007", "--with-edges", "dependents"]))
+                map_run = ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007"]
+                check("local: the gate (--with-edges) is refused on a --backlog map run",
+                      _arg_error(map_run + ["--with-edges", "dependents"]))
+                check("local: the gate (--expect) is refused on a --backlog map run",
+                      _arg_error(map_run + ["--expect", "BT-7:status=in review"]))
             check("github: --edges stays a separate run", _arg_error(base + ["--ids", "BT-007", "--edges", "dependents", "--pr-id", "BT-007"]))
             check("github: --all-open is a local-backend run and is refused", _arg_error(base + ["--all-open"]))
             check("github: a malformed --expect is an argument error", _arg_error(base + ["--ids", "BT-001", "--expect", "BT-1"]))
@@ -681,11 +684,13 @@ def local_gate_checks():
             'closed': '2026-10-27', 'close_reason': 'completed', 'body': '',
             'comments': [],
         }
+        i_seven = dict(i_auth, id='BT-007', title='Seven', blocked_by=['BT-006'], comments=[])  # an id form both backends accept
         try:
             tracker.write(lambda s: ({
                 issues.README: issues.README_TEXT,
                 issues.path_of(i_auth): issues.render_issue(i_auth),
                 issues.path_of(i_db): issues.render_issue(i_db),
+                issues.path_of(i_seven): issues.render_issue(i_seven),
             }, True), "init test store", allow_new=True)
 
             # 1. Matching expect
@@ -717,6 +722,20 @@ def local_gate_checks():
             code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect-file", str(ef)])
             check("local: --expect-file with a leading `#` comment line -> OK, exit 0",
                   code == 0 and "[MIRROR-OK BT-LOCAL-auth]" in out)
+
+            # 7. contract (A4): the SAME --expect text is accepted and OK on the local and the github backend
+            same = "BT-7:status=in review;BT-7:blocked_by=BT-6"
+            code_l, out_l = _run(base + ["--ids", "BT-007", "--expect", same])
+            orig = (rec.gh_available, rec.fetch_nodes)
+            try:
+                rec.gh_available = lambda: True
+                rec.fetch_nodes = lambda nums, comments=False, edges=False: {n: gh_node(n, blocked=(6,)) for n in nums}
+                gh_base = ["--arch", _arch(td, "github", "gh-arch.md"), "--backlog", str(Path(td) / "NO_MAP.md")]
+                code_g, out_g = _run(gh_base + ["--ids", "BT-007", "--expect", same])
+            finally:
+                rec.gh_available, rec.fetch_nodes = orig
+            check("contract: one --expect string is OK on the local backend and on the github backend",
+                  (code_l, code_g) == (0, 0) and "[MIRROR-OK BT-007]" in out_l and "[MIRROR-OK BT-007]" in out_g)
         finally:
             issues._git('update-ref', '-d', 'refs/heads/test-gate-issues', check=False)
 
