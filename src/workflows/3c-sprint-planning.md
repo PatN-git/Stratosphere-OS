@@ -51,8 +51,8 @@ Output compressed readout matching capacity thresholds:
 ```markdown
 [TARGET SPRINT MILESTONE: <vX.Y.Z>]
 
-- [AFK] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [HITL] BT-<padded> | <title> (<size>) | Area: <area> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
+- [AFK] BT-<padded> | <title> (<size>) | Area: <area or —> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
+- [HITL] BT-<padded> | <title> (<size>) | Area: <area or —> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
 - [SPIKE] BT-<padded> | <title> | (<size>) | close on Exit Criteria; follow-up via /3b
 - [NEXT] BT-<padded> | <title> (<size>) | over budget; next sprint
 

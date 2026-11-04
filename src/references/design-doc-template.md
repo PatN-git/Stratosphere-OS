@@ -1,7 +1,7 @@
 ---
 description: Template for a path-aware interface design document under docs/design/.
-version: "2.1.0"
-timestamp: 2026-10-14
+version: "2.1.1"
+timestamp: 2026-11-03
 ---
 
 # Design Doc Template
@@ -104,4 +104,4 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
 - **Compatibility & Errors:**
   - Keep one error shape across the interface; changes to an existing contract are additive; observable behavior counts as contract.
 - **Scrap Signals (for 3d):**
-  - This contract is wrong if <observable condition>; on a hit stop, record it in `## Deviations` and route to `/2c-reconcile-specs`.
+  - This contract is wrong if <observable condition>; on a hit stop, record it in the 3d plan's `## Deviations` and route to `/2c-reconcile-specs`.
