@@ -97,7 +97,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - Immortal Components: propose registering shell; on confirmation, register in .memory/DESIGN_RULES.md §3 immediately.
 
 ### Contract Check
-Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc, or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
+Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc (editable at `stable` too), or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
 
 ## Phase 5: Publish & Sync
 1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). (2b never touches the PRD's editorial status — 2a owns that.)

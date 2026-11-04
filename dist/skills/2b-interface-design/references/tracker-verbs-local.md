@@ -24,7 +24,7 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 - `set_parent`: `issues.py set <id> --parent <id>` (`—` unlinks)
 - `add_blocker`: `issues.py set <id> --add-blocker <id>`
 - `clear_blocker`: `issues.py set <id> --remove-blocker <id>`
-- `close`: `issues.py close <id> [--reason "not planned"]`: `done` plus date and reason, moved to `archive/`. The same rule: the merge closes; a workflow never closes an unmerged epic. 0b runs `issues.py merged --close` (ancestry check against the default branch and the newest recorded tip SHA of the issue and of each child slice)
+- `close`: `issues.py close <id> [--reason "not planned"]`: `done` plus date and reason, moved to `archive/`. The rule: the merge closes; a workflow never closes an unmerged epic. 0b runs `issues.py merged --close` (ancestry check against the default branch and the newest recorded tip SHA of the issue and of each child slice)
 - `merged`: `issues.py merged [--close]`: checks ancestry of shipped branches and tip SHAs against the default branch; prints `[MERGED <id>]` (and with `--close` marks done and archives)
 - `reopen`: `issues.py reopen <id> [--status <s>]`
 - `comment`: `issues.py comment <id> --body-file .tmp/<name>.md` (or `--body`); a resume note overwrites `.memory/resume/<id>.md` (one file per issue, gitignored); a PR-link comment is a normal comment
