@@ -43,9 +43,9 @@ assert_scaffold_tree() { # $1 proj
   for f in AGENTS.md CLAUDE.md GEMINI.md .gitignore .gitattributes index.md; do
     assert "scaffold: $f" "$(exists "$p/$f")"
   done
-  assert "scaffold: .memory 9 md" "$([ "$(nmd "$p/.memory")" = "9" ] && echo 1 || echo 0)"
+  assert "scaffold: .memory 8 md" "$([ "$(nmd "$p/.memory")" = "8" ] && echo 1 || echo 0)"
   assert "scaffold: .agents/rules 3 md" "$([ "$(nmd "$p/.agents/rules")" = "3" ] && echo 1 || echo 0)"
-  assert "scaffold: .agents/skills 27 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "28" ] && echo 1 || echo 0)"
+  assert "scaffold: .agents/skills 28 SKILL.md" "$([ "$(ls -1 "$p"/.agents/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d " ")" = "28" ] && echo 1 || echo 0)"
   assert "scaffold: no legacy .agents/workflows" "$([ -d "$p/.agents/workflows" ] && echo 0 || echo 1)"
   assert "scaffold: no .github/copilot/skills twin" "$([ -e "$p/.github/copilot/skills" ] && echo 0 || echo 1)"
   assert "scaffold: validate_memory.py" "$(exists "$p/.agents/scripts/validate_memory.py")"

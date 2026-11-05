@@ -1,0 +1,192 @@
+[
+ [
+  "A0.1 build: every slice was claimed on its unit branch before ship, cleared by ship",
+  true,
+  "{'U1': 'feature/BT-LOCAL-slugify-helper-slugify', 'U2': 'feature/BT-LOCAL-word-counter-words', 'U3': 'feature/BT-LOCAL-title-caser-title', 'U4': 'feature/BT-LOCAL-clamp-helper-clamp'}"
+ ],
+ [
+  "A0.2 build: each slice carries a `Shipped on <branch> @ <sha>` comment with the full tip",
+  true,
+  ""
+ ],
+ [
+  "A0.3 build: four epics in review/open, four dependents blocked, `check` OK",
+  true,
+  ""
+ ],
+ [
+  "A0.4 baseline: `merged` and `merged --close` print [NO-MERGES]",
+  true,
+  "'[NO-MERGES]' '[NO-MERGES]'"
+ ],
+ [
+  "A0.5 baseline: all four dependents KEEP, none CLEAR",
+  true,
+  "{('BT-LOCAL-document-slugify', 'BT-LOCAL-implement-slugify'): ['KEEP', None], ('BT-LOCAL-document-the-clamp-helper', 'BT-LOCAL-clamp-a-number'): ['KEEP', None], ('BT-LOCAL-document-the-title-caser', 'BT-LOCAL-title-case-a-string'): ['KEEP', None], ('BT-LOCAL-document-the-word-counter', 'BT-LOCAL-count-words'): ['KEEP', None]}"
+ ],
+ [
+  "A1.1 U1 merge commit: `merged` lists exactly [MERGED <U1 epic>]",
+  true,
+  "[MERGED BT-LOCAL-slugify-helper]"
+ ],
+ [
+  "A1.2 `merged` without --close writes nothing: U1 epic still in review/open",
+  true,
+  ""
+ ],
+ [
+  "A1.3 `merged --close` prints [MERGED <U1 epic>] only",
+  true,
+  "[MERGED BT-LOCAL-slugify-helper]"
+ ],
+ [
+  "A1.4 U1 epic closed: done, completed, archived, claimed_by cleared",
+  true,
+  "status=done reason=completed state=CLOSED archived=True claimed_by=None"
+ ],
+ [
+  "A1.5 U1 slice closed: done, completed, archived, claimed_by cleared",
+  true,
+  "status=done reason=completed state=CLOSED archived=True claimed_by=None"
+ ],
+ [
+  "A1.6 U1 closed in exactly one tracker commit",
+  true,
+  ""
+ ],
+ [
+  "A1.7 U2, U3, U4 epics untouched (in review/open)",
+  true,
+  ""
+ ],
+ [
+  "A1.8 U1 dependent [CLEAR]; U2/U3/U4 dependents [KEEP]",
+  true,
+  "{('BT-LOCAL-document-slugify', 'BT-LOCAL-implement-slugify'): ['CLEAR', 'python .agents/scripts/issues.py set BT-LOCAL-document-slugify --remove-blocker BT-LOCAL-implement-slugify'], ('BT-LOCAL-document-the-clamp-helper', 'BT-LOCAL-clamp-a-number'): ['KEEP', None], ('BT-LOCAL-document-the-title-caser', 'BT-LOCAL-title-case-a-string'): ['KEEP', None], ('BT-LOCAL-document-the-word-counter', 'BT-LOCAL-count-words'): ['KEEP', None]}"
+ ],
+ [
+  "A1.9 applying the printed cmd clears U1 dependent's blocked_by; others stay blocked",
+  true,
+  ""
+ ],
+ [
+  "A2.1 U2 squash: `merged` reports exactly the advisory [PROBABLY-MERGED ... confirm before close]",
+  true,
+  "[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A2.2 `merged --close` prints the advisory and does NOT close U2 epic",
+  true,
+  "[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A2.3 advisory-only `--close` wrote no tracker commit",
+  true,
+  ""
+ ],
+ [
+  "A2.4 re-run is stable (same advisory line, tracker head unchanged)",
+  true,
+  "[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A2.5 U2 dependent stays [KEEP] (squash is not an ancestor merge; advisory never frees it); U3/U4 KEEP",
+  true,
+  "{('BT-LOCAL-document-the-clamp-helper', 'BT-LOCAL-clamp-a-number'): ['KEEP', None], ('BT-LOCAL-document-the-title-caser', 'BT-LOCAL-title-case-a-string'): ['KEEP', None], ('BT-LOCAL-document-the-word-counter', 'BT-LOCAL-count-words'): ['KEEP', None]}"
+ ],
+ [
+  "A3.0 setup: U4 branch gone locally and in remote-tracking refs; project origin/master is stale vs the bare master",
+  true,
+  "stale=fb3df74 bare=d4e5f27"
+ ],
+ [
+  "A3.1 before fetch: U4 not detected by `merged` nor closed by `--close`",
+  true,
+  "[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A3.2 before fetch: U4 dependent stays [KEEP]",
+  true,
+  "{('BT-LOCAL-document-the-clamp-helper', 'BT-LOCAL-clamp-a-number'): ['KEEP', None], ('BT-LOCAL-document-the-title-caser', 'BT-LOCAL-title-case-a-string'): ['KEEP', None], ('BT-LOCAL-document-the-word-counter', 'BT-LOCAL-count-words'): ['KEEP', None]}"
+ ],
+ [
+  "A3.3 after fetch: U4 detected [MERGED] via the recorded tip SHA (branch is gone), U2 still advisory, U3 absent",
+  true,
+  "[MERGED BT-LOCAL-clamp-helper]\n[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A3.4 `--close` after fetch: same two lines",
+  true,
+  "[MERGED BT-LOCAL-clamp-helper]\n[PROBABLY-MERGED BT-LOCAL-word-counter] (squash commit fb3df74 matches id in origin/master; confirm before close)"
+ ],
+ [
+  "A3.5 U4 epic closed: done, completed, archived, claimed_by cleared",
+  true,
+  "status=done reason=completed state=CLOSED archived=True claimed_by=None"
+ ],
+ [
+  "A3.6 U4 slice closed: done, completed, archived, claimed_by cleared",
+  true,
+  "status=done reason=completed state=CLOSED archived=True claimed_by=None"
+ ],
+ [
+  "A3.7 U4 dependent [CLEAR]; U2 and U3 dependents [KEEP]",
+  true,
+  "{('BT-LOCAL-document-the-clamp-helper', 'BT-LOCAL-clamp-a-number'): ['CLEAR', 'python .agents/scripts/issues.py set BT-LOCAL-document-the-clamp-helper --remove-blocker BT-LOCAL-clamp-a-number'], ('BT-LOCAL-document-the-title-caser', 'BT-LOCAL-title-case-a-string'): ['KEEP', None], ('BT-LOCAL-document-the-word-counter', 'BT-LOCAL-count-words'): ['KEEP', None]}"
+ ],
+ [
+  "A3.8 applying the printed cmd clears U4 dependent; U2/U3 dependents stay blocked",
+  true,
+  ""
+ ],
+ [
+  "A4.1 U3 never merged: epic in review/open, never listed by any `merged` run",
+  true,
+  ""
+ ],
+ [
+  "A4.2 U2 squash epic still in review/open after every `--close` (never auto-closed)",
+  true,
+  ""
+ ],
+ [
+  "A4.3 U1 + U4 slices and epics all closed; U2 slice closed, U3 slice closed (shipped)",
+  true,
+  ""
+ ],
+ [
+  "A4.4 `issues.py check` OK at the end",
+  true,
+  "[CHECK-OK 12 issue(s)]"
+ ],
+ [
+  "A5.1 `board --md` writes the Markdown board with Done and In Review columns and the open dependents",
+  true,
+  "[BOARD] wrote C:\\t\\pa6-1\\out\\board.md"
+ ],
+ [
+  "A5.2 `board --web --out` writes an HTML page that names the units",
+  true,
+  "rc=0 size=28114 [BOARD] wrote C:\\t\\pa6-1\\out\\board.html (12 card(s))"
+ ],
+ [
+  "A5.3 `apply-moves --dry-run` of one move reports it and writes nothing",
+  true,
+  "BT-LOCAL-document-the-title-caser: planned -> in progress\n[APPLY-MOVES] dry run: 1 move(s) would apply, nothing written"
+ ],
+ [
+  "A5.4 `apply-moves` refuses to drag the unmerged U3 epic and the advisory-only U2 epic to done",
+  true,
+  "[ERROR] apply-moves refused, nothing applied:\n  line 1: BT-LOCAL-title-caser is in review and not merged (its merge closes it; `issues.py merged --close` does it); use --force to override\n  line 2: BT-LOCAL-word-counter is in review and not merged (its merge closes it; `issues.py merged --close` does it); use --force to override"
+ ],
+ [
+  "A5.5 no tracker write by any view (head unchanged)",
+  true,
+  ""
+ ],
+ [
+  "A5.6 no `gh` call anywhere in the run",
+  true,
+  "['git', 'python']"
+ ]
+]

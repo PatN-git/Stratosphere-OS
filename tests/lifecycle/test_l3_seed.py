@@ -3,10 +3,9 @@
 Driving `3b` onward otherwise costs four phases of live agent work to reach the one
 under test. These artifacts stand in for that work.
 
-The fixture has to be **self-consistent**, not merely present: `3b`'s first terminal
-gate runs `reconcile.py --require-gh`, which compares `BACKLOG_MAP.md` against the gh
-store. A fixture that disagreed with itself would fail that gate on my fixture rather
-than on the lifecycle, which is the worst possible finding to produce.
+The fixture has to be **self-consistent**, not merely present: the seeded epic must pass
+`issues.py check`, or 3b's local check would fail on my fixture rather than on the
+lifecycle, which is the worst possible finding to produce.
 """
 import importlib.util
 import json
@@ -38,16 +37,10 @@ def seeded(tmp_path, monkeypatch):
     """A scaffold-shaped project with the upstream artifacts installed."""
     project = tmp_path / "project"
     (project / ".memory").mkdir(parents=True)
-    (project / ".memory" / "BACKLOG_MAP.md").write_text(
-        "| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |\n"
-        "|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n"
-        "| BT-XXX | placeholder | planned | — | — | — | — | — | — |\n",
-        encoding="utf-8")
     scripts = project / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    (scripts / "reconcile.py").write_text(
-        (REPO / "src" / "scripts" / "reconcile.py").read_text(encoding="utf-8"),
-        encoding="utf-8")
+    for name in SCRIPTS:
+        (scripts / name).write_text((REPO / "src" / "scripts" / name).read_text(encoding="utf-8"), encoding="utf-8")
     subprocess.run(["git", "init", str(project)], capture_output=True, check=True)
 
     child = {"PATH": os.environ.get("PATH", "")}
@@ -55,8 +48,17 @@ def seeded(tmp_path, monkeypatch):
     child.update({"GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@harness.invalid",
                   "GIT_COMMITTER_NAME": "L3",
                   "GIT_COMMITTER_EMAIL": "l3@harness.invalid"})
+    assert issues(project, child, "init").returncode == 0  # what `scaffold.py --tracker local` runs
     e.seed_upstream(project, child, shim_dir)
     return project, child
+
+
+SCRIPTS = ("issues.py", "_tracker_common.py", "_ice.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+
+
+def issues(project, child, *argv):
+    return subprocess.run([sys.executable, str(project / ".agents" / "scripts" / "issues.py"), *argv],
+                          cwd=str(project), env={**os.environ, **child}, capture_output=True, text=True)
 
 
 def store(child):
@@ -114,37 +116,21 @@ def test_the_upstream_artifacts_pass_their_own_phase_checks(seeded):
 
 # --- the world the artifacts describe -----------------------------------------
 
-def test_the_parent_epic_exists_in_the_gh_store(seeded):
-    """`2a:30` mints it with `gh issue create`; the seed uses the same path, so the
-    store has one author and cannot drift from the shim's own shape."""
+def test_the_local_backend_seed_touches_no_github(seeded):
+    """The local backend never touches GitHub: the epic is a store issue and the shim's store stays empty."""
     _, child = seeded
-    issues = store(child)["issues"]
-    assert issues["1"]["title"].startswith("BT-001")
-    assert {l["name"] for l in issues["1"]["labels"]} == set(e.EPIC_LABELS)
+    store_file = Path(child["L3_GH_STORE"])
+    assert not store_file.exists() or not store(child)["issues"]
 
 
-def test_the_backlog_row_agrees_with_the_store(seeded):
-    """Status bare in the Status column, never in Labels (3b:69)."""
-    project, _ = seeded
-    row = [ln for ln in a.read(project / ".memory" / "BACKLOG_MAP.md").splitlines()
-           if ln.startswith("| BT-001 ")][0]
-    cells = [c.strip() for c in row.split("|")]
-    assert cells[3] == "planned"
-    assert "status:" not in cells[4]
-    assert cells[5] == "v1.0.0"
-
-
-def test_reconcile_reaches_mirror_ok_on_the_seeded_world(seeded, monkeypatch):
-    """The gate `3b` hits first. If this fails, the run would blame the lifecycle
-    for a fixture that never agreed with itself."""
+def test_the_local_epic_is_a_bt_local_issue_on_the_tracker_branch(seeded):
+    """`issues.py create` (tracker-verbs `create`): status is a field, never a label; the store passes `check`."""
     project, child = seeded
-    for key in ("PATH", "PYTHONPATH", "L3_GH_STORE"):
-        monkeypatch.setenv(key, child[key])
-    r = subprocess.run(
-        [sys.executable, str(project / ".agents" / "scripts" / "reconcile.py"),
-         "--require-gh", "--ids", "BT-001"],
-        cwd=str(project), capture_output=True, text=True)
-    assert "[MIRROR-OK BT-001]" in r.stdout, r.stdout + r.stderr
+    epic = json.loads(issues(project, child, "get", e._seed.LOCAL_EPIC_ID).stdout)
+    assert epic["status"] == "planned" and epic["milestone"] == "v1.0.0"
+    assert "tier:epic" in epic["labels"] and not any(l.startswith("status:") for l in epic["labels"])
+    assert issues(project, child, "check").returncode == 0
+    assert not list(a.backlog_maps(project))
 
 
 def test_the_seed_is_committed_so_3d_starts_from_a_clean_tree(seeded):
@@ -162,3 +148,24 @@ def test_a_seeded_run_says_what_it_did_not_test(tmp_path, capsys):
     r = _load("l3_run_seed", HARNESS / "run-L3.py")
     assert r.parse_args(["--seed"]).seed is True
     assert r.parse_args([]).seed is False
+
+
+# --- GitHub mode: the epic is the whole record ---------------------------------
+
+def test_a_github_seed_mints_the_epic_but_writes_no_backlog_row(tmp_path):
+    project = tmp_path / "project"
+    (project / ".memory").mkdir(parents=True)
+    subprocess.run(["git", "init", str(project)], capture_output=True, check=True)
+    child = {"PATH": os.environ.get("PATH", ""), "GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@harness.invalid",
+             "GIT_COMMITTER_NAME": "L3", "GIT_COMMITTER_EMAIL": "l3@harness.invalid"}
+    shim_dir = e.install_shims(tmp_path, child)
+    e.seed_upstream(project, child, shim_dir, tracker="github")
+    assert not (project / ".memory" / "BACKLOG_MAP.md").exists()
+    epic = store(child)["issues"]["1"]
+    assert {"tier:epic", "status:planned"} <= {l["name"] for l in epic["labels"]}
+
+
+def test_the_runner_threads_the_tracker_choice():
+    r = _load("l3_run_tracker", HARNESS / "run-L3.py")
+    assert r.parse_args([]).tracker == "local"
+    assert r.parse_args(["--tracker", "github"]).tracker == "github"

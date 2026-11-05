@@ -1,0 +1,34 @@
+{
+ "U1": {
+  "epic": "BT-LOCAL-slugify-helper",
+  "slice": "BT-LOCAL-implement-slugify",
+  "dep": "BT-LOCAL-document-slugify",
+  "branch": "feature/BT-LOCAL-slugify-helper-slugify",
+  "tip": "e8530de258fa6f7dd34a222f2d565fcebf297648",
+  "claimed_before_ship": "feature/BT-LOCAL-slugify-helper-slugify"
+ },
+ "U2": {
+  "epic": "BT-LOCAL-word-counter",
+  "slice": "BT-LOCAL-count-words",
+  "dep": "BT-LOCAL-document-the-word-counter",
+  "branch": "feature/BT-LOCAL-word-counter-words",
+  "tip": "f0dc67a15524f74749fcf20a7005c8ab286d390b",
+  "claimed_before_ship": "feature/BT-LOCAL-word-counter-words"
+ },
+ "U3": {
+  "epic": "BT-LOCAL-title-caser",
+  "slice": "BT-LOCAL-title-case-a-string",
+  "dep": "BT-LOCAL-document-the-title-caser",
+  "branch": "feature/BT-LOCAL-title-caser-title",
+  "tip": "6ce6fdc5f339e6ee4865ccf7e765b380c2ad4822",
+  "claimed_before_ship": "feature/BT-LOCAL-title-caser-title"
+ },
+ "U4": {
+  "epic": "BT-LOCAL-clamp-helper",
+  "slice": "BT-LOCAL-clamp-a-number",
+  "dep": "BT-LOCAL-document-the-clamp-helper",
+  "branch": "feature/BT-LOCAL-clamp-helper-clamp",
+  "tip": "5e452bdbab215c77b1290ca26af95cf0099f7ec0",
+  "claimed_before_ship": "feature/BT-LOCAL-clamp-helper-clamp"
+ }
+}

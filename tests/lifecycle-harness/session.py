@@ -26,6 +26,7 @@ from pathlib import Path
 # Pinned so a CLI release cannot silently change harness behaviour. Keep in step
 # with tests/install-harness/run-L2.py.
 NPX_PACKAGE = "@anthropic-ai/claude-code@2.1.170"
+EFFORTS = ("low", "medium", "high", "xhigh", "max")  # that version's `--effort` values
 
 # Pin the model per ROLE rather than inheriting ~/.claude/settings.json. Two reasons:
 # a harness whose result depends on an ambient setting is not reproducible between
@@ -134,12 +135,16 @@ class Turn:
 
 
 def build_cmd(prompt: str, model: str | None = None,
-              resume: str | None = None) -> list[str]:
+              resume: str | None = None, effort: str | None = None) -> list[str]:
     """The exact argv for one headless turn. Split out so it can be asserted on."""
     cmd = _base_cmd() + ["-p", prompt, "--output-format", "stream-json",
                          "--verbose", "--dangerously-skip-permissions"]
     if model:
         cmd += ["--model", model]
+    if effort:
+        # The Claude Code CLI's `--effort <level>` (verified on the pinned 2.1.170 `--help`: EFFORTS).
+        # Claude only: another host's CLI needs its own driver and flag.
+        cmd += ["--effort", effort]
     if resume:
         cmd += ["--resume", resume]
     return cmd
@@ -184,14 +189,15 @@ def _run(cmd: list[str], cwd, env, timeout: int) -> tuple[Turn, str | None]:
 class ClaudeSession:
     """One continuing conversation, resumed turn by turn."""
 
-    def __init__(self, cwd, env=None, timeout: int = 900, model: str = DRIVER_MODEL):
+    def __init__(self, cwd, env=None, timeout: int = 900, model: str = DRIVER_MODEL,
+                 effort: str | None = None):
         self.cwd, self.env, self.timeout = Path(cwd), env or dict(os.environ), timeout
-        self.model = model
+        self.model, self.effort = model, effort
         self.session_id: str | None = None
         self.turns: list[Turn] = []
 
     def send(self, prompt: str) -> Turn:
-        cmd = build_cmd(prompt, self.model, self.session_id)
+        cmd = build_cmd(prompt, self.model, self.session_id, self.effort)
         turn, sid = _run(cmd, self.cwd, self.env, self.timeout)
         # Only adopt the first id: --resume must keep pointing at one conversation.
         self.session_id = self.session_id or sid

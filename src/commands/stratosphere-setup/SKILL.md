@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-20
+version: "1.6.0"
+timestamp: 2026-10-22
 ---
 
 # Instantiate StratosphereOS
@@ -17,43 +17,42 @@ Instantiate minimum durable context an AI agent needs to resume work on a reposi
 This skill is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
 
 ## Standalone Mode Routing
-If this skill is run with the `--re-reconcile-labels` CLI flag:
-1. Skip all setup checks, git/github remote promptings, template scaffolding, vision statement settings, database audits, architecture mapping, design audits, learnings/glossary seeding, and skill synchronization.
-2. Jump directly to **Checkpoint 6: Label Reconciliation** to reconcile labels and project board, and install/verify extensions.
-3. Once Checkpoint 6 is complete, exit immediately.
+If invoked with `--re-reconcile-labels`:
+1. Skip setup checks, remotes, scaffolding, audits, seeding, and skill sync.
+2. Jump directly to **Checkpoint 6: Label Reconciliation**.
+3. Exit immediately after Checkpoint 6.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.agents/skills/<name>/references/` — each skill's own templates and guides
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
-
-Cold starts are expensive! A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales.
+A compact, durable memory layer eliminates re-derivation cost across sessions. Protocol files keep memory dense and trustworthy as the project scales.
 
 ## Template source (read before any file creation)
 
 All templates ship **bundled inside this skill** under its `assets/templates/` directory (the scaffolder payload — `scripts/`, `assets/`, `versions.json` — rides in the `stratosphere-setup` skill folder so every install channel carries it). Locate the installed skill's `assets/templates/` (Checkpoint 0 finds it) and read the relevant template file before creating any project file — never reconstruct templates from memory:
 - `assets/templates/constitution/` → `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - `assets/templates/rules/` → `output-mode.md`, `memory-protocol.md`
-- `assets/templates/memory/` → `STATUS.md`, `BACKLOG_MAP.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
+- `assets/templates/memory/` → `STATUS.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-All 23 bundled skills (`0a`–`4c`, `3x`, and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
+All 22 bundled skills (`0a`–`4c` and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
 - One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`.
 - All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert.
 - Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
 
 ## Existing Installation Detection
 
-Before proceeding with setup, verify if StratosphereOS is already installed in this project:
-1. **Check detection markers:** Check if `.agents/.stratosphere-lock.json` exists, or if both `AGENTS.md` and a populated `.memory/` folder exist.
-2. **Handle existing install:** If an existing install is detected, do **NOT** silently proceed. Stop and inform the user:
+Before proceeding, verify if StratosphereOS is already installed:
+1. **Detection:** Check if `.agents/.stratosphere-lock.json` exists, or both `AGENTS.md` and a populated `.memory/` exist.
+2. **Handle existing install:** Do not proceed silently. Prompt user via native question tool (`AskUserQuestion` / `ask_question`):
    *"This project already has StratosphereOS installed. Setup bootstraps a new project; to upgrade, run `/stratosphere-update`."*
-3. **Ask confirmation:** Prompt the user using the native `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity) with three options:
+   Options:
    - **Run /stratosphere-update instead (recommended):** Exit setup and run `/stratosphere-update`.
-   - **Continue setup anyway:** Proceed with setup (only create-only-if-missing templates; never overwrite preserved files).
-   - **Cancel:** Abort the setup process.
-   You must wait for the user's choice and follow it exactly.
+   - **Continue setup anyway:** Proceed (create-only-if-missing; never overwrite preserved files).
+   - **Cancel:** Abort setup.
+   Follow the user's choice exactly.
 
 ## Version Control Setup & Path Detection
 
@@ -61,26 +60,24 @@ Before any file operations:
 
 1. **Initialize Git (Greenfield only):**
    - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
-     - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
+     - If no git repository exists (no `.git`), prompt via native question tool (`AskUserQuestion` / `ask_question`):
        `No git repository is initialized in this project. Initialize a git repository? [y/N]`
-     - If they answer yes, initialize it by running `git init` before continuing.
-   - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
+     - Yes → initialize with `git init`.
+   - **Brownfield** if: existing source code, dependencies present, or live database configured.
 
-2. **Verify GitHub CLI & Remote Connection (Optional):**
-   - Check if the GitHub CLI (`gh`) is installed and authenticated. Run `gh --version` and `gh auth status` (be sure to clear the `GITHUB_TOKEN` environment variable if running tests to verify the user's persistent credentials).
-   - If `gh` is not installed or not authenticated, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
-     `GitHub CLI (gh) is recommended for automating PRs and issue management. It is not set up/authenticated. Would you like to pause to set it up now? [y/N]`
-   - If the user selects **Yes**:
-     - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal. Wait for authentication before proceeding.
-   - If the user selects **No**:
-     - Document in `.memory/STATUS.md` that GitHub CLI is unavailable. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6) and fall back to local file-based tracking.
-   - **Check GitHub Remote Repository Connection:** If `gh` is installed and authenticated (or if GitHub integration was selected during plugin installation), verify that the local repository is connected to a remote GitHub repository by running `git remote -v` or `gh repo view`.
-   - If no GitHub remote repository is connected, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
-     `No remote GitHub repository is connected to this project. A connected GitHub repository is required to automatically populate labels and issues in BACKLOG_MAP.md. Would you like to connect or create a GitHub repository now? [y/N]`
-   - If the user selects **Yes**:
-     - Provide instructions or assist the user in running `gh repo create` or `git remote add origin <url>` and pushing their initial commit. Wait for connection confirmation before proceeding.
-   - If the user selects **No**:
-     - Document in `.memory/STATUS.md` that remote GitHub connection is unavailable. Fall back to local file-based label and issue tracking so `BACKLOG_MAP.md` is populated locally without remote sync errors.
+2. **Choose the issue tracker (GitHub recommended):** backend is `github` (GitHub issues) or `local` (one file per issue on the `<repo>/issues` git branch). Checkpoint 0 records it.
+   - Check if `gh` is installed and authenticated: run `gh --version` and `gh auth status` (clear `GITHUB_TOKEN` in tests to verify persistent credentials).
+   - If `gh` is not installed/authenticated, prompt via native question tool:
+     `No GitHub connection: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Set up GitHub now? [Y/n]`
+     - **Yes (recommended):** instruct user to install `gh` (`winget install GitHub.cli`, `brew install gh`, or `cli.github.com`) and run `gh auth login`. Wait for authentication.
+     - **No:** tracker is `local`. Skip remote GitHub integrations (e.g. label creation in Checkpoint 6).
+   - **Check GitHub Remote:** If `gh` is authenticated, verify remote connection via `git remote -v` or `gh repo view`.
+   - If no remote is connected, prompt via native question tool:
+     `No GitHub repository is connected to this project: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Connect or create a GitHub repository now? [Y/n]`
+     - **Yes (recommended):** assist user in running `gh repo create` or `git remote add origin <url>` and pushing initial commit. Wait for connection.
+     - **No:** tracker is `local`; skip remote GitHub integrations.
+   - **Result:** `gh` authenticated and GitHub remote connected → `github`, else `local`. Pass as `--tracker` in Checkpoint 0.
+   - **Switching later (local → GitHub only):** once `gh` and a remote exist, run `python .agents/scripts/tracker_switch.py` (dry run), then `--apply`. `/stratosphere-update` never changes the backend.
 
 
 ## Checkpoint 0: Scaffold (deterministic — both paths)
@@ -94,7 +91,7 @@ Find `<plugin>` by checking these locations in order and using the first that co
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 
-**Suite integrity check (before scaffolding):** assert the 24 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
+**Suite integrity check (before scaffolding):** assert the 25 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
 
 ```bash
 python <plugin>/scripts/check_suite.py suite
@@ -105,8 +102,8 @@ If `<plugin>/scripts/check_suite.py` is missing, the installed plugin predates t
 Then run the scaffolder from the project root — it creates the full folder structure and copies every template verbatim, **create-only-if-missing**, with **zero LLM tokens** (do not hand-create these files — let the script do it):
 
 ```bash
-# <plugin> = the path you found above
-python <plugin>/scripts/scaffold.py
+# <plugin> = the path you found above; <tracker> = the backend chosen in Version Control Setup step 2 (github | local)
+python <plugin>/scripts/scaffold.py --tracker <tracker>
 
 # Add --dry-run to preview what would be created without writing any files:
 python <plugin>/scripts/scaffold.py --dry-run
@@ -119,11 +116,15 @@ python <plugin>/scripts/scaffold.py --update
 **What it creates** (skips anything already present):
 - Folders: `.memory/`, `.agents/rules/`, `.agents/skills/`, `.agents/scripts/`, `docs/discovery/`, `docs/prds/`, `.tmp/`
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
-- Memory: `.memory/{STATUS,BACKLOG_MAP,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md`
+- Memory: `.memory/{STATUS,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md` (`tracker:` is written into ARCHITECTURE.md's frontmatter)
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
-- All 23 bundled skills (`0a`–`4c`, `3x`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
+- All 22 bundled skills (`0a`–`4c`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
 - `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
 - `.gitignore` (only if missing)
+
+**Record the tracker as a law:** in `.memory/ARCHITECTURE.md`, turn the tracker `[[A-XXX]] [LAW]` placeholder under Known Architectural Constraints into an entry with the next free `A-nnn` ID and the chosen backend (`<github|local>` replaced); keep the placeholder wording otherwise.
+
+**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand.
 
 **Upgrades and Updates:** If this is an existing project needing an upgrade or sync, do not use setup. Instead, run `/stratosphere-update` which performs a safe, in-place framework block update.
 
@@ -204,14 +205,14 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 - **Greenfield:** skip. Leave `.memory/GLOSSARY.md` as the empty template.
 - **Brownfield:** scan `docs/prds/`, `docs/discovery/`, READMEs, and DB enum/type definitions for recurring domain terms.
   1. Propose 5–10 terms with one-line definitions to the user.
-  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc.
+  2. User confirms which to keep; write confirmed entries as `[[G-xxx]] [ASSUMED]` with `Source:` pointing to the originating doc, per `references/glossary-entry-rules.md`.
   3. Assign sequential IDs starting from `[[G-001]]`.
-  4. **Preserve guidelines and placeholders:** Do NOT delete the protocol instruction line (`> GLOSSARY follows the same protocol as LEARNINGS.md — not exempt from trust tags.`), the `Avoid:` instructions, or the format example line under `## Superseded`.
+  4. **Preserve guidelines and placeholders:** Do NOT delete the `glossary-guidance` header block or the format example line under `## Superseded`.
 
 ### Checkpoint 5.2: Secret hygiene
 
 - Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit).
-- Rationale: `.memory/STATUS.md` is the churny per-session pointer — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES/BACKLOG_MAP`) stay tracked and backed up.
+- Rationale: `.memory/STATUS.md` is the churny folder-state file (session lines) — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES`) stay tracked and backed up.
 
 ### Checkpoint 5.3: Test gate (opt-in)
 
@@ -222,7 +223,9 @@ Ask once (native question tool) whether to install the pre-commit test gate: it 
 ## Checkpoint 6: Label Reconciliation (both paths)
 
 > [!NOTE]
-> **GitHub CLI Fallback:** If the GitHub CLI (`gh`) is unavailable or unauthenticated (because the user declined setup in the Version Control Setup step), skip all automated remote GitHub operations (Steps 1-4). Instead, skip directly to Step 5 using the template's canonical labels for the local registry, and inform the user they will need to manage remote labels manually on GitHub.
+> **The registry:** canonical labels live in `references/label-taxonomy.md`. The project's `area:*` labels go to the `## Tracker Registry` lines of `.memory/ARCHITECTURE.md` (with the Project ID) under `tracker: github`, and to the tracker branch through `python .agents/scripts/issues.py label area:<slug>` (one call per slug) under `tracker: local`.
+>
+> **Local tracker:** the local backend never touches GitHub. Skip every GitHub operation below (labels and Project board); only register the project's `area:*` slugs, as above.
 
 GitHub labels are ground truth for the `area:` dimension — the same principle as the live database in Checkpoint 2. The canonical taxonomy dimensions (`type:`, `mode:`, `tier:`, `priority:`, `size:`, `status:`, `concept:`) are system-level constants and must always match the registry.
 
@@ -230,7 +233,7 @@ GitHub labels are ground truth for the `area:` dimension — the same principle 
 No GitHub labels exist yet.
 1. Create every label in the canonical registry verbatim in GitHub.
 2. No user confirmation required — no conflicts possible.
-3. Write the confirmed label set into `.memory/BACKLOG_MAP.md ## Label Registry` while preserving all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
+3. Write the project's live `area:*` labels into the registry; none yet → leave the Area line empty (slugs are added as they are introduced).
 
 ### Brownfield
 GitHub labels already exist and may differ from the registry.
@@ -265,7 +268,7 @@ GitHub labels already exist and may differ from the registry.
 
 5. **Execute** confirmed changes in GitHub.
 
-6. **Write final resolved label set** into `.memory/BACKLOG_MAP.md ## Label Registry`. This becomes the single source of truth — do not revert to template defaults, but MUST preserve all operational bullet points (such as label syncing rules and the `Milestone` definition line). Always keep the `Area (area:xxx)` line: list the project's live `area:*` labels, or, if none exist yet, write it as **Area (area:xxx)**: *project-defined — add slugs through the registry flow as they are introduced*. Never drop the line.
+6. **Write the final resolved `area:*` set** into the registry. It is the source of truth: never revert to template defaults.
 
 ### GitHub Project & Board Setup (both paths)
 1. **Programmatic Check:** Before prompting or setting up, search for any existing Project V2 board for the owner by running `gh project list --owner <owner>`. If a board is detected, query its fields (`gh project view <number> --owner <owner> --json fields`) to verify if the `Status` single-select field is configured.
@@ -287,9 +290,8 @@ GitHub labels already exist and may differ from the registry.
 
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
-1. Update `.memory/STATUS.md` to reflect current version, build state, and immediate next step.
-2. If GitHub issues or active tasks exist, populate `.memory/BACKLOG_MAP.md` using `BT-xxx` IDs and the Label Registry.
-3. Backlog seeding and the instantiate command MUST emit BT ids in zero-padded `BT-007` form, inheriting the global BACKLOG_MAP rule.
+1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
+2. If issues or active tasks exist, seed them through the `create` verb (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)
@@ -308,8 +310,8 @@ GitHub labels already exist and may differ from the registry.
    # Unix/macOS (Claude Code)
    npm install --prefix .agents/scripts/design
    ```
-   *(Note: If the install fails due to network constraints or offline environment, print a warning, record in STATUS.md that the Google lint seam is not provisioned, and proceed with setup rather than halting).*
-   For `claude-design`, `native`, or non-Node/offline projects: skip the npm install and record in `.memory/STATUS.md` that the lint toolchain is not provisioned.
+   *(Note: If the install fails due to network constraints or offline environment, print a warning, record in STATUS.md `Repo notes` that the Google lint seam is not provisioned, and proceed with setup rather than halting).*
+   For `claude-design`, `native`, or non-Node/offline projects: skip the npm install and record in `.memory/STATUS.md` `Repo notes` that the lint toolchain is not provisioned.
 
 ## Checkpoint 9: Skill setup (interactive)
 
@@ -354,5 +356,5 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
 - **Re-running this skill is safe.** Files are created only if missing; existing files are checked for structural drift and user is asked before changes.
 - **Minimalism:** shortest accurate phrasing. No filler.
 - **Live DB wins over code.** Conflicts logged as `[LAW]` entries in `LEARNINGS.md`.
-- **Live GitHub labels win over the template registry (area: only).** After Checkpoint 6, the registry in `.memory/BACKLOG_MAP.md` is authoritative. Do not revert to template defaults.
+- **Live GitHub labels win over the template registry (area: only).** After Checkpoint 6, the registry (Checkpoint 6) is authoritative. Do not revert to template defaults.
 - **Protocols govern ongoing behavior.** This skill instantiates the structure; the rule files in `.agents/rules/` and `.memory/DESIGN_RULES.md` govern all ongoing work. `DESIGN.md` follows an external spec.

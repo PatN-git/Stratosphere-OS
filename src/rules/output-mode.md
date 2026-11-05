@@ -2,8 +2,8 @@
 trigger: always_on
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
-timestamp: 2026-09-15
-version: "2.0.0"
+timestamp: 2026-10-28
+version: "2.0.1"
 ---
 
 # Output Mode Protocol
@@ -40,7 +40,7 @@ Maximize information density while minimizing token waste. Focus on *what was do
 5. **Updates**: [Changes to docs/scripts]
 
 ## 4. General Constraints
-- **Word economy:** Drop any word whose removal does not change meaning. Prefer the shortest phrasing that preserves intent (e.g. "in order to" → "to"; cut hedges and intensifiers).
+- **Word economy:** Drop any word whose removal does not change meaning. Prefer the shortest phrasing that preserves intent for the reader (e.g. "in order to" → "to"; cut hedges and intensifiers).
 - **No fillers:** delete any phrase whose removal loses no information — acknowledgements (e.g. "Sure", "Great"), flattery (e.g. "Great question"), self-narration (e.g. "Let me…"), and sign-offs (e.g. "Hope this helps").
 - **Surgical narrative:** explain *why*, not *how*.
 - **Direct verification:** show results, not process.

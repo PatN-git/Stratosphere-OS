@@ -6,8 +6,8 @@ paths:
   - "docs/**/*"
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
-version: "2.0.3"
-timestamp: 2026-10-14
+version: "2.1.0"
+timestamp: 2026-11-04
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -52,7 +52,7 @@ Other existing metadata keys (such as `issue_url`, `status`, `linked-prd`) are p
 | `stale` | `deprecated` |
 | `draft` | `draft` (unchanged) |
 
-Work-status (`status:*` GitHub labels / BACKLOG `Status`) **never** appears in doc frontmatter, and the editorial enum never appears on issues. **Exception:** the `discovery-brief` type keeps its routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision rather than editorial maturity.
+Work-status (`status:*` labels) **never** appears in doc frontmatter, and the editorial enum never appears on issues. **Exceptions:** an `issue` file's `status:` is its work status; the `discovery-brief` type keeps its routing-outcome vocab (`ready-for-prd | exit-bug | exit-spike | dropped`), which records a routing decision rather than editorial maturity.
 
 `sources` (optional): supersedes a body `# Citations` / `## Sources` section. Each entry requires `resource`; `id`, `title`, `author`, `last_modified` are optional.
 
@@ -94,10 +94,9 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `type` | Applies to | Extra fields beyond the base contract |
 |:---|:---|:---|
 | `status` | `STATUS.md` | — |
-| `backlog` | `BACKLOG_MAP.md` | — |
 | `learnings` | `LEARNINGS.md` | — |
 | `glossary` | `GLOSSARY.md` | — |
-| `architecture` | `ARCHITECTURE.md` | — |
+| `architecture` | `ARCHITECTURE.md` | `tracker` (optional): `github` \| `local`, the issue-tracker backend. Absent: a present tracker branch means `local`, else `github` when `gh` is ready, else scripts halt (`reconcile.py resolve_backend`). `tracker_branch` (local): `<repo>/issues`. `data_read` (optional): how `/0f-walk-me-through` reads one record, e.g. `supabase, read-only role`; it names the method, never the secret (that stays in `.env`); read-only credentials only, never an admin or service-role key. Absent: illustrative traces. |
 | `database-schema` | `DATABASE_SCHEMA.md` | — |
 | `design-rules` | `DESIGN_RULES.md` | — |
 | `design` | `DESIGN.md` | conforming (tolerated by the `@google/design.md` linter) |
@@ -108,7 +107,8 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
 | `roadmap` | `docs/ROADMAP.md` | — |
 | `audit-report` | `docs/audits/*.md` | — |
-| `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
+| `concept-map` | `docs/discovery/*.map.md` (v4 legacy; `issues.py migrate`) | `status`, `slug` |
+| `issue` | `docs/issues/*.md` on the `tracker_branch` (never the working tree), written only by `issues.py` | `status` (work status) and the tracker fields; no `generated` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
 | `reference` | in-scope reference material under `docs/` (e.g. `docs/okf-spec-essentials.md`) | — |
@@ -117,7 +117,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
 - **Directory `index.md` files** (e.g. `.memory/index.md`, `docs/prds/index.md`): Used for progressive disclosure. These files must **not** carry frontmatter and are listings only.
 - **`log.md`**: If present, carries change history. It must not contain frontmatter.
-- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (companion renders live in `.tmp/render/`, never `docs/`), `docs/**/.last-run.json`, and `.memory/*.jsonl` (e.g. `jules-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
+- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (companion renders live in `.tmp/render/`, never `docs/`), `docs/**/.last-run.json`, and `.memory/*.jsonl` (e.g. `audit-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
 
 ## 5. Version Semantics
 - **System/Template Files**: Stamped at build time by `build/build.py` based on the system `VERSION` constant.

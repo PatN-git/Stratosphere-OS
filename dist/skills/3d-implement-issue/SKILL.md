@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.7.0"
-timestamp: 2026-10-20
+version: "2.8.0"
+timestamp: 2026-10-22
 ---
 
 # Implement issue
@@ -19,11 +19,11 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 0. **Spike guard (first, before any side effect):** if the slice is `status:needs_spec`, HALT: `[SPIKE] BT-<n> is not buildable. Close it on its Exit Criteria, or mint a Build slice with /3b-create-issue.`
    **Blocker guard:** `python .agents/scripts/reconcile.py --edges blockers --ids BT-<n>`; any `[BLOCKER-UNMET]`/`[BLOCKER-UNKNOWN]` → HALT `[BLOCKED-BY] BT-<n> waits on BT-<b> (<scope>: <reason>)`. HITL may override in chat (log it in the Phase 0.5 plan). Skip under 3z (its frontier ran it), for a CI-fix dispatch and for rework of a shipped slice.
 1. **Branch Isolation:** `python .agents/scripts/pr_body.py unit --slice BT-<padded> --milestone <Milestone> --parent <Parent> --parent-milestone <parent's Milestone> --type <type> --slug "<parent epic name>"` → `{unit, globs, branch}`.
-   - Inputs: Milestone, Parent from the BACKLOG row, else `gh issue view <n> --json milestone,parent`; parent's Milestone likewise (`gh issue view <parent> --json milestone`); `—` for none. `<type>` = the parent's `type:` label (the slice's if standalone); standalone → slice title as slug.
-   - Find an active branch matching the first `globs` entry, in order, among local + `origin/` branches (`git for-each-ref --format='%(refname:short)' refs/heads refs/remotes/origin`); active = no merged PR (`gh pr list --head <b> --state merged --json number`; no `gh` → not in `git branch --no-merged <default>`). Found → checkout/pull. None → `needs_milestone` true: HALT `[NO-RELEASE] BT-<n>: epic BT-<p> has no release milestone — assign one via /3c or /3a` (HITL may override in chat → epic branch); else create `branch` from default (name taken by a merged branch → append `-2`).
+   - Inputs, by backend (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)): github → `gh issue view <n> --json milestone,parent`, and the parent's Milestone with `gh issue view <parent> --json milestone` (one issue each, never a list); local → `issues.py get <n>`, then `get <parent>`. `—` for none. `<type>` = the parent's `type:` label (the slice's if standalone); standalone → slice title as slug.
+   - Find an active branch matching any `globs` entry (first hit in glob order) among local + `origin/` branches (`git for-each-ref --format='%(refname:short)' refs/heads refs/remotes/origin`); active = no merged PR (`gh pr list --head <b> --state merged --json number`; no `gh` → not in `git branch --no-merged <default>`). Found → checkout; pull only when it has an upstream. None → `needs_milestone` true: HALT `[NO-RELEASE] BT-<n>: epic BT-<p> has no release milestone — assign one via /3c or /3a` (HITL may override in chat → epic branch); else create `branch` from default (name taken by a merged branch → append `-2`).
    - Prompt (AFK: first match, else own-issue unit, never adopt) on several active matches for one glob, unreadable or ambiguous Parent/Milestone, or a checked-out unmerged feature branch outside `globs`. Never work on `main`.
-   - Update `.memory/STATUS.md` `Current Branch`/`Active issue`; refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
-2. Read slice issue. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/BT-<parentPadded>-interface.md` if it exists. **First-slice rule:** set the slice to `status:in progress` in `BACKLOG_MAP.md` and via `gh issue edit <n> --remove-label "status:planned" --remove-label "status:blocked" --remove-label "status:in review" --remove-label "status:done" --add-label "status:in progress"`. Slice closed (rework of a shipped slice) → after the label edit and BACKLOG update, `gh issue reopen <n>` as the last write (relabel first: the board Action restores the column from the label at reopen). Promote the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips this flip and any reopen: its slice keeps its shipped status.
+   - Upsert your session line in `.memory/STATUS.md` `Sessions` (`BT-n · branch · date`; own line only, never a rewrite); skip it under 3z (its orchestrator writes the line); refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates.
+2. Read slice issue, its parent epic, and inspect sibling slices (github: `gh issue view <parent> --json body,subIssues`; local: `issues.py get <parent>`, then `issues.py children <parent>`) to understand integration seams and contracts before planning. Its `### Dependencies` `Design:` line names the design path (`—` = none); absent (legacy slice) → `docs/design/<parentId>-interface.md` if it exists (`<parentId>` = the slice's Parent as `get` returns it: `BT-012` or `BT-LOCAL-<slug>`). **First-slice rule:** `claim` the slice (`[CLAIMED BT-<n> by <x>]` → HALT: another session holds it), then `set_status` it `in progress` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); it clears whichever of `planned`, `blocked`, `in review`, `done` the slice carries). Slice closed (rework of a shipped slice) → `reopen` it: github after `set_status`, as the last write (relabel first: the board Action restores the column from the label at reopen); local first, before `claim`. `set_status` the parent epic `planned → in progress` **only if the epic is not already at `in progress`, `in review`, or `done`** (never downgrade a further-along epic). A CI fix (dispatched per `references/ci-gate.md` §3) skips the claim, this flip and any reopen: its slice keeps its shipped status.
 3. **Conditional Read:** If a design path resolved, read the frozen blueprint at it; no PRD/design doc at that path (standalone slice) → skip the blueprint.
    - UI slices also read brand tokens `.memory/DESIGN.md` and design rules `.memory/DESIGN_RULES.md` §3 (a backend-only slice reads just the blueprint/contract).
    - UI slices must implement design *only* from these files via Fast-Track B; never access/re-read the live generator.
@@ -37,7 +37,7 @@ Apply strictly to backend logic, database operations, hooks, and state functions
 **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.** No baseline suite run before it: the observed RED is the baseline; Phase 3 step 6 is the only full run.
 
 ## Phase 0.5: Plan
-Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; 4a deletes it after ship).
+Plan every slice before coding; small slices get a short plan. **Skip only** a pure cosmetic slice (micro-tdd Fast-Track B scope; no plan file is written). Persist the plan to `.tmp/3d-plan-BT-<padded>.md` (scratch; 4a deletes it after ship). A retry updates the existing plan, keeping `## Deviations`.
 - **HITL:** use the host's native planning mode where one exists (e.g. Antigravity `/plan`, Claude Code plan mode). Any approval prompt is the host's own; add no extra review halt.
 - **AFK** (dispatched by 3z): no approval.
 - **Required sections:** (1) files `[NEW]`/`[MODIFY]`, one-line intent each; (2) seams to test; (3) AC → planned test path; (4) existing tests at risk and how each stays green; (5) cross-cutting touchpoints (state/URL hydration, mocks/fixtures, env stubs needed for CI parity); (6) applicable memory IDs (`[[L/A/DR/G-xxx]]`); (7) open decisions; (8) `Noticed, not touched`: issues seen outside the slice, one line each, never fixed here, `none` if empty.
@@ -48,7 +48,7 @@ Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, o
 - micro-tdd returns `stuck` → halt the slice; commit nothing half-done. Stash uncommitted edits so the tree stays clean: `git stash push -u -m "BT-<padded> stuck"`.
 - Then HITL presents its two options; AFK returns it as `stuck` in the 3z JSON.
 1. **CLI/Subprocess:** assert on stdout/stderr, not just exit code.
-2. **Requirements:** link test to requirement bare IDs from BACKLOG_MAP.md/issue (not STATUS.md) (e.g., `BT-101`).
+2. **Requirements:** link test to requirement bare IDs from the issue (never STATUS.md) (e.g., `BT-101`).
 3. **Fallbacks:** prefer native libraries (e.g. sqlite3, argparse) over third-party in mock/simple utility environments.
 
 ## Phase 2: Refactoring & Architecture Checks
@@ -66,7 +66,7 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no track
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced, and step 6's full run is green.
 5. Compare the coverage map with the plan's AC → test list (skipped when Phase 0.5 was skipped). Name every deviation and write them to a `## Deviations` section of `.tmp/3d-plan-BT-<padded>.md`; none → `none`.
-6. First run `python .agents/scripts/floor_guard.py`: exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes `.tmp/3d-suite-BT-<padded>.json`); red → return to the micro-tdd loop, do not hand off.
+6. First run `python .agents/scripts/floor_guard.py`: exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (`<cmd>` = the project's test command; it writes `.tmp/3d-suite-BT-<padded>.json`); red → return to the micro-tdd loop, do not hand off.
 7. Done also requires a clean tree after the full run, so files the suite generated are checked (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
 
-**Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR.
+**Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR (HITL; under 3z return the JSON and stop).

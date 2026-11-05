@@ -1,0 +1,4 @@
+Please apply these moves with `python .agents/scripts/issues.py apply-moves -` (the lines below are its stdin):
+BT-LOCAL-gated-card -> in progress
+BT-LOCAL-script-img-src-x-onerror-document-title -> in progress
+BT-LOCAL-second-card -> in review

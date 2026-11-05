@@ -1,0 +1,77 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="neon-ring" x1="18" y1="20" x2="110" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#8B5CF6" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#00F0FF" stop-opacity="0.1" />
+    </linearGradient>
+    <linearGradient id="layer-apex" x1="64" y1="16" x2="64" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0F2FE" />
+      <stop offset="50%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#818CF8" />
+    </linearGradient>
+    <linearGradient id="layer-mid" x1="64" y1="42" x2="64" y2="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="layer-base" x1="64" y1="68" x2="64" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284C7" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#312E81" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95" />
+    </linearGradient>
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="core-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle for standalone contrast -->
+  <rect width="128" height="128" rx="28" fill="#070B14" />
+  <rect width="128" height="128" rx="28" stroke="url(#neon-ring)" stroke-width="1.2" stroke-opacity="0.3" />
+
+  <!-- Back part of celestial orbital ring -->
+  <ellipse cx="64" cy="58" rx="46" ry="17" transform="rotate(-26 64 58)" stroke="url(#neon-ring)" stroke-width="2" stroke-linecap="round" stroke-dasharray="160 50" filter="url(#neon-glow)" />
+
+  <!-- Layer 3: Execution Platform (Base) -->
+  <g filter="url(#neon-glow)">
+    <path d="M64 98L30 80L64 62L98 80L64 98Z" fill="url(#layer-base)" stroke="#0284C7" stroke-width="1.5" stroke-opacity="0.6" />
+    <path d="M30 80L64 98L98 80" stroke="#38BDF8" stroke-width="1.5" stroke-opacity="0.7" fill="none" />
+  </g>
+
+  <!-- Layer 2: Orchestration Brain (Mid) -->
+  <g filter="url(#neon-glow)">
+    <path d="M64 74L30 56L64 38L98 56L64 74Z" fill="url(#layer-mid)" stroke="#00F0FF" stroke-width="1.8" stroke-opacity="0.8" />
+    <path d="M30 56L64 74L98 56" stroke="#A78BFA" stroke-width="2" stroke-opacity="0.9" fill="none" />
+  </g>
+
+  <!-- Layer 1: Lifecycle Apex (Top) -->
+  <g filter="url(#core-glow)">
+    <path d="M64 50L30 32L64 14L98 32L64 50Z" fill="url(#layer-apex)" stroke="#E0F2FE" stroke-width="2.2" />
+    <path d="M30 32L64 50L98 32" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- Glowing Apex Singularity / Orchestration Beacon -->
+  <circle cx="64" cy="32" r="3.5" fill="#FFFFFF" filter="url(#core-glow)" />
+  <circle cx="64" cy="32" r="1.5" fill="#00F0FF" />
+
+  <!-- Front part of celestial orbital ring with radiant node -->
+  <ellipse cx="64" cy="58" rx="46" ry="17" transform="rotate(-26 64 58)" stroke="#00F0FF" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="70 140" filter="url(#core-glow)" />
+  <circle cx="28" cy="74" r="2.5" fill="#00F0FF" filter="url(#core-glow)" />
+  <circle cx="28" cy="74" r="1" fill="#FFFFFF" />
+
+  <!-- Subtle cosmic star particles -->
+  <circle cx="22" cy="28" r="1" fill="#38BDF8" opacity="0.8" />
+  <circle cx="106" cy="36" r="1.2" fill="#818CF8" opacity="0.9" />
+  <circle cx="98" cy="94" r="1" fill="#00F0FF" opacity="0.7" />
+</svg>

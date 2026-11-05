@@ -238,6 +238,15 @@ def test_record_suite_pads_the_issue_number_to_three_digits(repo):
     assert suite_record(repo, "BT-007").is_file()
 
 
+def test_record_suite_takes_a_local_backend_id_and_pr_body_suite_finds_it(repo):
+    suite_repo(repo)
+    assert gate(repo, "record", "--suite", "BT-LOCAL-x-y", "--", *PYTEST_FULL).returncode == 0
+    assert suite_record(repo, "BT-LOCAL-x-y").is_file()
+    pr_body = REPO_ROOT / "src" / "scripts" / "pr_body.py"
+    r = subprocess.run([sys.executable, str(pr_body), "suite"], cwd=repo, capture_output=True, text=True, env=_GIT_ENV)
+    assert r.returncode == 0 and "pytest" in r.stdout, r.stdout + r.stderr
+
+
 def test_record_suite_needs_an_issue_id(repo):
     suite_repo(repo)
     assert gate(repo, "record", "--suite", "oops", "--", *PYTEST_FULL).returncode != 0

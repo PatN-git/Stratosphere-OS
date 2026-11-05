@@ -1,0 +1,15 @@
+p='findings.md'
+s=open(p,encoding='utf-8').read()
+rows=("| F42 | B2 | product (docs) | minor | 1c `concept-map-template.md` says \"Instantiate into `docs/discovery/<slug>.map.md`\" (and carries map frontmatter), but 1c SKILL Phase 1 step 3 says \"The tracker is the only record\". Both 1c runs flagged it; both followed SKILL (map body only on the `concept:map` issue). | not fixed. Proposed: template = the issue body; drop the file path and the frontmatter block. |\n"
+"| F43 | B4 | product | minor | A map-born brief cannot fill the template's `Ask (verbatim)`: 1c never stores the user's opening words (map template has no Ask section), so B4 left a placeholder until the user re-typed it. | not fixed. Proposed: map template `## Ask (verbatim)` written at Phase 1 Chart; Converge copies it. |\n")
+s=s.replace("## Learnings", rows+"## Learnings",1)
+s+="""
+## Follow-up B2–B4 — 1c chart → scripted resolution → converge, local tracker (2026-10-28)
+- Fresh unseeded local sandbox `C:\\t\\l3-j6med60n`; fog-variant topic `relay/topic-fog.md` (two undecided, dependent decisions; disliked terms "edge evaluation", "shard key"); one blind fog proxy.
+- **B2 chart** (Haiku, 2 turns): `concept:map` `BT-LOCAL-concept-map-feature-flags-for-backend`, `in progress`, no milestone; 9 child tickets (1 research, 1 prototype, 7 grilling — more than the planned 2; 1c chooses its own split), blockers wired so bucketing waits on evaluation location (user's condition honoured; it also removed a research edge the user did not want), research ticket parked as `blocked`; nothing resolved during charting; `issues.py check` OK. Agent slip: graduated fog bullets were left in the fog list until the user reply. One fog item (flag lifecycle) kept by the user.
+- **B3 scripted** (`b3_resolve.py`): 9 resolution comments (vocabulary tickets name rejected synonyms), 9 closes, 9 `Decisions so far` lines, fog emptied (lifecycle → Out of scope follow-up). My prototype resolution recorded no measurement — B4's RAT caught it.
+- **B4 converge** (fresh Haiku, 2 turns): Phase 0 resumed the map and routed to Converge (frontier + fog empty); brief `docs/discovery/feature-flags-backend.md` (`type: discovery-brief`, `concept-map:` set); inline RAT found 7 real issues (leans vs decisions, unnamed stable hash, two delivery paths, unmeasured prototype, missing Ask); **GLOSSARY hash unchanged at the gate (PASS)**; after approval: `[[G-001]] Local evaluation — Avoid: edge evaluation`, `[[G-002]] Bucketing key — Avoid: user ID, hash key, shard key`, both `Source:` = the brief, rule format, no code identifiers; map `CLOSED done`; `issues.py check` OK; validate_memory clean.
+- Findings: F42, F43. Haiku claims triaged: version field (F30 class); prototype closed without observation is my B3 script, not the skill; slug-truncated local ids and the parked-ticket status are wording nits.
+- Harness note: unseeded local sandboxes commit only `chore: init`; scaffold files stay untracked (no effect on these phases).
+"""
+open(p,'w',encoding='utf-8').write(s)

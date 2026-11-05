@@ -15,7 +15,8 @@ ORCHESTRATORS = {"2z-write-spec", "3z-afk-loop"}
 # through a reference they apply: {reader: reference file})
 HANDOFFS = {
     "1a-research": ("docs/research/", {"1c-concept-map"}, {}),  # 1c runs 1a inline and saves the result
-    "2b-interface-design": ("docs/design/BT-", set(), {}),
+    # `-interface.md`, not `docs/design/BT-`: readers write the parent's id as `<parentId>` (GitHub `BT-012` or local `BT-LOCAL-<slug>`)
+    "2b-interface-design": ("-interface.md", set(), {}),
     # 3b applies audit-to-slices.md §8, which takes the [ACTIVE] release from ROADMAP.md
     "3a-version-planning": ("docs/ROADMAP.md", set(), {"3b-create-issue": "audit-to-slices.md"}),
 }

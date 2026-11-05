@@ -68,6 +68,23 @@ def test_confirm_is_refused_until_the_budget_is_spent():
     assert a.source == "policy:not-yet"
 
 
+def test_the_not_yet_push_back_is_1b_only_other_phases_confirm():
+    ask = "I have what I need. Shall I proceed with the slices?"
+    assert make(max_questions=10).reply(ask).source == "policy:not-yet"           # 1b is the default phase
+    a = make(phase="3b", max_questions=10).reply(ask)
+    assert (a.text, a.source) == ("Yes, proceed.", "policy:confirm")
+    assert make(phase="0a", max_questions=10).reply(ask).source == "policy:confirm"
+
+
+def test_an_approval_request_with_numbered_drafts_and_ice_is_approved_not_picked():
+    ask = ("Approval request. Drafts:\n1. Login form (ICE 0.8)\n2. Logout (ICE 0.6)\n3. Session expiry (ICE 0.4)\n"
+           "Approve and I will mint them in order?")
+    a = make(phase="3b").reply(ask)
+    assert (a.text, a.source) == ("Approved — mint every drafted slice as drafted.", "policy:approve")
+    # a plain menu without the approval wording is still a pick
+    assert make(phase="3b").reply("Which framing?\n1. Local\n2. Remote").source == "policy:pick-first"
+
+
 def test_menu_beats_confirm():
     """'Shall I proceed with 1, 2 or 3' is a pick, not a yes."""
     a = make().reply("Shall I proceed?\n1. Yes now\n2. After more questions")

@@ -77,13 +77,6 @@ def drive(phase: str, prompt: str, sentinel: str, chat, responder,
     run.turns.append(turn)
 
     while True:
-        # A phase that stalls must fail by name rather than consume the run's
-        # remaining wall clock. Checked between turns, so a turn in flight is
-        # never killed mid-write.
-        if budget is not None and clock() - started > budget:
-            raise PhaseFailure(
-                f"{phase}: exceeded its {budget:.0f}s budget after "
-                f"{len(run.turns)} turn(s) without reaching its sentinel")
         if sentinel in turn.text:
             if settle is None:
                 return run
@@ -98,6 +91,15 @@ def drive(phase: str, prompt: str, sentinel: str, chat, responder,
                 return run
             turn = _reopen(phase, run, chat, responder, gaps)
             continue
+
+        # A phase that stalls must fail by name rather than consume the run's
+        # remaining wall clock. Checked between turns, so a turn in flight is
+        # never killed mid-write, and after the sentinel: a phase that finished
+        # in one long turn is done, not late.
+        if budget is not None and clock() - started > budget:
+            raise PhaseFailure(
+                f"{phase}: exceeded its {budget:.0f}s budget after "
+                f"{len(run.turns)} turn(s) without reaching its sentinel")
 
         answer = responder.reply(turn.text)
         run.replies = responder.replies

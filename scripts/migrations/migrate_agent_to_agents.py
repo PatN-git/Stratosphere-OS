@@ -4,7 +4,7 @@
 StratosphereOS moved its constitution filename from the nonstandard `AGENT.md`
 (singular) to `AGENTS.md` (plural) — the Linux Foundation "agents.md" open
 standard that Claude Code (via a CLAUDE.md `@AGENTS.md` import), Antigravity,
-and Google Jules all read. Fresh installs use the new name automatically; this
+and Cursor all read. Fresh installs use the new name automatically; this
 script migrates an EXISTING instantiated project in place.
 
 It is intentionally NOT wired into scaffold.py's install/update lifecycle —

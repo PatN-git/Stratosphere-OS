@@ -22,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src" / "dev-skills"
-TARGETS = (ROOT / ".agents" / "skills", ROOT / ".claude" / "skills")
+IN_TREE_TARGETS = (ROOT / ".agents" / "skills", ROOT / ".claude" / "skills")
+GLOBAL_AGY_TARGET = Path.home() / ".gemini" / "config" / "skills"
 
 
 def main() -> int:
@@ -30,6 +31,16 @@ def main() -> int:
     if not SRC.is_dir():
         print(f"no dev-skills source at {SRC}")
         return 0
+
+    targets = list(IN_TREE_TARGETS)
+    if not check:
+        # Clean up retired directory name from previous versions
+        for t in targets + ([GLOBAL_AGY_TARGET] if GLOBAL_AGY_TARGET.parent.exists() else []):
+            stale = t / "improve-workflows-skills"
+            if stale.is_dir():
+                shutil.rmtree(stale)
+        if GLOBAL_AGY_TARGET.parent.exists():
+            targets.append(GLOBAL_AGY_TARGET)
 
     drifted: list[str] = []
     placed = 0
@@ -40,7 +51,7 @@ def main() -> int:
             if not src_file.is_file():
                 continue
             rel = src_file.relative_to(SRC)
-            for target in TARGETS:
+            for target in targets:
                 dst = target / rel
                 if check:
                     # This repo gitignores `.agents/` wholesale, so that copy is
@@ -49,7 +60,8 @@ def main() -> int:
                     if not target.exists():
                         continue
                     if not dst.exists() or not filecmp.cmp(src_file, dst, shallow=False):
-                        drifted.append(str(dst.relative_to(ROOT)))
+                        rel_name = dst.relative_to(ROOT) if dst.is_relative_to(ROOT) else dst
+                        drifted.append(str(rel_name))
                     continue
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst)
@@ -64,7 +76,7 @@ def main() -> int:
         print("dev-skills: placed copies match source")
         return 0
 
-    print(f"dev-skills: placed {placed} file(s) into {len(TARGETS)} target(s)")
+    print(f"dev-skills: placed {placed} file(s) into {len(targets)} target(s)")
     return 0
 
 

@@ -37,12 +37,10 @@ def scan_definitions(project_root: Path) -> dict[str, str]:
         "LEARNINGS.md",
         "GLOSSARY.md",
         "ARCHITECTURE.md",
-        "DESIGN_RULES.md",
-        "BACKLOG_MAP.md"
+        "DESIGN_RULES.md"
     ]
 
     DEF_RE = re.compile(r"^\s*(?:[-*+]\s+\**|#+\s+)?\[\[([A-Za-z0-9_-]+)\]\]")
-    TABLE_RE = re.compile(r"^\s*\|\s*(?:\[\[)?([A-Za-z0-9_-]+)(?:\]\])?\s*\|")
 
     for fname in target_files:
         fpath = memory_dir / fname
@@ -52,15 +50,6 @@ def scan_definitions(project_root: Path) -> dict[str, str]:
         try:
             content = fpath.read_text(encoding="utf-8")
             for line in content.splitlines():
-                # Check Backlog Map table rows
-                if fname == "BACKLOG_MAP.md":
-                    m = TABLE_RE.match(line)
-                    if m:
-                        def_id = m.group(1)
-                        if not def_id.endswith("-x") and not def_id.endswith("-ID"):  # Skip placeholders
-                            definitions[def_id] = f".memory/{fname}"
-                    continue
-
                 # Check standard list or heading item definitions
                 m = DEF_RE.match(line)
                 if m:

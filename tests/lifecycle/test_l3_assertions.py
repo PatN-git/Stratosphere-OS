@@ -29,6 +29,7 @@ def _load(name, path):
 a = _load("l3_assertions", HARNESS / "assertions.py")
 e = _load("l3_env_assert", HARNESS / "env.py")
 gh = _load("l3_gh_assert", HARNESS / "shims" / "gh_shim.py")
+seed = _load("l3_seed_assert", HARNESS / "seed.py")
 
 CHILD = {"PATH": os.environ.get("PATH", ""),
          "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
@@ -260,11 +261,16 @@ def test_2b_fails_without_the_interface_contract(tmp_path):
 
 # --- 0a second run -----------------------------------------------------------
 
-def test_0a_second_notes_an_unchanged_status_but_fails_on_a_new_branch(tmp_path):
+def test_0a_second_fails_on_a_retired_status_field_or_a_new_branch(tmp_path):
     proj = project(tmp_path)
     c = ctx(proj)
     problems, notes = a.check("0a-second", c)
-    assert problems == [] and notes
+    assert problems == []
+
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Current Branch:** feat/x\n")
+    problems, _ = a.check("0a-second", c)
+    assert any("retired" in p for p in problems)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n")
 
     subprocess.run(["git", "-C", str(proj), "branch", "feat/BT-002-y"],
                    capture_output=True)
@@ -272,18 +278,17 @@ def test_0a_second_notes_an_unchanged_status_but_fails_on_a_new_branch(tmp_path)
     assert any("only 3d creates branches" in p for p in problems)
 
 
-# --- 3b: the terminal sync gate, run rather than believed --------------------
+# --- 3b: the store and the gate, run rather than believed ---------------------
 
-BACKLOG = """---
-type: backlog
-generated:
-  at: 2026-01-01
----
-
-| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| BT-001 | Ruleset parsing | planned | type:feature | v1.0.0 | — | — | 1.0 | — |
-"""
+# The retired v5 store: no backend may leave one (BT-221 moved the local tracker to the `<repo>/issues` branch).
+OLD_MAP = "| ID | Title | Status |\n|:---|:---|:---|\n| BT-LOCAL-x | X | planned |\n"
+MAP = Path(".memory") / "BACKLOG_MAP.md"  # relative to a project root
+ARCH = Path(".memory") / "ARCHITECTURE.md"
+SCRIPTS = ("issues.py", "_tracker_common.py", "_ice.py", "reconcile.py", "nightly_state.py", "ice_read.py", "pr_body.py")
+GIT_ID = {"GIT_AUTHOR_NAME": "L3", "GIT_AUTHOR_EMAIL": "l3@x", "GIT_COMMITTER_NAME": "L3",
+          "GIT_COMMITTER_EMAIL": "l3@x"}
+SLICE = "type:feature,tier:slice,mode:AFK,size:small"
+AC_BODY = "### Overview\nParse.\n\n### Acceptance Criteria (Verifiable)\n- [ ] Parses the ruleset\n"
 
 
 def _shimmed(tmp_path, monkeypatch):
@@ -293,63 +298,73 @@ def _shimmed(tmp_path, monkeypatch):
         monkeypatch.setenv(key, child[key])
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
+    seed.seed_labels(child, tmp_path / "shims")  # the repo has its labels, as after stratosphere-setup
     return child
 
 
-def _project_with_reconcile(tmp_path, backlog):
+def _project_with_reconcile(tmp_path):
     proj = project(tmp_path)
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True)
-    for name in ("reconcile.py", "nightly_state.py"):  # reconcile imports nightly_state
+    for name in SCRIPTS:  # reconcile imports nightly_state; every script imports _tracker_common (issues and ice_read also _ice)
         (scripts / name).write_text(
             (REPO / "src" / "scripts" / name).read_text(encoding="utf-8"),
             encoding="utf-8")
-    write(proj / ".memory" / "BACKLOG_MAP.md", backlog)
     return proj
 
 
-def test_3b_passes_when_the_mirror_matches_the_store(tmp_path, monkeypatch):
+def _issues(proj, *argv):
+    r = subprocess.run([sys.executable, str(proj / ".agents" / "scripts" / "issues.py"), *argv], cwd=str(proj),
+                       env={**os.environ, **GIT_ID}, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    return r.stdout.strip()
+
+
+def _local_3b(tmp_path, monkeypatch, *, labels=SLICE, body=AC_BODY, mint=True, mint_issue=False, map_file=False):
     child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing", "--label",
-             "status:planned,type:feature", "--milestone", "v1.0.0"])
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
+    proj = _project_with_reconcile(tmp_path)
+    _issues(proj, "init")
+    epic = _issues(proj, "create", "--title", "Flag evaluation", "--label", "type:feature,tier:epic")
     before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md",
-          BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16"))
-
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert problems == [], problems
-
-
-def test_3b_fails_when_the_mirror_and_the_store_disagree(tmp_path, monkeypatch):
-    child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing", "--label",
-             "status:done,type:feature", "--milestone", "v1.0.0"])
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
-    before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md",
-          BACKLOG.replace("at: 2026-01-01", "at: 2026-09-16"))
-
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert any("MIRROR-OK" in p for p in problems)
+    if mint_issue:
+        gh.main(["issue", "create", "--title", "Ruleset parsing"])
+    if mint:
+        write(tmp_path / "body.md", body)
+        _issues(proj, "create", "--title", "Ruleset parsing", "--label", labels, "--parent", epic,
+                "--body-file", str(tmp_path / "body.md"))
+    if map_file:
+        write(proj / MAP, OLD_MAP)
+    c = a.Context(project=proj, child_env={**os.environ}, store=Path(child["L3_GH_STORE"]), before=before)
+    return a.check("3b", c)[0]
 
 
-def test_3b_fails_when_an_issue_has_no_backlog_row(tmp_path, monkeypatch):
-    child = _shimmed(tmp_path, monkeypatch)
-    gh.main(["issue", "create", "--title", "Ruleset parsing"])
-    gh.main(["issue", "create", "--title", "Unmirrored slice"])
-    proj = _project_with_reconcile(tmp_path, BACKLOG)
-    before = a.snapshot(proj)
-    write(proj / ".memory" / "BACKLOG_MAP.md", BACKLOG + "\n")
+def test_3b_local_passes_when_it_creates_a_checked_slice_and_touches_no_github(tmp_path, monkeypatch):
+    assert _local_3b(tmp_path, monkeypatch) == []
 
-    c = a.Context(project=proj, child_env={**os.environ},
-                  store=Path(child["L3_GH_STORE"]), before=before)
-    problems, _ = a.check("3b", c)
-    assert any("BT-002" in p for p in problems)
+
+def test_3b_local_fails_when_no_slice_was_created(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, mint=False)
+    assert any("no slice" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_a_slice_body_has_no_acceptance_criteria(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, body="### Overview\nParse.\n")
+    assert any("BT-LOCAL-ruleset-parsing" in p and "Acceptance Criteria" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_issues_check_finds_a_bad_label_set(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, labels="type:feature,tier:slice,mode:AFK")
+    assert any("issues.py check" in p and "size:" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_a_backlog_map_exists(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, map_file=True)
+    assert any("BACKLOG_MAP.md" in p for p in problems), problems
+
+
+def test_3b_local_fails_when_it_created_a_github_issue(tmp_path, monkeypatch):
+    problems = _local_3b(tmp_path, monkeypatch, mint_issue=True)
+    assert any("never touches GitHub" in p for p in problems)
 
 
 # --- 3d ----------------------------------------------------------------------
@@ -361,8 +376,26 @@ def test_3d_fails_when_nothing_was_committed_and_no_branch_was_cut(tmp_path):
     assert any("committed nothing" in p for p in problems)
 
 
+def test_3d_fails_without_a_session_line_or_with_a_retired_field(tmp_path):
+    proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Active Issue / PRD:** BT-001\n")
+    problems, _ = a.check("3d", ctx(proj))
+    assert any("session line" in p for p in problems)
+    assert any("retired" in p for p in problems)
+
+
+def test_3d_session_line_accepts_a_local_backend_id(tmp_path):
+    """The local backend's ids are `BT-LOCAL-<slug>`; a session line naming one is a session line."""
+    proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md",
+          "# STATUS\n- **Sessions:**\n  - BT-LOCAL-flag-evaluation · feature/v1.0-flags · 2026-10-28\n")
+    problems, _ = a.check("3d", ctx(proj))
+    assert not any("session line" in p for p in problems)
+
+
 def test_3d_passes_with_a_branch_and_a_commit(tmp_path):
     proj = project(tmp_path)
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     before = a.snapshot(proj)
     subprocess.run(["git", "-C", str(proj), "checkout", "-b", "feat/BT-001-flags"],
                    capture_output=True)
@@ -405,6 +438,9 @@ def test_4a_fails_without_a_verdict_token(tmp_path):
 
 # --- 0b ----------------------------------------------------------------------
 
+GOOD_STATUS = "# STATUS\n- **Last Sync:** 2026-10-27\n- **Sessions:**\n  - BT-001 · feat/BT-001-flags · 2026-10-27\n"
+
+
 def _validator(proj, exit_code):
     scripts = proj / ".agents" / "scripts"
     scripts.mkdir(parents=True, exist_ok=True)
@@ -412,25 +448,59 @@ def _validator(proj, exit_code):
         f"import sys\nsys.exit({exit_code})\n", encoding="utf-8")
 
 
-def test_0b_passes_when_it_wrote_status_and_ran_the_scripts(tmp_path):
+def test_0b_passes_when_it_synced_status_and_ran_the_scripts(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     c = a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
         {"name": "Bash", "input": '{"command": "python .agents/scripts/okf_view.py"}'}])
     problems, _ = a.check("0b", c)
     assert problems == []
 
 
+def test_0b_accepts_an_unchanged_last_sync_when_repo_notes_record_a_skipped_sync(tmp_path):
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md",
+          "# STATUS\n- **Last Sync:**\n- **Repo notes:** Merge sync skipped: gh unavailable.\n")
+    problems, notes = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "python okf_view.py"}'}]))
+    assert not any("Last Sync" in p for p in problems)
+    assert any("skipped the merge sync" in n for n in notes)
+
+
+def test_0b_fails_without_last_sync_or_with_a_retired_field(tmp_path):
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md", "# STATUS\n- **Next Immediate Step:** x\n")
+    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "python okf_view.py"}'}]))
+    assert any("Last Sync" in p for p in problems)
+    assert any("retired" in p for p in problems)
+
+
 def test_0b_fails_when_okf_view_never_ran(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
-    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD,
-                                          before=before))
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
+    problems, _ = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[
+        {"name": "Bash", "input": '{"command": "ls"}'}]))
     assert any("okf_view.py" in p for p in problems)
+
+
+def test_0b_without_a_tool_stream_notes_the_okf_view_clause_instead_of_failing_it(tmp_path):
+    """A caller with no stream (a check run after the fact) cannot know okf_view ran, so it is no evidence."""
+    proj = project(tmp_path)
+    before = a.snapshot(proj)
+    _validator(proj, 0)
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
+    problems, notes = a.check("0b", a.Context(project=proj, child_env=CHILD, before=before))
+    assert problems == []
+    assert any("okf_view.py" in n for n in notes)
 
 
 def test_0b_fails_if_a_single_run_promoted_a_memory_to_verified(tmp_path):
@@ -438,7 +508,7 @@ def test_0b_fails_if_a_single_run_promoted_a_memory_to_verified(tmp_path):
     proj = project(tmp_path)
     before = a.snapshot(proj)
     _validator(proj, 0)
-    write(proj / ".memory" / "STATUS.md", "# STATUS\nlast session: done\n")
+    write(proj / ".memory" / "STATUS.md", GOOD_STATUS)
     write(proj / ".memory" / "LEARNINGS.md",
           "## [[L-001]] Local evaluation\nverified: true\n")
     c = a.Context(project=proj, child_env=CHILD, before=before, tool_uses=[

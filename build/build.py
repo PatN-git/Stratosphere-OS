@@ -44,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "4.10.1"
+VERSION = "5.0.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
@@ -181,6 +181,53 @@ policy:
 """
 
 
+BACKEND_TAG = re.compile(r"\s*<!-- (github|local|master) -->\s*$")
+
+
+def project_backend(master_text: str, backend: str) -> str:
+    """One backend's view of the master tracker-verbs.md: a line ending in `<!-- github -->` / `<!-- local -->` is kept
+    only for that backend, an untagged line for both, a `<!-- master -->` line for neither; a Verbs table row becomes
+    one `- verb: form` bullet. Front matter: the master's description and timestamp, the build VERSION."""
+    fm, body = split_frontmatter(master_text)
+    meta = {k: v.strip() for k, v in re.findall(r"^(description|timestamp):\s*(.*)$", fm or "", re.M)}
+    col = {"github": 1, "local": 2}[backend]
+    out, in_verbs, titled = [], False, False
+    for line in body.splitlines():
+        m = BACKEND_TAG.search(line)
+        if m:
+            if m.group(1) != backend:
+                continue
+            line = line[:m.start()]
+        if line.startswith("## "):
+            in_verbs = line == "## Verbs"
+        elif in_verbs and line.startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) == 3 and cells[0].startswith("`"):
+                out.append(f"- {cells[0]}: {cells[col]}")
+            continue
+        elif not titled and line.startswith("# "):
+            line, titled = f"{line} ({'GitHub' if backend == 'github' else 'Local'})", True
+        out.append(line)
+    banner = "<!-- AUTO-GENERATED: DO NOT EDIT DIRECTLY. Compiled from src/references/tracker-verbs.md by build/build.py -->\n\n"
+    head = f'---\ndescription: {meta["description"]}\nversion: "{VERSION}"\ntimestamp: {meta["timestamp"]}\n---\n\n{banner}'
+    return head + re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
+
+
+def generate_projected_verbs(master_text: str) -> tuple[str, str]:
+    """Compile the single master tracker-verbs.md into the (GitHub, local) backend references."""
+    return project_backend(master_text, "github"), project_backend(master_text, "local")
+
+
+def project_tracker_verbs(ref_dir: Path):
+    """Compile master src/references/tracker-verbs.md into projected backend references."""
+    master = ref_dir / "tracker-verbs.md"
+    if not master.is_file():
+        return
+    gh_text, local_text = generate_projected_verbs(master.read_text(encoding="utf-8"))
+    write_lf(ref_dir / "tracker-verbs-github.md", gh_text)
+    write_lf(ref_dir / "tracker-verbs-local.md", local_text)
+
+
 def emit_skill(src_md, name, skills_dir, ref_dir):
     """Emit one self-contained skill: SKILL.md + its transitive references/."""
     dst = skills_dir / name
@@ -207,6 +254,7 @@ def build_bundle():
     force_rmtree(BUNDLE)
     BUNDLE.mkdir(parents=True)
     ref_dir = SRC / "references"
+    project_tracker_verbs(ref_dir)
 
     # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():
@@ -278,7 +326,17 @@ def write_versions_manifest():
 def write_plugin_manifest():
     """dist/ is the plugin root: the manifest sits beside dist/skills, so a host that installs a
     plugin directory picks up the one canonical skill tree (no per-host copy)."""
-    manifest = {"name": "stratosphere-os", "version": VERSION, "description": DESCRIPTION, "author": AUTHOR}
+    manifest = {
+        "name": "stratosphere-os",
+        "displayName": "StratosphereOS",
+        "version": VERSION,
+        "description": DESCRIPTION,
+        "logo": "assets/logo.png",
+        "author": {
+            "name": AUTHOR,
+            "url": "https://github.com/PatN-git/Stratosphere-OS"
+        }
+    }
     write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
 
 
@@ -312,6 +370,9 @@ def main():
     force_rmtree(DIST / "antigravity")
     build_bundle()
     print(f"[built] {BUNDLE.relative_to(ROOT)}")
+    if (SRC / "assets").exists():
+        copytree(SRC / "assets", DIST / "assets")
+        print("[built] dist/assets")
     write_plugin_manifest()
     print("[built] dist/plugin.json")
     write_marketplace()

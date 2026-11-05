@@ -1,20 +1,22 @@
 # Stratosphere-OS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
-[![Version](https://img.shields.io/badge/version-4.10.1-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
 
-> An agentic orchestration framework that equips AI coding assistants (Claude Code, Google Antigravity) with structured memory, automated TDD guardrails, and deterministic project lifecycles. Developed out of frustration with unstructured AI workflows and inspired by popular skill builders.
+> An agentic orchestration framework that equips AI coding assistants (Claude Code, Google Antigravity, Cursor, Codex, OpenClaw) with structured memory, automated TDD guardrails, and deterministic project lifecycles. Developed out of frustration with unstructured AI workflows and inspired by popular skill builders.
 
 ---
 
 ## Table of Contents
 - [Why StratosphereOS?](#why-stratosphereos)
 - [Workspace Directory Structure](#workspace-directory-structure)
+- [Dual Issue Tracking (GitHub & Local)](#dual-issue-tracking-github--local)
 - [Lifecycle Skills Matrix](#lifecycle-skills-matrix)
 - [Getting Started (Installation)](#getting-started-installation)
+- [Upgrading Framework Files](#upgrading-framework-files-updating)
 - [Architecture & Governance](#architecture--governance)
 
 ---
@@ -22,7 +24,7 @@
 ## Why StratosphereOS?
 
 ### Beyond Unstructured Code Generation
-In modern AI software development, ad-hoc chat prompting quickly leads to architectural drift, subtle bugs, and unmaintainable technical debt. StratosphereOS addresses this by enforcing **Human-in-the-Loop (HITL) architecture governance**. 
+In modern AI software development, ad-hoc chat prompting quickly leads to architectural drift, subtle bugs, and unmaintainable technical debt. StratosphereOS addresses this by enforcing **Human-in-the-Loop (HITL) architecture governance**.
 
 Developers act as **Loop Engineers**—interviewing the agent, stress-testing specifications, and establishing clear UI and logic contracts before any implementation begins. Once the human explicitly approves the requirements, small vertical slices are delegated to autonomous test-driven loops (`micro-tdd`) that execute independently until all compiler and test suite checks pass.
 
@@ -41,35 +43,84 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 ├── AGENTS.md / CLAUDE.md / GEMINI.md  ← Core constitution and layer rules
 ├── .agents/                          ← Orchestration engine (rules, workflows, skills)
 ├── .memory/                          ← Authoritative project memory
-│   ├── STATUS.md                     ← Active session health and build status
-│   ├── BACKLOG_MAP.md                ← Feature slices and issue tracking
+│   ├── ARCHITECTURE.md               ← System structural invariants & tracker backend
 │   ├── LEARNINGS.md                  ← Accumulated architectural traps and fixes
 │   ├── GLOSSARY.md                   ← Project domain vocabulary
-│   ├── ARCHITECTURE.md               ← System structural invariants
 │   ├── DATABASE_SCHEMA.md            ← Living database definitions
-│   └── DESIGN.md / DESIGN_RULES.md   ← UI design tokens and structural contracts
+│   ├── DESIGN.md / DESIGN_RULES.md   ← UI design tokens and structural contracts
+│   ├── STATUS.md                     ← Active session state and health (gitignored)
+│   └── resume/                       ← Ephemeral session continuity notes (gitignored)
 └── docs/                             ← Product Requirement Documents (PRDs) and research
+```
+
+### Project Memory & Git Hygiene
+StratosphereOS maintains a clean separation between persistent knowledge and ephemeral session state:
+- **Tracked in Git:** Authoritative project memory (`ARCHITECTURE.md`, `LEARNINGS.md`, `GLOSSARY.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`). These files form the living documentation of your system and are committed alongside your code.
+- **Gitignored:** Ephemeral session files (`STATUS.md`, `resume/`). These track active session health and in-flight handoff notes, preventing unnecessary merge conflicts across concurrent branches and worktrees.
+
+---
+
+## Dual Issue Tracking (GitHub & Local)
+
+StratosphereOS supports two zero-friction issue-tracking backends configured in `.memory/ARCHITECTURE.md` (`tracker: github` or `tracker: local`):
+
+1. **GitHub Issues (`tracker: github`)**:
+   - Integrates directly with GitHub Issues, milestones, and project boards via the `gh` CLI.
+   - Ideal for open-source repositories and teams collaborating on GitHub.
+
+2. **Local Tracker (`tracker: local`)**:
+   - Stores each issue as a standalone markdown document (`docs/issues/<id>.md`) on an isolated `<repo>/issues` Git branch.
+   - Every feature branch, worktree, and offline environment reads and updates issues via `issues.py` with **zero merge conflicts** and zero external dependencies.
+   - Ideal for private offline work, air-gapped environments, or solo development.
+
+### Tracker Management CLI
+StratosphereOS includes a high-performance CLI utility (`.agents/scripts/issues.py`) to manage issues across both backends:
+
+```bash
+# View a live summary table across all milestones and epics
+python .agents/scripts/issues.py summary
+
+# Open the visual interactive Kanban board in your browser
+python .agents/scripts/issues.py board --open
+
+# List, view, or filter issues
+python .agents/scripts/issues.py list
+python .agents/scripts/issues.py view <id>
+
+# Seamlessly switch between GitHub and Local tracker backends
+python .agents/scripts/tracker_switch.py --to github
+python .agents/scripts/tracker_switch.py --to local
 ```
 
 ---
 
 ## Lifecycle Skills Matrix
 
-StratosphereOS provides structured lifecycle skills spanning the entire development lifecycle. Each installs to `.agents/skills/<name>/SKILL.md` and is invoked as `/<name>` on Claude Code, Antigravity, Cursor, Codex, Devin and OpenClaw.
+StratosphereOS provides 28 structured skills spanning the entire development lifecycle. Each installs to `.agents/skills/<name>/SKILL.md` and is invoked as `/<name>` on Claude Code, Antigravity, Cursor, Codex, Devin, and OpenClaw.
 
 | Stage | Command | Purpose & Rationale | Reads | Produces |
 |:---|:---|:---|:---|:---|
-| **0. Session Start** | `/0a-start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
-| **1. Discovery** | `/1a-research`<br/>`/1b-concept-framing`<br/>`/1c-concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps complex dependency trees. | `.memory/*` | Discovery brief, glossary terms |
-| **2. Design** | `/2a-write-prd`<br/>`/2b-interface-design` | Derives formal PRDs and UI contracts to prevent agent hallucinations and UI drift. | Discovery brief | PRD doc, UI/logic contracts |
-| **2z. Spec Orchestration** | `/2z-write-spec` | Chains `/2a-write-prd` → `/2b-interface-design` → `/2c-reconcile-specs` in one invocation with a single memory load and a decision log; resumes after a Path A pause. | Discovery brief, `.memory/*` | PRD doc, design doc, reconciled specs |
-| **3. Planning** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into traceable vertical-slice issues sized for single context windows. | PRD, `BACKLOG_MAP` | Release roadmap, sprint plan, vertical issues |
-| **3d. Execution** | `/3d-implement-issue` | Runs autonomous `micro-tdd`: writes failing test, executes suite, writes code, refactors. | Issue, `ARCHITECTURE` | Passing unit tests, committed code |
-| **3z. Orchestration** | `/3z-afk-loop` | Runs the autonomous end-to-end loop for `type:AFK` slices (single slice or batch), chaining session start, implementation, verification, PR shipping, and stop session. | `BACKLOG_MAP`, `STATUS` | Automated PRs and synced status |
-| **4. Ship & Audit** | `/4a-verify-and-ship`<br/>`/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits acceptance criteria against automated test coverage, audits structural drift, and screens broad codebase health across 6 passes. | Issue, tests, codebase, `.memory/*` | Quality gap report, traceable PR, audit reports (docs/audits/) + slice proposals |
-| **0. Anytime** | `/0e-plain-english` | Restates the agent's last message or question in plain, non-technical English; say "more" to elaborate. | Last agent message | Plain-language explanation |
-| **0. Session Stop** | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, and prepares clean session handoffs. | Session work | Updated `STATUS.md`, clean handoff |
-| **Maintenance** | `/stratosphere-update` | Upgrades framework templates, rules, and workflows in-place without overwriting user memory or configuration. | `.memory/*`, lockfile | Updated framework files |
+| **0. Session Management** | `/0a-start-session` | Eliminates cold-start costs by restoring branch state and loading durable memory. | `STATUS`, `.memory/*` | Synced session context |
+| | `/0b-stop-session`<br/>`/0c-handoff` | Lints project memory, updates status ground truth, stages resume notes, and prepares clean handoffs. | Session work | Updated `STATUS.md`, resume note, handoff brief |
+| | `/0d-nightly-consolidation` | Consolidates ephemeral session learnings and prunes outdated scratch state. | `.memory/*`, git logs | Consolidated learnings, clean memory |
+| | `/load-memory` | Read-only reconstruction of active project memory and architecture invariants. | `.memory/*` | Loaded agent context |
+| **0. Anytime Utilities** | `/0e-plain-english` | Restates the agent's last message or question in plain, non-technical English. | Last agent message | Plain-language explanation |
+| | `/0f-walk-me-through` | Traces why a result happened, or predicts behavior, in plain words (≤ 3 tool calls). | Ticket, commit, or diff | Step-by-step walkthrough |
+| **1. Discovery & Ideation** | `/1a-research`<br/>`/1b-concept-framing`<br/>`/1c-concept-map` | Investigates domain context, deconstructs fuzzy ideas, and maps multi-entity dependency trees. | `.memory/*` | Discovery brief, glossary terms, entity maps |
+| | `/concept-brainstorm` | Divergent/convergent ideation loop (Constraints → Diverge → Triage → Validate). | Brief, domain ideas | Prioritized concepts, structured trade-offs |
+| **2. Design & Contracts** | `/2a-write-prd`<br/>`/2b-interface-design` | Derives formal PRDs and UI/API contracts to prevent hallucinations and drift. | Discovery brief | PRD doc, UI/logic contracts |
+| | `/2c-reconcile-specs` | Cross-audits PRD, interface design, architecture, and database schemas for consistency. | PRD, design, schema | Reconciled specifications |
+| | `/2z-write-spec` | Orchestrates `/2a` → `/2b` → `/2c` in one invocation with unified memory and decision log. | Discovery brief, `.memory/*` | PRD doc, design doc, reconciled specs |
+| **3. Planning & Decomposition** | `/3a-version-planning`<br/>`/3b-create-issue`<br/>`/3c-sprint-planning` | Deconstructs PRDs into roadmap milestones and context-sized vertical slice issues. | PRD, tracker | Release roadmap, sprint plan, vertical issues |
+| | `/plan-html` | Generates standalone, interactive HTML plans, roadmaps, and trade-off matrices. | Markdown plans, tables | Self-contained interactive HTML file |
+| **4. Autonomous Execution** | `/3d-implement-issue` | Implements vertical slices via autonomous `micro-tdd`: test-first RED → GREEN → REFACTOR. | Issue, `ARCHITECTURE` | Passing unit tests, surgical code commits |
+| | `/3z-afk-loop` | Runs autonomous end-to-end loops for `type:AFK` issues (start → implement → ship → stop). | Issues, `STATUS` | Automated PRs and updated status |
+| | `/micro-tdd` | Inner TDD engine: routes code changes via cheapest safe path (direct, visual, or test-first). | Failing test / target code | Passing tests, refactored code |
+| **5. Ship & Quality Audit** | `/4a-verify-and-ship` | Audits acceptance criteria against automated test suites, pushes branch, and opens/updates PR. | Issue, tests, codebase | Verification audit, pushed branch, tracked PR |
+| | `/4b-audit-architecture-drift`<br/>`/4c-codebase-health-audit` | Audits codebase against `ARCHITECTURE.md` invariants and screens 6 passes of broad codebase health. | Codebase, `.memory/*` | Drift audit report, health audit report |
+| **6. Scaffolding & Maintenance** | `/stratosphere-setup` | Scaffolds initial `.memory/` layer, constitution, rules, and issue tracker. | User requirements | Initialized StratOS workspace |
+| | `/stratosphere-update` | Upgrades framework templates, rules, and skills in-place without touching user memory. | `.memory/*`, lockfile | Upgraded framework files |
+| | `/sync-skills` | Discovers, installs, and synchronizes external domain and ecosystem skills on demand. | `external-skills.json` | Installed external skills |
 
 ---
 
@@ -149,7 +200,7 @@ agy plugin install dist
 ```
 `agy` copies it to `~/.gemini/config/plugins/stratosphere-os/`; `agy plugin list` shows it (the source reads `antigravity`, not the clone path). `/stratosphere-setup` and `/stratosphere-update` find the installed copy there. To update, pull the clone and run `agy plugin install dist` again, which overwrites the plugin in place (`/stratosphere-update` does the same from a release-tag clone). Plugins do not auto-update, and the plugin carries only the bundled skills: external skills still arrive through `/sync-skills`. Track D stays available. Verified on `agy` 1.3.0 only.
 
-Use Track D or Track E, not both: they register the same skills, and `/stratosphere-update` follows the first copy it finds (the Track D one), so the plugin copy is never refreshed. Untested.
+Use Track D or Track E, not both: they register the same skills, and `/stratosphere-update` follows the first copy it finds (the Track D one), so the plugin copy is never refreshed.
 
 > [!TIP]
 > **Zero-Click AI Installation Shortcut**
@@ -170,43 +221,19 @@ To upgrade an already-instantiated project to later plugin versions, run:
 ```
 Your `.memory/` data and constitution are never overwritten; framework-owned blocks are updated in place, and you confirm any conflicts.
 
-> [!IMPORTANT]
-> **Upgrading a v3 project to v4.0.0 — do not auto-update.**
-> v4 is a breaking release: every lifecycle artifact is renamed to Agent Skills spec form and moves to `.agents/skills/<name>/SKILL.md`. `/0a_start-session` and its siblings stop resolving — use `/0a-start-session`. There are **no alias shims**.
->
-> `/stratosphere-update` alone is **not sufficient** and will refuse to run. The migration is a one-shot script that is **not bundled with the plugin** — fetch it from the release tag and run it once, by hand, from your project root:
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/PatN-git/Stratosphere-OS/v4.0.0/scripts/migrations/migrate_v3_to_v4.py -o migrate_v3_to_v4.py
-> python migrate_v3_to_v4.py            # dry run (default) — read it before applying
-> python migrate_v3_to_v4.py --apply
-> rm migrate_v3_to_v4.py
-> ```
->
-> If you keep a clone of this repo (Antigravity users do), run `scripts/migrations/migrate_v3_to_v4.py --project <your-project>` from it instead.
->
-> Then run `/stratosphere-update` to place the v4 skills. Between the two commands the project has no lifecycle skills, so run them back-to-back — and on a dedicated branch, since the migration touches `.agents/`, `.memory/` and `docs/`.
-
 > [!TIP]
 > **Keeping the Plugin Fresh**
-> - **Claude Code users:** leave the StratOS marketplace plugin's `autoUpdate` **off** until you have migrated — a background update into a breaking release leaves a v3 project with skills that no longer resolve. Update deliberately, migrate, then `/stratosphere-update`. Once on v4, `"autoUpdate": true` is safe again for MINOR/PATCH releases.
+> - **Claude Code users (Track C):** updates arrive through `/plugin update stratosphere-os` or automatically if `autoUpdate` is enabled.
 > - **Track A users:** `npx skills update`.
-> - **Google Antigravity users (Track D):** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
+> - **Google Antigravity users (Track E / Marketplace):** updates can be installed via the **Customizations > Marketplace** tab in Antigravity or by running `agy plugin install dist` from an updated repository clone.
+> - **Track D users:** update your local repository clone via `git pull` and re-run `scripts/install-antigravity-bridge.sh` (or `.ps1`) to install the latest skills.
 
 ---
 
 ## Architecture & Governance
 
 ### Open Knowledge Format (OKF) Conformance
-StratosphereOS conforms to the [Open Knowledge Format (OKF) v0.1 Specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf). The `.memory/` and `docs/` directories form a structured knowledge bundle. An interactive HTML graph visualizer can be generated anytime via `python .agents/scripts/okf_view.py`.
+StratosphereOS conforms to the [Open Knowledge Format (OKF) v0.2 Specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf). The `.memory/` and `docs/` directories form a structured knowledge bundle. An interactive HTML graph visualizer can be generated anytime via `python .agents/scripts/okf_view.py`.
 
 ### UI Stack & Design Tooling
 By default, UI projects assume React + Tailwind CSS + shadcn/ui. Non-UI projects rely on clean interface contracts defined during `/2b-interface-design`. Google Stitch design integration is supported automatically when enabled in workspace settings.
-
-### Experimental: Jules Dispatch (opt-in)
-An optional pack that offloads bounded `mode:AFK` slices to **Google Jules** (an async cloud coding agent) so implementation runs on Google's side, preserving Claude/Antigravity tokens. It **dispatches and reports only** — it never merges, never enables auto-merge, and never orchestrates other workflows; you verify each Jules PR with `/4a-verify-and-ship` and merge it yourself.
-
-- **Not bundled — fetched on demand:** `python <plugin>/scripts/sync_skills.py --only jules-dispatch` lands it at `.agents/skills/jules-dispatch/`. It is invisible to `/stratosphere-update` (survives byte-identical).
-- **Setup:** `JULES_API_KEY` in `.env.local` (sent as the `X-Goog-Api-Key` header); install the Jules GitHub app on the repo and configure its environment once in Jules's UI (Initial Setup → Run and Snapshot); keep a root `AGENTS.md` (Jules auto-reads it for conventions).
-- **Data egress:** Jules clones the repo into a Google-managed VM and opens a PR on origin. Reconcile via PR review — nothing is pushed from your local tree.
-- Status: `v0.1`, experimental. Source: `src/experimental/jules-dispatch/`; plan: `docs/plans/jules-afk-dispatch-implementation-plan.md`.

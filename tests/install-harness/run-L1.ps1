@@ -46,7 +46,7 @@ function Assert-ScaffoldTree([string]$proj) {
     }
     AssertFileCount "scaffold: .memory/*.md == 9" (Join-Path $proj ".memory") "*.md" 9
     AssertFileCount "scaffold: .agents/rules/*.md == 3" (Join-Path $proj ".agents\rules") "*.md" 3
-    Assert "scaffold: .agents/skills 27 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 28)
+    Assert "scaffold: .agents/skills 28 SKILL.md" ((Get-ChildItem -Path (Join-Path $proj ".agents\skills") -Filter "SKILL.md" -Recurse -ErrorAction SilentlyContinue).Count -eq 28)
     Assert "scaffold: no legacy .agents/workflows" (-not (Test-Path (Join-Path $proj ".agents\workflows")))
     Assert "scaffold: no .github/copilot/skills twin" (-not (Test-Path (Join-Path $proj ".github\copilot\skills")))
     AssertPathExists "scaffold: validate_memory.py" (Join-Path $proj ".agents\scripts\validate_memory.py")
@@ -179,7 +179,7 @@ function Run-TrackDCell {
         $bridge = Join-Path $repo "scripts\install-antigravity-bridge.ps1"
         $r = Invoke-Bridge $bridge $tgt
         Assert "trackD: bridge exit 0" ($r.Code -eq 0)
-        Assert "trackD: bridge reports 27 copied" ($r.Out -match 'Copied 28 skills')
+        Assert "trackD: bridge reports 28 copied" ($r.Out -match 'Copied 28 skills')
         Assert-BundleTree $tgt "trackD"
         New-Item -ItemType Directory -Force -Path (Join-Path $tgt "foreign-skill") | Out-Null
         Set-Content -Path (Join-Path $tgt "foreign-skill\SKILL.md") -Value "x"

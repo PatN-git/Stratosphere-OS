@@ -230,7 +230,7 @@ for t in sorted((root / "tests").rglob("test_*.py")):
     body = t.read_text(encoding="utf-8")
     if md_read.search(body) and not real_check.search(body):
         errs.append(f"MARKDOWN-ONLY TEST: {t.relative_to(root)} only inspects markdown; test the script/build it depends on, "
-                    "or add `# md-crosscheck: <what it compares against>` (see improve-workflows-skills playbook)")
+                    "or add `# md-crosscheck: <what it compares against>` (see improve-lifecycle-skills playbook)")
 
 # 4.5 Absolute file:// link guard check
 for mr in [root/"src", root/BUNDLE]:
@@ -343,8 +343,25 @@ else:
     except Exception as e:
         errs.append(f"ERROR reading {SETUP}/versions.json: {e}")
 
-# 2.95 Experimental source must NEVER leak into dist. The jules-dispatch pack lives
-# under src/experimental/ and ships on demand via sync-skills, not the plugin bundle.
+# Validate dist/plugin.json schema and version alignment
+p_file = root / "dist/plugin.json"
+if p_file.exists():
+    try:
+        p_data = json.loads(p_file.read_text(encoding="utf-8"))
+        for req in ("name", "displayName", "version", "description", "author"):
+            if req not in p_data:
+                errs.append(f"MISSING {req} in dist/plugin.json")
+        if build_version and p_data.get("version") != build_version:
+            errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != dist/plugin.json version ({p_data.get('version')})")
+        if "logo" in p_data:
+            logo_path = root / "dist" / p_data["logo"]
+            if not logo_path.is_file():
+                errs.append(f"dist/plugin.json logo '{p_data['logo']}' does not exist on disk")
+    except Exception as e:
+        errs.append(f"ERROR reading dist/plugin.json: {e}")
+
+# 2.95 Experimental source must NEVER leak into dist. Any experimental packs live
+# under src/experimental/ and ship on demand via sync-skills, not the plugin bundle.
 for p in (root / BUNDLE).rglob("*"):
     if "experimental" in p.relative_to(root / BUNDLE).parts:
         errs.append(f"EXPERIMENTAL PATH LEAKED INTO {BUNDLE}: {p.relative_to(root)}")

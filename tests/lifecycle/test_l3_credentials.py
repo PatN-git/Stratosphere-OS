@@ -73,6 +73,29 @@ def test_no_usable_credential_anywhere_is_reported_not_guessed(tmp_path):
                                 tmp_path / "store" / ".credentials.json") is None
 
 
+def test_a_credential_whose_refresh_token_and_access_token_both_expired_is_unusable(tmp_path):
+    """Tokens that are present but dead pass a shape check, preflight passes, and turn 1 dies."""
+    def dead(path, **oauth):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"claudeAiOauth": {"accessToken": "a", "refreshToken": "r", **oauth}}),
+                        encoding="utf-8")
+        return path
+    store = dead(tmp_path / "store" / ".credentials.json", expiresAt=1, refreshTokenExpiresAt=2)
+    assert e.credentials_source(tmp_path / "home", store) is None
+    # a live refresh token, or an access token still valid, keeps it usable
+    live = dead(tmp_path / "live" / ".credentials.json", expiresAt=1, refreshTokenExpiresAt=32503680000000)
+    assert e.credentials_source(tmp_path / "home", live) == live
+    fresh = dead(tmp_path / "fresh" / ".credentials.json", expiresAt=32503680000000, refreshTokenExpiresAt=2)
+    assert e.credentials_source(tmp_path / "home", fresh) == fresh
+    r = _load("l3_run_creds_dead", HARNESS / "run-L3.py")
+    real = r.env_mod.credentials_source
+    r.env_mod.credentials_source = lambda *a, **kw: real(tmp_path / "home", store)
+    try:
+        assert r.preflight_credentials(["0a"]) == 2
+    finally:
+        r.env_mod.credentials_source = real
+
+
 def test_a_file_that_is_not_json_is_not_a_credential(tmp_path):
     store = tmp_path / "store" / ".credentials.json"
     store.parent.mkdir(parents=True)

@@ -15,9 +15,11 @@ surprising is a harness people stop running.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -50,6 +52,8 @@ class Context:
     # therefore unreachable in this mode, and a checker that failed on it would be
     # reporting the mode rather than the lifecycle.
     handoff: bool = False
+    # `github`: GitHub (the shim's store) is the only record. `local`: the `issues.py` store on the tracker branch.
+    tracker: str = "local"
 
 
 # --- small readers -----------------------------------------------------------
@@ -117,10 +121,9 @@ def head(project: Path) -> str:
 def snapshot(project: Path, bare: Path | None = None) -> dict:
     """Taken before a phase, so "unchanged" is checkable rather than assumed."""
     status = project / ".memory" / "STATUS.md"
-    backlog = project / ".memory" / "BACKLOG_MAP.md"
     snap = {
         "status_md": read(status) if status.exists() else None,
-        "backlog_md": read(backlog) if backlog.exists() else None,
+        "local_issues": local_issue_ids(project),
         "branches": branches(project),
         "head": head(project),
     }
@@ -135,6 +138,20 @@ def store_state(ctx: Context) -> dict:
     if ctx.store and ctx.store.exists():
         return json.loads(read(ctx.store))
     return {"issues": {}, "invocations": []}
+
+
+# --- STATUS.md: folder state only (BT-218) -----------------------------------
+
+RETIRED_STATUS_FIELDS = ("Current Branch", "Active Issue", "Current Focus", "Completed This Session",
+                         "Open/Active Task Brief", "Next Immediate Step")
+SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-(?:\d+|LOCAL-[\w-]+) · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
+LAST_SYNC = re.compile(r"\*\*Last Sync:\*\*\s*\d{4}-\d{2}-\d{2}")
+# 0b step 2: a skipped merge sync leaves `Last Sync` unchanged and says so in `Repo notes`.
+SYNC_SKIPPED = re.compile(r"\*\*Repo notes:\*\*[^\n]*\bsync\b[^\n]*\bskipped\b", re.I)
+
+
+def retired_status_fields(text: str) -> list:
+    return [f for f in RETIRED_STATUS_FIELDS if f in text]
 
 
 # --- per phase ---------------------------------------------------------------
@@ -296,9 +313,10 @@ def check_0a_second(ctx: Context):
     status = ctx.project / ".memory" / "STATUS.md"
     if not status.exists():
         return ["STATUS.md does not exist"], notes
-    if ctx.before.get("status_md") == read(status):
-        notes.append("0a did not update STATUS.md on the second run; with a backlog "
-                     "present it should restore an active task")
+    old = retired_status_fields(read(status))
+    if old:
+        problems.append(f"STATUS.md carries retired single-task fields {old}; it holds "
+                        "folder state only (0a Phase B.3)")
     new = branches(ctx.project) - ctx.before.get("branches", set())
     if new:
         problems.append(f"0a created branch(es) {sorted(new)} - only 3d creates "
@@ -307,46 +325,86 @@ def check_0a_second(ctx: Context):
 
 
 def check_3b(ctx: Context):
-    """The store is authoritative: `3b` writes BACKLOG_MAP from what gh returned."""
+    """GitHub mode: the store is authoritative (`github_3b.py`). Local backend: GitHub is not touched, so the check
+    reads the issues 3b created in the `issues.py` store (`create`, `references/tracker-verbs.md`) and runs
+    `issues.py check`, the local post-condition (3b Phase 3 step 5)."""
     problems, notes = [], []
-    state = store_state(ctx)
-    issues = [i for i in state["issues"].values() if not i.get("isPR")]
-    if not issues:
-        return ["3b minted no issues in the fixture store"], notes
-    backlog = ctx.project / ".memory" / "BACKLOG_MAP.md"
-    if not backlog.exists():
-        return ["BACKLOG_MAP.md does not exist"], notes
-    text = read(backlog)
-    missing = [f"BT-{i['number']:03d}" for i in issues
-               if f"BT-{i['number']:03d}" not in text]
-    if missing:
-        problems.append(f"issues minted with no BACKLOG_MAP row: {missing}")
-    if ctx.before.get("backlog_md") == text:
-        problems.append("BACKLOG_MAP.md is untouched, so nothing was mirrored")
-    elif "generated:" in text:
-        before_at = re.search(r"at:\s*(\S+)", ctx.before.get("backlog_md") or "")
-        now_at = re.search(r"at:\s*(\S+)", text)
-        if before_at and now_at and before_at.group(1) == now_at.group(1):
-            problems.append("BACKLOG_MAP generated.at was not refreshed (3b:69)")
-    ids = ",".join(f"BT-{i['number']:03d}" for i in issues)
-    ok, out = mirror_ok(ctx, ids)
-    if not ok:
-        problems.append(f"the terminal sync gate did not reach [MIRROR-OK]: "
-                        f"{out.strip()[:300]}")
+    if ctx.tracker == "github":
+        state = store_state(ctx)
+        issues = [i for i in state["issues"].values() if not i.get("isPR")]
+        if not issues:
+            return ["3b minted no issues in the fixture store"], notes
+        return check_3b_github(ctx, issues), notes
+    maps = sorted(str(p.relative_to(ctx.project)) for p in backlog_maps(ctx.project))
+    if maps:
+        problems.append(f"{maps}: no backend keeps a BACKLOG_MAP.md; local issues live on the tracker branch")
+    if state_issues(ctx):
+        problems.append("3b created GitHub issues, but the local backend never touches GitHub")
+    code, out = run_issues(ctx.project, ctx.child_env, "list", "--all")
+    if code:
+        return problems + [f"the local store cannot be read (issues.py list --all): {out[:300]}"], notes
+    issues = {i["id"]: i for i in json.loads(out)}
+    new = sorted(set(issues) - (ctx.before.get("local_issues") or set()))
+    slices = [bt for bt in new if "tier:slice" in issues[bt]["labels"]]
+    if not slices:
+        problems.append("3b created no slice in the local store (issues.py list --all)")
+    for bt in slices:
+        code, out = run_issues(ctx.project, ctx.child_env, "get", bt)
+        if code or "### Acceptance Criteria" not in json.loads(out)["body"]:
+            problems.append(f"{bt} has no `### Acceptance Criteria` in its body (what 4a's auditor reads)")
+    code, out = run_issues(ctx.project, ctx.child_env, "check")
+    if code:
+        problems.append(f"issues.py check failed: {out[:300]}")
     return problems, notes
 
 
-def mirror_ok(ctx: Context, ids: str):
+def backlog_maps(project: Path) -> list:
+    """Every `BACKLOG_MAP.md` in the project outside `.git`: the retired v5 store, which no backend keeps."""
+    return [p for p in project.rglob("BACKLOG_MAP.md") if ".git" not in p.relative_to(project).parts]
+
+
+def run_issues(project: Path, env: dict | None, *argv) -> tuple[int, str]:
+    """The installed `issues.py`, the only reader of the local store (exit code, stdout+stderr)."""
+    script = project / ".agents" / "scripts" / "issues.py"
+    if not script.exists():
+        return 2, f"no issues.py at {script}"
+    r = subprocess.run([sys.executable, str(script), *argv], cwd=str(project), env=env,
+                       capture_output=True, text=True)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def local_issue_ids(project: Path) -> set | None:
+    """Ids in the local store, closed included; None when there is no store (GitHub mode, or before setup)."""
+    code, out = run_issues(project, None, "list", "--all")
+    return {i["id"] for i in json.loads(out)} if code == 0 else None
+
+
+def state_issues(ctx: Context) -> list:
+    """Non-PR issues in the gh shim's store beyond none: the local backend must leave it empty."""
+    return [i for i in store_state(ctx)["issues"].values() if not i.get("isPR")]
+
+
+def check_3b_github(ctx: Context, issues: list) -> list:
+    """GitHub mode: the checks live in `github_3b.py`; they run the gate through `mirror_ok` below."""
+    spec = importlib.util.spec_from_file_location("l3_github_3b", Path(__file__).with_name("github_3b.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.check(ctx, issues, mirror_ok)
+
+
+def mirror_ok(ctx: Context, ids: str, expect: list | None = None):
     """Run the real gate ourselves rather than believing the transcript.
 
-    `--require-gh` is what the terminal gates pass: without a reachable GitHub it
-    exits 3 with `[MIRROR-UNVERIFIED]` instead of the fail-open `[local-only]`, so
-    reaching `[MIRROR-OK]` proves the shim was found AND believed.
+    Without a reachable GitHub the gate exits 3 with `[GH-UNAVAILABLE]`, so reaching
+    `[MIRROR-OK]` proves the shim was found AND believed. GitHub mode has no map to
+    diff, so the caller passes `expect` (`BT-n:field=value` items) as the intended state.
+    The local backend has no gate: `issues.py check` is its post-condition (`check_3b`).
     """
     script = ctx.project / ".agents" / "scripts" / "reconcile.py"
     if not script.exists():
         return False, f"no reconcile.py at {script}"
-    r = subprocess.run(["python", str(script), "--require-gh", "--ids", ids],
+    args = ["--expect", ";".join(expect)] if expect else []
+    r = subprocess.run(["python", str(script), "--ids", ids, *args],
                        cwd=str(ctx.project), env=ctx.child_env,
                        capture_output=True, text=True)
     return "[MIRROR-OK" in r.stdout, r.stdout + r.stderr
@@ -362,6 +420,13 @@ def check_3d(ctx: Context):
                         "branch - 3d is the only creator of branches (AGENTS.md 4)")
     if head(ctx.project) == ctx.before.get("head"):
         problems.append("3d committed nothing")
+    status = ctx.project / ".memory" / "STATUS.md"
+    text = read(status) if status.exists() else ""
+    if not SESSION_LINE.search(text):
+        problems.append("3d wrote no session line `BT-n · branch · date` to STATUS.md "
+                        "(3d Phase 0 step 1)")
+    if retired_status_fields(text):
+        problems.append(f"STATUS.md carries retired fields {retired_status_fields(text)}")
     tests = sorted(ctx.project.glob("tests/test_*.py")) + \
         sorted(ctx.project.glob("test_*.py"))
     if not tests:
@@ -410,8 +475,14 @@ def check_0b(ctx: Context):
     status = ctx.project / ".memory" / "STATUS.md"
     if not status.exists():
         return ["STATUS.md does not exist"], notes
-    if read(status) == ctx.before.get("status_md"):
-        problems.append("0b wrote no STATUS.md fields (0b step 2)")
+    text = read(status)
+    if SYNC_SKIPPED.search(text):
+        notes.append("0b skipped the merge sync and noted it in Repo notes; `Last Sync` left unchanged")
+    elif not LAST_SYNC.search(text):
+        problems.append("0b did not set `Last Sync` in STATUS.md (0b step 2)")
+    if retired_status_fields(text):
+        problems.append(f"STATUS.md carries retired fields {retired_status_fields(text)} "
+                        "(0b step 2 keeps folder state only)")
     r = subprocess.run(["python", str(ctx.project / ".agents" / "scripts" /
                                       "validate_memory.py"), "--path", ".memory"],
                        cwd=str(ctx.project), env=ctx.child_env,
@@ -419,7 +490,10 @@ def check_0b(ctx: Context):
     if r.returncode != 0:
         problems.append(f"validate_memory.py exits {r.returncode} after 0b "
                         f"(0b step 9): {(r.stdout or '')[-300:]}")
-    if not ran_command(ctx, "okf_view.py"):
+    if not ctx.tool_uses:
+        notes.append("no tool-use stream was given, so whether 0b ran okf_view.py (step 10) "
+                     "could not be checked")
+    elif not ran_command(ctx, "okf_view.py"):
         problems.append("0b did not run okf_view.py (step 10) - nothing in the "
                         "tool-use stream names it")
     # Promotion to `verified` needs >=2 occurrences across tasks and belongs to 0d,
