@@ -12,11 +12,16 @@ import sys
 from pathlib import Path
 
 sys.dont_write_bytecode = True
+REPO_ROOT = Path(__file__).resolve().parents[3]
 WT = Path(r"C:\Users\patri\Dev\Stratosphere-OS\.claude\worktrees\bt221")
+if not WT.exists():
+    WT = REPO_ROOT
 ISSUES = str(WT / "src/scripts/issues.py")
 RECON = str(WT / "src/scripts/reconcile.py")
-ROOT = Path(r"C:\t\pa6-1")
-DRV = Path(r"C:\t\pa6-driver")
+TMP_DIR = REPO_ROOT / ".tmp"
+TMP_DIR.mkdir(parents=True, exist_ok=True)
+ROOT = TMP_DIR / "pa6-1"
+DRV = Path(__file__).resolve().parent
 OUT = DRV / "out"
 BARE = ROOT / "pa6.git"
 PROJ = ROOT / "project"
@@ -42,7 +47,7 @@ TRACE = []      # (label, cmd, rc, out)
 RESULTS = []    # (name, ok, detail)
 ALL_MERGED_OUT = []
 ENV = {**os.environ, "HOME": str(ROOT / "home"), "USERPROFILE": str(ROOT / "home"),
-       "GIT_CONFIG_GLOBAL": str(ROOT / "gitconfig"), "TMP": r"C:\t", "TEMP": r"C:\t",
+       "GIT_CONFIG_GLOBAL": str(ROOT / "gitconfig"), "TMP": str(TMP_DIR), "TEMP": str(TMP_DIR),
        "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8", "GIT_TERMINAL_PROMPT": "0", "GIT_EDITOR": "true"}
 ARGV_LOG = []
 

@@ -1,8 +1,9 @@
 """Copy board.html and append a probe that reports live-DOM facts and drives moveCard(); no change to the page's own code."""
 from pathlib import Path
 
-src = Path(r"C:\t\v5board\repo\.tmp\render\board.html")
-dst = Path(r"C:\t\v5board\repo\.tmp\render\probe.html")
+DIR = Path(__file__).resolve().parent
+src = DIR / "repo/.tmp/render/board.html"
+dst = DIR / "repo/.tmp/render/probe.html"
 IDS = {
     "plain": "BT-LOCAL-plain-card",
     "hyphen": "BT-LOCAL-pre-fetch-cache-serve",

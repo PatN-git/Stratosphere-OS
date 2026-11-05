@@ -1,8 +1,9 @@
 """Append a probe to the rendered board: dispatch keydown events and report selection/move state. No change to the page's own code."""
 from pathlib import Path
 
-src = Path(r"C:\t\v5board\repo\.tmp\render\board.html")
-dst = Path(r"C:\t\v5board\repo\.tmp\render\keyprobe.html")
+DIR = Path(__file__).resolve().parent
+src = DIR / "repo/.tmp/render/board.html"
+dst = DIR / "repo/.tmp/render/keyprobe.html"
 probe = """
 <script>
 window.addEventListener('load', function () {

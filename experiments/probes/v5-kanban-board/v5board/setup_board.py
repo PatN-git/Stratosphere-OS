@@ -6,8 +6,9 @@ from pathlib import Path
 
 WT = Path(r"C:\Users\patri\Dev\Stratosphere-OS\.claude\worktrees\bt221")
 ISSUES = str(WT / "src" / "scripts" / "issues.py")
-ROOT = Path(r"C:\t\v5board\repo")
-ENV = {"TMP": r"C:\t", "TEMP": r"C:\t", "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+DIR = Path(__file__).resolve().parent
+ROOT = DIR / "repo"
+ENV = {"TMP": str(DIR.parents[3] / ".tmp"), "TEMP": str(DIR.parents[3] / ".tmp"), "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@t", "PATH": __import__("os").environ["PATH"], "SYSTEMROOT": __import__("os").environ.get("SYSTEMROOT", "")}
 
 
@@ -19,7 +20,7 @@ def run(*cmd, **kw):
 
 
 if ROOT.exists():
-    sys.exit("repo exists; delete C:\\t\\v5board\\repo first")
+    sys.exit("repo exists; delete repo first")
 ROOT.mkdir(parents=True)
 run("git", "init", "-q", "-b", "main")
 (ROOT / ".memory").mkdir()

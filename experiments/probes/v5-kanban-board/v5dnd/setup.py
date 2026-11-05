@@ -4,9 +4,9 @@ from pathlib import Path
 
 WT = Path(r"C:\Users\patri\Dev\Stratosphere-OS\.claude\worktrees\bt221")
 ISSUES = str(WT / "src" / "scripts" / "issues.py")
-BASE = Path(r"C:\t\v5dnd")
+BASE = Path(__file__).resolve().parent
 ROOT = BASE / "repo"
-ENV = {"TMP": r"C:\t", "TEMP": r"C:\t", "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+ENV = {"TMP": str(BASE.parents[3] / ".tmp"), "TEMP": str(BASE.parents[3] / ".tmp"), "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ["PATH"], "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
 
 

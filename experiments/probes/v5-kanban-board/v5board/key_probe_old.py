@@ -2,8 +2,12 @@
 import subprocess
 from pathlib import Path
 
+DIR = Path(__file__).resolve().parent
+REPO_ROOT = DIR.parents[3]
 wt = Path(r"C:\Users\patri\Dev\Stratosphere-OS\.claude\worktrees\bt221")
-new = Path(r"C:\t\v5board\repo\.tmp\render\keyprobe.html").read_text(encoding="utf-8")
+if not wt.exists():
+    wt = REPO_ROOT
+new = (DIR / "repo/.tmp/render/keyprobe.html").read_text(encoding="utf-8")
 head_tpl = subprocess.run(["git", "show", "HEAD:src/skills/plan-html/assets/templates/board.html"], cwd=wt, capture_output=True,
                           text=True, encoding="utf-8").stdout
 cur_tpl = (wt / "src/skills/plan-html/assets/templates/board.html").read_text(encoding="utf-8")
@@ -17,5 +21,5 @@ def handler(t):
 
 assert handler(cur_tpl) in new
 old = new.replace(handler(cur_tpl), handler(head_tpl))
-Path(r"C:\t\v5board\repo\.tmp\render\keyprobe_old.html").write_text(old, encoding="utf-8")
+(DIR / "repo/.tmp/render/keyprobe_old.html").write_text(old, encoding="utf-8")
 print("ok")
