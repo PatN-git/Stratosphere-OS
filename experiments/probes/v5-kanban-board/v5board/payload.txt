@@ -1,0 +1,5 @@
+Please apply these moves with `python .agents/scripts/issues.py apply-moves -` (the lines below are its stdin):
+BT-LOCAL-plain-card -> in progress
+BT-LOCAL-pre-fetch-cache-serve -> needs_spec
+BT-LOCAL-quote-and-and-tick -> blocked
+BT-LOCAL-script-img-src-x-onerror-document-title -> done

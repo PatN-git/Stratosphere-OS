@@ -1,0 +1,3 @@
+BT-LOCAL-plain-card -> planned
+BT-LOCAL-nope -> done
+this is not a move
