@@ -17,18 +17,17 @@ Instantiate minimum durable context an AI agent needs to resume work on a reposi
 This skill is a **one-time setup** for new projects. To upgrade or sync an existing project, run `/stratosphere-update` instead. The setup script itself can be invoked with a `--re-reconcile-labels` CLI flag (or as `stratosphere-setup --re-reconcile-labels`) to execute label reconciliation and Project board syncing as a standalone mode on an existing project, without performing the full workspace reinstall.
 
 ## Standalone Mode Routing
-If this skill is run with the `--re-reconcile-labels` CLI flag:
-1. Skip all setup checks, git/github remote promptings, template scaffolding, vision statement settings, database audits, architecture mapping, design audits, learnings/glossary seeding, and skill synchronization.
-2. Jump directly to **Checkpoint 6: Label Reconciliation** to reconcile labels and project board, and install/verify extensions.
-3. Once Checkpoint 6 is complete, exit immediately.
+If invoked with `--re-reconcile-labels`:
+1. Skip setup checks, remotes, scaffolding, audits, seeding, and skill sync.
+2. Jump directly to **Checkpoint 6: Label Reconciliation**.
+3. Exit immediately after Checkpoint 6.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
 - `.agents/skills/<name>/references/` — each skill's own templates and guides
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
-
-Cold starts are expensive! A small, durable memory layer eliminates re-derivation cost. The protocol files keep memory dense and trustworthy as the project scales.
+A compact, durable memory layer eliminates re-derivation cost across sessions. Protocol files keep memory dense and trustworthy as the project scales.
 
 ## Template source (read before any file creation)
 
@@ -45,15 +44,15 @@ All 22 bundled skills (`0a`–`4c` and the three drivers) are **copied into the 
 
 ## Existing Installation Detection
 
-Before proceeding with setup, verify if StratosphereOS is already installed in this project:
-1. **Check detection markers:** Check if `.agents/.stratosphere-lock.json` exists, or if both `AGENTS.md` and a populated `.memory/` folder exist.
-2. **Handle existing install:** If an existing install is detected, do **NOT** silently proceed. Stop and inform the user:
+Before proceeding, verify if StratosphereOS is already installed:
+1. **Detection:** Check if `.agents/.stratosphere-lock.json` exists, or both `AGENTS.md` and a populated `.memory/` exist.
+2. **Handle existing install:** Do not proceed silently. Prompt user via native question tool (`AskUserQuestion` / `ask_question`):
    *"This project already has StratosphereOS installed. Setup bootstraps a new project; to upgrade, run `/stratosphere-update`."*
-3. **Ask confirmation:** Prompt the user using the native `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity) with three options:
+   Options:
    - **Run /stratosphere-update instead (recommended):** Exit setup and run `/stratosphere-update`.
-   - **Continue setup anyway:** Proceed with setup (only create-only-if-missing templates; never overwrite preserved files).
-   - **Cancel:** Abort the setup process.
-   You must wait for the user's choice and follow it exactly.
+   - **Continue setup anyway:** Proceed (create-only-if-missing; never overwrite preserved files).
+   - **Cancel:** Abort setup.
+   Follow the user's choice exactly.
 
 ## Version Control Setup & Path Detection
 
@@ -61,25 +60,23 @@ Before any file operations:
 
 1. **Initialize Git (Greenfield only):**
    - **Greenfield** if: no `src/`, no committed code beyond scaffolding, fresh init, or no live database.
-     - If **Greenfield** is chosen and no git repository is connected (e.g. no `.git` directory exists in the project root), use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to prompt the user:
+     - If no git repository exists (no `.git`), prompt via native question tool (`AskUserQuestion` / `ask_question`):
        `No git repository is initialized in this project. Initialize a git repository? [y/N]`
-     - If they answer yes, initialize it by running `git init` before continuing.
-   - **Brownfield** if: existing source code, dependencies present, or a live database connection is configured.
+     - Yes → initialize with `git init`.
+   - **Brownfield** if: existing source code, dependencies present, or live database configured.
 
-2. **Choose the issue tracker (GitHub recommended):** the answer is the tracker backend, `github` (GitHub issues are the only store) or `local` (one file per issue on the `<repo>/issues` git branch). Checkpoint 0 records it.
-   - Check if the GitHub CLI (`gh`) is installed and authenticated. Run `gh --version` and `gh auth status` (be sure to clear the `GITHUB_TOKEN` environment variable if running tests to verify the user's persistent credentials).
-   - If `gh` is not installed or not authenticated, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
+2. **Choose the issue tracker (GitHub recommended):** backend is `github` (GitHub issues) or `local` (one file per issue on the `<repo>/issues` git branch). Checkpoint 0 records it.
+   - Check if `gh` is installed and authenticated: run `gh --version` and `gh auth status` (clear `GITHUB_TOKEN` in tests to verify persistent credentials).
+   - If `gh` is not installed/authenticated, prompt via native question tool:
      `No GitHub connection: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Set up GitHub now? [Y/n]`
-   - If the user selects **Yes** (recommended):
-     - Provide instructions to install `gh` (e.g., using `winget install GitHub.cli`, `brew install gh`, or from `https://cli.github.com/`) and run `gh auth login` in their terminal. Wait for authentication before proceeding.
-   - If the user selects **No**: the tracker is `local`. Skip all subsequent automated remote GitHub integrations (such as automated label creation in Checkpoint 6).
-   - **Check GitHub Remote Repository Connection:** If `gh` is installed and authenticated (or if GitHub integration was selected during plugin installation), verify that the local repository is connected to a remote GitHub repository by running `git remote -v` or `gh repo view`.
-   - If no GitHub remote repository is connected, prompt the user using `AskUserQuestion` (on Claude Code) or `ask_question` (on Google Antigravity):
+     - **Yes (recommended):** instruct user to install `gh` (`winget install GitHub.cli`, `brew install gh`, or `cli.github.com`) and run `gh auth login`. Wait for authentication.
+     - **No:** tracker is `local`. Skip remote GitHub integrations (e.g. label creation in Checkpoint 6).
+   - **Check GitHub Remote:** If `gh` is authenticated, verify remote connection via `git remote -v` or `gh repo view`.
+   - If no remote is connected, prompt via native question tool:
      `No GitHub repository is connected to this project: issues will be tracked locally on a git branch, and the project can be switched to GitHub later. Connect or create a GitHub repository now? [Y/n]`
-   - If the user selects **Yes** (recommended):
-     - Provide instructions or assist the user in running `gh repo create` or `git remote add origin <url>` and pushing their initial commit. Wait for connection confirmation before proceeding.
-   - If the user selects **No**: the tracker is `local`; skip remote GitHub integrations as above.
-   - **Result:** `gh` authenticated and a GitHub remote connected → `github`, else `local`. Pass it as `--tracker` in Checkpoint 0.
+     - **Yes (recommended):** assist user in running `gh repo create` or `git remote add origin <url>` and pushing initial commit. Wait for connection.
+     - **No:** tracker is `local`; skip remote GitHub integrations.
+   - **Result:** `gh` authenticated and GitHub remote connected → `github`, else `local`. Pass as `--tracker` in Checkpoint 0.
    - **Switching later (local → GitHub only):** once `gh` and a remote exist, run `python .agents/scripts/tracker_switch.py` (dry run), then `--apply`. `/stratosphere-update` never changes the backend.
 
 
