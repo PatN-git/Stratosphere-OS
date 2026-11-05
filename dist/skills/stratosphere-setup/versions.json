@@ -36,9 +36,9 @@
       "version": "1.0.8"
     },
     "assets/templates/memory/GLOSSARY.md": {
-      "sha256": "d0aa2d6b40f18e52d2ca2f5bf7b26e2a70cd0dbc5baff395df2827dba2cc08d3",
-      "timestamp": "2026-09-29",
-      "version": "1.1.0"
+      "sha256": "531f03877695af5bcff72c376f61f522359d073cbce3f6856b7e5626641d24e0",
+      "timestamp": "2026-11-05",
+      "version": "1.2.0"
     },
     "assets/templates/memory/LEARNINGS.md": {
       "sha256": "204f62d702ccbd8b920c2215e8a8e07eacd811de85b21a2aec015366929d51ff",
@@ -66,7 +66,7 @@
       "version": "2.0.1"
     },
     "skills/0a-start-session/SKILL.md": {
-      "sha256": "8a1cbf479b3b23c0fee3b4a40ac3463b52e808d9b9f43dbada45452f4ee9b386",
+      "sha256": "dc356b9647bd6b994a0a47ff99322a89a3d75587842d235fa8f44202a03d7056",
       "timestamp": "2026-10-22",
       "version": "1.2.0"
     },
@@ -86,17 +86,17 @@
       "version": "2.0.0"
     },
     "skills/0a-start-session/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/0a-start-session/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "eaa18655b27cb89fe7e18cebe70513f59915d39b3260e8f804f40dc3fde8b7ca",
+      "sha256": "38eea279a84a7478f0e7f92cc8a297cd4533523d3a520981348b9f7efb86863d",
       "timestamp": "2026-10-27",
       "version": "1.6.0"
     },
@@ -131,12 +131,12 @@
       "version": "2.0.0"
     },
     "skills/0b-stop-session/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/0b-stop-session/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -251,12 +251,12 @@
       "version": "2.0.0"
     },
     "skills/1c-concept-map/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/1c-concept-map/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -286,12 +286,12 @@
       "version": "2.0.0"
     },
     "skills/2a-write-prd/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/2a-write-prd/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -336,12 +336,12 @@
       "version": "2.0.0"
     },
     "skills/2b-interface-design/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/2b-interface-design/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -386,12 +386,12 @@
       "version": "2.0.0"
     },
     "skills/3a-version-planning/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3a-version-planning/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -431,12 +431,12 @@
       "version": "2.0.0"
     },
     "skills/3b-create-issue/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3b-create-issue/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -466,17 +466,17 @@
       "version": "2.0.0"
     },
     "skills/3c-sprint-planning/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3c-sprint-planning/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "ad6610c7df64c4fb6c585d7d8ac90b7447a2cd393d3356082b4c06f8f38bb569",
+      "sha256": "b2dfab9f62420cecbb6ab1d728368ae6537302a3879cd9177ee947769f40b750",
       "timestamp": "2026-10-22",
       "version": "2.8.0"
     },
@@ -511,12 +511,12 @@
       "version": "2.0.0"
     },
     "skills/3d-implement-issue/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3d-implement-issue/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -566,12 +566,12 @@
       "version": "2.0.0"
     },
     "skills/3z-afk-loop/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/3z-afk-loop/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -646,12 +646,12 @@
       "version": "2.0.0"
     },
     "skills/4a-verify-and-ship/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/4a-verify-and-ship/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -706,12 +706,12 @@
       "version": "2.0.0"
     },
     "skills/4b-audit-architecture-drift/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/4b-audit-architecture-drift/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -761,12 +761,12 @@
       "version": "2.0.0"
     },
     "skills/4c-codebase-health-audit/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/4c-codebase-health-audit/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
@@ -841,12 +841,12 @@
       "version": "2.0.0"
     },
     "skills/stratosphere-setup/references/tracker-verbs-github.md": {
-      "sha256": "3c2a60c537f2979ee1cac831ae461f2800458bec4b73553003cee081131f21f0",
+      "sha256": "81930770875f4866d1826197f6bde98d93b414535edddf0ab5e02adfbfdf1e5d",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },
     "skills/stratosphere-setup/references/tracker-verbs-local.md": {
-      "sha256": "6db04d93b2a17d7f6dac8f731768db2db7ffe35c3ab99cec84c5ddc1efc32216",
+      "sha256": "d4c0f421a864f650c82422e6e0ffeb493e0a8cb1b1729090dd8080ade9bcc2be",
       "timestamp": "2026-10-22",
       "version": "5.0.0"
     },

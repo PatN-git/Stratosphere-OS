@@ -16,6 +16,7 @@ win; a lost race re-reads and retries, never forces. Agents never edit issue fil
   merge state    merged [--close]   (open `in review` issues whose shipped tip SHA or branch is in the default branch)
   views          board [--milestone M] [--parent P] [--md [file] | --web [--out F] [--open]]   (text kanban, a Markdown
                  export, or an interactive HTML page whose copied move payload is `apply-moves` input)
+                 summary [--milestone M] [--parent P]   (concise markdown table of open issues)
   human moves    apply-moves [file|-] [--dry-run] [--force]   (batch status writer for the board's payload)
   maintenance    init | check | sync [--remote origin] | migrate [--map .memory/BACKLOG_MAP.md]
 
@@ -591,6 +592,8 @@ def _render_board_html(store, issues_list, a):
 
 
 def cmd_board(store, a):
+    if getattr(a, 'open', False):
+        a.web = True
     issues_list = list(store.issues.values())
     if a.milestone:
         issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
@@ -631,6 +634,27 @@ def cmd_board(store, a):
         path.write_text(text + '\n', encoding='utf-8')
         return f"[BOARD] wrote {path}"
     return text or "[BOARD-EMPTY]"
+
+
+def cmd_summary(store, a):
+    issues_list = [i for i in store.issues.values() if effective_status(i) != 'done']
+    if a.milestone:
+        issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
+    if a.parent:
+        issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+    if not issues_list:
+        return "[NO-ISSUES] no open issues match"
+    rows = ["| ID | Title | Status | Milestone | Blocked By | Claimed By |",
+            "|:---|:---|:---|:---|:---|:---|"]
+    for i in sorted(issues_list, key=lambda x: x['id']):
+        mid = i['id']
+        title = i['title'].replace('|', '/')
+        st = effective_status(i)
+        ms = i.get('milestone') or '—'
+        blk = ','.join(sorted(i.get('blocked_by') or [])) or '—'
+        clm = i.get('claimed_by') or '—'
+        rows.append(f"| {mid} | {title} | {st} | {ms} | {blk} | {clm} |")
+    return '\n'.join(rows)
 
 
 
@@ -1143,6 +1167,9 @@ def parser():
     p.add_argument('--web', action='store_true', help='render interactive HTML board')
     p.add_argument('--out', default='.tmp/render/board.html', help='output HTML path')
     p.add_argument('--open', action='store_true', help='launch the browser on the page (never done by default)')
+    p = sub.add_parser('summary', help='output a concise markdown table of open issues')
+    p.add_argument('--milestone')
+    p.add_argument('--parent')
     p = sub.add_parser('apply-moves')
     p.add_argument('file', nargs='?', default='-', help='file with moves (default: stdin)')
     p.add_argument('--force', action='store_true', help='move claimed issues; close an unmerged epic or standalone issue; move past an open blocker')
@@ -1180,6 +1207,8 @@ def run(a, out):
             out(text)
     elif a.cmd == 'board':
         out(cmd_board(tracker.store(), a))
+    elif a.cmd == 'summary':
+        out(cmd_summary(tracker.store(), a))
     elif a.cmd in WRITES:
         out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '') or getattr(a, 'file', '')}".strip()))
     else:

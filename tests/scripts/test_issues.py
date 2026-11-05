@@ -922,6 +922,54 @@ def test_board_web_puts_a_closed_issue_in_the_done_column(repo, tmp_path):
     assert next(c for c in data['cards'] if c['id'] == a)['column'] == 'done'
 
 
+def test_board_open_implies_web(repo, tmp_path, monkeypatch):
+    ok('init')
+    ok('create', '--title', 'Setup DB', '--label', SLICE)
+    opened = []
+    import webbrowser
+    monkeypatch.setattr(webbrowser, 'open', opened.append)
+    out_html = tmp_path / 'open_board.html'
+    code, text = run('board', '--open', '--out', str(out_html))
+    assert code == 0
+    assert f"[BOARD] wrote {out_html}" in text
+    assert len(opened) == 1
+    assert out_html.resolve().as_uri() in opened[0]
+
+
+def test_summary_markdown_table(repo):
+    ok('init')
+    e = ok('create', '--title', 'Auth epic', '--label', 'type:feature,tier:epic,size:large,mode:HITL')
+    s1 = ok('create', '--title', 'Login flow', '--label', SLICE, '--parent', e, '--milestone', 'v1.0')
+    s2 = ok('create', '--title', 'Logout flow', '--label', SLICE, '--parent', e, '--blocked-by', s1)
+    ok('claim', s1, '--by', 'agent-a')
+
+    code, text = run('summary')
+    assert code == 0
+    assert "| ID | Title | Status | Milestone | Blocked By | Claimed By |" in text
+    assert f"| {e} | Auth epic | planned | — | — | — |" in text
+    assert f"| {s1} | Login flow | in progress | v1.0 | — | agent-a |" in text
+    assert f"| {s2} | Logout flow | planned | — | {s1} | — |" in text
+
+    code, text = run('summary', '--milestone', 'v1.0')
+    assert code == 0
+    assert s1 in text
+    assert s2 not in text
+    assert e not in text
+
+    code, text = run('summary', '--parent', e)
+    assert code == 0
+    assert s1 in text
+    assert s2 in text
+    assert e in text
+
+    ok('close', e)
+    ok('close', s1)
+    ok('close', s2)
+    code, text = run('summary')
+    assert code == 0
+    assert "[NO-ISSUES]" in text
+
+
 def test_apply_moves_atomic(repo, tmp_path):
     ok('init')
     b1 = ok('create', '--title', 'Task 1', '--label', SLICE)

@@ -34,7 +34,7 @@ BODY = ("### Overview\n{title}.\n\n### ICE Priorities\n- **Impact:** 1.0\n- **Co
 
 
 def _script(env, name, *argv):
-    r = subprocess.run([sys.executable, str(env.project / ".agents" / "scripts" / name), *argv],
+    r = subprocess.run([sys.executable, "-B", str(env.project / ".agents" / "scripts" / name), *argv],
                        cwd=str(env.project), env=env.child_env, capture_output=True, text=True)
     return r.returncode, (r.stdout + r.stderr).strip()
 

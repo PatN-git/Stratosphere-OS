@@ -136,7 +136,7 @@ def test_every_master_line_reaches_the_projections_it_is_tagged_for():
     both, a `master` line to neither; table rows are projected as bullets; no tag survives."""
     master = read_src("references/tracker-verbs.md")
     gh, local = _project(master)
-    assert "<!--" not in re.sub(r"<!-- stratos:resume -->", "", gh + local)
+    assert "<!--" not in re.sub(r"<!-- (stratos:resume|AUTO-GENERATED:.*?) -->", "", gh + local)
     in_verbs = False
     for line in master.splitlines():
         if line.startswith("## "):

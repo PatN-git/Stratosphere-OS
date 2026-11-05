@@ -20,7 +20,8 @@ Restore session context (read-only), then activate: restore the branch and trans
 **Pre-check:** if `.memory/` is absent → output exactly `Repository uninitialized. Please run /stratosphere-setup first.` and HALT. This presence check is the only validation here — no skill or suite checks.
 
 ## Phase A — Hydrate (read-only)
-1. **Resolve the task to resume** from the authoritative active set — the `status:in progress` issues (`wip` read, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); local backend with a remote: run `python .agents/scripts/issues.py sync` first): an `in progress` epic is never the active task: when its slice is listed too, resolve to that leaf; then exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task.
+1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues (`wip` read, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); local backend with a remote: run `python .agents/scripts/issues.py sync` first):
+   - **Leaf Resolution Rule:** an `in progress` epic is never the active task: when its slice is listed too, resolve to that leaf; then exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task.
 2. Run the `load-memory` skill for that task.
 
 ## Phase B — Activate (side effects)

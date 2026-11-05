@@ -230,7 +230,7 @@ for t in sorted((root / "tests").rglob("test_*.py")):
     body = t.read_text(encoding="utf-8")
     if md_read.search(body) and not real_check.search(body):
         errs.append(f"MARKDOWN-ONLY TEST: {t.relative_to(root)} only inspects markdown; test the script/build it depends on, "
-                    "or add `# md-crosscheck: <what it compares against>` (see improve-workflows-skills playbook)")
+                    "or add `# md-crosscheck: <what it compares against>` (see improve-lifecycle-skills playbook)")
 
 # 4.5 Absolute file:// link guard check
 for mr in [root/"src", root/BUNDLE]:

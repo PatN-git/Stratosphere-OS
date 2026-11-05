@@ -1,17 +1,17 @@
 ---
-name: improve-workflows-skills
+name: improve-lifecycle-skills
 description: Dev-time discipline for authoring, editing, or pruning StratOS's OWN lifecycle skills (src/workflows/) and execution skills (src/skills/). Fires when creating/editing a StratOS skill, running a pruning/refactor pass, or reviewing framework artifacts. Repo-local and dev-only — NOT a product skill; never advise consumer projects with it.
 metadata:
   stratos.layer: execution
-version: "2.3.0"
-timestamp: 2026-10-06
+version: "2.4.0"
+timestamp: 2026-11-05
 ---
 
-# SKILL: Improve Workflows & Skills (dev-only)
+# SKILL: Improve Lifecycle Skills (dev-only)
 
 Repo-local skill for developing **StratOS's own** framework artifacts. Authored in
 `src/dev-skills/`, which the build never globs — it is placed into this repo's
-`.agents/skills/` and `.claude/skills/` by `scripts/place-dev-skills.py` and ships nowhere.
+`.agents/skills/`, `.claude/skills/`, and Antigravity host directories by `scripts/place-dev-skills.py` and ships nowhere.
 
 ## When this fires
 Authoring a new skill, editing one, or running a pruning/refactor pass over

@@ -4,6 +4,8 @@ version: "5.0.0"
 timestamp: 2026-10-22
 ---
 
+<!-- AUTO-GENERATED: DO NOT EDIT DIRECTLY. Compiled from src/references/tracker-verbs.md by build/build.py -->
+
 # Tracker verbs (Local)
 
 The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a tracker branch (or a v5 map still to migrate) means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.

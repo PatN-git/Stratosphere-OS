@@ -208,7 +208,8 @@ def project_backend(master_text: str, backend: str) -> str:
         elif not titled and line.startswith("# "):
             line, titled = f"{line} ({'GitHub' if backend == 'github' else 'Local'})", True
         out.append(line)
-    head = f'---\ndescription: {meta["description"]}\nversion: "{VERSION}"\ntimestamp: {meta["timestamp"]}\n---\n\n'
+    banner = "<!-- AUTO-GENERATED: DO NOT EDIT DIRECTLY. Compiled from src/references/tracker-verbs.md by build/build.py -->\n\n"
+    head = f'---\ndescription: {meta["description"]}\nversion: "{VERSION}"\ntimestamp: {meta["timestamp"]}\n---\n\n{banner}'
     return head + re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
 
 

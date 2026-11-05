@@ -13,7 +13,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + this repo's installed copy
-HOST_MATRIX = "src/dev-skills/improve-workflows-skills/references/host-matrix.md"
+HOST_MATRIX = "src/dev-skills/improve-lifecycle-skills/references/host-matrix.md"
 HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "OpenClaw")
 HOST_SECTION_BUDGET = 700  # chars, ~175 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
 OKF_PROTOCOL = "src/rules/okf-protocol.md"

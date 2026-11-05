@@ -4,15 +4,16 @@ title: Glossary
 description: Shared domain vocabulary used across docs and code.
 generated:
   by: stratosphere-setup
-  at: 2026-09-29
-version: "1.1.0"
+  at: 2026-11-05
+version: "1.2.0"
 ---
 # GLOSSARY
 
 ## Purpose
-<!-- SOS:BLOCK id=glossary-guidance v=1.1.0 -->
-Shared domain vocabulary: one `[[G-xxx]]` entry per project-specific term, each with a trust tag (`.agents/rules/memory-protocol.md`).
-Vocabulary only: no code identifiers, file paths, table or column names, formulas or thresholds (→ `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`). Writers follow `references/glossary-entry-rules.md`.
+<!-- SOS:BLOCK id=glossary-guidance v=1.2.0 -->
+- **Format:** One `[[G-xxx]]` entry per project-specific term, each with a trust tag (`.agents/rules/memory-protocol.md`).
+- **Scope:** Vocabulary only — no code identifiers, file paths, table or column names, formulas, or thresholds (→ `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`).
+- **Rules:** Writers follow `references/glossary-entry-rules.md`.
 <!-- SOS:/BLOCK id=glossary-guidance -->
 
 ## Active Entries
