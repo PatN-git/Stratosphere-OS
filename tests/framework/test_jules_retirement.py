@@ -151,13 +151,14 @@ def test_marketplace_manifest_clean():
     assert mk_path.is_file()
     data = json.loads(mk_path.read_text(encoding="utf-8"))
     skills = data["plugins"][0]["skills"]
-    assert len(skills) == 27
+    assert len(skills) == 28
     assert "./dist/skills/3x-jules-dispatch" not in skills
     assert "./dist/skills/0a-start-session" in skills
     assert "./dist/skills/0b-stop-session" in skills
     assert "./dist/skills/0c-handoff" in skills
     assert "./dist/skills/0d-nightly-consolidation" in skills
     assert "./dist/skills/0e-plain-english" in skills
+    assert "./dist/skills/0f-walk-me-through" in skills
     assert "./dist/skills/1a-research" in skills
     assert "./dist/skills/1b-concept-framing" in skills
     assert "./dist/skills/1c-concept-map" in skills
