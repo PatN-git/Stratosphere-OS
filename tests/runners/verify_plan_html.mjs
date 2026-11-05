@@ -652,7 +652,8 @@ function bootPage(script, planJson, { storageThrows, readyState }) {
   } catch (e) { error = e; }
   const rendered = [...created.values()].reduce((n, el) => n + String(el.innerHTML).length + String(el.textContent).length, 0);
   const spySections = context.document.querySelectorAll('.spy-section').length;
-  return { error, rendered, spySections };
+  const html = [...created.values()].map((el) => String(el.innerHTML)).join('');
+  return { error, rendered, spySections, html };
 }
 
 const bootTargets = [
@@ -689,6 +690,20 @@ bootTargets.forEach(({ label, html, stateFrom, isPlanDocument }) => {
     assert(`Boot [${sc.name}]: ${label} renders content${result.error ? ` (threw: ${result.error.message})` : ''}`, ok);
   });
 });
+
+// ─── 5. Board blocked-by badge (display only) ───────────────────────────────
+console.log('\n[5] Board blocked-by badge');
+{
+  const boardTpl = bootTargets.find((b) => b.label === 'template board.html');
+  const state = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
+  state.cards[0].meta = { ...state.cards[0].meta, blocked_by: 'issue-2,<b>x&' };
+  const res = bootPage(pageScript(boardTpl.html), JSON.stringify(state), { storageThrows: false, readyState: 'complete' });
+  assert('Badge: a card with meta.blocked_by shows `blocked by <ids>`', !res.error && res.html.includes('blocked by issue-2,'));
+  assert('Badge: the ids are escaped (no raw markup from data)', res.html.includes('&lt;b&gt;x&amp;') && !res.html.includes('<b>x'));
+  const plain = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
+  const res2 = bootPage(pageScript(boardTpl.html), JSON.stringify(plain), { storageThrows: false, readyState: 'complete' });
+  assert('Badge: a card without blockers shows none', !res2.error && !res2.html.includes('blocked by'));
+}
 
 if (failed) {
   console.log('\n=== Behavioral Verification FAILED ===');

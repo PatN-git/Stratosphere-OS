@@ -274,7 +274,9 @@ def test_orphan_guard():
                 ga_content = ga_file.read_text(encoding="utf-8")
                 if "docs/okf-view.html linguist-generated=true -diff" not in ga_content:
                     failures.append(f"Linguist attributes missing from reconciled .gitattributes in {name} project.")
-                
+                if ".memory/** text eol=lf" not in ga_content:
+                    failures.append(f".memory LF rule missing from reconciled .gitattributes in {name} project.")
+
         if failures:
             print("Orphan Guard failed! Unresolved / mismatched files:")
             for f in failures:

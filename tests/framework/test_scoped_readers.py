@@ -25,7 +25,7 @@ RETIRED = re.compile(r"BACKLOG_MAP|map row|Ref cell|Status cell|BT-LOCAL Fallbac
 
 def _issues_commands():
     out = subprocess.run([sys.executable, str(SRC / "scripts" / "issues.py"), "--help"], capture_output=True, text=True).stdout
-    return set(re.search(r"\{([a-z,]+)\}", out).group(1).split(","))
+    return set(re.search(r"\{([a-z,-]+)\}", out).group(1).split(","))
 
 
 def _reads_section():
@@ -42,7 +42,7 @@ def test_no_reader_names_the_retired_local_store(rel):
 
 @pytest.mark.parametrize("rel", READERS)
 def test_every_local_command_is_one_issues_py_accepts(rel):
-    used = set(re.findall(r"issues\.py ([a-z]+)", read_src(rel)))
+    used = set(re.findall(r"issues\.py ([a-z][a-z-]*)", read_src(rel)))
     assert used <= _issues_commands(), f"{rel}: {used - _issues_commands()} is not an issues.py command"
 
 
@@ -51,7 +51,8 @@ def test_0a_syncs_the_tracker_branch_and_only_the_4a_ship_push_pushes_it():
     assert "issues.py sync" in read_src("workflows/0a-start-session.md")
     assert "git push origin" not in read_src("workflows/0b-stop-session.md")
     ship = read_src("workflows/4a-verify-and-ship.md")
-    assert "issues.py sync`, then `git push origin \"$(python .agents/scripts/issues.py branch)\"`" in ship
+    push = 'git push origin "$(python .agents/scripts/issues.py branch)"'
+    assert "issues.py sync" in ship and push in ship and ship.index("issues.py sync") < ship.index(push)
 
 
 def test_load_memory_reads_the_local_store_through_issues_py():
@@ -69,7 +70,7 @@ def test_the_reads_reference_defines_the_wip_set_and_the_candidates_read():
 @pytest.mark.parametrize("rel", WIP_READERS)
 def test_wip_readers_use_a_scoped_query(rel):
     text = read_src(rel)
-    assert 'status:in progress' in text and ("gh issue list" in text or "tracker-verbs.md" in text), \
+    assert 'status:in progress' in text and ("gh issue list" in text or "tracker-verbs.md" in text or "tracker-verbs-github.md" in text), \
         f"{rel} has no scoped WIP read"
 
 

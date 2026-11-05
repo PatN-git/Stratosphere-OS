@@ -7,7 +7,7 @@ paths:
 title: Open Knowledge Format (OKF) Protocol
 description: Specifications and type registries for OKF v0.2 conformance.
 version: "2.1.0"
-timestamp: 2026-10-28
+timestamp: 2026-11-04
 ---
 
 # Open Knowledge Format (OKF) Protocol
@@ -107,7 +107,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 | `design-doc` | `docs/design/*.md` (other design docs) | — |
 | `roadmap` | `docs/ROADMAP.md` | — |
 | `audit-report` | `docs/audits/*.md` | — |
-| `concept-map` | `docs/discovery/*.map.md` | `status`, `slug` |
+| `concept-map` | `docs/discovery/*.map.md` (v4 legacy; `issues.py migrate`) | `status`, `slug` |
 | `issue` | `docs/issues/*.md` on the `tracker_branch` (never the working tree), written only by `issues.py` | `status` (work status) and the tracker fields; no `generated` |
 | `plan` | `docs/plans/*.md` | — |
 | `proposal` | `docs/proposals/*.md`, `docs/nightly/*.md` | — |
@@ -117,7 +117,7 @@ Agents must use the following defined types. If no existing type fits, the agent
 - **Root `index.md`**: The bundle entrypoint. It is the **only** file carrying `okf_version: "0.2"`.
 - **Directory `index.md` files** (e.g. `.memory/index.md`, `docs/prds/index.md`): Used for progressive disclosure. These files must **not** carry frontmatter and are listings only.
 - **`log.md`**: If present, carries change history. It must not contain frontmatter.
-- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (companion renders live in `.tmp/render/`, never `docs/`), `docs/**/.last-run.json`, and `.memory/*.jsonl` (e.g. `jules-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
+- **Non-markdown files inside the bundle scope are excluded.** `docs/**/*.html` (companion renders live in `.tmp/render/`, never `docs/`), `docs/**/.last-run.json`, and `.memory/*.jsonl` (e.g. `audit-ledger.jsonl`) are durable and in-scope by directory but **cannot carry frontmatter**. They are not concept documents and are exempt from §2.
 
 ## 5. Version Semantics
 - **System/Template Files**: Stamped at build time by `build/build.py` based on the system `VERSION` constant.

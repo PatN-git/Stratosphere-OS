@@ -30,6 +30,9 @@ URL, branch or nothing, and `statusCheckRollup` is one green CheckRun), `api gra
 `stratosphere-update`, which L3 never drives - so they are deliberately absent and
 will fail loudly if a phase reaches for one.
 
+Labels are a registry, as on GitHub: `issue|pr create --label` and `issue|pr edit --add-label` refuse a name that
+`label create` (or the seed) has not made - `could not add label: '<n>' not found`, exit 1, nothing changed.
+
 The store lives at `$L3_GH_STORE`. There is no default: a shim that quietly invents
 a store in the current directory would split state across phases and pass anyway.
 """
@@ -67,9 +70,10 @@ def store_path() -> Path:
 
 
 class Failure(Exception):
-    def __init__(self, code: int, message: str):
+    def __init__(self, code: int, message: str, bare: bool = False):
         super().__init__(message)
         self.code = code
+        self.bare = bare  # real gh's own wording: no `[l3-shim]` prefix, and not an unknown-surface finding
 
 
 class Partial(Exception):
@@ -147,15 +151,20 @@ def positional(argv: list[str]) -> list[str]:
 
 
 _JQ = re.compile(r"^\.([A-Za-z_][A-Za-z0-9_]*)$")
+_JQ_LAST_COMMENT = re.compile(r'^\[\.comments\[\]\s*\|\s*select\(\.body\s*\|\s*startswith\("([^"]*)"\)\)\]\s*\|\s*last\s*\|\s*\.body$')
 _JQ_EACH = re.compile(r"^\.\[\]\.([A-Za-z_][A-Za-z0-9_]*)$")  # `.[].name`, for a list of rows
 
 
 def apply_jq(data, expr: str):
-    """The only jq the chain uses is `-q .id`, from github-issue-relations.md:9.
+    """The jq the chain uses: `-q .<field>` (github-issue-relations.md:9), `.[].<field>` and the resume_note read.
 
     Anything else fails by name rather than returning something plausible: a
     silently wrong node id produces a mutation against the wrong issue.
     """
+    note = _JQ_LAST_COMMENT.match(expr.strip())
+    if note and isinstance(data, dict):  # the resume_note read; real gh prints an empty line when nothing matches
+        hits = [c["body"] for c in data.get("comments", []) if c["body"].startswith(note.group(1))]
+        return hits[-1] if hits else ""
     each = _JQ_EACH.match(expr.strip())
     if each and isinstance(data, list):
         return "\n".join(str(row[each.group(1)]) for row in data)
@@ -165,7 +174,8 @@ def apply_jq(data, expr: str):
                       f"the shim implements only `-q .<field>`, not {expr!r}")
     if not isinstance(data, dict) or m.group(1) not in data:
         raise Failure(EXIT_UNKNOWN, f"no field {m.group(1)!r} to select")
-    return data[m.group(1)]
+    value = data[m.group(1)]
+    return {True: "true", False: "false"}.get(value, value) if isinstance(value, bool) else value  # jq prints JSON booleans
 
 
 # --- the issue store ---------------------------------------------------------
@@ -176,6 +186,33 @@ def node_id(number: int) -> str:
 
 def by_node_id(state: dict, nid: str) -> dict | None:
     return next((i for i in state["issues"].values() if i["id"] == nid), None)
+
+
+def register_label(state: dict, name: str, description: str = "", color: str = "") -> None:
+    """Add a label to the repo's registry (idempotent, as `label create --force`)."""
+    registry = state.setdefault("labels", [])
+    if not any(l["name"].lower() == name.lower() for l in registry):
+        registry.append({"name": name, "description": description, "color": color})
+
+
+def require_labels(state: dict, names: list[str]) -> None:
+    """Real gh refuses a label the repo does not have, before it changes anything: all-or-nothing per call.
+    Names match case-insensitively, as on GitHub."""
+    known = {l["name"].lower() for l in state.get("labels", [])}
+    for n in names:
+        if n.lower() not in known:
+            raise Failure(EXIT_UNKNOWN, f"could not add label: '{n}' not found", bare=True)
+
+
+def require_milestone(state: dict, title: str | None) -> None:
+    """Real gh refuses a milestone the repo does not have (`'v9.9.9' not found`, exit 1, nothing changed). Known = made
+    through the shim or already carried by a (seeded) issue."""
+    if not title:
+        return
+    known = {m["title"] for m in state["milestones"]}
+    known |= {(i.get("milestone") or {}).get("title") for i in state["issues"].values() if isinstance(i.get("milestone"), dict)}
+    if title not in known:
+        raise Failure(EXIT_UNKNOWN, f"'{title}' not found", bare=True)
 
 
 def mint(state: dict, *, title: str, body: str, labels: list[str],
@@ -262,11 +299,14 @@ def brief(issue: dict) -> dict:
 def cmd_issue(state: dict, argv: list[str]) -> str:
     action, rest = argv[0], argv[1:]
     if action == "create":
+        labels = take_all(rest, "--label", "-l")
+        require_labels(state, labels)
+        milestone = take(rest, "--milestone", "-m")  # not refused here: seeds mint epics with milestones no registry made
         issue = mint(state,
                      title=take(rest, "--title", "-t") or "",
                      body=_body(rest),
-                     labels=take_all(rest, "--label", "-l"),
-                     milestone=take(rest, "--milestone", "-m"))
+                     labels=labels,
+                     milestone=milestone)
         issue["assignees"] = take_all(rest, "--assignee", "-a")
         return issue["url"]
 
@@ -274,10 +314,12 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         issue = get(state, positional(rest)[0])
         remove = set(take_all(rest, "--remove-label"))
         add = take_all(rest, "--add-label")
+        require_labels(state, add)
+        ms = take(rest, "--milestone", "-m")
+        require_milestone(state, ms)
         names = [l["name"] for l in issue["labels"] if l["name"] not in remove]
         names += [a for a in add if a not in names]
         issue["labels"] = [{"name": n} for n in names]
-        ms = take(rest, "--milestone", "-m")
         if ms is not None:
             issue["milestone"] = {"title": ms} if ms else None
         if "--remove-milestone" in rest:
@@ -285,7 +327,7 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
         body = _body(rest)
         if body:
             issue["body"] = body
-        issue["assignees"] += take_all(rest, "--add-assignee")
+        issue["assignees"] += [a for a in dict.fromkeys(take_all(rest, "--add-assignee")) if a not in issue["assignees"]]
         return issue["url"]
 
     if action == "view":
@@ -341,21 +383,15 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
 
 
 def cmd_label(state: dict, argv: list[str]) -> str:
-    """`label list` answers from the registry: created labels plus any an issue already carries
-    (the shim accepts any label on `issue create`, so those are de facto known). `label create` is
-    idempotent, as with `--force`."""
+    """The registry is `state["labels"]`: `label create` plus whatever the seed made. `issue|pr create|edit` refuse
+    a label outside it (`require_labels`). `label create` is idempotent, as with `--force`."""
     action, rest = argv[0], argv[1:]
-    registry = state.setdefault("labels", [])
     if action == "create":
         name = positional(rest)[0]
-        if not any(l["name"] == name for l in registry):
-            registry.append({"name": name, "description": take(rest, "--description", "-d") or "",
-                             "color": take(rest, "--color", "-c") or ""})
+        register_label(state, name, take(rest, "--description", "-d") or "", take(rest, "--color", "-c") or "")
         return f'Label "{name}" created'
     if action == "list":
-        known = {l["name"] for l in registry}
-        rows = list(registry) + [{"name": n, "description": "", "color": ""} for n in sorted(
-            {l["name"] for i in state["issues"].values() for l in i["labels"]} - known)]
+        rows = state.setdefault("labels", [])
         fields = take(rest, "--json")
         jq = take(rest, "-q", "--jq")
         if not fields:
@@ -387,10 +423,12 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
                      if p["isPR"] and p["state"] == "OPEN" and head and p.get("head") == head and p.get("base") == base), None)
         if twin:  # as real gh: one open PR per head/base pair
             raise Failure(EXIT_UNKNOWN, f"a pull request for branch {head!r} into branch {base!r} already exists: {twin['url']}")
+        labels = take_all(rest, "--label", "-l")
+        require_labels(state, labels)
         pr = mint(state,
                   title=take(rest, "--title", "-t") or "",
                   body=_body(rest),
-                  labels=take_all(rest, "--label", "-l"),
+                  labels=labels,
                   milestone=None,
                   is_pr=True,
                   draft="--draft" in rest or "-d" in rest)
@@ -419,8 +457,10 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
         if body:
             pr["body"] = body
         remove = set(take_all(rest, "--remove-label"))
+        add = take_all(rest, "--add-label")
+        require_labels(state, add)
         names = [l["name"] for l in pr["labels"] if l["name"] not in remove]
-        names += [a for a in take_all(rest, "--add-label") if a not in names]
+        names += [a for a in add if a not in names]
         pr["labels"] = [{"name": n} for n in names]
         return pr["url"]
 
@@ -498,7 +538,8 @@ def find_pr(state: dict, ref: str | None) -> dict:
     branch = ref.split(":", 1)[-1]
     hits = [p for p in state["issues"].values() if p["isPR"] and branch and p.get("head") == branch]
     if not hits:
-        raise Failure(EXIT_UNKNOWN, f"no pull requests found for branch {branch or '<none: detached or no repo>'!r}")
+        # real gh's own refusal (an existence probe before the first PR): a call, not an unknown surface
+        raise Failure(EXIT_UNKNOWN, f'no pull requests found for branch "{branch or "<none: detached or no repo>"}"', bare=True)
     return max([p for p in hits if p["state"] == "OPEN"] or hits, key=lambda p: p["number"])
 
 
@@ -556,7 +597,7 @@ def _pr_list(state: dict, rest: list[str]) -> str:
     return json.dumps([project(pr_record(p, names), names, state) for p in rows])
 
 
-_MUTATION = re.compile(r"\b(addSubIssue|addBlockedBy|removeBlockedBy)\b")
+_MUTATION = re.compile(r"\b(addSubIssue|removeSubIssue|addBlockedBy|removeBlockedBy)\b")
 _ALIAS = re.compile(r"\b(\w+):\s*issue\(number:\s*(\d+)\)")
 
 
@@ -565,6 +606,8 @@ def cmd_api(state: dict, argv: list[str]) -> str:
         return _graphql(state, argv[1:])
     rest = [a for a in argv if a != "--paginate"]
     path = rest[0].split("?", 1)[0]
+    owner, _, repo = state.get("repo", REPO).partition("/")
+    path = path.replace("{owner}", owner).replace(":owner", owner).replace("{repo}", repo).replace(":repo", repo)
     if re.match(r"^repos/[^/]+/[^/]+/milestones/?$", path):
         title = take(rest, "-f", "--field", "-F", "--raw-field")
         known = {m["title"] for m in state["milestones"]}
@@ -577,7 +620,7 @@ def cmd_api(state: dict, argv: list[str]) -> str:
         # list: milestones made through the shim plus any an issue already carries (seeded epics)
         used = {i.get("milestone", {}).get("title") if isinstance(i.get("milestone"), dict) else i.get("milestone")
                 for i in state["issues"].values()}
-        rows = state["milestones"] + [{"title": t, "number": 0, "state": "open"} for t in sorted(used - known) if t]
+        rows = state["milestones"] + [{"title": t, "number": 0, "state": "open"} for t in sorted(t for t in used - known if t)]
         if take(rest, "--jq", "-q") == ".[].title":
             return chr(10).join(r["title"] for r in rows)
         return json.dumps(rows)
@@ -670,11 +713,16 @@ def _graphql(state: dict, argv: list[str]) -> str:
                           f"{name}: no issue with node id {nid!r} in the store")
         return issue
 
-    if name == "addSubIssue":
+    if name in ("addSubIssue", "removeSubIssue"):
         parent, child = resolve("p"), resolve("c")
-        if not any(s["number"] == child["number"] for s in parent["subIssues"]):
+        if name == "removeSubIssue" and (child["parent"] or {}).get("number") != parent["number"]:
+            raise Failure(EXIT_UNKNOWN, f"{name}: #{child['number']} is not a sub-issue of #{parent['number']}")
+        parent["subIssues"] = [s for s in parent["subIssues"] if s["number"] != child["number"]]
+        if name == "addSubIssue":
             parent["subIssues"].append(brief(child))
-        child["parent"] = brief(parent)
+            child["parent"] = brief(parent)
+        else:
+            child["parent"] = None
         subject = parent
     else:
         issue, blocker = resolve("i"), resolve("b")
@@ -690,6 +738,11 @@ def _graphql(state: dict, argv: list[str]) -> str:
 def cmd_repo(state: dict, argv: list[str]) -> str:
     """Enough for Slice 6's shape to be exercised without a real repo."""
     action, rest = argv[0], argv[1:]
+    if action == "view":
+        name = positional(rest)[0] if positional(rest) else state["repo"]
+        if name in state.get("repos", []):
+            return f"https://github.com/{name}"
+        raise Failure(EXIT_UNKNOWN, f"GraphQL: Could not resolve to a Repository with the name '{name}'. (repository)", bare=True)
     if action == "create":
         name = positional(rest)[0] if positional(rest) else state["repo"]
         state["repos"].append(name)
@@ -705,6 +758,24 @@ def cmd_repo(state: dict, argv: list[str]) -> str:
 
 def dispatch(state: dict, argv: list[str]) -> tuple[str, str]:
     """Return (stdout, stderr) for one invocation."""
+    repo_override = take(argv, "-R", "--repo")
+    if repo_override:
+        filtered = []
+        i = 0
+        while i < len(argv):
+            if argv[i] in ("-R", "--repo") and i + 1 < len(argv):
+                i += 2
+                continue
+            if argv[i].startswith("--repo="):
+                i += 1
+                continue
+            filtered.append(argv[i])
+            i += 1
+        argv = filtered
+        state["repo"] = repo_override
+
+    if not argv:
+        return VERSION, ""
     if argv[0] in ("version", "--version"):
         return VERSION, ""
     if argv[0] == "auth":
@@ -750,6 +821,10 @@ def main(argv=None) -> int:
         print(exc.out)
         return EXIT_UNKNOWN
     except Failure as exc:
+        if exc.bare:  # a refusal real gh also gives (a missing label): recorded as a call, not an unknown surface
+            save(state)
+            print(exc, file=sys.stderr)
+            return exc.code
         state["unknown"].append(argv)
         save(state)
         print(f"[l3-shim] {exc}\n[l3-shim] full argv: {argv}", file=sys.stderr)

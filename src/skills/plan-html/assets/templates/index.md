@@ -1,8 +1,8 @@
 ---
 name: index
 description: index of plan-html templates
-version: "1.3.3"
-timestamp: 2026-06-25
+version: "1.3.4"
+timestamp: 2026-11-02
 ---
 
 # Template Index
@@ -17,7 +17,7 @@ Load ONLY the single template file matching the scenario. Never load all files.
 | `decision-record` | `decision-record.html` | ADR-style: context, options considered, final decision, consequences |
 | `wireframe-compare` | `wireframe-compare.html` | 3 lo-fi UI direction sketches side-by-side for a pick |
 | `plan-document` | `plan-document.html` | Complex plan with sticky TOC, scroll-spy, search filter, and diagrams |
-| `board` | `board.html` | Generic draggable board editor (backlog, sprint, or triage) with change payload emitter |
+| `board` | `board.html` | Generic draggable board editor with search filter, tag pills, keyboard navigation (j/k/h/l/1-9), and change payload emitter |
 
 ## Composition Rules & No Match
 - **Keep nesting flat**: Use one primary component per section. Never nest a widget inside another widget (e.g., no diagram/widget inside a collapsible details/accordion).

@@ -74,13 +74,14 @@ def _run(argv):
     return code, buf.getvalue()
 
 
-def _arg_error(argv):
-    """True when argparse rejects argv (SystemExit 2)."""
+def _arg_error(argv, msg=""):
+    """True when argparse rejects argv (SystemExit 2), with `msg` in its stderr text."""
+    err = io.StringIO()
     try:
-        with contextlib.redirect_stderr(io.StringIO()):
+        with contextlib.redirect_stderr(err):
             rec.main(argv)
     except SystemExit as e:
-        return e.code == 2
+        return e.code == 2 and msg in err.getvalue()
     return False
 
 
@@ -256,6 +257,18 @@ def edge_checks():
             check("offline dependents: KEEP for the unknown edge, CLEAR for same-unit, exit 0",
                   code == 0 and "[KEEP BT-301 <- BT-070]" in out and "[CLEAR BT-207 <- BT-070]" in out)
             check("offline: pr_merge_state is never called", looked == [])
+
+            # 11. local ids (BT-LOCAL-<slug>) have no GitHub issue: CLEAR carries the issues.py hint, not a skip
+            p.write_text("\n".join([
+                "| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |",
+                "|----|-------|--------|--------|-----------|--------|------------|-----|-----|",
+                "| BT-LOCAL-aaa | t | done | type:feature | — | — | — | ICE | — |",
+                "| BT-LOCAL-bbb | t | planned | type:feature | — | — | BT-LOCAL-aaa | ICE | — |"]) + "\n", encoding="utf-8")
+            code, out = _run(["--edges", "dependents", "--all-open", "--backlog", path])
+            check("local ids: CLEAR cmd is issues.py set <D> --remove-blocker <B>",
+                  code == 0 and out.splitlines()[0].startswith("[CLEAR BT-LOCAL-bbb <- BT-LOCAL-aaa]")
+                  and out.splitlines()[1] == "  cmd: python .agents/scripts/issues.py set BT-LOCAL-bbb --remove-blocker BT-LOCAL-aaa"
+                  and "# skip" not in out)
     finally:
         rec.gh_available, rec.pr_merge_state = orig_avail, orig_state
 
@@ -381,6 +394,18 @@ def expect_checks():
     check("expect: set fields are padded id / label sets", exp["BT-007"]["blocked_by"] == {"BT-006", "BT-008"}
           and exp["BT-009"]["labels"] == {"a", "b"})
     check("expect: none tokens make an empty set", rec.parse_expect("BT-7:blocked_by=—")["BT-007"]["blocked_by"] == set())
+    check("expect: `none` in any case is the empty value of the list and nullable fields",
+          rec.parse_expect("BT-7:blocked_by=none;BT-7:labels=None;BT-7:milestone=NONE;BT-7:parent=none")["BT-007"]
+          == {"blocked_by": set(), "labels": set(), "milestone": "—", "parent": "—"})
+    check("expect: only a whole `none` value is empty; inside a longer list it is an ordinary item",
+          rec.parse_expect("BT-7:labels=none,type:bug")["BT-007"]["labels"] == {"none", "type:bug"})
+    try:
+        got = rec.parse_expect("# no Spikes; x\nBT-1:status=done;BT-2:status=planned\n  # tail; note")
+    except ValueError:
+        got = None
+    check("expect: a `;` inside a `#` comment line is ignored, real `;` items still parse",
+          got == {"BT-001": {"status": "done"}, "BT-002": {"status": "planned"}})
+    check("expect: comment-only text is empty", rec.parse_expect("# a; b") == {})
     for bad in ("BT-7", "BT-7:status", "BT-7:colour=red", "X-7:status=done"):
         try:
             rec.parse_expect(bad)
@@ -452,8 +477,11 @@ def github_checks():
             check("github: --expect-file works like --expect", _run(base + ["--ids", "BT-001", "--expect-file",
                   str(_expect_file(td, "BT-1:status=in review\n"))])[0] == 0)
             with tempfile.TemporaryDirectory() as td2:
-                check("local: --with-edges / --expect need tracker github", _arg_error(
-                    ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007", "--with-edges", "dependents"]))
+                map_run = ["--arch", _arch(td2, "local"), "--backlog", write_backlog(td2), "--ids", "BT-007"]
+                check("local: the gate (--with-edges) is refused on a --backlog map run",
+                      _arg_error(map_run + ["--with-edges", "dependents"], "--with-edges is not supported"))
+                check("local: the gate (--expect) is refused on a --backlog map run",
+                      _arg_error(map_run + ["--expect", "BT-7:status=in review"], "--expect is not supported"))
             check("github: --edges stays a separate run", _arg_error(base + ["--ids", "BT-007", "--edges", "dependents", "--pr-id", "BT-007"]))
             check("github: --all-open is a local-backend run and is refused", _arg_error(base + ["--all-open"]))
             check("github: a malformed --expect is an argument error", _arg_error(base + ["--ids", "BT-001", "--expect", "BT-1"]))
@@ -476,6 +504,20 @@ def github_checks():
             serve({10: gh_node(10, blocked=(7,), parent=None)})
             code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
             check("github: --edges blockers reads the blockers from GitHub", "[BLOCKER-UNMET BT-010 <- BT-007]" in out and code == 1)
+
+            # closed = done: a blocker closed natively (merged PR) keeps its stale status label, still met
+            closed_blk = gh_node(10, blocked=(7,), parent=None)
+            closed_blk["blockedBy"]["nodes"][0].update(state="CLOSED", labels={"nodes": [{"name": "tier:slice"}, {"name": "status:planned"}]})
+            serve({10: closed_blk})
+            code, out = _run(base + ["--ids", "BT-010", "--edges", "blockers"])
+            check("github: --edges blockers counts a closed blocker with a stale status label as done",
+                  "[BLOCKER-UNMET" not in out and code == 0)
+            closed_dep = gh_node(7, blocking=((8, None),))
+            closed_dep["blocking"]["nodes"][0].update(state="CLOSED")  # status:planned label kept after a native merge-close
+            serve({7: closed_dep})
+            code, out = _run(base + ["--ids", "BT-007", "--edges", "dependents"])
+            check("github: --edges dependents skips a closed dependent (done, nothing left to unblock)",
+                  "BT-008" not in out and code == 0)
 
             # failure handling: retried, then a clear halt; never a local fallback
             rec.fetch_nodes = orig[1]
@@ -612,17 +654,105 @@ def main():
     check("check_pr=True + PR link present -> ok",
           rec.compare(r7, gh_issue(comments=[{"body": "https://github.com/o/r/pull/42"}]), ALL, True) == [])
 
+    shipped = gh_issue(comments=[{"body": "Shipped on feature/x @ 1234567"}])
+    check("github: `Shipped on` is not a PR link, only a /pull/ URL is",
+          any("pr-link" in x for x in rec.compare(r7, shipped, ALL, True)))
+    check("local: a `Shipped on <branch> @ <sha>` comment is the PR link",
+          rec.compare(r7, shipped, ALL, True, local=True) == [])
+
     check("issue_number strips padding", rec.issue_number("BT-007") == "7")
     check("issue_number local -> None", rec.issue_number("BT-LOCAL-x") is None)
 
     edge_checks()
     github_checks()
+    local_gate_checks()
 
     if FAILS:
         print(f"\n{len(FAILS)} FAILED")
         return False
     print("\nAll reconcile tests PASSED.")
     return True
+
+
+def local_gate_checks():
+    """A4: local backend accepts --expect, --expect-file and --with-edges against store.rows()."""
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "ARCHITECTURE.md"
+        p.write_text("---\ntype: architecture\ntracker: local\ntracker_branch: test-gate-issues\nversion: \"1.0.0\"\n---\n# A\n",
+                     encoding="utf-8")
+        base = ["--arch", str(p)]
+        import issues
+        tracker = issues.Tracker(str(p))
+        i_auth = {
+            'type': 'issue', 'id': 'BT-LOCAL-auth', 'title': 'Auth',
+            'status': 'in review', 'labels': ['type:feature', 'tier:epic'],
+            'milestone': 'v1.0.0', 'parent': None, 'blocked_by': ['BT-LOCAL-db'],
+            'claimed_by': None, 'created': '2026-10-27', 'updated': '2026-10-27',
+            'closed': None, 'close_reason': None, 'body': '',
+            'comments': ['- 2026-10-27: Shipped on feature/auth @ 1234567'],
+        }
+        i_db = {
+            'type': 'issue', 'id': 'BT-LOCAL-db', 'title': 'DB',
+            'status': 'done', 'labels': ['type:feature', 'tier:slice', 'size:small', 'mode:AFK'],
+            'milestone': 'v1.0.0', 'parent': 'BT-LOCAL-auth', 'blocked_by': [],
+            'claimed_by': None, 'created': '2026-10-27', 'updated': '2026-10-27',
+            'closed': '2026-10-27', 'close_reason': 'completed', 'body': '',
+            'comments': [],
+        }
+        i_seven = dict(i_auth, id='BT-007', title='Seven', blocked_by=['BT-006'], comments=[])  # an id form both backends accept
+        try:
+            tracker.write(lambda s: ({
+                issues.README: issues.README_TEXT,
+                issues.path_of(i_auth): issues.render_issue(i_auth),
+                issues.path_of(i_db): issues.render_issue(i_db),
+                issues.path_of(i_seven): issues.render_issue(i_seven),
+            }, True), "init test store", allow_new=True)
+
+            # 1. Matching expect
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--pr-id", "BT-LOCAL-auth",
+                                     "--expect", "BT-LOCAL-auth:status=in review;BT-LOCAL-auth:blocked_by=BT-LOCAL-db"])
+            check("local: matching expectation -> OK, exit 0", code == 0 and "[MIRROR-OK BT-LOCAL-auth]" in out)
+
+            # 2. Status drift
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect", "BT-LOCAL-auth:status=planned"])
+            check("local: status drift -> exit 1", code == 1 and "[MIRROR-DRIFT BT-LOCAL-auth: status expect=planned" in out)
+
+            # 3. Open-but-done drift
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect", "BT-LOCAL-auth:status=done"])
+            check("local: open-but-done drift -> exit 1", code == 1 and "expect=done" in out)
+
+            # 4. Missing issue
+            code, out = _run(base + ["--ids", "BT-LOCAL-absent", "--expect", "BT-LOCAL-absent:status=done"])
+            check("local: missing issue -> exit 1", code == 1 and "[MIRROR-DRIFT BT-LOCAL-absent: issue not found in local store]" in out)
+
+            # 5. Combined with-edges
+            code, out = _run(base + ["--ids", "BT-LOCAL-db", "--expect", "BT-LOCAL-db:status=done",
+                                     "--with-edges", "dependents"])
+            check("local: combined gate + edges exit 0", code == 0 and "[MIRROR-OK BT-LOCAL-db]" in out
+                  and "[CLEAR BT-LOCAL-auth <- BT-LOCAL-db]" in out)
+
+            # 6. --expect-file whose first line is a `#` comment (joined to --expect text, it must stay a comment line)
+            ef = Path(td) / "gate-expect.txt"
+            ef.write_text("# gate for auth; db\nBT-LOCAL-auth:status=in review\n", encoding="utf-8")
+            code, out = _run(base + ["--ids", "BT-LOCAL-auth", "--expect-file", str(ef)])
+            check("local: --expect-file with a leading `#` comment line -> OK, exit 0",
+                  code == 0 and "[MIRROR-OK BT-LOCAL-auth]" in out)
+
+            # 7. contract (A4): the SAME --expect text is accepted and OK on the local and the github backend
+            same = "BT-7:status=in review;BT-7:blocked_by=BT-6"
+            code_l, out_l = _run(base + ["--ids", "BT-007", "--expect", same])
+            orig = (rec.gh_available, rec.fetch_nodes)
+            try:
+                rec.gh_available = lambda: True
+                rec.fetch_nodes = lambda nums, comments=False, edges=False: {n: gh_node(n, blocked=(6,)) for n in nums}
+                gh_base = ["--arch", _arch(td, "github", "gh-arch.md"), "--backlog", str(Path(td) / "NO_MAP.md")]
+                code_g, out_g = _run(gh_base + ["--ids", "BT-007", "--expect", same])
+            finally:
+                rec.gh_available, rec.fetch_nodes = orig
+            check("contract: one --expect string is OK on the local backend and on the github backend",
+                  (code_l, code_g) == (0, 0) and "[MIRROR-OK BT-007]" in out_l and "[MIRROR-OK BT-007]" in out_g)
+        finally:
+            issues._git('update-ref', '-d', 'refs/heads/test-gate-issues', check=False)
 
 
 def test_reconcile():

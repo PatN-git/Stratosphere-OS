@@ -1,7 +1,7 @@
 ---
 description: Template for docs/ROADMAP.md - releases mapped to parent features with MVP cut-line rationale.
-version: "2.0.1"
-timestamp: 2026-10-14
+version: "2.1.0"
+timestamp: 2026-10-28
 ---
 
 # Roadmap Template
@@ -18,7 +18,7 @@ the block below is the *artifact's*.
 type: roadmap
 title: Product Roadmap
 description: Release roadmap mapping product releases to parent features with MVP cut-line rationale and shipped history.
-version: <plugin version>   # stamped at generation (okf-protocol §5)
+version: <plugin version>   # stamped at generation; omit the line when the manifest is unresolvable (okf-protocol §5)
 generated:
   by: 3a-version-planning
   at: <ISO 8601>
@@ -34,14 +34,14 @@ generated:
 
 **Live product:** `vX.Y` &nbsp;<!-- highest [SHIPPED] release, or [ACTIVE] if none shipped yet -->
 
-## vX.Y — <release name> [ACTIVE] [MAJOR | MINOR]
-> **Rationale / MVP cut-line:** <why these features, why now, what is deferred and why>
+## vX.Y — <release name> [ACTIVE]
+> **Rationale / MVP cut-line:** <MAJOR or MINOR and why, why these features, why now, what is deferred and why>
 
 - BT-<padded> — <feature title> (`scope:baseline` | `scope:differentiator`, `tier:epic`)
 - BT-<padded> — <feature title> (...)
 
-## vX.(Y+1) — <next release> [PLANNED] [MINOR]
-> **Rationale:** <...>
+## vX.(Y+1) — <next release> [PLANNED]
+> **Rationale:** <MAJOR or MINOR and why, ...>
 
 - BT-<padded> — <feature title> (...)
 
@@ -49,4 +49,4 @@ generated:
 
 ## Shipped
 <!-- Token-efficient history (mirrors the `## Superseded` convention in memory docs): one terse line per shipped release; do not retain full feature detail here. Newest first. Never delete — this is the product changelog. -->
-- vX.(Y-1) — <release name> — shipped <YYYY-MM-DD> — <N features>, [MAJOR | MINOR]
+- vX.(Y-1) — <release name> — shipped <YYYY-MM-DD> — <N features>, MAJOR | MINOR

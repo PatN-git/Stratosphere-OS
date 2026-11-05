@@ -41,7 +41,7 @@ jobs:
         # Auto-discovers every tests/test_*.py (pytest.ini excludes -m integration).
         # Replaces the old hand-listed per-test steps: subagent_spawning, terminal_sync,
         # reconcile, plan_html_delegation, plus previously-unwired suites (update_flow,
-        # update_preflight, migrate, jules, 3z). Local `pytest` == this.
+        # update_preflight, migrate, 3z). Local `pytest` == this.
         run: python -m pytest -n auto --dist worksteal
 
       - name: Verify dev-skill copies match src/dev-skills/

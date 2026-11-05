@@ -18,7 +18,7 @@ timestamp: 2026-10-22
 Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Precondition & Mode
-1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`references/tracker-verbs.md`).
+1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
@@ -28,12 +28,12 @@ Run the `load-memory` skill to restore session context (read-only).
    **Locate research:** same slug, fuzzy-match `docs/research/*.md` (ignore *.work.md) by 1b's External Research matching (multiple matches → list filenames, user selects; none → no research; match only, no staleness prompt). Record both paths for the PRD frontmatter `discovery:` / `research:` (Phase 5 step 1).
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
-`create` the parent issue (`references/tracker-verbs.md`) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
+`create` the parent issue (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
 > [!IMPORTANT]
 > **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns (local backend: `BT-LOCAL-<slug>`).
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
-- **Labels (apply):** `tier:epic`, `area:<x>` (inferred), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
+- **Labels (apply):** `tier:epic`, `area:<x>` (inferred; no registry slug fits → omit it, 3b/the user adds it), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.
 - **Labels (never apply):** `size:*`, `mode:*`.
 - **Body:** one-line summary + link to `docs/prds/BT-<padded>-<name>.md`.
 
@@ -91,7 +91,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 ## Phase 5: Publish & Sync
 1. Write `docs/prds/BT-<padded>-<feature-name>.md`. Write the template's **Artifact frontmatter** block verbatim (it already carries `type: prd` — do not prepend a second one). Set `bt: BT-<padded>`, `discovery:` / `research:` to the paths located in Phase 1 step 5 (`—` when none), and editorial `status: stable` (the PRD passed Phase 4 validation; `draft` only while unvalidated). PRD frontmatter never carries a work-status token.
 2. **Epic stays `status:needs_spec`.** 2a never promotes it — `/2b-interface-design` owns `needs_spec → planned` (at design freeze for Path A/B/C, or on its no-surface skip path). `3b` has a defensive guard as backstop.
-3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md && git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a-version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
+3. **Commit & Push Doc:** `git add docs/prds/BT-<padded>-<feature-name>.md [docs/discovery/<slug>.md]` (the brief only when the `linked-prd:` edit was made) `&& git commit -m "docs(BT-<padded>): PRD"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). PRDs are cross-feature inputs read by `/3a-version-planning` on default — committing here (not on a feature branch) keeps them visible. Never sweep unrelated drift into this commit.
 4. `set_body` the parent issue: summary + doc link + §10 Open Questions + discovery brief link (if a brief was located).
 5. **Refs:** `set_refs(BT-<padded>, <memory IDs>)` (`[[L-xxx]]`, `[[A-xxx]]`; doc paths go in the body, never in Refs). The epic stays `status:needs_spec`, with no milestone until 3a assigns one.
 6. **Invoke `plan-html` skill:** If PRD is ≥100 lines or has arch decisions, invoke `plan-html` using `plan-document` to render the ephemeral companion `.tmp/render/docs/prds/BT-<padded>-<feature-name>.html` (never committed; re-render from the `.md` whenever presenting it).

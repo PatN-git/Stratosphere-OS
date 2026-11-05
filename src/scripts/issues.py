@@ -13,6 +13,10 @@ win; a lost race re-reads and retries, never forces. Agents never edit issue fil
   ready          3c/3z candidate lines (`ice_read.py candidates` format) whose effective blockers have cleared,
                  plus [MISSING-LABELS] and [BLOCKED <id> <- <blocker>] lines
   writes         create | set | comment | claim | close | reopen | label
+  merge state    merged [--close]   (open `in review` issues whose shipped tip SHA or branch is in the default branch)
+  views          board [--milestone M] [--parent P] [--md [file] | --web [--out F] [--open]]   (text kanban, a Markdown
+                 export, or an interactive HTML page whose copied move payload is `apply-moves` input)
+  human moves    apply-moves [file|-] [--dry-run] [--force]   (batch status writer for the board's payload)
   maintenance    init | check | sync [--remote origin] | migrate [--map .memory/BACKLOG_MAP.md]
 
 Exit: 0 ok; 1 a finding, a refused write ([CLAIMED], [ERROR …]) or an unknown id.
@@ -26,6 +30,7 @@ import fnmatch
 import subprocess
 import sys
 import uuid
+from html import escape as html_escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -41,6 +46,7 @@ MAP_DEFAULT = '.memory/BACKLOG_MAP.md'
 FIELDS = ('type', 'id', 'title', 'status', 'labels', 'milestone', 'parent', 'blocked_by', 'claimed_by',
           'created', 'updated', 'closed', 'close_reason')
 STATUSES = ('needs_spec', 'planned', 'in progress', 'in review', 'blocked', 'done')
+GUARDED = ('in progress', 'in review', 'done')   # apply-moves refuses a move into these while a blocker is open
 REASONS = ('completed', 'not planned')
 # The canonical label vocabulary of references/label-taxonomy.md (a test pins the two equal); `area:*` slugs are the
 # project's own and live in the store's README.
@@ -208,7 +214,7 @@ def parse_issue(text):
         raise IssuesError("[ERROR] issue file without frontmatter")
     fm, rest = text[4:].split('\n---\n', 1)
     issue = {k: None for k in FIELDS}
-    for line in fm.splitlines():
+    for line in fm.split('\n'):  # not splitlines(): a title may hold U+2028 or \x85, which json.dumps leaves raw
         key, _, value = line.partition(':')
         value = value.strip()
         if value.startswith('['):
@@ -236,6 +242,11 @@ def render_issue(issue):
 
 def path_of(issue):
     return f"{ARCHIVE if issue.get('closed') else ROOT}/{issue['id']}.md"
+
+
+def effective_status(issue):
+    """The board/move status: a closed issue is `done` whatever its stored status says."""
+    return 'done' if issue.get('closed') else issue.get('status')
 
 
 class Store:
@@ -345,10 +356,34 @@ def default_branch():
     return next((b for b in ('main', 'master') if head(f'refs/heads/{b}')), None)
 
 
+def _is_ancestor(sha, target):
+    return _git('merge-base', '--is-ancestor', sha, target, check=False)[0] == 0
+
+
+def _tip_sha(comment):
+    m = re.search(r'Shipped.*?@\s*([0-9a-f]{7,40})', comment) or re.search(r'Shipped\s+([0-9a-f]{7,40})', comment)
+    return m.group(1) if m else None
+
+
+def _recorded_tips(store, bt):
+    """(newest, older) recorded ship tips of an issue. 4a posts `Shipped on <branch> @ <sha>` on each shipped slice
+    (closed at ship), so an epic's sources are its child slices too. Per source only the NEWEST tip (last comment)
+    is `newest`; the rest are `older`."""
+    sources = [i for i in store.issues.values() if i['id'] == bt or i['parent'] == bt]
+    newest, older = [], []
+    for src in sources:
+        tips = [s for s in (_tip_sha(c) for c in src.get('comments', [])) if s]
+        if tips:
+            newest.append(tips[-1])
+            older += tips[:-1]
+    return newest, older
+
+
 def make_merged_of(store):
     """`merged_of(bt)` for _tracker_common.edge_verdict without a PR host: the blocker's ship-unit branches (pr_body
-    globs) are merged when every local or remote-tracking one is an ancestor of the default branch, 'none' when no
-    such branch exists (deleted after merge, or a Spike with no code), 'open' otherwise."""
+    globs) are merged when every local or remote-tracking one is an ancestor of the default branch. With no such
+    branch (deleted) the recorded `Shipped on <branch> @ <sha>` tips decide ('merged' when each newest tip is an
+    ancestor, else 'open'); 'none' only when no tip was ever recorded (a Spike with no code), 'open' otherwise."""
     target = default_branch()
     refs = _git('for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes').split()
 
@@ -368,9 +403,13 @@ def make_merged_of(store):
         hits = [r for r in refs if any(fnmatch.fnmatch(local(r), g) for g in globs)
                 and not any(fnmatch.fnmatch(local(r), g) for g in longer)]
         if not hits:
-            return 'none'
-        return 'merged' if all(_git('merge-base', '--is-ancestor', r, target, check=False)[0] == 0
-                               for r in hits) else 'open'
+            # A deleted branch proves nothing: judge by the tip 4a recorded (the blocker's, or its child slices'),
+            # 'none' only when nothing was ever shipped (a Spike or a manual close, no code).
+            newest, _ = _recorded_tips(store, bt)
+            if not newest:
+                return 'none'
+            return 'merged' if all(_is_ancestor(s, target) for s in newest) else 'open'
+        return 'merged' if all(_is_ancestor(r, target) for r in hits) else 'open'
     return merged_of
 
 
@@ -398,6 +437,202 @@ def ready(store, merged_of=None):
 def candidate_ids(store):
     lines, missing = candidates(open_as_gh(store))
     return {l.split(' |', 1)[0] for l in lines} | {m.split(' ')[1] for m in missing}
+
+
+def _detect_merged(store, bt):
+    """Return ('merged', reason) | ('stale', reason) | ('advisory', reason) | None for an open issue."""
+    issue = store.issues.get(bt)
+    if not issue:
+        return None
+    target = default_branch()
+    if not target:
+        return None
+
+    # 1. Recorded tip SHAs (_recorded_tips): merged when every source's newest tip is an ancestor of the target.
+    newest, older = _recorded_tips(store, bt)
+    is_ancestor = lambda sha: _is_ancestor(sha, target)
+
+    if newest:
+        unmerged = [s for s in newest if not is_ancestor(s)]
+        if not unmerged:
+            return ('merged', f"newest tip {newest[-1][:7]} is ancestor of {target}")
+        stale = [s for s in older if is_ancestor(s)]
+        if stale:
+            return ('stale', f"newest tip {unmerged[0][:7]} is not in {target}; older tip {stale[0][:7]} is")
+
+    # 2. Check branch ancestry via make_merged_of logic
+    merged_of = make_merged_of(store)
+    state = merged_of(bt)
+    if state == 'merged':
+        return ('merged', f"branch is ancestor of {target}")
+
+    # 3. Squash commit fallback (advisory only)
+    # Only a commit made at or after the recorded ship (the newest tip's committer date; the comment's date is
+    # day-granular) that is not a `docs(` commit: 2a/2b's `docs(<epic>): PRD` names the id long before any merge.
+    since = max((int(t) for t in (_git('show', '-s', '--format=%ct', s, check=False)[1].strip() for s in newest)
+                 if t.isdigit()), default=None)
+    rc, out = _git('log', target, '--grep', f"({bt})", '--format=%h%x09%ct%x09%s', check=False)
+    for line in (out.splitlines() if rc == 0 else []):
+        sha, ct, subject = (line.split('\t', 2) + ['', ''])[:3]
+        if not subject.startswith('docs(') and (since is None or int(ct) >= since):
+            return ('advisory', f"squash commit {sha} matches id in {target}")
+
+    return None
+
+
+def cmd_merged(store, a):
+    candidates = [i for i in store.issues.values() if not i['closed'] and i['status'] == 'in review']
+    changes = {}
+    lines = []
+    for issue in sorted(candidates, key=lambda x: x['id']):
+        bt = issue['id']
+        res = _detect_merged(store, bt)
+        if not res:
+            continue
+        kind, reason = res
+        if kind == 'merged':
+            if a.close:
+                _close_issue(issue, 'completed')
+                changes.update(store.changes(issue))
+            lines.append(f"[MERGED {bt}]")
+        elif kind == 'stale':
+            lines.append(f"[STALE-TIP {bt}] ({reason}; re-shipped, not merged)")
+        elif kind == 'advisory':
+            lines.append(f"[PROBABLY-MERGED {bt}] ({reason}; confirm before close)")
+
+    out_text = '\n'.join(lines) if lines else '[NO-MERGES]'
+    return changes, out_text
+
+
+def _find_board_template():
+    candidates = [
+        at_top('.agents/skills/plan-html/assets/templates/board.html'),
+        at_top('src/skills/plan-html/assets/templates/board.html'),
+        at_top('dist/skills/plan-html/assets/templates/board.html'),
+        Path(__file__).resolve().parent.parent / 'skills/plan-html/assets/templates/board.html'
+    ]
+    for p in candidates:
+        if p.is_file():
+            return p
+    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, or dist/skills")
+
+
+def _render_board_html(store, issues_list, a):
+    tpl_path = _find_board_template()
+    tpl_text = tpl_path.read_text(encoding='utf-8')
+
+    STATUS_LABELS = {
+        'needs_spec': 'Needs Spec',
+        'planned': 'Planned',
+        'in progress': 'In Progress',
+        'in review': 'In Review',
+        'blocked': 'Blocked',
+        'done': 'Done'
+    }
+    columns = [{'id': st, 'label': STATUS_LABELS.get(st, st.replace('_', ' ').title())} for st in STATUSES]
+
+    cards = []
+    for issue in sorted(issues_list, key=lambda x: x['id']):
+        st = effective_status(issue)
+        labels = [l for l in issue.get('labels', []) if not l.startswith('status:')]
+        priority = next((l.split(':')[1] for l in labels if l.startswith('priority:')), None)
+        tier = next((l.split(':')[1] for l in labels if l.startswith('tier:')), None)
+        meta = {}
+        if priority:
+            meta['priority'] = priority
+        if issue.get('parent'):
+            meta['parent'] = issue['parent']
+        if tier:
+            meta['tier'] = tier
+        if issue.get('blocked_by'):
+            meta['blocked_by'] = ','.join(sorted(issue['blocked_by']))
+
+        cards.append({
+            'id': issue['id'],
+            'label': issue['title'],
+            'column': st,
+            'labels': labels,
+            'meta': meta
+        })
+
+    title = f"{repo_name()} Backlog Board"
+    data = {
+        'title': title,
+        'columns': columns,
+        'cards': cards,
+        # the page's copy payload is exactly this command's stdin: a header line plus `<id> -> <status>` lines
+        'apply_cmd': 'python .agents/scripts/issues.py apply-moves -',
+    }
+
+    # Titles, labels and ids are data: one JSON blob, with every character that could end the script element or the
+    # line (`<`, `>`, `&`, U+2028/9) written as a \u escape. str.replace only, never a re replacement template.
+    data_json = json.dumps(data, indent=2, ensure_ascii=False)
+    for ch in '<>&\u2028\u2029':
+        data_json = data_json.replace(ch, f'\\u{ord(ch):04x}')
+    block = '<script id="plan-data" type="application/json">'
+    placeholder = f'{block}{{}}</script>'
+    if placeholder not in tpl_text:
+        raise IssuesError("[ERROR] board.html template has no empty plan-data block")
+    html = tpl_text.replace('{{title}}', html_escape(title)).replace(placeholder, f'{block}\n{data_json}\n</script>', 1)
+
+    out_file = at_top(a.out or '.tmp/render/board.html')
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(html, encoding='utf-8')
+
+    # a browser is launched only on request: an agent run must never pop a window
+    if a.open:
+        try:
+            import webbrowser
+            webbrowser.open(out_file.resolve().as_uri())
+        except Exception:
+            pass
+
+    return f"[BOARD] wrote {out_file} ({len(cards)} card(s))"
+
+
+def cmd_board(store, a):
+    issues_list = list(store.issues.values())
+    if a.milestone:
+        issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
+    if a.parent:
+        issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+
+    if a.web:
+        return _render_board_html(store, issues_list, a)
+
+    lines = []
+    as_md = bool(a.md)
+    for st in STATUSES:
+        group = [i for i in issues_list if effective_status(i) == st]
+        if not group:
+            continue
+        title = st.replace('_', ' ').title()
+        if as_md:
+            lines.append(f"## {title} ({len(group)})")
+        else:
+            lines.append(f"=== {title} ({len(group)}) ===")
+        for i in sorted(group, key=lambda x: x['id']):
+            size = next((l.split(':')[1] for l in i['labels'] if l.startswith('size:')), None)
+            size_txt = f"  [size:{size}]" if (size and not as_md) else (f" `size:{size}`" if size else "")
+            blk_txt = ""
+            if i['blocked_by']:
+                blk = ','.join(sorted(i['blocked_by']))
+                blk_txt = f" [BLOCKED by {blk}]" if not as_md else f" *(blocked by {blk})*"
+            if as_md:
+                lines.append(f"- **{i['id']}** {i['title']}{size_txt}{blk_txt}")
+            else:
+                lines.append(f"{i['id']}  {i['title']}{size_txt}{blk_txt}")
+        lines.append("")
+
+    text = '\n'.join(lines).strip()
+    if a.md:
+        path = Path(a.md)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text + '\n', encoding='utf-8')
+        return f"[BOARD] wrote {path}"
+    return text or "[BOARD-EMPTY]"
+
+
 
 
 # --- writes ---------------------------------------------------------------------------------------------------------
@@ -520,7 +755,7 @@ def cmd_comment(store, a):
     issue = store.get(a.id)
     text = a.body if a.body is not None else _body(a.body_file)
     if text.lstrip().startswith('<!-- stratos:resume -->'):
-        # A resume note is folder state: one gitignored file per issue, replaced whole (tracker-verbs.md).
+        # A resume note is folder state: one gitignored file per issue, replaced whole (tracker-verbs-local.md).
         note = at_top('.memory/resume') / f"{a.id}.md"
         note.parent.mkdir(parents=True, exist_ok=True)
         note.write_text(text, encoding='utf-8')
@@ -548,19 +783,27 @@ def cmd_claim(store, a):
     return store.changes(issue), a.id
 
 
+def _close_issue(issue, reason):
+    issue.update(status='done', closed=issue['closed'] or today(), close_reason=reason, claimed_by=None, updated=now())
+
+
+def _reopen_issue(issue, status):
+    issue.update(status=_status(status), closed=None, close_reason=None, updated=now())
+
+
 def cmd_close(store, a):
     issue = store.get(a.id)
     if a.reason not in REASONS:
         raise IssuesError(f"[ERROR] --reason must be one of {', '.join(REASONS)}")
     if issue['closed'] and issue['close_reason'] == a.reason:
         return {}, a.id
-    issue.update(status='done', closed=issue['closed'] or today(), close_reason=a.reason, claimed_by=None, updated=now())
+    _close_issue(issue, a.reason)
     return store.changes(issue), a.id
 
 
 def cmd_reopen(store, a):
     issue = store.get(a.id)
-    issue.update(status=_status(a.status or 'planned'), closed=None, close_reason=None, updated=now())
+    _reopen_issue(issue, a.status or 'planned')
     return store.changes(issue), a.id
 
 
@@ -571,6 +814,103 @@ def cmd_label(store, a):
     if a.name in store.areas:
         return {}, a.name
     return {README: store.files.get(README, README_TEXT).rstrip('\n') + f"\n- {a.name}\n"}, a.name
+
+
+def cmd_apply_moves(store, a):
+    """Batch status writer for human-driven moves (the board's payload). Grammar, one move per line: `<id> [anything]
+    -> <status>`; blank lines, `#` comments and the board's `Please apply ...` header are ignored; the status is what
+    follows the LAST `->`, in any case, with `_` or spaces (`Needs Spec`, `in_progress`). Atomic: any line that does
+    not parse, an unknown id or status, or a refused move applies nothing (exit 1, every offending line listed). A card
+    that ends the batch in `in progress`, `in review` or `done` with an open blocker (as `ready` judges) is refused."""
+    text = getattr(a, '_moves_text', None)  # a lost write race re-runs this function; stdin can be read only once
+    if text is None:
+        source = a.file
+        if source == '-' or not source:
+            text = sys.stdin.read()
+        else:
+            p = at_top(source)
+            if not p.is_file():
+                raise IssuesError(f"[ERROR] file not found: {source}")
+            text = p.read_text(encoding='utf-8-sig')
+        a._moves_text = text
+
+    spellings = {st.replace('_', ' '): st for st in STATUSES}
+    cur_branch = current_branch()
+    force = a.force
+    problems, applied, touched, moved_at, merged_ok = [], [], {}, {}, {}
+
+    def merged(bt):
+        if bt not in merged_ok:
+            res = _detect_merged(store, bt)
+            merged_ok[bt] = bool(res) and res[0] == 'merged'
+        return merged_ok[bt]
+
+    n_moves = 0
+    for n, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith('#') or line.startswith('Please apply'):
+            continue
+        n_moves += 1
+        left, arrow, right = line.rpartition('->')
+        if not arrow or not left.strip():
+            problems.append(f"line {n}: not a move (expected `<id> ... -> <status>`): {line}")
+            continue
+        bt = left.split(None, 1)[0].rstrip(':')
+        target = spellings.get(' '.join(right.lower().replace('_', ' ').split()))
+        if bt not in store.issues:
+            problems.append(f"line {n}: unknown id {bt}")
+            continue
+        if target is None:
+            problems.append(f"line {n}: unknown status {right.strip()!r} (one of: {', '.join(STATUSES)})")
+            continue
+        issue = store.issues[bt]
+        old = effective_status(issue)
+        if old == target:
+            continue
+        if issue.get('claimed_by') and issue['claimed_by'] != cur_branch and not force:
+            problems.append(f"line {n}: [CLAIMED {bt} by {issue['claimed_by']}] use --force to move")
+            continue
+        # "the merge closes": an epic or standalone issue in review is closed by its merge, never by a drag
+        if (target == 'done' and old == 'in review' and ('tier:epic' in issue['labels'] or not issue['parent'])
+                and not force and not merged(bt)):
+            problems.append(f"line {n}: {bt} is in review and not merged (its merge closes it; `issues.py merged "
+                            "--close` does it); use --force to override")
+            continue
+        if target == 'done':
+            _close_issue(issue, 'completed')
+        elif issue.get('closed'):
+            _reopen_issue(issue, target)
+        else:
+            issue.update(status=target, updated=now())
+        touched[bt], moved_at[bt] = issue, n
+        applied.append(f"{bt}: {old} -> {target}")
+
+    # a blocker is judged on the batch end state, so a blocker moved to done in the same payload clears its dependent
+    if not force:
+        rows, merged_of = store.rows(), None
+        for bt, issue in touched.items():
+            if effective_status(issue) not in GUARDED:
+                continue
+            for blk in sorted(effective_blockers(bt, rows)):
+                if merged_of is None:  # make_merged_of reads git: only once a guarded move needs it
+                    merged_of = make_merged_of(store)
+                verdict, _, why = edge_verdict(bt, blk, rows, merged_of)
+                if verdict != 'OK':
+                    problems.append(f"line {moved_at[bt]}: [BLOCKED {bt} <- {blk}] {why}; use --force to move")
+
+    if not n_moves and not problems:
+        raise IssuesError("[ERROR] apply-moves: no moves found (expected lines `<id> ... -> <status>`)")
+    if problems:
+        raise IssuesError("[ERROR] apply-moves refused, nothing applied:\n" + '\n'.join(f"  {p}" for p in problems))
+
+    dry = a.dry_run
+    summary = (f"[APPLY-MOVES] dry run: {len(applied)} move(s) would apply, nothing written" if dry
+               else f"[APPLY-MOVES] applied {len(applied)} move(s)" + ('' if applied else ' (already in place)'))
+    changes = {}
+    if not dry:
+        for issue in touched.values():
+            changes.update(store.changes(issue))
+    return changes, '\n'.join(applied + [summary])
 
 
 # --- check ----------------------------------------------------------------------------------------------------------
@@ -795,11 +1135,23 @@ def parser():
     sub.add_parser('check')
     p = sub.add_parser('sync'); p.add_argument('--remote', default='origin')
     p = sub.add_parser('migrate'); p.add_argument('--map', default=MAP_DEFAULT)
+    p = sub.add_parser('merged'); p.add_argument('--close', action='store_true')
+    p = sub.add_parser('board')
+    p.add_argument('--milestone')
+    p.add_argument('--parent')
+    p.add_argument('--md', nargs='?', const='.tmp/board.md', default=None)
+    p.add_argument('--web', action='store_true', help='render interactive HTML board')
+    p.add_argument('--out', default='.tmp/render/board.html', help='output HTML path')
+    p.add_argument('--open', action='store_true', help='launch the browser on the page (never done by default)')
+    p = sub.add_parser('apply-moves')
+    p.add_argument('file', nargs='?', default='-', help='file with moves (default: stdin)')
+    p.add_argument('--force', action='store_true', help='move claimed issues; close an unmerged epic or standalone issue; move past an open blocker')
+    p.add_argument('--dry-run', action='store_true', help='parse and validate, print the moves, write nothing')
     return ap
 
 
 WRITES = {'create': cmd_create, 'set': cmd_set, 'comment': cmd_comment, 'claim': cmd_claim, 'close': cmd_close,
-          'reopen': cmd_reopen, 'label': cmd_label}
+          'reopen': cmd_reopen, 'label': cmd_label, 'apply-moves': cmd_apply_moves}
 
 
 def _dump(value):
@@ -808,7 +1160,7 @@ def _dump(value):
 
 def run(a, out):
     if frontmatter_key(at_top(a.arch), 'tracker') == 'github':  # a stale local store must not read as the live one
-        raise IssuesError("[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs.md)")
+        raise IssuesError("[TRACKER-GITHUB] issues.py is the local backend; use the gh forms (references/tracker-verbs-github.md)")
     tracker = Tracker(a.arch)
     if a.cmd == 'branch':
         out(tracker.branch)
@@ -820,8 +1172,16 @@ def run(a, out):
         out(cmd_sync(tracker, a.remote))
     elif a.cmd == 'migrate':
         out(cmd_migrate(tracker, a.map))
+    elif a.cmd == 'merged':
+        if a.close:
+            out(tracker.write(lambda s: cmd_merged(s, a), "issues: merged --close"))
+        else:
+            _, text = cmd_merged(tracker.store(), a)
+            out(text)
+    elif a.cmd == 'board':
+        out(cmd_board(tracker.store(), a))
     elif a.cmd in WRITES:
-        out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '')}"))
+        out(tracker.write(lambda s: WRITES[a.cmd](s, a), f"issues: {a.cmd} {getattr(a, 'id', '') or getattr(a, 'title', '') or getattr(a, 'name', '') or getattr(a, 'file', '')}".strip()))
     else:
         store = tracker.store()
         if a.cmd == 'get':

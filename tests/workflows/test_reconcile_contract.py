@@ -75,9 +75,9 @@ def test_removed_flags_are_rejected_by_argparse(tmp_path, flag):
     assert code == 2 and "unrecognized arguments" in err
 
 
-def test_local_mode_supports_only_edges(tmp_path):
+def test_local_mode_needs_a_gate_or_an_edges_flag(tmp_path):
     code, _, err = run(["--ids", "BT-003", *local_project(tmp_path)])
-    assert code == 2 and "only --edges" in err
+    assert code == 2 and "--expect" in err and "--edges" in err and "only --edges" not in err
 
 
 def test_local_edges_still_decide_blockers_and_dependents(tmp_path):

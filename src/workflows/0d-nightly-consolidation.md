@@ -26,7 +26,7 @@ Do not modify files without user approval, except the report, `.last-run.json` (
 - Before proposing, read the `## Decisions` section (max 30 lines) of each of the last 7 `docs/nightly/nightly-*.md` reports by filename date; none yet → skip. An item the user **declined** is not re-proposed without new evidence; an `accepted · deferred` item may be. A `pending` line is carried forward (Phase 4 step 2). Do not read their proposal text (Phase 1 anti-anchoring).
 - Output the high-density proposal to `docs/nightly/nightly-<YYYY-MM-DD>.md` (tracked), covering session/skill optimizations. **Prepend OKF frontmatter** — `type: proposal`, `title`, `description` (Phase 3.5 reads both), `status: stable`, `generated: {by: 0d-nightly-consolidation, at: <ISO 8601>}`.
 - Stamp the run: `python .agents/scripts/nightly_state.py stamp` (never hand-write `.last-run.json`).
-- **Retention:** archive or delete `docs/nightly/nightly-*.md` reports older than ~90 days by filename date. Keep `.last-run.json` and `index.md`.
+- **Retention:** delete `docs/nightly/nightly-*.md` reports older than ~90 days by filename date. Keep `.last-run.json` and `index.md`.
 
 ## Phase 3: Crystallize Memory
 - Scan `.memory/*` (except `DESIGN.md`) for:
@@ -36,7 +36,8 @@ Do not modify files without user approval, except the report, `.last-run.json` (
     | Duplicate or overlapping entries | Merge? |
     | `[PATTERN]` cited ≥3 times | Promote to `[LAW]` in `ARCHITECTURE.md` or `DESIGN_RULES.md`? (Not for `GLOSSARY.md`) |
     | `[ASSUMED]` cited in `Ref` by ≥2 distinct tasks | Promote to `[PATTERN]`? |
-    | `[ASSUMED]` older than 7 days by its inline `[YYYY-MM-DD]`, unvalidated | Supersede with a `[REMOVED]` tombstone? |
+    | `[ASSUMED]` older than 7 days by its inline `[YYYY-MM-DD]` | Supersede with a `[REMOVED]` tombstone? |
+- Citations are the `Refs:` lines of tracker issues (`issues.py list --all`, then `get`) plus `[[ID]]` mentions in `.memory/`.
 - A removal is a tombstone under `## Superseded`, never a deletion (memory-protocol §3, §5): deleting leaves an ID gap.
 - **Avoid-list reconciliation:** Migrate or retire `Avoid:` synonyms for superseded terms.
 - Adjust plan if proposals surface. No-op audits (promotion, avoid-list, retention with nothing qualifying) collapse into one status line in the report (same line as Phase 4 step 1), never a section.

@@ -3,8 +3,8 @@ name: micro-tdd
 description: Routes each code change to its cheapest safe path (direct edit, visual check, or test-first RED→GREEN→REFACTOR); localizes unclear bugs before fixing. Use for any code change or bug fix; 3d delegates its loop here.
 metadata:
   stratos.layer: execution
-version: "1.5.0"
-timestamp: 2026-10-16
+version: "1.6.0"
+timestamp: 2026-11-03
 ---
 
 # SKILL: Micro-TDD Execution
@@ -39,8 +39,8 @@ Logic and Risk routes. No production code before a failing test.
 1. **Isolate & Specify (RED):**
    - Name the break first: the production change this test catches. Write one minimal unit test per cycle asserting the change or new capability; each boundary (e.g. both sides of a threshold) gets its own cycle. Expected values from an independent source (literal, spec, worked example), never recomputed the way the code computes them. Never write a test that only asserts a constant equals its new value: test behavior that reads it; nothing reads it → nothing to test, finish on Direct.
    - Run target test file; type-check during the loop.
-   - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
-     - **Characterization Carve-out:** test pinning already-correct legacy behavior before modification may start green, but must fail when the subject returns undefined or a wrong value.
+   - **Validate Red:** Confirm the test fails specifically due to the absence of functionality—not due to runtime compile errors or typos; an `ImportError` for the not-yet-written module is a valid RED. **Record the observed RED** — the failing assertion + that it failed for absent functionality; the RED must be an observed result, never assumed. In silent/AFK mode, surface it to the caller as `red_confirmed` rather than narrating.
+     - **Characterization Carve-out:** a test pinning already-correct behavior (legacy before modification, or a guard/boundary the code already satisfies, e.g. "performs no I/O") may start green, but must fail when the subject returns undefined or a wrong value, or under a one-line mutation that breaks the property; record that failure as the observed RED.
      - Otherwise a test passing immediately is invalid → rewrite. Bug route: assumed cause is wrong → localize (Bug Loop step 2).
 2. **Implement & Pass (GREEN):**
    - Simplest non-speculative production code that passes the test.

@@ -29,7 +29,7 @@ timestamp: 2026-10-27
 - **Intermediates:** Store all temporary files, scratch logs, scraped data, and scratch scripts in `.tmp/` (ephemeral, regeneratable). Never inline multi-line or quote-heavy code or file content in a shell command (`python -c`, heredocs): write it with the file-write tool, code to `.tmp/`.
 
 ## 4. Version Control
-- **Granularity:** one branch + one PR per SHIP UNIT: the slice's release `vX.Y` (milestone `vX.Y.Z`), else its parent epic, else itself (standalone). Every slice of the unit commits onto that branch; its one PR accumulates them (several epics and sprints per release). Resolve with `pr_body.py unit`.
+- **Granularity:** one branch + one PR per SHIP UNIT: an epic slice's release `vX.Y` (milestone `vX.Y.Z`), else its parent epic; a standalone issue is itself. Every slice of the unit commits onto that branch; its one PR accumulates them (several epics and sprints per release). Resolve with `pr_body.py unit`.
 - **Isolation:** plain git branches (single working dir); worktrees allowed, not required.
 - **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. An epic's slice needs a release milestone (3d halts without one).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label.

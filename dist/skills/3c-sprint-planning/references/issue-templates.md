@@ -6,7 +6,7 @@ timestamp: 2026-10-13
 
 # Issue Templates
 
-Writes use the tracker verbs (`references/tracker-verbs.md`); labels, statuses and milestones follow `references/label-taxonomy.md`.
+Writes use the tracker verbs (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)); labels, statuses and milestones follow `references/label-taxonomy.md`.
 
 ## SPIKE (Template A)
 *Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice`, `size:medium`. Sprintable at the medium weight (3h), not buildable. Close on Exit Criteria; mint follow-up Build slices via `/3b-create-issue`.*
@@ -60,7 +60,7 @@ Must cite the governing design/architectural laws violated (e.g. violates `[[A-x
 ### Dependencies
 - **Parent:** `BT-<padded>` (local: `BT-LOCAL-<slug>`) — the epic this slice belongs to (bare ID; `—` if standalone). Written once with `set_parent`.
 - **Blocked by:** `BT-<padded>, …` (local: `BT-LOCAL-<slug>`) — slices that must land first (bare IDs; `—` if none). Written once with `add_blocker`.
-- **Design:** `docs/design/BT-<parentPadded>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
+- **Design:** `docs/design/<parentId>-interface.md` | `—` — the parent feature's frozen interface design (`—` if none or standalone). 3d reads the blueprint only when this names a path.
 
 ### Notes
 Edge cases, trade-offs, and `.memory/LEARNINGS.md` traps.

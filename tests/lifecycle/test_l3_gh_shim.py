@@ -27,6 +27,7 @@ def _load(name, path):
 
 gh = _load("l3_gh_shim", HARNESS / "shims" / "gh_shim.py")
 e = _load("l3_env_shim", HARNESS / "env.py")
+seed = _load("l3_seed_shim", HARNESS / "seed.py")
 
 
 @pytest.fixture
@@ -36,6 +37,7 @@ def store(tmp_path, monkeypatch):
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(tmp_path)  # a PR call asks git about origin: never the developer's checkout
+    seed.seed_labels({"L3_GH_STORE": str(path)}, HARNESS / "shims")  # a repo as stratosphere-setup leaves it
     return path
 
 
@@ -187,7 +189,11 @@ def test_body_file_is_read_from_disk(store, capsys, tmp_path):
 
 def test_milestones_list_with_paginate_and_query_create_and_include_issue_milestones(store, capsys):
     """`ensure_milestone` (tracker-verbs.md) lists with --paginate, a query string and --jq, then creates with -f."""
-    run(["issue", "create", "--title", "seeded", "--milestone", "v0.9.0"], capsys)
+    run(["issue", "create", "--title", "no milestone"], capsys)
+    run(["issue", "create", "--title", "seeded"], capsys)
+    seeded = state(store)
+    seeded["issues"]["2"]["milestone"] = {"title": "v0.9.0"}  # a seeded epic: carries a milestone the registry never saw
+    store.write_text(json.dumps(seeded), encoding="utf-8")
     list_argv = ["api", "--paginate", "repos/{owner}/{repo}/milestones?state=open", "--jq", ".[].title"]
     assert run(list_argv, capsys) == (0, "v0.9.0", "")
     assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0
@@ -198,11 +204,10 @@ def test_milestones_list_with_paginate_and_query_create_and_include_issue_milest
 
 def test_label_create_then_list_in_text_json_and_jq(store, capsys):
     assert run(["label", "create", "area:fe", "--description", "front end"], capsys)[0] == 0
-    run(["issue", "create", "--title", "a", "--label", "type:bug"], capsys)
     assert run(["label", "create", "area:fe"], capsys)[0] == 0  # idempotent
     _, out, _ = run(["label", "list", "--json", "name"], capsys)
-    assert json.loads(out) == [{"name": "area:fe"}, {"name": "type:bug"}]
-    assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == ["area:fe", "type:bug"]
+    assert json.loads(out) == [{"name": n} for n in (*seed.LABELS, "area:fe")]  # the seeded taxonomy, then the new one
+    assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == [*seed.LABELS, "area:fe"]
     assert "area:fe\tfront end" in run(["label", "list"], capsys)[1]
     assert run(["label", "list", "--json", "nope"], capsys)[0] != 0
     assert run(["label", "delete", "area:fe"], capsys)[0] != 0
@@ -248,6 +253,7 @@ def test_pr_edit_changes_body_title_and_labels(store, capsys, tmp_path):
     body.write_text("new body", encoding="utf-8")
     assert run(["pr", "edit", "1", "--title", "Renamed", "--body-file", str(body),
                 "--add-label", "risk:one-way"], capsys)[0] == 0
+    run(["label", "create", "x"], capsys)
     assert run(["pr", "edit", "1", "--add-label", "x", "--remove-label", "risk:one-way"], capsys)[0] == 0
     _, out, _ = run(["pr", "view", "1", "--json", "title,body,labels"], capsys)
     got = json.loads(out)
@@ -262,6 +268,13 @@ def test_pr_ready_undo_converts_back_to_draft(store, capsys):
     assert json.loads(run(["pr", "view", "1", "--json", "isDraft"], capsys)[1]) == {"isDraft": True}
 
 
+def test_adding_an_assignee_twice_keeps_one_like_real_github(store, capsys):
+    run(["issue", "create", "--title", "a"], capsys)
+    run(["issue", "edit", "1", "--add-assignee", "@me"], capsys)
+    run(["issue", "edit", "1", "--add-assignee", "@me"], capsys)
+    assert json.loads(run(["issue", "view", "1", "--json", "assignees"], capsys)[1]) == {"assignees": ["@me"]}
+
+
 def test_issue_reopen_sets_the_state_back_to_open(store, capsys):
     run(["issue", "create", "--title", "a"], capsys)
     run(["issue", "close", "1"], capsys)
@@ -273,7 +286,7 @@ def test_issue_reopen_sets_the_state_back_to_open(store, capsys):
 
 def _mutation(kind, a, b):
     query = f"mutation($x:ID!,$y:ID!){{{kind}(input:{{...}}){{issue{{number}}}}}}"
-    keys = {"addSubIssue": ("p", "c")}.get(kind, ("i", "b"))
+    keys = {"addSubIssue": ("p", "c"), "removeSubIssue": ("p", "c")}.get(kind, ("i", "b"))
     return ["api", "graphql", "-f", f"query={query}",
             "-f", f"{keys[0]}={a}", "-f", f"{keys[1]}={b}"]
 
@@ -299,6 +312,50 @@ def test_blocked_by_can_be_added_and_removed(store, capsys):
     run(_mutation("removeBlockedBy", gh.node_id(2), gh.node_id(1)), capsys)
     _, out, _ = run(["issue", "view", "2", "--json", "blockedBy"], capsys)
     assert json.loads(out)["blockedBy"] == {"nodes": [], "totalCount": 0}
+
+
+def test_jq_prints_json_booleans_lowercase_like_real_gh(store, capsys):
+    """Found live (smoke repo): `gh pr view --json isDraft -q .isDraft` prints `true`, not Python's `True`."""
+    run(["pr", "create", "--title", "p", "--draft"], capsys)
+    assert run(["pr", "view", "1", "--json", "isDraft", "-q", ".isDraft"], capsys) == (0, "true", "")
+    run(["pr", "ready", "1"], capsys)
+    assert run(["pr", "view", "1", "--json", "isDraft", "-q", ".isDraft"], capsys) == (0, "false", "")
+
+
+def test_remove_sub_issue_clears_both_ends(store, capsys):
+    run(["issue", "create", "--title", "epic"], capsys)
+    run(["issue", "create", "--title", "slice"], capsys)
+    run(_mutation("addSubIssue", gh.node_id(1), gh.node_id(2)), capsys)
+    assert run(_mutation("removeSubIssue", gh.node_id(1), gh.node_id(2)), capsys)[0] == 0
+    _, parent, _ = run(["issue", "view", "2", "--json", "parent"], capsys)
+    _, kids, _ = run(["issue", "view", "1", "--json", "subIssues"], capsys)
+    assert json.loads(parent)["parent"] is None
+    assert json.loads(kids)["subIssues"]["nodes"] == []
+    run(["issue", "create", "--title", "other"], capsys)
+    code, _, err = run(_mutation("removeSubIssue", gh.node_id(1), gh.node_id(3)), capsys)
+    assert code == 1 and "not a sub-issue" in err, "real GitHub refuses removing a child from a parent it is not under"
+
+
+def test_an_unknown_milestone_is_refused_on_edit_like_real_gh(store, capsys):
+    """Found live (smoke repo): real `gh issue edit --milestone v9.9.9` exits 1 `'v9.9.9' not found` and changes nothing."""
+    run(["issue", "create", "--title", "a"], capsys)
+    code, _, err = run(["issue", "edit", "1", "--milestone", "v9.9.9"], capsys)
+    assert code == 1 and "'v9.9.9' not found" in err
+    assert state(store)["issues"]["1"]["milestone"] is None
+    run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)
+    assert run(["issue", "edit", "1", "--milestone", "v1.0.0"], capsys)[0] == 0
+    assert run(["issue", "create", "--title", "b", "--milestone", "v9.9.9"], capsys)[0] == 0  # create stays lenient: seeds mint epics
+
+
+def test_jq_reads_the_latest_resume_note_and_prints_an_empty_line_without_one(store, capsys):
+    """The `resume_note` read of tracker-verbs-github.md; real gh answers an empty line when no comment matches."""
+    run(["issue", "create", "--title", "a"], capsys)
+    jq = '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'
+    argv = ["issue", "view", "1", "--json", "comments", "--jq", jq]
+    assert run(argv, capsys) == (0, "", "")
+    for body in ("<!-- stratos:resume -->\nfirst", "plain", "<!-- stratos:resume -->\nsecond"):
+        run(["issue", "comment", "1", "--body", body], capsys)
+    assert run(argv, capsys) == (0, "<!-- stratos:resume -->\nsecond", "")
 
 
 def test_an_unknown_mutation_fails_by_name(store, capsys):
@@ -338,6 +395,7 @@ def _shimmed_env(tmp_path, monkeypatch):
         monkeypatch.setenv(key, child[key])
     for var in gh.TOKEN_VARS:
         monkeypatch.delenv(var, raising=False)
+    seed.seed_labels(child, tmp_path / "shims")  # the repo has its labels, as after stratosphere-setup
     return child
 
 
@@ -626,6 +684,18 @@ def test_pr_view_with_no_argument_or_a_branch_name_finds_the_pr(clone, store, ca
     assert code != 0 and "feat/none" in err
 
 
+def test_pr_view_of_a_branch_without_a_pr_is_real_ghs_refusal_not_an_unknown_surface(clone, store, capsys):
+    """An existence probe by branch before the first PR exists is routine (4a does it); real gh answers
+    `no pull requests found for branch "x"` and exits 1. The shim must give that wording and record the call,
+    not log it under `unknown`, which L3 reads as an undocumented GitHub surface."""
+    code, _, err = run(["pr", "view", "feat/none", "--json", "number,url,isDraft,body,state"], capsys)
+    assert code == 1
+    assert err == 'no pull requests found for branch "feat/none"'
+    raw = state(store)
+    assert raw["unknown"] == []
+    assert ["pr", "view", "feat/none", "--json", "number,url,isDraft,body,state"] in raw["invocations"]
+
+
 def test_pr_view_by_branch_prefers_the_open_pr(clone, store, capsys):
     _push_branch(clone, "feat/x")
     def set_states(*states):
@@ -704,3 +774,110 @@ def test_issue_edit_remove_milestone_unsets_it(store, capsys):
     run(["issue", "create", "--title", "a", "--milestone", "v1.0.0"], capsys)
     assert run(["issue", "edit", "1", "--remove-milestone"], capsys)[0] == 0
     assert json.loads(run(["issue", "view", "1", "--json", "milestone"], capsys)[1]) == {"milestone": None}
+
+
+# --- the label registry: real gh refuses a label the repo does not have (F32) -------------------------------------
+
+def _label_names(raw):
+    return {l["name"] for l in raw.get("labels", [])}
+
+
+def test_issue_create_refuses_an_unknown_label_and_changes_nothing(store, capsys):
+    run(["label", "create", "type:feature"], capsys)
+    before = state(store)
+    code, out, err = run(["issue", "create", "--title", "a", "--label", "type:feature,nope", "--label", "also-nope"], capsys)
+    assert code == 1 and out == ""
+    assert "could not add label: 'nope' not found" in err
+    after = state(store)
+    assert after["issues"] == {} and after["next_number"] == before["next_number"]  # all-or-nothing, no number spent
+
+
+def test_issue_edit_refuses_an_unknown_added_label_and_changes_nothing(store, capsys):
+    run(["label", "create", "status:planned"], capsys)
+    run(["label", "create", "status:done"], capsys)
+    run(["issue", "create", "--title", "a", "--label", "status:planned"], capsys)
+    code, _, err = run(["issue", "edit", "1", "--remove-label", "status:planned", "--add-label", "status:done,nope"], capsys)
+    assert code == 1 and "could not add label: 'nope' not found" in err
+    assert state(store)["issues"]["1"]["labels"] == [{"name": "status:planned"}]  # the remove did not land either
+
+
+def test_pr_create_and_edit_refuse_an_unknown_label(store, capsys):
+    run(["label", "create", "risk:one-way"], capsys)
+    code, _, err = run(["pr", "create", "--title", "p", "--label", "nope"], capsys)
+    assert code == 1 and "could not add label: 'nope' not found" in err and state(store)["issues"] == {}
+    run(["pr", "create", "--title", "p", "--head", "feat/a"], capsys)
+    assert run(["pr", "edit", "1", "--add-label", "nope"], capsys)[0] == 1
+    assert state(store)["issues"]["1"]["labels"] == []
+    assert run(["pr", "edit", "1", "--add-label", "risk:one-way"], capsys)[0] == 0
+
+
+def test_label_names_match_case_insensitively_like_github(store, capsys):
+    run(["label", "create", "Area:FE"], capsys)
+    run(["label", "create", "area:fe"], capsys)
+    assert {n for n in _label_names(state(store)) if n.lower() == "area:fe"} == {"Area:FE"}
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 0
+
+
+def test_a_label_made_with_label_create_is_then_accepted(store, capsys):
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 1
+    assert run(["label", "create", "area:fe"], capsys)[0] == 0
+    assert run(["issue", "create", "--title", "a", "--label", "area:fe"], capsys)[0] == 0
+    assert run(["issue", "edit", "1", "--add-label", "area:fe"], capsys)[0] == 0
+
+
+def test_removing_an_absent_label_is_a_no_op(store, capsys):
+    run(["label", "create", "type:bug"], capsys)
+    run(["issue", "create", "--title", "a", "--label", "type:bug"], capsys)
+    assert run(["issue", "edit", "1", "--remove-label", "never-existed"], capsys)[0] == 0
+    assert state(store)["issues"]["1"]["labels"] == [{"name": "type:bug"}]
+
+
+def test_the_seeded_registry_is_the_label_taxonomy(store):
+    """Setup creates every canonical label (stratosphere-setup greenfield); the harness seeds the same set."""
+    sys.path.insert(0, str(REPO / "src" / "scripts"))
+    try:
+        issues = _load("l3_issues_taxonomy", REPO / "src" / "scripts" / "issues.py")
+    finally:
+        sys.path.remove(str(REPO / "src" / "scripts"))
+    canonical = {f"{k}:{v}" for k, vals in issues.CANONICAL.items() for v in vals} | {f"status:{s}" for s in issues.STATUSES}
+    assert set(seed.LABELS) == canonical
+
+
+def test_repo_view_succeeds_for_created_repo_and_fails_with_graphql_error_for_unknown(store, capsys):
+    """B2: gh repo view matches real GitHub GraphQL not found error and URL on success."""
+    code, _, err = run(["repo", "view", "owner/nonexistent-repo"], capsys)
+    assert code != 0
+    assert "GraphQL: Could not resolve to a Repository with the name 'owner/nonexistent-repo'." in err
+
+    run(["repo", "create", "owner/real-repo"], capsys)
+    code, out, _ = run(["repo", "view", "owner/real-repo"], capsys)
+    assert code == 0
+    assert out.strip() == "https://github.com/owner/real-repo"
+
+
+def test_root_flag_repo_and_owner_expansion_in_api(store, capsys):
+    """B2: -R root flag overrides repo and repos/{owner}/{repo}/milestones expands cleanly."""
+    code, out, _ = run(["-R", "custom-org/custom-repo", "api", "repos/{owner}/{repo}/milestones", "-f", "title=v2.0.0"], capsys)
+    assert code == 0
+    assert "v2.0.0" in out
+    code, out, _ = run(["api", "repos/:owner/:repo/milestones", "--jq", ".[].title"], capsys)
+    assert code == 0
+    assert "v2.0.0" in out.splitlines()
+
+
+def test_ci_gate_status_with_no_workflows_rollup_is_empty(clone, store, tmp_path, monkeypatch, capsys):
+    """B2: Real GitHub returns statusCheckRollup: [] when repo has no workflows, producing verdict none."""
+    _shimmed_env(tmp_path, monkeypatch)
+    sha = _push_branch(clone, "feat/no-ci")
+    run(["pr", "create", "--title", "test-no-ci"], capsys)
+    # Clear rollup as on real repo with no CI workflows
+    raw = state(Path(os.environ["L3_GH_STORE"]))
+    raw["issues"]["1"]["statusCheckRollup"] = []
+    Path(os.environ["L3_GH_STORE"]).write_text(json.dumps(raw), encoding="utf-8")
+
+    r = subprocess.run([sys.executable, str(REPO / "src" / "scripts" / "ci_gate.py"), "status", "--pr", "1",
+                        "--sha", sha, "--wait", "5"], cwd=str(clone), capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    res = json.loads(r.stdout)
+    assert res["verdict"] == "none"
+    assert res["failing"] == []

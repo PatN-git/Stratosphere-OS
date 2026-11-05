@@ -24,7 +24,7 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 - Framework-specific traps
 
 ## What does NOT belong here
-- Temporary TODOs → the tracker (`references/tracker-verbs.md`)
+- Temporary TODOs → the tracker (`references/tracker-verbs-github.md`, local: `references/tracker-verbs-local.md`)
 - Current task status → the issue's resume note
 - One-off debugging logs unless they reveal a reusable rule
 - `[LAW]`-tier rules → `ARCHITECTURE.md` or `DESIGN_RULES.md`

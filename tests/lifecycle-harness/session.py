@@ -26,6 +26,7 @@ from pathlib import Path
 # Pinned so a CLI release cannot silently change harness behaviour. Keep in step
 # with tests/install-harness/run-L2.py.
 NPX_PACKAGE = "@anthropic-ai/claude-code@2.1.170"
+EFFORTS = ("low", "medium", "high", "xhigh", "max")  # that version's `--effort` values
 
 # Pin the model per ROLE rather than inheriting ~/.claude/settings.json. Two reasons:
 # a harness whose result depends on an ambient setting is not reproducible between
@@ -141,8 +142,8 @@ def build_cmd(prompt: str, model: str | None = None,
     if model:
         cmd += ["--model", model]
     if effort:
-        # Passed through as given: the flag name is the Claude Code CLI's `--effort <level>`, not
-        # verified against the pinned CLI version, so an unknown value surfaces as the CLI's own error.
+        # The Claude Code CLI's `--effort <level>` (verified on the pinned 2.1.170 `--help`: EFFORTS).
+        # Claude only: another host's CLI needs its own driver and flag.
         cmd += ["--effort", effort]
     if resume:
         cmd += ["--resume", resume]

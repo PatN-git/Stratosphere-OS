@@ -48,7 +48,7 @@ def test_the_always_loaded_memory_protocol_shrinks_by_at_least_600_characters():
 def test_memory_protocol_points_to_the_tracker_verbs_and_keeps_the_minting_anchor():
     text = read_src("rules/memory-protocol.md")
     assert "## 8. Backlog ID Minting (Late Binding)" in text  # 3b links this anchor
-    assert "references/tracker-verbs.md" in text
+    assert "references/tracker-verbs-github.md" in text
     assert "BACKLOG_MAP" not in text
 
 

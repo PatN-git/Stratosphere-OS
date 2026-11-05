@@ -97,7 +97,7 @@ def parse_args(argv=None):
                          "(default none, or 600 with --handoff)")
     ap.add_argument("--model", default=session_mod.DRIVER_MODEL,
                     help="the agent under test; calibration is model-specific")
-    ap.add_argument("--effort", default=None,
+    ap.add_argument("--effort", default=None, choices=session_mod.EFFORTS,
                     help="reasoning effort for the agent under test, passed to the CLI as --effort (default: the CLI's)")
     ap.add_argument("--proxy-model", default=session_mod.PROXY_MODEL)
     ap.add_argument("--auditor-model", default=session_mod.AUDITOR_MODEL)
