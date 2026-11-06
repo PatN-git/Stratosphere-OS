@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.1"
+version: "1.5.2"
 timestamp: 2026-11-06
 ---
 
@@ -48,26 +48,23 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 2: Grill
 
-State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
+State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file. Apply G1–G3, Hollow Consent Guard, and V1–V3 in `references/frontier-interview.md`.
 
 **Grill mode (facts looked up, decisions asked — batched by dependency):**
-- **Facts are never asked (per G2):** Resolve discoverable facts (patterns, constraints, schemas) silently via `grep`, AST, or subagents. Ask only user decisions. Log lookups in `## Established Facts`; log confirmed decisions in `## Settled Decisions`.
+- **Facts are never asked (per G2):** Resolve discoverable facts (constants, configurations, API schemas, file structures, data models) silently via `grep`, AST parsers, file inspection, or bounded `.tmp/` probes (`<=2 min`, read-only; log `probe: <cmd>` in `## Established Facts`). Ask only user decisions; recommending a candidate (G1) never makes the decision — only user confirmation does. Log confirmed decisions in `## Settled Decisions`.
 - **Sharpen / short path:** grill one decision at a time.
-- **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with your recommended answer (per G1).
+- **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with a grounded recommendation or approach triangulation (per G1).
   - A decision waits for a later round only if its answer depends on a sibling still open this round (per G3).
   - Where you can confidently infer an answer (common on brownfield), present it as a batch-confirm — *"here's what I inferred; correct any that are wrong"* — never a silent assumption.
   - Collect → mark settled on `## Coverage` → recompute the frontier → next round.
 
-- **G1 — Recommend when grounded, open when not:** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
-- **G2 — Facts vs Decisions (Silent Grep/AST Resolution):** If a codebase exists, look up facts (constants, configurations, API schemas, file structures, data models) natively and silently via `grep`, AST parsers, or file inspection first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
-  - **Empirical fork:** a local probe can answer it (read-only, <=2 min, in .tmp/; no network, installs, cost, secrets, production)? Run it, log "probe: <cmd>" in Established Facts, ask only the preference left. Else ask.
-- **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependency edges in order (a decision waits until its prerequisites are settled). Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
-
 **Stop conditions:**
 1. **Primary gate — confirmed core alignment:** Stop grilling as soon as core problem statement and actor alignment are confirmed by the user. Restate actor, problem, and chosen framing back to the user; when confirmed, halt grilling and advance immediately to Phase 3. The user — never the agent — declares "enough"; do not stop merely because the next question "wouldn't change the brief" (that lets the agent answer its own questions).
-   - **Not consent:** hedges ("sounds good", "looks reasonable"), silence, off-topic replies. Re-ask the open point. "Whatever you think": offer two options.
+   - **Not consent:** hedges ("sounds good", "looks reasonable"), silence, off-topic replies. Re-ask the open point. "Whatever you think": offer two options (per `references/frontier-interview.md`).
 2. User explicitly signals done ("enough", "write it up").
-3. Core problem and actor alignment confirmed **or** the 10–15 question budget cap is reached.
+3. **10–15 question budget cap reached:**
+   - **Core framing locked:** If core Actor, Problem, and Chosen Framing are confirmed, stop grilling and advance to Phase 3 (recording any remaining non-blocking questions under `## Open Questions` in the brief for `/2a-write-prd` §10).
+   - **Mid-Flight Escalation to `/1c-concept-map`:** If multi-subsystem dependencies prevent locking core Actor, Problem, or Chosen Framing within 10–15 questions, flush state to `.tmp/1b-discovery-<slug>.work.md` (`## Ask (verbatim)`, `## Candidate vocabulary`, `## Established Facts`, `## Settled Decisions`, `## Decoupled Follow-ups`, open frontier questions, fog areas) and ask user to confirm escalating to `/1c-concept-map` (keep work file on disk for `/1c-concept-map` Phase 1 ingestion).
 
 **Decision Question Budget:** Bound grilling to 10–15 high-ambiguity decision questions maximum. Prevent developer interrogation fatigue by eliminating trivia and discoverable facts. Batch questions strictly by dependency frontier (G3).
 
@@ -76,10 +73,7 @@ State synthesis of known facts and confirm — do not re-grill. Lead open-ended 
 **Focus areas — probe in order of ambiguity; skip if clear:**
 - **Actor identity** — role, segment, context (not "users").
 - **Problem shape** — pain without solution (what hurts without X, and how often?).
-- **Vocabulary** — pin terms that could mean multiple things. (Run V1, V2, V3 checks):
-  - **V1 (Vocabulary Stress-Test):** Stress-test terms under scenario edge-cases.
-  - **V2 (Code-Contradiction Check):** Check terms against actual naming in code.
-  - **V3 (Glossary-Conflict Callout):** Verify terms do not clash with `GLOSSARY.md` `[[G-xxx]]`.
+- **Vocabulary** — pin terms that could mean multiple things; run V1 (Vocabulary Stress-Test), V2 (Code-Contradiction Check), and V3 (Glossary-Conflict Callout against `GLOSSARY.md` `[[G-xxx]]`) per `references/frontier-interview.md`.
 - **Internal Prior Art** — prior attempts and BT refs; current-code facts → `## Established Facts`.
 - **External Research:** derive slug (kebab-case core problem as 2–5 word noun phrase). Fuzzy-match docs/research/*.md (ignore *.work.md). One strong match → read only frontmatter `generated.at` date; if <90 days old, ask: "Research at docs/research/<slug>.md (updated <generated.at>). Still current, or refresh first?" and read body only after confirmation; if >90 days, treat as stale and prompt to refresh. Zero matches → probe 2-3 questions or suggest /1a-research. Multiple matches → list filenames, user selects.
 - **Success state** — observable, measurable outcomes.

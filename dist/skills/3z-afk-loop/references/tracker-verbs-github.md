@@ -1,6 +1,6 @@
 ---
 description: The single write surface for issue state: the runtime halt rule, each write kind as a verb, the misfits and the read forms. Workflows name a verb; this file says how the backend does it.
-version: "5.1.0"
+version: "5.2.0"
 timestamp: 2026-10-22
 ---
 
