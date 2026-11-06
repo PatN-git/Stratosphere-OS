@@ -176,9 +176,9 @@
       "version": "1.0.0"
     },
     "skills/1a-research/SKILL.md": {
-      "sha256": "31b092882f8988022327b620569fde6084512e51709fa6688e7ed1f1c3352df0",
-      "timestamp": "2026-10-14",
-      "version": "1.0.9"
+      "sha256": "24b6e23b79912fd7e2bffeb7385d2237cadc562947e6740505e4559bf57db6ac",
+      "timestamp": "2026-11-06",
+      "version": "1.0.10"
     },
     "skills/1a-research/references/research-competitive-template.md": {
       "sha256": "db25018889c71847822597e7fc1d652a8e5f6587ab977877185eb9acb8aa30f6",
@@ -196,9 +196,9 @@
       "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "a887f5b76c7d2a048cda3daf6f2f1cc0a849689288c865ece8de55d991299082",
-      "timestamp": "2026-10-22",
-      "version": "1.5.0"
+      "sha256": "24efc57720777f4aaf6e3af788c457854e1f0d62b56f4631d46e1c0ac78048b0",
+      "timestamp": "2026-11-06",
+      "version": "1.5.1"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
       "sha256": "5e3de6f3bda5e01fd074d56dff3e74626bfbbd07e89f11c0f641dcafb4cc09b3",
@@ -216,9 +216,9 @@
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "4242f16a1bbc5ab609c4f979191dbffca9d37147553024da1cdc5aebc83afc9a",
-      "timestamp": "2026-10-22",
-      "version": "1.4.0"
+      "sha256": "18c665d94918f7860991ff03a2fccc82799fbd0a079626d4aed36186caf3cc0e",
+      "timestamp": "2026-11-06",
+      "version": "1.4.1"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
       "sha256": "03bb0adaa4ec6096aeb3d6b826187a4ffcb8d50cc88691efa85a31b3b30799b3",
@@ -226,9 +226,9 @@
       "version": "1.1.0"
     },
     "skills/1c-concept-map/references/concept-map-template.md": {
-      "sha256": "b97a3ebdc16bbc4297e38840ec2088701fd4599197c9a313d5cc43e43d86750d",
-      "timestamp": "2026-10-28",
-      "version": "2.1.0"
+      "sha256": "32f1560992758506ff7f3db3d428b39e46576d46bb8106c67516bf5e9f322f54",
+      "timestamp": "2026-11-06",
+      "version": "2.1.1"
     },
     "skills/1c-concept-map/references/github-issue-relations.md": {
       "sha256": "863aefd2a06b5308de28ce8675868542b38f09f096bfdd189131c955f4964a78",

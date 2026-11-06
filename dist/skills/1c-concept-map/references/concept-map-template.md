@@ -1,7 +1,7 @@
 ---
 description: Template for a concept map - a foggy multi-session idea charted into decision tickets.
-version: "2.1.0"
-timestamp: 2026-10-28
+version: "2.1.1"
+timestamp: 2026-11-06
 ---
 
 # Concept Map Template
@@ -29,3 +29,11 @@ Use the body below as the body of the `concept:map` issue, substituting every `<
 <An index of all closed decision tickets resolved during this concept map lifecycle. Note that the actual answers and resolutions live as comments on the closed tickets themselves.>
 
 - [<ticket title>](<#/link>) — <gist of the decision>
+
+## Dependency Map
+```mermaid
+flowchart TD
+    %% Single-pass declarative concept map topology
+    %% Nodes represent decision tickets; edges represent dependency blockers
+    Ask["Ask (verbatim)"] --> D1["Decision Ticket 1"]
+```

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-10-22
+version: "1.5.1"
+timestamp: 2026-11-06
 ---
 
 # Concept framing
@@ -51,7 +51,7 @@ Run the `load-memory` skill to restore session context (read-only).
 State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
 
 **Grill mode (facts looked up, decisions asked — batched by dependency):**
-- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is looked up first; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user. Record each lookup result with its source in the work file's `## Established Facts` when it lands; record each user-confirmed decision with its reason in `## Settled Decisions`.
+- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is resolved silently via `grep`, AST inspection, or local file search before asking the user; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user. Record each lookup result with its source in the work file's `## Established Facts` when it lands; record each user-confirmed decision with its reason in `## Settled Decisions`.
 - **Sharpen / short path:** grill one decision at a time.
 - **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with your recommended answer (per G1).
   - A decision waits for a later round only if its answer depends on a sibling still open this round (per G3).
@@ -59,17 +59,17 @@ State synthesis of known facts and confirm — do not re-grill. Lead open-ended 
   - Collect → mark settled on `## Coverage` → recompute the frontier → next round.
 
 - **G1 — Recommend when grounded, open when not:** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
-- **G2 — Facts vs Decisions:** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
+- **G2 — Facts vs Decisions (Silent Grep/AST Resolution):** If a codebase exists, look up facts (constants, configurations, API schemas, file structures, data models) natively and silently via `grep`, AST parsers, or file inspection first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)
   - **Empirical fork:** a local probe can answer it (read-only, <=2 min, in .tmp/; no network, installs, cost, secrets, production)? Run it, log "probe: <cmd>" in Established Facts, ask only the preference left. Else ask.
 - **G3 — Dependency-Ordered Grilling:** Walk the decision tree resolving dependency edges in order (a decision waits until its prerequisites are settled). Probe high-ambiguity axes first to resolve structural questions before grilling on local details.
 
 **Stop conditions:**
-1. **Primary gate — confirmed shared understanding:** stop only when you can restate actor, problem, and chosen framing back to the user and they confirm it is correct and complete. The user — never the agent — declares "enough"; do not stop merely because the next question "wouldn't change the brief" (that lets the agent answer its own questions).
+1. **Primary gate — confirmed core alignment:** Stop grilling as soon as core problem statement and actor alignment are confirmed by the user. Restate actor, problem, and chosen framing back to the user; when confirmed, halt grilling and advance immediately to Phase 3. The user — never the agent — declares "enough"; do not stop merely because the next question "wouldn't change the brief" (that lets the agent answer its own questions).
    - **Not consent:** hedges ("sounds good", "looks reasonable"), silence, off-topic replies. Re-ask the open point. "Whatever you think": offer two options.
 2. User explicitly signals done ("enough", "write it up").
-3. Focus areas covered **and** the confirmation in (1) obtained.
+3. Core problem and actor alignment confirmed **or** the 10–15 question budget cap is reached.
 
-A thorough grill is typically 20–50 questions; do not target brevity. There is no fixed question budget — depth is bounded by shared understanding, not count.
+**Decision Question Budget:** Bound grilling to 10–15 high-ambiguity decision questions maximum. Prevent developer interrogation fatigue by eliminating trivia and discoverable facts. Batch questions strictly by dependency frontier (G3).
 
 **Check-in every ~5 questions (direction check, not an off-ramp):** *"Here's what's still fuzzy: [X, Y]. Keep drilling these, or are they intentionally open?"*
 
