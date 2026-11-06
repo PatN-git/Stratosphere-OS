@@ -16,7 +16,7 @@ Upgrade project framework files, rules, and memory templates in place while full
 
 ## Core Principle
 
-Your `.memory/` data (such as active learning logs, custom glossary entries, database tables) and your customized constitution pointers are **never** overwritten. Only framework-owned guidance sections wrapped in `SOS:BLOCK` markers are updated in-place. If there are conflicts, you (the agent) will merge them, and the user will explicitly confirm all diffs.
+Your `.memory/` data (learnings, glossary, schemas) and customized constitution pointers are **never** overwritten. Only framework-owned guidance sections wrapped in `SOS:BLOCK` markers update in place. Conflicts are merged by the agent and confirmed by the user.
 
 ---
 
