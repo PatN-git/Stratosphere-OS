@@ -196,14 +196,19 @@
       "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "6c10e6aa0a868d31e82745c752b6648db5e941be7f656cd7c49221fbc332a453",
+      "sha256": "78775866cf02f71bfb75a971c44801e179ca85917106d2f7c3e1774299617431",
       "timestamp": "2026-11-06",
-      "version": "1.5.1"
+      "version": "1.5.2"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
-      "sha256": "5e3de6f3bda5e01fd074d56dff3e74626bfbbd07e89f11c0f641dcafb4cc09b3",
-      "timestamp": "2026-10-13",
-      "version": "2.1.0"
+      "sha256": "0ed9b8710988122f65e60812a4fd8d8fdc168c93495a2471f3b6c5d717843ac9",
+      "timestamp": "2026-11-06",
+      "version": "2.2.0"
+    },
+    "skills/1b-concept-framing/references/frontier-interview.md": {
+      "sha256": "e7d539a33d85637427c9170e46d06795d1f7f2a9033f45a9bff034379090980f",
+      "timestamp": "2026-11-06",
+      "version": "1.0.0"
     },
     "skills/1b-concept-framing/references/glossary-entry-rules.md": {
       "sha256": "4ba70f4952bc93815149e6ffd9e0f1aa78ba7960ce83c5e731cc67e105fd087e",
@@ -216,19 +221,29 @@
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "18c665d94918f7860991ff03a2fccc82799fbd0a079626d4aed36186caf3cc0e",
+      "sha256": "b5aba916605796b5aaa2c2207caa0d5305857da88fd8fca2f0253f677b0523ef",
       "timestamp": "2026-11-06",
-      "version": "1.4.1"
+      "version": "1.5.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
-      "sha256": "03bb0adaa4ec6096aeb3d6b826187a4ffcb8d50cc88691efa85a31b3b30799b3",
-      "timestamp": "2026-10-22",
-      "version": "1.1.0"
+      "sha256": "e7e906f5c9f7d7917c249dbe727fb7cd5a0020dfe26e6450a8518bf65bee3212",
+      "timestamp": "2026-11-06",
+      "version": "1.2.0"
     },
     "skills/1c-concept-map/references/concept-map-template.md": {
-      "sha256": "32f1560992758506ff7f3db3d428b39e46576d46bb8106c67516bf5e9f322f54",
+      "sha256": "98fbb44c602e3bce18d0cfa72724ad786016afda6e32c23faa73a620872b40e2",
       "timestamp": "2026-11-06",
-      "version": "2.1.1"
+      "version": "2.2.0"
+    },
+    "skills/1c-concept-map/references/discovery_brief_template.md": {
+      "sha256": "0ed9b8710988122f65e60812a4fd8d8fdc168c93495a2471f3b6c5d717843ac9",
+      "timestamp": "2026-11-06",
+      "version": "2.2.0"
+    },
+    "skills/1c-concept-map/references/frontier-interview.md": {
+      "sha256": "e7d539a33d85637427c9170e46d06795d1f7f2a9033f45a9bff034379090980f",
+      "timestamp": "2026-11-06",
+      "version": "1.0.0"
     },
     "skills/1c-concept-map/references/github-issue-relations.md": {
       "sha256": "863aefd2a06b5308de28ce8675868542b38f09f096bfdd189131c955f4964a78",
