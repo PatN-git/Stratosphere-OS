@@ -31,6 +31,9 @@ SECRET_PATTERNS = {
     'Generic Private Key': r'-----BEGIN [A-Z ]+ PRIVATE KEY-----'
 }
 
+_ACTIVE_HANDLE_RE = re.compile(r'\[\[([A-Za-z0-9_-]+)\]\]')
+_ACTIVE_DEF_LINE_RE = re.compile(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\](.*)')
+
 def scan_file_for_secrets(file_path):
     errors = []
     try:
@@ -154,50 +157,66 @@ def extract_active_refs(issue_body=None, query_issue=None, memory_dir=".memory",
             text_to_scan = f"# Error fetching issue {query_issue}: {e}"
 
     # Extract all referenced ID handles: [[L-xxx]], [[A-xxx]], [[DR-xxx]], [[G-xxx]]
-    raw_handles = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', text_to_scan)
+    raw_handles = _ACTIVE_HANDLE_RE.findall(text_to_scan)
     active_ids = []
+    active_set = set()
     for h in raw_handles:
-        if not is_placeholder(h) and h not in active_ids:
+        if not is_placeholder(h) and h not in active_set:
             active_ids.append(h)
+            active_set.add(h)
 
-    # Scan target memory files for definitions
+    # Scan target memory files for definitions (optimized by prefix filter)
     definitions = {}
-    target_files = ['ARCHITECTURE.md', 'LEARNINGS.md', 'GLOSSARY.md', 'DESIGN_RULES.md']
-    for fname in target_files:
-        fpath = memory_path / fname
-        if not fpath.is_file():
-            continue
-        try:
-            with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-        except Exception:
-            continue
+    if active_set:
+        target_files = []
+        if any(i.startswith('A-') for i in active_set):
+            target_files.append('ARCHITECTURE.md')
+        if any(i.startswith('L-') for i in active_set):
+            target_files.append('LEARNINGS.md')
+        if any(i.startswith('G-') for i in active_set):
+            target_files.append('GLOSSARY.md')
+        if any(i.startswith('DR-') for i in active_set):
+            target_files.append('DESIGN_RULES.md')
+        if any(not i.startswith(('A-', 'L-', 'G-', 'DR-')) for i in active_set):
+            target_files = ['ARCHITECTURE.md', 'LEARNINGS.md', 'GLOSSARY.md', 'DESIGN_RULES.md']
 
-        lines = content.splitlines()
-        current_def_id = None
-        current_block = []
+        for fname in target_files:
+            fpath = memory_path / fname
+            if not fpath.is_file():
+                continue
+            try:
+                with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+            except Exception:
+                continue
 
-        for line in lines:
-            def_m = re.match(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\](.*)', line)
-            if def_m:
-                if current_def_id and current_block:
-                    definitions[current_def_id] = "\n".join(current_block)
-                did = def_m.group(1)
-                if not is_placeholder(did):
-                    current_def_id = did
-                    current_block = [line]
-                else:
-                    current_def_id = None
-                    current_block = []
-            elif current_def_id:
-                if line.startswith((' ', '\t')) or (line and not line.startswith(('#', '- ', '* '))):
-                    current_block.append(line)
-                else:
-                    definitions[current_def_id] = "\n".join(current_block)
-                    current_def_id = None
-                    current_block = []
-        if current_def_id and current_block:
-            definitions[current_def_id] = "\n".join(current_block)
+            lines = content.splitlines()
+            current_def_id = None
+            current_block = []
+
+            for line in lines:
+                if line and line.lstrip()[:1] in ('-', '*', '+'):
+                    def_m = _ACTIVE_DEF_LINE_RE.match(line)
+                    if def_m:
+                        if current_def_id and current_block:
+                            definitions[current_def_id] = "\n".join(current_block)
+                        did = def_m.group(1)
+                        if not is_placeholder(did):
+                            current_def_id = did
+                            current_block = [line]
+                        else:
+                            current_def_id = None
+                            current_block = []
+                        continue
+                if current_def_id:
+                    if line.startswith((' ', '\t')) or (line and not line.startswith(('#', '- ', '* '))):
+                        current_block.append(line)
+                    else:
+                        definitions[current_def_id] = "\n".join(current_block)
+                        current_def_id = None
+                        current_block = []
+            if current_def_id and current_block:
+                definitions[current_def_id] = "\n".join(current_block)
 
     # Format active references output
     lines_out = [

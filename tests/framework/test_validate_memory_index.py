@@ -129,16 +129,17 @@ Check [[A-001]], [[A-003]], [[L-003]], [[G-002]], [[DR-001]].
     out_file = tmp_path / ".tmp" / "perf-refs.txt"
 
     import validate_memory
+    body = issue_file.read_text(encoding="utf-8")
     # Warm up disk/cache
     validate_memory.extract_active_refs(
-        issue_body="Warmup [[A-001]]",
+        issue_body=body,
         memory_dir=mem,
         out_path=out_file
     )
 
     start = time.perf_counter()
     res = validate_memory.extract_active_refs(
-        issue_body=issue_file.read_text(encoding="utf-8"),
+        issue_body=body,
         memory_dir=mem,
         out_path=out_file
     )
