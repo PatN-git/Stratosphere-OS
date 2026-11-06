@@ -1,7 +1,7 @@
 ---
-description: Scan matrix for 4c-codebase-health-audit. Defines what each of the six passes detects.
-version: "1.2.0"
-timestamp: 2026-10-15
+description: Scan matrix for 4c-codebase-health-audit. Defines what each subagent pass detects.
+version: "1.3.0"
+timestamp: 2026-11-06
 ---
 
 # Health Audit — Scan Matrix
@@ -10,7 +10,7 @@ Reference for `4c-codebase-health-audit`. Each subagent receives only its assign
 
 ---
 
-## Subagent A: Safety Auditor
+## Subagent A: Security Auditor
 
 ### A1 — Security & Secrets
 
@@ -50,7 +50,7 @@ Audit command failed (offline, tool missing, unparseable output) → the pass is
 
 ---
 
-## Subagent B: Quality Auditor
+## Subagent B: Reliability Auditor
 
 ### B1 — Reliability (Error Handling)
 
@@ -80,7 +80,7 @@ For each source file, check for test counterpart (`*.test.*`, `*.spec.*`, `__tes
 
 ---
 
-## Subagent C: Efficiency Auditor
+## Subagent C: Maintainability Auditor
 
 ### C1 — Maintainability (Duplication + Dead Code)
 
@@ -109,3 +109,15 @@ A number (ms, KB, row or query count) appears only if a command run in this audi
 | **Missing memoization** | React: large lists/expensive derivations without `React.memo`/`useMemo`/`useCallback`. Backend: repeated identical DB queries without caching. |
 | **Unnecessary re-renders** | Inline object/array literals in JSX props; functions created in render body without `useCallback`; context providers with unstable value objects. |
 | **Missing streaming** | Large file reads or dataset fetches loaded entirely into memory — candidates for streaming/chunking. |
+
+---
+
+## Subagent D: Architecture Auditor
+
+### D1 — Architecture Law & Boundaries
+
+| Category | What to detect |
+|:---|:---|
+| **Negative invariant breach** | Code violating negative invariants in `.memory/ARCHITECTURE.md` (`Never: ...`, `[LAW]`, `Avoid: ...`). |
+| **Domain boundary leaks** | Illegal cross-domain imports violating package boundaries, leaking private types, or bypassing established facades. |
+| **Leaked abstraction seams** | Low-level storage or transport operations inline in application core logic instead of through defined interfaces/adapters. |

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-22
+version: "1.5.0"
+timestamp: 2026-11-06
 ---
 
 # Codebase Health Audit
@@ -30,12 +30,12 @@ Run the `load-memory` skill to restore session context (read-only).
 
 | Directory / Pattern | Required? | Passes |
 |:---|:---|:---|
-| `src/` | **Required** — HALT if absent | All 6 |
-| `api/` | If exists | All 6 |
-| `scripts/` | If exists | All 6 |
+| `src/` | **Required** — HALT if absent | All passes |
+| `api/` | If exists | All passes |
+| `scripts/` | If exists | All passes |
 | Config: `.env.example`, `next.config.*`, `supabase/config.toml`, `*.config.js/ts` | If exist | Security, Performance |
 | Migrations: `supabase/migrations/`, `prisma/migrations/`, `drizzle/` | If exist | Security, Performance |
-| Guardrail inputs (Quality Auditor): `.github/workflows/*`, hook config (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`), package manifest and test-runner config, and a runner summary if one exists in `.tmp/` | If exist | Correctness (B2) |
+| Guardrail inputs (Reliability Auditor): `.github/workflows/*`, hook config (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`), package manifest and test-runner config, and a runner summary if one exists in `.tmp/` | If exist | Correctness (B2) |
 
 Trigger prompt may narrow scope (e.g. `4c src/features/billing`) — honor it, warn:
 ```
@@ -64,7 +64,7 @@ Read the `wip` set (`references/tracker-verbs-github.md` (local: `references/tra
 
 ## Phase 2: Scan Execution
 
-Invoke 3 subagents in parallel. Parent resolves all inputs and passes explicitly — subagents never sweep the repo.
+Invoke 4 orthogonal quiet subagents in parallel with zero-bleed context isolation. Parent resolves all inputs and passes explicitly — subagents never sweep the repo.
 
 **Input to each subagent:**
 - Explicit file list for assigned scan targets
@@ -72,16 +72,17 @@ Invoke 3 subagents in parallel. Parent resolves all inputs and passes explicitly
 - `.memory/LEARNINGS.md`
 - Confidence threshold: **≥60** (overrides default ≥80 in `.agents/skills/4c-codebase-health-audit/references/confidence-scale.md`)
 
-**Guardrail (inject into every subagent):**
-> "Scan and report findings only. Do not modify any file. Do not create, commit, or push. Return findings to parent."
+**Zero-Bleed Guardrail (inject into every subagent):**
+> "Scan and report findings only with zero-bleed context isolation (use read-only helpers without cross-pass context bleed). Do not modify any file. Do not create, commit, or push. Return findings to parent."
 
 **Scan matrix:** `.agents/skills/4c-codebase-health-audit/references/health-audit-scan-matrix.md`
 
 | Subagent | Passes |
 |:---|:---|
-| **Safety Auditor** | Security & Secrets (A1), Dependency Health (A2) |
-| **Quality Auditor** | Reliability / Error Handling (B1), Correctness / Test Coverage (B2) |
-| **Efficiency Auditor** | Maintainability / Duplication + Dead Code (C1), Performance Anti-Patterns (C2) |
+| **Security Auditor** | Security & Secrets (A1), Dependency Health (A2) |
+| **Reliability Auditor** | Reliability / Error Handling (B1), Correctness / Test Coverage (B2) |
+| **Maintainability Auditor** | Maintainability / Duplication + Dead Code (C1), Performance Anti-Patterns (C2) |
+| **Architecture Auditor** | Architecture Law & Boundaries (D1 negative invariants `Never:`, `[LAW]`, `Avoid:`, domain leaks) |
 
 Each subagent reads its assigned sections from the scan matrix and returns findings as: `file, line(s), category, description, confidence (60–100), suggested fix`, plus a status per pass: `ran`, `inconclusive: <why>` (its command failed) or `n/a` (no input to scan). A2 also returns `cves_high_plus`, B2 `skipped_tests`.
 
@@ -89,7 +90,7 @@ Each subagent reads its assigned sections from the scan matrix and returns findi
 
 ## Phase 3: Consolidation
 
-Parent merges findings from all 3 subagents:
+Parent merges findings from all 4 subagents:
 
 ### 3.1 Deduplicate
 Same file + approximate line range across passes → keep both (different diagnoses), link: `Related: [pass] finding at <file>:<line>`.

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-22
+version: "1.4.0"
+timestamp: 2026-11-06
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -23,7 +23,7 @@ _INPUT:_ Human trigger prompt.
 
 _CONSTRAINTS:_
 - Never scan or ingest the entire repository.
-- Read `.memory/` only as needed for architecture rules, historical learnings, active backlog items, and system constraints.
+- Read `.memory/` only as needed for architecture rules, historical learnings, active backlog items, and system constraints. Enforce adherence to `.memory/ARCHITECTURE.md` negative invariants (`Never: ...`, `[LAW]`, `Avoid: ...`).
 - Do not modify production code.
 - Do not write refactored code.
 - Write only `docs/audits/arch-*.md` and `.tmp/`.
@@ -34,7 +34,7 @@ _CONSTRAINTS:_
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping + `Dismissed (deliberate)` lines; the main agent handles subsequent logic.
 
-_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/`, `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md` and `.agents/skills/4b-audit-architecture-drift/references/design-red-flags.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/` including `.memory/ARCHITECTURE.md` negative invariants (`Never: ...`, `[LAW]`, `Avoid: ...`), `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md` and `.agents/skills/4b-audit-architecture-drift/references/design-red-flags.md`.
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix
@@ -53,7 +53,7 @@ _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgica
 8. Leaked side effects: functions mutating global state, mutating parameters, or introducing untracked state mutations that degrade local reasoning.
 9. Dependency-inversion violations: high-level modules depending directly on low-level utility implementations rather than abstractions. Ensure seams are defined via clean interfaces/adapters to preserve locality.
 10. High volumes of cross-domain imports violating system boundaries and locality.
-11. Ignores historical learnings in `.memory/LEARNINGS.md`.
+11. Ignores historical learnings in `.memory/LEARNINGS.md` or violates `.memory/ARCHITECTURE.md` negative invariants (`Never: ...`, `[LAW]`, `Avoid: ...`).
 12. A named red flag from `design-red-flags.md`: name the flag in the finding.
 
 ## Confidence scale & reporting threshold
