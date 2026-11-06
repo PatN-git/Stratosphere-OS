@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.3.0"
-timestamp: 2026-10-13
+version: "1.4.0"
+timestamp: 2026-11-06
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -40,10 +40,10 @@ _CONSTRAINTS:_ read only resolved artifacts + `.memory/`; never ingest the repo.
 Surface contradictions and blocking gaps only — not stylistic drift.
 
 ### Scan Matrix
-1. **Contract existence:** every contract any resolved artifact references (table, field, enum, type, endpoint, key) exists in the schema source.
-   - Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared.
+1. **Contract existence (AST Diffing):** Deterministic schema diffing via `contract_check.py` replaces subjective Dual-LLM persona debate (0 debate tokens; binary pass/fail verification). Every contract any resolved artifact references (table, field, enum, type, endpoint, key) must exist in the schema or TypeScript sources.
+   - Run `python .agents/scripts/contract_check.py --docs <all resolved artifacts> --schema .memory/DATABASE_SCHEMA.md [--ts <path>]` (add `--sql <schema.sql>` when declared): each `[CONTRACT-MISSING]` is a P0/P1 finding, `[CONTRACT-SKIP]` means no schema is declared.
    - When `--sql` is declared, also run `python .agents/scripts/contract_check.py --parity --schema .memory/DATABASE_SCHEMA.md --sql <schema.sql>`: each `[CONTRACT-DRIFT]` (a table/column in one schema source but not the other) is a P1 finding.
-   - Reason only where the script can't answer (endpoint, key, type, anything it ignores).
+   - Reason only where the script can't answer (complex behavioral semantics, anything it ignores).
 2. **Semantic contradiction:** behavioral claims agree across Concept map → Research → Discovery → PRD → Interface-Design (state transitions, timing/ordering, fallbacks, batching, rate/quota). Flag prose ↔ typed-contract ↔ stress-matrix disagreement.
 3. **Attribute rules:** each attribute is extracted or inherited, with an explicit missing-value rule — required-missing (reject) vs optional-missing (degrade/default).
 4. **Boundary record:** auth/access and runner/quota constraints a slice must honor are recorded (e.g. service-role secret, timeout, quota).

@@ -261,9 +261,9 @@
       "version": "5.0.0"
     },
     "skills/2a-write-prd/SKILL.md": {
-      "sha256": "4c9643af14b3e5f4a3e6f244fd722d432a06195e90b3028988ec354bec41f5b7",
-      "timestamp": "2026-10-22",
-      "version": "1.7.1"
+      "sha256": "3672bffc3b0f89cc8d8222b76f0f9c49b7cd88e0e7dbaf9e0096e8c13c053925",
+      "timestamp": "2026-11-06",
+      "version": "1.8.0"
     },
     "skills/2a-write-prd/references/PRD-template.md": {
       "sha256": "0d59dc7edfbd0271fc151654164fc4df1c782299b78cf39dac8e1e31c77fd52b",
@@ -296,9 +296,9 @@
       "version": "5.0.0"
     },
     "skills/2b-interface-design/SKILL.md": {
-      "sha256": "b61eb920d5caa4943a21633c045a35a8b9bc00abbca0ec7f79f3683d9e77554d",
-      "timestamp": "2026-10-22",
-      "version": "1.6.1"
+      "sha256": "29c239e7d32343adab80728b4ecd092b79c407f0ade3904234c82bd6a2c3db1d",
+      "timestamp": "2026-11-06",
+      "version": "1.7.0"
     },
     "skills/2b-interface-design/references/code-smell-baseline.md": {
       "sha256": "2e77ac82f0237cdbd2bda3514f22a7c7ea58f1016ad1cc340642ebf5bf5baa3e",
@@ -346,9 +346,9 @@
       "version": "5.0.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "bb9e5b532598129b49f2b73763e12289e580bff0a0527bb2d0d3d5594f1a7691",
-      "timestamp": "2026-10-13",
-      "version": "1.3.0"
+      "sha256": "25ce4bbc5fc6f9e23e6031dc4cf9ede2780ecac8cc255c9180fef0d6a058ca00",
+      "timestamp": "2026-11-06",
+      "version": "1.4.0"
     },
     "skills/2c-reconcile-specs/references/confidence-scale.md": {
       "sha256": "27fac984867cf7fe175322d808f117fea0675e04c9dfd292d814495695c1c113",
@@ -356,9 +356,9 @@
       "version": "1.2.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "ffc7223f7ebbe393b9bf3295545869e81ac4f270a51e4f1bd49eb9db70108041",
-      "timestamp": "2026-10-13",
-      "version": "1.1.0"
+      "sha256": "3aff20c23553813fef9608fff10f7b58acb86a9d686efdc5fee364604cee78dc",
+      "timestamp": "2026-11-06",
+      "version": "1.2.0"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "fe3e6344e2c7a6cac770b3075b6200c4585d92637d1dea6b03695c977ede5893",

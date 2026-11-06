@@ -93,6 +93,7 @@ class Source:
         self.tables = {}
         self.enums = {}
         self.col_enum = {}
+        self.endpoints = set()
 
     def add_enum(self, typ, labels):
         known = self.enums.get(typ)
@@ -241,6 +242,205 @@ def parse_sql(path):
     return src
 
 
+TS_INTERFACE_RE = re.compile(
+    r'(?:export\s+)?interface\s+([A-Za-z0-9_]+)(?:<[^>]+>)?(?:\s+extends\s+[^{]+)?\s*\{([^}]*)\}',
+    re.DOTALL
+)
+TS_TYPE_OBJ_RE = re.compile(
+    r'(?:export\s+)?type\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*=\s*\{([^}]*)\}',
+    re.DOTALL
+)
+TS_TYPE_UNION_RE = re.compile(
+    r"""(?:export\s+)?type\s+([A-Za-z0-9_]+)\s*=\s*((?:['"][^'"]+['"]\s*\|\s*)*['"][^'"]+['"])\s*;""",
+    re.M
+)
+TS_FIELD_RE = re.compile(
+    r'(?:^|[\n;,])\s*([A-Za-z0-9_]+|["\'][^"\']+["\'])(\?)?\s*:\s*([^;,\n]+)',
+    re.M
+)
+ENDPOINT_ROUTE_RE = re.compile(r'^(?:(GET|POST|PUT|PATCH|DELETE)\s+)?(/[\w\-./:]+)$')
+DEFERRED_RE = re.compile(r'^\s*(?:\d+\.|\*|-)\s*(?:\*\*\[DEFERRED\]\*\*|\[DEFERRED\])\s*(.*)', re.I)
+ODI_RE = re.compile(r'\(ODI:.*?\)', re.I)
+
+
+def strip_ts_comments(text):
+    """Strip // and /* */ comments from TypeScript code, preserving quoted strings."""
+    out, i = [], 0
+    in_single_q = False
+    in_double_q = False
+    in_backtick = False
+    while i < len(text):
+        c = text[i]
+        if in_single_q:
+            if c == "'" and (i == 0 or text[i - 1] != "\\"):
+                in_single_q = False
+            out.append(c)
+            i += 1
+        elif in_double_q:
+            if c == '"' and (i == 0 or text[i - 1] != "\\"):
+                in_double_q = False
+            out.append(c)
+            i += 1
+        elif in_backtick:
+            if c == '`' and (i == 0 or text[i - 1] != "\\"):
+                in_backtick = False
+            out.append(c)
+            i += 1
+        elif c == "'":
+            in_single_q = True
+            out.append(c)
+            i += 1
+        elif c == '"':
+            in_double_q = True
+            out.append(c)
+            i += 1
+        elif c == '`':
+            in_backtick = True
+            out.append(c)
+            i += 1
+        elif text.startswith("//", i):
+            while i < len(text) and text[i] != "\n":
+                i += 1
+        elif text.startswith("/*", i):
+            i += 2
+            while i < len(text) and not text.startswith("*/", i):
+                i += 1
+            i += 2
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def parse_ts(path):
+    src = Source(Path(path).name)
+    src.endpoints = getattr(src, "endpoints", set())
+    text = strip_ts_comments(Path(path).read_text(encoding="utf-8-sig"))
+
+    # 1. Parse string literal union types (enums)
+    for m in TS_TYPE_UNION_RE.finditer(text):
+        type_name = m.group(1)
+        labels = QUOTED_RE.findall(m.group(2))
+        src.add_enum(type_name, labels)
+
+    # 2. Parse interfaces and type objects
+    for m in list(TS_INTERFACE_RE.finditer(text)) + list(TS_TYPE_OBJ_RE.finditer(text)):
+        name = m.group(1)
+        body = m.group(2)
+        cols = src.tables.setdefault(name, set())
+        for fm in TS_FIELD_RE.finditer(body):
+            raw_field = fm.group(1).strip()
+            field_name = raw_field.strip("'\"")
+            cols.add(field_name)
+
+            # Check if field name is an endpoint route (e.g. "/api/v1/..." or "GET /api/v1/...")
+            ep_m = ENDPOINT_ROUTE_RE.match(field_name)
+            if ep_m:
+                src.endpoints.add(field_name)
+
+            field_type = fm.group(3).strip()
+            # If field_type is string literal union (e.g. 'a' | 'b')
+            if "'" in field_type or '"' in field_type:
+                labels = QUOTED_RE.findall(field_type)
+                if labels and "|" in field_type:
+                    anon_type = f"{name}_{field_name}"
+                    src.add_enum(anon_type, labels)
+                    src.col_enum[(name, field_name)] = anon_type
+            elif field_type in src.enums:
+                src.col_enum[(name, field_name)] = field_type
+
+    return src
+
+
+def collect_ts_files(paths):
+    files = []
+    for p in paths:
+        pt = Path(p)
+        if pt.is_file():
+            files.append(pt)
+        elif pt.is_dir():
+            for item in sorted(pt.rglob("*")):
+                if item.is_file() and (item.name.endswith(".ts") or item.name.endswith(".d.ts")):
+                    if not (item.name.endswith(".test.ts") or item.name.endswith(".spec.ts")):
+                        parts = set(item.parts)
+                        if "node_modules" not in parts and ".git" not in parts:
+                            files.append(item)
+    return files
+
+
+def ep_norm(ep):
+    parts = ep.strip().split()
+    return parts[-1] if len(parts) > 1 else parts[0]
+
+
+def is_prd_doc(path):
+    try:
+        text = Path(path).read_text(encoding="utf-8-sig", errors="replace")[:1000]
+        return "type: prd" in text or "# PRD" in text or "## 6. User Stories" in text
+    except OSError:
+        return False
+
+
+def check_prd_contracts(prd_path, sources):
+    """Verify PRD-specific invariants:
+    1. 100% mirroring: Every [DEFERRED] story in §6 must be mirrored in §9 Out of Scope.
+    2. Backticked HTTP endpoints must resolve against declared endpoints in sources.
+    Returns a list of finding strings.
+    """
+    findings = []
+    lines = Path(prd_path).read_text(encoding="utf-8-sig").splitlines()
+
+    sec6_lines = []
+    sec9_lines = []
+    cur_sec = None
+
+    for no, line in enumerate(lines, 1):
+        if line.startswith("## "):
+            header = line[3:].strip().lower()
+            if header.startswith("6.") or "user stories" in header:
+                cur_sec = 6
+            elif header.startswith("9.") or "out of scope" in header:
+                cur_sec = 9
+            else:
+                cur_sec = None
+        elif cur_sec == 6:
+            sec6_lines.append((no, line))
+        elif cur_sec == 9:
+            sec9_lines.append((no, line))
+
+    sec9_text = " ".join(t for _, t in sec9_lines).lower()
+
+    # 1. Mirroring check: §6 [DEFERRED] -> §9
+    for no, line in sec6_lines:
+        m = DEFERRED_RE.match(line)
+        if m:
+            raw_story = m.group(1).strip()
+            # Strip (ODI: ...) first per Safeguard 4
+            clean_story = ODI_RE.sub("", raw_story).strip()
+            title_display = clean_story.split(":", 1)[0].strip() if ":" in clean_story else clean_story
+            title_key = title_display.strip("*_ \t").lower()
+
+            match_phrase = title_key
+            matched = match_phrase in sec9_text or (len(match_phrase) > 5 and any(w in sec9_text for w in match_phrase.split() if len(w) > 4))
+            if not matched:
+                findings.append(f"[CONTRACT-MISSING] {Path(prd_path).as_posix()}:{no} [DEFERRED] story \"{title_display}\" missing from §9 Out of Scope")
+
+    # 2. Endpoint resolution check (Safeguards 5)
+    known_endpoints = {ep for s in sources for ep in getattr(s, "endpoints", set())}
+    if known_endpoints:
+        known_paths = {ep_norm(ep) for ep in known_endpoints}
+        source_names = ", ".join(sorted({s.name for s in sources if getattr(s, "endpoints", None)}))
+        for no, span, fenced in spans(prd_path):
+            ep_m = ENDPOINT_ROUTE_RE.match(span.strip())
+            if ep_m:
+                ep_token = span.strip()
+                norm_p = ep_norm(ep_token)
+                if ep_token not in known_endpoints and norm_p not in known_paths:
+                    findings.append(f"[CONTRACT-MISSING] {Path(prd_path).as_posix()}:{no} {ep_token} (endpoint, {source_names})")
+
+    return findings
+
+
 def spans(doc):
     """Yield (line_no, span_text, fenced) for inline backtick spans and every line inside a fenced block."""
     in_fence = False
@@ -292,12 +492,15 @@ def count_refs(span, known_tables, fenced):
     return sum(1 for m in REF_RE.finditer(span) if m.group(1) in known_tables) + sum(1 for _ in bindings(span, fenced))
 
 
-def load_sources(schema, sql_paths):
-    """Parsed schema sources (md first, then each sql); a template-only schema declares nothing and is dropped."""
+def load_sources(schema, sql_paths, ts_paths=None):
+    """Parsed schema sources (md first, then each sql, then each ts); dropped if empty."""
     sources = [parse_sql(p) for p in sql_paths]
+    if ts_paths:
+        for p in collect_ts_files(ts_paths):
+            sources.append(parse_ts(p))
     if Path(schema).is_file():
         sources.insert(0, parse_md(schema))
-    return [s for s in sources if s.declares_tables()]
+    return [s for s in sources if s.declares_tables() or bool(s.enums) or (hasattr(s, "endpoints") and bool(s.endpoints))]
 
 
 def parity_drift(sources):
@@ -328,47 +531,68 @@ def run_parity(sources):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Spec-to-schema contract check (detection only).")
     ap.add_argument("--docs", nargs="+", default=[], help="spec docs to check (PRD, design doc); not used with --parity")
+    ap.add_argument("--prd", default=None, help="PRD document to check for contracts, endpoints, and deferred story mirroring")
     ap.add_argument("--schema", default=".memory/DATABASE_SCHEMA.md")
     ap.add_argument("--sql", nargs="+", default=[], help="schema.sql file(s); a reference must resolve in each")
+    ap.add_argument("--ts", nargs="+", default=[], help="TypeScript file(s) or directories to parse interfaces and types from")
     ap.add_argument("--parity", action="store_true", help="flag tables/columns present in one schema source but not another")
     args = ap.parse_args(argv)
-    if args.parity and args.docs:
-        ap.error("--parity takes no --docs")
-    if not args.parity and not args.docs:
-        ap.error("the following arguments are required: --docs")
+    if args.parity and (args.docs or args.prd):
+        ap.error("--parity takes no --docs or --prd")
+    if not args.parity and not args.docs and not args.prd:
+        ap.error("at least one of --docs or --prd is required")
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    missing = [p for p in (*args.docs, *args.sql) if not Path(p).is_file()]
+    all_inputs = [*args.docs, *([args.prd] if args.prd else []), *args.sql, *(args.ts or [])]
+    missing = [p for p in all_inputs if not Path(p).exists()]
     if missing:
         print(f"[CONTRACT-ERROR] file not found: {', '.join(missing)}", file=sys.stderr)
         return 2
 
-    sources = load_sources(args.schema, args.sql)
+    sources = load_sources(args.schema, args.sql, ts_paths=args.ts)
     if args.parity:
         return run_parity(sources)
-    if not sources:
+
+    all_docs = list(args.docs)
+    if args.prd and args.prd not in all_docs:
+        all_docs.append(args.prd)
+
+    if not sources and not any(is_prd_doc(d) for d in all_docs):
         print("[CONTRACT-SKIP] no schema declared")
         return 0
 
     known_tables = {t for s in sources for t in s.tables} - {PLACEHOLDER_TABLE}
     findings, advisories, checked = [], [], 0
-    for doc in args.docs:
-        label = Path(doc).as_posix()
-        for no, span, fenced in spans(doc):
-            checked += count_refs(span, known_tables, fenced)
-            for ref, kind, source in check_span(span, sources, known_tables, fenced):
-                if kind == "ambiguous":
-                    line, bucket = f"[CONTRACT-AMBIGUOUS {ref}: {source}]", advisories
-                else:
-                    line, bucket = f"[CONTRACT-MISSING] {label}:{no} {ref} ({kind}, {source})", findings
-                if line not in bucket:
-                    bucket.append(line)
+
+    if sources:
+        for doc in all_docs:
+            label = Path(doc).as_posix()
+            for no, span, fenced in spans(doc):
+                checked += count_refs(span, known_tables, fenced)
+                for ref, kind, source in check_span(span, sources, known_tables, fenced):
+                    if kind == "ambiguous":
+                        line, bucket = f"[CONTRACT-AMBIGUOUS {ref}: {source}]", advisories
+                    else:
+                        line, bucket = f"[CONTRACT-MISSING] {label}:{no} {ref} ({kind}, {source})", findings
+                    if line not in bucket:
+                        bucket.append(line)
+
+    for doc in all_docs:
+        if doc == args.prd or is_prd_doc(doc):
+            prd_findings = check_prd_contracts(doc, sources)
+            for pf in prd_findings:
+                if pf not in findings:
+                    findings.append(pf)
+
     if advisories:
         print("\n".join(advisories))
     if findings:
         print("\n".join(findings))
         return 1
+    if not sources and not findings:
+        print("[CONTRACT-SKIP] no schema declared")
+        return 0
     print(f"[CONTRACT-OK] {checked} reference(s) checked")
     return 0
 
