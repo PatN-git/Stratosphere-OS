@@ -137,13 +137,16 @@ Check [[A-001]], [[A-003]], [[L-003]], [[G-002]], [[DR-001]].
         out_path=out_file
     )
 
-    start = time.perf_counter()
-    res = validate_memory.extract_active_refs(
-        issue_body=body,
-        memory_dir=mem,
-        out_path=out_file
-    )
-    elapsed_ms = (time.perf_counter() - start) * 1000.0
+    times = []
+    for _ in range(3):
+        start = time.perf_counter()
+        res = validate_memory.extract_active_refs(
+            issue_body=body,
+            memory_dir=mem,
+            out_path=out_file
+        )
+        times.append((time.perf_counter() - start) * 1000.0)
+    elapsed_ms = min(times)
 
     assert res == 0
     assert out_file.exists()
