@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-22
+version: "1.4.1"
+timestamp: 2026-11-06
 ---
 
 # Concept Map Workflow
@@ -35,7 +35,8 @@ timestamp: 2026-10-22
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
    - Link as sub-issues and wire blockers with `set_parent` / `add_blocker` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
-5. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
+5. **Declarative Mermaid Generation (Single-Pass):** Generate a valid Mermaid `flowchart TD` directly in the map issue body under `## Dependency Map`. Emit the diagram in a single pass directly from the ticket dependency graph; eliminate verbose intermediate Graph-of-Thought (GoT) text scratchpads.
+6. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
 ---
 

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.1"
-timestamp: 2026-10-22
+version: "1.7.0"
+timestamp: 2026-11-06
 ---
 
 # Interface Design
@@ -86,9 +86,10 @@ Run the `load-memory` skill to restore session context (read-only).
 2. Run UX / System Stress Test.
 3. Set design doc `status → stable` (editorial).
 
-### UX / System Stress Test
+### UX / System Stress Test & State Machine Modeling
 1. Subagent - "Stress Tester": Invoke a subagent. Input: actors/flows/states, resolved blueprint. Reads: design doc fresh from the filesystem. Guardrail: "Report the matrix only; do not edit any file." Output: adverse condition -> failure mode -> handling (UI: bad signal/low battery/distracted; Path C: network partition/malformed payload/DB lock/retry storm).
-2. **Extend design doc:** Write stress matrix into existing `## States / Edge Classes`.
+2. **Extend design doc:** Write stress matrix and explicit Finite State Machine schemas into `## States / Edge Classes` (`idle -> loading -> success | error`, retry boundaries, timeouts).
+3. **Design Tokens:** Enforce strict binding to `.memory/DESIGN.md` design tokens [[DR-002]]/[[DR-003]]. Disallow ad-hoc hex codes, un-tokenized spacing, or rogue inline styling.
 
 ### Greenfield Bootstrap Deltas
 *Apply only when Phase 2 classified run as bootstrap:*
@@ -97,7 +98,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - Immortal Components: propose registering shell; on confirmation, register in .memory/DESIGN_RULES.md §3 immediately.
 
 ### Contract Check
-Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc (editable at `stable` too), or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
+Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md [--ts <path>]` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc (editable at `stable` too), or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
 
 ## Phase 5: Publish & Sync
 1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). (2b never touches the PRD's editorial status — 2a owns that.)

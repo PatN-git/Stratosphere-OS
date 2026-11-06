@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-10-28
+version: "1.2.0"
+timestamp: 2026-11-06
 ---
 
 Explain your previous message (or subject passed as arguments) to a non-technical reader, in first person. Read-only: no edits, commands, or answers on user's behalf. Wording per `references/plain-language.md`.

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-10-22
+version: "1.9.0"
+timestamp: 2026-11-06
 ---
 
 # Verify and Ship
@@ -36,7 +36,7 @@ Run the `load-memory` skill to restore session context (read-only).
 - **Context Isolation Rule:**
   - **Local:** Run Phase 2/3 natively only if this session was read-only on production code (no edits under slice path, no `/3d-implement-issue`; `/0a` memory/branch writes do not taint). If native, run both Spec and Standards audits.
   - **Isolate:** Otherwise run the two audits as **two separate, independent subagents in two isolated contexts** — never one agent doing both (each guardrail is that agent's entire contract; inputs and scopes differ):
-    1. **Strict Business-Logic Auditor** (independent subagent). Input: the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (the slice issue's `### Acceptance Criteria` (primary, from the `get` read's body); the resolved PRD §6/§7/§8, design doc and 3d `## Deviations`; the scoped diff and named tests inline; full files only on demand); `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit." Output: AC↔test gaps ≥ 80 confidence (withhold implementation-only divergences < 70; a PRD §8 item a later open slice owns is `PARTIAL`, not a gap), plus a `Watch` list: findings scored 60-79, one line each (what, where, why unsure). Watch items never block.
+    1. **Strict Business-Logic Auditor** (independent subagent). Input: the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (the slice issue's `### Acceptance Criteria` (primary, from the `get` read's body); the resolved PRD §6/§7/§8, design doc and 3d `## Deviations`; the scoped diff and named tests inline; full files only on demand); `.agents/skills/4a-verify-and-ship/references/confidence-scale.md`. Guardrail: "Audit + format the AC↔test table only; no edits, commits or pushes; return to main for Phase 4. Judge recorded deviations on merit. Map each Acceptance Criterion semantically to its test function name/identifier — never cite fragile source line numbers or hallucinate line references." Output: AC↔test gaps ≥ 80 confidence (withhold implementation-only divergences < 70; a PRD §8 item a later open slice owns is `PARTIAL`, not a gap), plus a `Watch` list: findings scored 60-79, one line each (what, where, why unsure). Watch items never block.
     2. **Standards Auditor** (a second, separate subagent — do not fold into the first; dispatch it with `auditor_model: small` per `references/auditor-model-tiers.md` and record the tier as `std_tier`): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`, and the `info:` lines `floor_guard.py` printed in step 0 (it skips and drops per that reference). Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix), plus `Dismissed` (cap 3): findings it considered and rejected, each `File · Rule · reason ≤ 8 words`.
 
 ### Clean Exit Rule
@@ -46,11 +46,13 @@ If no spec issues (confidence ≥ 80) and no standards violations → proceed di
 If issues exist, output in three separate sections:
 
 ### 1. Spec / Business-Logic (Ship-Blocking)
-Map the slice's Acceptance Criteria (AC), plus the PRD/design requirements the auditor checked, directly to tests:
+Map the slice's Acceptance Criteria (AC), plus the PRD/design requirements the auditor checked, directly to tests using semantic identifiers (test function name/identifier) rather than fragile source code line numbers:
 
 | Slice AC / Requirement | Test Target | Status | Confidence | Gap / Security Risk / Bar |
 |---|---|---:|---:|---|
-| [AC description] | [test_name] or [NONE] | FAIL | [80-100] | [Missing coverage or gap; **bar** = the fix that would close it] |
+| [AC description] | [test_function_name] or [NONE] | FAIL | [80-100] | [Missing coverage or gap; **bar** = the fix that would close it] |
+
+*Anti-Hallucination Invariant:* Test targets must reference semantic function or method identifiers (e.g. `test_verify_clean_match`), never arbitrary line numbers (`app.py:142`) which churn across edits and trigger hallucination. Reject line number hallucination.
 
 *(Optional Footnote)* If sub-threshold findings (40-59) were withheld, append: "Note: <N> sub-threshold findings were withheld."
 
@@ -71,7 +73,8 @@ Halt. Await human approval. If approved, or if user response to gap report autho
 
 ## Phase 5: Isolated Ship Gate
 
-> **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard and floor guard first.
+> **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard, floor guard, and cryptographic test gate verification first.
+0. **Cryptographic test gate verification:** run `python .agents/scripts/test_gate.py verify --base <base>` (with `<base>` as resolved in Phase 2). Exit non-zero → HALT: `[TEST-GATE] Committed code differs from recorded passing test run; run tests and re-record before shipping`. Mandated before push and PR opening.
 1. **Branch isolation:** Verify branch is NOT `main`/`master` AND `branch_ok` from `python .agents/scripts/pr_body.py unit --slice BT-<padded> --milestone <Milestone> --parent <Parent> --parent-milestone <parent's Milestone> --branch "$(git branch --show-current)"` (inputs as 3d step 1) is true. Else halt `[BRANCH-UNIT]`; HITL may confirm shipping on that branch (adoption: `features:` then lists the parent).
 2. **CSS check (UI surfaces only):** Skip when the feature has no UI surface — no `theme.tokens.css` in the app and no UI block in the interface design doc (`2b` Path C). State the skip. A backend-only project has no tokens to synchronize and must not be blocked on them. Otherwise run the design validator:
    ```bash

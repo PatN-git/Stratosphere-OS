@@ -348,9 +348,12 @@ p_file = root / "dist/plugin.json"
 if p_file.exists():
     try:
         p_data = json.loads(p_file.read_text(encoding="utf-8"))
-        for req in ("name", "displayName", "version", "description", "author"):
+        for req in ("name", "displayName", "version", "description", "author", "suggestedPrompts"):
             if req not in p_data:
                 errs.append(f"MISSING {req} in dist/plugin.json")
+        prompts = p_data.get("suggestedPrompts", [])
+        if len(prompts) > 3:
+            errs.append(f"dist/plugin.json suggestedPrompts ({len(prompts)}) exceeds maximum 3")
         if build_version and p_data.get("version") != build_version:
             errs.append(f"VERSION MISMATCH: build/build.py VERSION ({build_version}) != dist/plugin.json version ({p_data.get('version')})")
         if "logo" in p_data:

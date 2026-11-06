@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.6.0"
-timestamp: 2026-10-22
+version: "2.7.0"
+timestamp: 2026-11-06
 ---
 
 # Sprint planning
@@ -27,6 +27,7 @@ Run the `load-memory` skill to restore session context (read-only).
 ## Phase 2: Filter & Sort Engine
 1. **Dependency Sorting:** Evaluate dependencies. If GitHub has no native dependencies, parse the text `Blocked by:` in the issue body.
    - Run `python .agents/scripts/reconcile.py --edges blockers --ids <candidate slices>` once (one batched read); effective blockers include the parent epic's. `[BLOCKER-OK]` is not blocking.
+   - **Deterministic DAG Validation:** Reject Self-Consistency path voting or stochastic permutations. Validate sprint dependency acyclicity and execution sequence via `cat .tmp/3c-edges.txt | python .agents/scripts/reconcile.py --topo-sort` (or stdin). If a cycle is detected (`[CYCLE-DETECTED ...]`), halt immediately and notify user. Valid order (`[TOPO-ORDER ...]`) establishes strict dependency sequence in <5ms.
    - Set `[BLOCKED]` on `[BLOCKER-UNMET]`/`[BLOCKER-UNKNOWN]` when the blocker is not in the current sprint.
    - Set `[blocked-but-sequenced-in-sprint]` on the same when the blocker is in the current sprint.
    - **Late-discovered dependency:** if sequencing reveals a genuine prerequisite not yet recorded in a slice's `Blocked by` (a real ordering constraint missed at creation), flag it `[NEW-DEP] BT-<padded> ← BT-<prereq>`. Do **not** write it yet — it is proposed for HITL confirmation in Phase 5.

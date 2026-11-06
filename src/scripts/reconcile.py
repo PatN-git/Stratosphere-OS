@@ -26,6 +26,7 @@ Usage:
   python .agents/scripts/reconcile.py --edges blockers|dependents (--ids BT-007[,…] | --all-open)
 """
 import argparse
+import graphlib
 import json
 import re
 import subprocess
@@ -506,12 +507,133 @@ def github_main(args, ids, expect, fields, gate):
     return code
 
 
+def topological_sort(graph):
+    """Pure deterministic topological sort of a directed graph.
+    graph: dict mapping node -> set/list of predecessor nodes (nodes that this node depends on).
+    Returns (order, None) if acyclic, or (None, cycle_nodes) if cyclic.
+    """
+    clean_graph = {}
+    for node, preds in graph.items():
+        clean_graph.setdefault(node, set())
+        for p in preds:
+            clean_graph.setdefault(p, set())
+            clean_graph[node].add(p)
+
+    ts = graphlib.TopologicalSorter()
+    for node in sorted(clean_graph.keys()):
+        ts.add(node, *sorted(clean_graph[node]))
+    try:
+        return list(ts.static_order()), None
+    except graphlib.CycleError as e:
+        cycle = list(e.args[1]) if len(e.args) > 1 else []
+        return None, cycle
+
+
+def parse_edges(text: str):
+    """Parse text containing dependency edges into a graph {node: set of predecessors}.
+    Supports:
+      BT-002: BT-001                   (BT-002 depends on BT-001)
+      BT-003 <- BT-002                 (BT-003 depends on BT-002)
+      BT-001 -> BT-002                 (BT-002 depends on BT-001)
+      BT-004:blocked_by=BT-002,BT-003  (BT-004 depends on BT-002 and BT-003)
+      BT-005                           (BT-005 has no blockers)
+    """
+    graph = {}
+    for raw_line in text.splitlines():
+        line = raw_line.split('#', 1)[0].strip()
+        if not line:
+            continue
+        if ':blocked_by=' in line:
+            target, blks = line.split(':blocked_by=', 1)
+            target = target.strip()
+            graph.setdefault(target, set())
+            for b in blks.split(','):
+                b = b.strip()
+                if b:
+                    graph[target].add(b)
+                    graph.setdefault(b, set())
+        elif '<-' in line:
+            target, blks = line.split('<-', 1)
+            target = target.strip()
+            graph.setdefault(target, set())
+            for b in blks.split(','):
+                b = b.strip()
+                if b:
+                    graph[target].add(b)
+                    graph.setdefault(b, set())
+        elif '->' in line:
+            preds, targets = line.split('->', 1)
+            target = targets.strip()
+            graph.setdefault(target, set())
+            for p in preds.split(','):
+                p = p.strip()
+                if p:
+                    graph[target].add(p)
+                    graph.setdefault(p, set())
+        elif ':' in line:
+            target, blks = line.split(':', 1)
+            target = target.strip()
+            graph.setdefault(target, set())
+            for b in blks.split(','):
+                b = b.strip()
+                if b:
+                    graph[target].add(b)
+                    graph.setdefault(b, set())
+        else:
+            target = line.strip()
+            if target:
+                graph.setdefault(target, set())
+    return graph
+
+
+def topo_sort_cli(args):
+    text = ""
+    if args.edges_file:
+        if args.edges_file == "-":
+            text = sys.stdin.read()
+        else:
+            text = Path(args.edges_file).read_text(encoding="utf-8")
+    elif args.backlog:
+        rows = parse_backlog(args.backlog)
+        graph = {}
+        for bid, row in rows.items():
+            graph.setdefault(bid, set())
+            for blk in row.get('blocked_by', []):
+                blk_id = _canon_id(blk)
+                if blk_id:
+                    graph[bid].add(blk_id)
+                    graph.setdefault(blk_id, set())
+        order, cycle = topological_sort(graph)
+        if cycle:
+            print(f"[CYCLE-DETECTED {' -> '.join(cycle)}]")
+            return 1
+        print(f"[TOPO-ORDER {','.join(order)}]")
+        return 0
+    elif not sys.stdin.isatty():
+        text = sys.stdin.read()
+    else:
+        print("[TOPO-SORT-ERROR: missing --edges-file, --backlog, or stdin edges input]")
+        return 1
+
+    graph = parse_edges(text)
+    order, cycle = topological_sort(graph)
+    if cycle:
+        print(f"[CYCLE-DETECTED {' -> '.join(cycle)}]")
+        return 1
+    print(f"[TOPO-ORDER {','.join(order)}]")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Terminal Sync Invariant gate (tracker: github) and D3 blocker edge verdicts.")
-    scope = ap.add_mutually_exclusive_group(required=True)
+    scope = ap.add_mutually_exclusive_group(required=False)
     scope.add_argument('--ids', help="comma-separated BT ids, e.g. BT-007,BT-006")
     scope.add_argument('--all-open', action='store_true',
                        help="local backend with --edges: every open issue of the store")
+    ap.add_argument('--topo-sort', action='store_true',
+                    help="topological DAG sort of issues/edges; outputs [TOPO-ORDER ...] or [CYCLE-DETECTED ...]")
+    ap.add_argument('--edges-file', default=None,
+                    help="file containing edges for --topo-sort (or - for stdin)")
     ap.add_argument('--pr-id', help="the id that must carry a PR-link comment (e.g. the shipped slice)")
     ap.add_argument('--fields', default=None,
                     help="fields to check (default: all). Pass only the fields this phase wrote.")
@@ -528,6 +650,10 @@ def main(argv=None):
                     help="Combined mode: the --ids gate plus the --edges verdicts from ONE fetch")
     ap.add_argument('--expect-file', help="--expect read from a file (`;` or one item per line, `#` comments)")
     args = ap.parse_args(argv)
+    if args.topo_sort:
+        return topo_sort_cli(args)
+    if not (args.ids or args.all_open):
+        ap.error("one of the arguments --ids --all-open is required")
     if args.edges and (args.pr_id or args.fields is not None):
         ap.error("--edges is a separate run: not with --pr-id/--fields (the gate plus edges: --with-edges)")
     args.fields = args.fields or ','.join(ALL_FIELDS)

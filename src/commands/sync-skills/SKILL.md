@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.1.0"
-timestamp: 2026-10-08
+version: "1.2.0"
+timestamp: 2026-10-31
 ---
 
 # Sync Skills
@@ -19,7 +19,7 @@ Third-party skills are **not bundled** with the skill suite. They are fetched on
 Run from the **project root**. `sync_skills.py` lives in the installed `stratosphere-setup` skill (not the project) and reads that skill's `external-skills.json` automatically; invoke it with that skill's path — `<plugin>` is the first of these that contains `scripts/sync_skills.py`. Check the running host's own group first; only if none matches, try the other group:
 
 - **Claude Code:** `./.claude/skills/stratosphere-setup/`, `~/.claude/skills/stratosphere-setup/`, marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/` (glob — newest version directory)
-- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
+- **Antigravity and other hosts:** `./.agents/skills/stratosphere-setup/`, `~/.gemini/config/plugins/*/skills/stratosphere-setup/` (glob — newest directory if multiple match), `~/.gemini/config/plugins/stratosphere-os/skills/stratosphere-setup/` (`agy plugin install dist`), `~/.gemini/config/skills/stratosphere-setup/`, `~/.agents/skills/stratosphere-setup/`
 
 ```bash
 # See what's available (asterisk = installed by default)

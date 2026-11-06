@@ -1,11 +1,20 @@
 {
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "stratosphere-os",
   "displayName": "StratosphereOS",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
   "logo": "assets/logo.png",
   "author": {
     "name": "Gravity Technologies",
     "url": "https://github.com/PatN-git/Stratosphere-OS"
-  }
+  },
+  "homepage": "https://github.com/PatN-git/Stratosphere-OS",
+  "repository": "https://github.com/PatN-git/Stratosphere-OS",
+  "license": "MIT",
+  "suggestedPrompts": [
+    "/stratosphere-setup",
+    "/0a-start-session",
+    "/2a-write-prd"
+  ]
 }

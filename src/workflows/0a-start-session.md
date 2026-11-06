@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.0"
-timestamp: 2026-10-22
+version: "1.3.0"
+timestamp: 2026-11-06
 ---
 
 # START SESSION
@@ -22,7 +22,7 @@ Restore session context (read-only), then activate: restore the branch and trans
 ## Phase A — Hydrate (read-only)
 1. **Resolve the task to resume** from the authoritative active set — `status:in progress` issues (`wip` read, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); local backend with a remote: run `python .agents/scripts/issues.py sync` first):
    - **Leaf Resolution Rule:** an `in progress` epic is never the active task: when its slice is listed too, resolve to that leaf; then exactly one → use it; several (concurrent work) → list them and ask which to resume; none → no active task.
-2. Run the `load-memory` skill for that task.
+2. Run the `load-memory` skill for that task. `load-memory` runs deterministic AST hydration via `.agents/scripts/validate_memory.py --index --query-issue <id>` (<5ms, zero LLM calls), restoring cited `[LAW]`, `[PATTERN]`, and `Avoid:` negative constraints without conversational drift, stochastic summarization (rejecting S2A / System 2 Attention), or vector dependencies (rejecting k-NN). The Zero Test/Build Invariant is strictly preserved: index extraction is an AST search utility, NOT a test runner or build script.
 
 ## Phase B — Activate (side effects)
 1. If no task resolved (`Session Status: no-active-task`) → output next-step guidance (`/1a-research` or `/1b-concept-framing`) and HALT before any side effect.

@@ -8,6 +8,8 @@
                                              {head_sha, cmd, observed} only if the tree and HEAD are unchanged
                                              (else exit 3). Chain commands with `bash -c "a && b"`.
   test_gate.py check                         hook body: exit 1 if a staged code file differs from the record
+  test_gate.py verify [--base <base>]        verify committed code between <base> (default merge-base or HEAD~1)
+                                             and HEAD matches recorded test run
   test_gate.py install                       write the pre-commit hook (never over a foreign hook or core.hooksPath)
   test_gate.py status                        exit 0 when the StratOS hook is installed, else 1
 
@@ -179,6 +181,53 @@ def check():
     return 1
 
 
+def default_base():
+    """Resolve default base commit: merge-base with candidate default branch, else HEAD~1, else EMPTY_TREE."""
+    head = git("rev-parse", "--verify", "-q", "HEAD", check=False).stdout.strip()
+    remote_head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", check=False).stdout.strip()
+    cands = (*([remote_head] if remote_head else []), "origin/main", "origin/master", "main", "master")
+    for cand in cands:
+        if git("rev-parse", "--verify", "-q", cand, check=False).returncode == 0:
+            mb = git("merge-base", "HEAD", cand, check=False).stdout.strip()
+            if mb and mb != head:
+                return mb
+    if git("rev-parse", "--verify", "-q", "HEAD~1", check=False).returncode == 0:
+        return "HEAD~1"
+    return EMPTY_TREE
+
+
+def verify(base=None):
+    """Verify that committed code files between <base> and HEAD match the recorded passing test run."""
+    if git("rev-parse", "--verify", "-q", "HEAD", check=False).returncode != 0:
+        print("test-gate: verified 0 file(s) against recorded passing test run")
+        return 0
+    ref = base if base else default_base()
+    raw = git("diff", "--raw", "-z", "--no-renames", "--no-abbrev", ref, "HEAD").stdout.split("\0")
+    files = load_record().get("files", {})
+    mismatched = []
+    checked = 0
+    for header, path in zip(raw[0::2], raw[1::2]):
+        if not header:
+            continue
+        _, new_mode, _, new_sha, status = header.lstrip(":").split()
+        if ungated(path) or new_mode in SKIP_MODES:
+            continue
+        checked += 1
+        committed = None if status == "D" or new_sha == ZERO else new_sha
+        rec = files.get(path)
+        if path not in files or rec != committed:
+            mismatched.append((path, committed, rec))
+    if mismatched:
+        print("test-gate: verification failed: committed code differs from recorded test run:", file=sys.stderr)
+        for p, comm, rec in mismatched:
+            c_str = comm[:8] if comm else "deleted"
+            r_str = rec[:8] if rec else ("deleted" if rec is None and p in files else "<unrecorded>")
+            print(f"  {p} (committed: {c_str}, recorded: {r_str})", file=sys.stderr)
+        return 1
+    print(f"test-gate: verified {checked} file(s) against recorded passing test run")
+    return 0
+
+
 def hook_file():
     custom = git("config", "--get", "core.hooksPath", check=False).stdout.strip()
     return custom, Path(custom or git("rev-parse", "--git-path", "hooks").stdout.strip()) / "pre-commit"
@@ -239,6 +288,17 @@ def main(argv):
                 sys.exit("usage: test_gate.py record --suite BT-<n> -- <whole-suite command...>")
             return record_suite(rest[1], rest[3:], cwd)
         return record(rest[1:] if rest[:1] == ["--"] else rest, cwd)
+    if cmd == "verify":
+        rest = argv[1:]
+        base = None
+        if rest:
+            if len(rest) == 2 and rest[0] == "--base":
+                base = rest[1]
+            elif len(rest) == 1 and rest[0].startswith("--base="):
+                base = rest[0].split("=", 1)[1]
+            else:
+                sys.exit("usage: test_gate.py verify [--base <base>]")
+        return verify(base)
     handlers = {"check": check, "install": install, "status": status}
     if cmd not in handlers or len(argv) != 1:
         sys.exit(__doc__)

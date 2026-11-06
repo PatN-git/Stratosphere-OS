@@ -10,6 +10,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -30,6 +31,8 @@ def slug_of(path):
 
 def write(path, recs, mtime=None, raw=()):
     """Write dict records (and raw lines) as JSONL; mtime defaults to the newest timestamp inside."""
+    if os.name == "nt" and not str(path).startswith("\\\\?\\"):
+        path = Path(f"\\\\?\\{os.path.abspath(path)}")
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [json.dumps(r) for r in recs] + list(raw)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

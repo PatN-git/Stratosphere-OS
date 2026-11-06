@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.1"
-timestamp: 2026-10-22
+version: "1.8.0"
+timestamp: 2026-11-06
 ---
 
 # Write PRD
@@ -41,8 +41,12 @@ Record issue URL and minted ID for PRD front matter.
 
 **Close the discovery link (if a brief was located in Phase 1):** write the minted `BT-<padded>` into the brief's `linked-prd:` frontmatter, so the discovery→PRD link is bidirectional.
 
-## Phase 3: Draft
+## Phase 3: Draft (Two-Stage Macro-CoT)
 Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, the open issues (`list`), LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
+
+**Two-Stage Macro-CoT:**
+- **Stage 1 (Contract Lock):** Lock Core Triad: §1 Problem/Actor, §6 Journey Stories (`[BASELINE]`, `[DIFFERENTIATOR]`, `[DEFERRED]`, ODI), and §7 Boundaries (Always/Ask first/Never).
+- **Stage 2 (Single Pass):** Stream remaining sections (§2–§5, §8–§12) in single pass with active KV-cache reuse. (Reject multi-turn SoT leaf calls: causes contradictions and token bloat).
 
 **Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout.
 - Seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10.
@@ -58,7 +62,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - Group stories under chronological journey steps (Jeff Patton Story Mapping). For each step, ask *"What has to be true for the user to get through this step?"* to discover features.
 - Assign scope tag (`[BASELINE]`, `[DIFFERENTIATOR]`, or `[DEFERRED]`) and record the ODI score (with its confidence tag) or `ODI: -`.
 - If research (`1a`) exists, map scope tags using gap matrix and Opportunity scores. Else mark `[unbacked]` and propose for user confirmation. Never assert "differentiator" without evidence or user sign-off.
-- Every `[DEFERRED]` story must be mirrored in §9 Out of Scope.
+- **Strict 100% Mirroring:** Every `[DEFERRED]` story must be mirrored in §9 Out of Scope. `contract_check.py --prd` asserts this with line attribution.
 
 **Viability, Cost & Ethics (§4, §12):**
 - **§12 Viability & Cost:** Summarize and cite `## Cost & Viability Signals` from `1a` research. Do not generate new pricing/market figures. Tag un-cited figures `[unverified estimate — confirm]`; mark missing as `[Unknown]`. Complexity score (1-10) is explicit estimate.
@@ -84,7 +88,7 @@ Instantiate from `references/PRD-template.md`. Synthesize from the discovery bri
 - [ ] Ethical: dark-pattern exclusions in §4; profit-alignment in §12
 - [ ] No slice lists anywhere in the doc
 - [ ] All memory refs resolve to existing entries
-- [ ] `python .agents/scripts/contract_check.py --docs <prd> --schema .memory/DATABASE_SCHEMA.md` passes (or prints `[CONTRACT-SKIP]`), or each `[CONTRACT-MISSING]` finding is written as `> open:`
+- [ ] `python .agents/scripts/contract_check.py --prd <prd> --schema .memory/DATABASE_SCHEMA.md` passes (or prints `[CONTRACT-SKIP]`), or each `[CONTRACT-MISSING]` finding is written as `> open:`
 - [ ] `> open:` markers moved to §10
 - [ ] §7 ADR flag raised if applicable
 

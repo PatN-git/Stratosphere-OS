@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-22
+version: "1.5.0"
+timestamp: 2026-11-06
 ---
 
 # Version Planning
@@ -46,6 +46,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
 
 ## Phase 2: Classify Releases
 1. **Group features:** propose feature-to-release mapping. Sequencing: baseline before differentiator across features; never defer a feature that enables the primary growth loop past the release in which the core product goes live.
+   - **Deterministic DAG Sequencing:** Do not generate multiple candidate roadmaps for stochastic LLM majority voting. Write candidate feature dependency edges to `.tmp/3a-edges.txt` and validate execution order and acyclicity via `python .agents/scripts/reconcile.py --topo-sort --edges-file .tmp/3a-edges.txt` in <5ms.
    - **Late-discovered dependency:** a genuine prerequisite between epics not yet in the dependent's `Blocked by` → flag `[NEW-DEP] BT-<padded> ← BT-<prereq>`. Do **not** write it yet — it is proposed at the Phase 2.5 halt.
 2. **MAJOR vs MINOR** (compatibility test only; scope class does NOT influence this):
    - **MAJOR** (`X+1`, `Y->0`) if any feature requires a destructive schema change/migration to existing data; removes/renames an existing public contract (API route, CLI flag, exported interface, event); or removes/alters an existing user-facing capability.

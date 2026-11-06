@@ -6,14 +6,15 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.9.0"
-timestamp: 2026-10-22
+version: "1.10.0"
+timestamp: 2026-11-06
 ---
 
 # AFK END-TO-END LOOP
 
 ## Authority & Guardrails
 - **Orchestrator rule:** AGENTS.md §1 Orchestrators. `3z` is the sole `AFK` orchestrator.
+- **Exit code control:** Deterministic execution branching relies strictly on process exit codes (`$? == 0` for success, non-zero for failure/halt). Banish LLM conversational transcript inspection or CRITIC-style semantic parsing of raw git/test stdout.
 - **Subagent isolation:** never run `/3d-implement-issue` and `/4a-verify-and-ship` in same context. Each is a fresh subagent that self-hydrates via `load-memory` (no `/0a`, see Step 2A).
 - **Workspace:** dispatch 3d/4a subagents with workspace `shared/inherit`, never a worktree — 3d's commits and the `.tmp/` plan and suite files must be visible to the next step, and a worktree lacks untracked deps (e.g. `node_modules`) and branches from the default branch.
 - **Depth:** 3z → 3d/4a subagent → at most one further level (AGENTS.md §8 Subagent nesting). Where the host has no subagents, run each step inline.
