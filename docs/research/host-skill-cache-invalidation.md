@@ -1,3 +1,13 @@
+---
+type: research
+title: "Host Skill Cache Invalidation & In-Process Hot-Reloading"
+generated:
+  by: 1a-research
+  at: 2026-11-06
+status: stable
+version: "1.0.0"
+---
+
 # Host Skill Cache Invalidation & In-Process Hot-Reloading
 
 **Document ID:** `docs/research/host-skill-cache-invalidation.md`  

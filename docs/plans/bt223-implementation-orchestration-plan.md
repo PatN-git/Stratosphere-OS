@@ -1,3 +1,13 @@
+---
+type: plan
+title: "Implementation Orchestration Plan: Epic BT-223"
+generated:
+  by: 3c-sprint-planning
+  at: 2026-11-06
+status: stable
+version: "1.0.0"
+---
+
 # Implementation Orchestration Plan: Epic BT-223
 **Harden Lifecycle per 'Prompt Report' (arXiv:2406.06608)**
 
