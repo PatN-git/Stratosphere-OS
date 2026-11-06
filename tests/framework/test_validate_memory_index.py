@@ -238,14 +238,14 @@ def test_0a_start_session_and_load_memory_consume_active_refs():
     assert "negative constraints" in text_load.lower()
 
 
-def test_0b_and_0d_rigid_table_templates_and_diff_verification():
+def test_0b_and_0d_streamlined_templates_and_diff_verification():
     text_0b = read_src("workflows/0b-stop-session.md")
     text_0d = read_src("workflows/0d-nightly-consolidation.md")
 
     # 0b assertions
     assert "git diff" in text_0b
-    assert "| ID | File | Trust Tag |" in text_0b
-    assert "| Check | Command / Target | Status | Detail |" in text_0b
+    assert "negative constraints" in text_0b.lower()
+    assert "validate_memory.py" in text_0b
 
     # 0d assertions
     assert "| Slug | Nights | Ladder Rung |" in text_0d

@@ -44,10 +44,9 @@ Record issue URL and minted ID for PRD front matter.
 ## Phase 3: Draft (Two-Stage Macro-CoT)
 Instantiate from `references/PRD-template.md`. Synthesize from the discovery brief (`docs/discovery/<slug>.md`, if located in Phase 1), conversation, the open issues (`list`), LEARNINGS, and ADR memory entries. Reference BT-xxx, [[L-xxx]], [[A-xxx]], [[DR-xxx]] inline.
 
-**Two-Stage Macro-CoT Execution:**
-- **Stage 1 (Contract Lock):** First lock the Core Triad: §1 Problem (Scope facets) and Actor, §6 Journey Stories (grouped by chronological journey steps with scope tags `[BASELINE]`, `[DIFFERENTIATOR]`, `[DEFERRED]`, and ODI scores), and §7 Boundaries (Always / Ask first / Never capabilities).
-- **Stage 2 (Single-Pass Expansion):** Stream the remaining sections (§2 Solution, §3 Goals, §4 Non-Goals, §5 Success Signals, §8 Observable End-State, §9 Out of Scope, §10 Open Questions, §11 Further Notes, §12 Viability & Cost) in a single pass with active KV-cache reuse.
-- **Rejection of Skeleton-of-Thought (SoT):** Do NOT break PRD drafting into 10–12 parallel leaf generation calls. Slicing into separate turns causes cross-section contradictions and explodes prompt prefix tokens by 500%.
+**Two-Stage Macro-CoT:**
+- **Stage 1 (Contract Lock):** Lock Core Triad: §1 Problem/Actor, §6 Journey Stories (`[BASELINE]`, `[DIFFERENTIATOR]`, `[DEFERRED]`, ODI), and §7 Boundaries (Always/Ask first/Never).
+- **Stage 2 (Single Pass):** Stream remaining sections (§2–§5, §8–§12) in single pass with active KV-cache reuse. (Reject multi-turn SoT leaf calls: causes contradictions and token bloat).
 
 **Discovery-brief ingestion (if a brief was located):** use its Vocabulary throughout.
 - Seed §1 from Problem (including Scope facets) and Actor, §2 from Chosen Framing, §4 from Non-Goals, §3, §5 and §8 from Success State, §6 story actors from Actor, §7 from Constraints & Settled Decisions (or a legacy `## Constraints`) and Established Facts (restate file paths as capability names — §7 stays path-free), §9 from Decoupled Follow-ups; absorb Open Questions into §10.

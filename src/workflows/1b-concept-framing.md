@@ -51,7 +51,7 @@ Run the `load-memory` skill to restore session context (read-only).
 State synthesis of known facts and confirm — do not re-grill. Lead open-ended first, then narrow. Re-ask vague points. Use `## Coverage` to drive sequence if using work file.
 
 **Grill mode (facts looked up, decisions asked — batched by dependency):**
-- **Facts are never asked (per G2).** Anything discoverable — actor on a brownfield app, existing patterns, constraints in code — is resolved silently via `grep`, AST inspection, or local file search before asking the user; dispatch a subagent for anything expensive and don't block on it (only questions downstream of a running lookup wait). Only *decisions* go to the user. Record each lookup result with its source in the work file's `## Established Facts` when it lands; record each user-confirmed decision with its reason in `## Settled Decisions`.
+- **Facts are never asked (per G2):** Resolve discoverable facts (patterns, constraints, schemas) silently via `grep`, AST, or subagents. Ask only user decisions. Log lookups in `## Established Facts`; log confirmed decisions in `## Settled Decisions`.
 - **Sharpen / short path:** grill one decision at a time.
 - **Generate / longer path (work file present):** grill the **frontier** in rounds — every open decision whose prerequisites are settled (`## Coverage` is the settled set), asked as one numbered batch, each with your recommended answer (per G1).
   - A decision waits for a later round only if its answer depends on a sibling still open this round (per G3).
