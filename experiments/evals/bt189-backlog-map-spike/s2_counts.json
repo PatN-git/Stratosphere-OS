@@ -1,0 +1,254 @@
+[
+ {
+  "file": "commands/stratosphere-setup/SKILL.md",
+  "total": 31056,
+  "core_sent": 1495,
+  "core_line": 2429,
+  "gate_sent": 0,
+  "all_sent": 1495,
+  "all_line": 2429
+ },
+ {
+  "file": "commands/stratosphere-update/SKILL.md",
+  "total": 13208,
+  "core_sent": 352,
+  "core_line": 659,
+  "gate_sent": 0,
+  "all_sent": 352,
+  "all_line": 659
+ },
+ {
+  "file": "memory-templates/BACKLOG_MAP.md",
+  "total": 6558,
+  "core_sent": 1378,
+  "core_line": 1609,
+  "gate_sent": 32,
+  "all_sent": 1410,
+  "all_line": 2108
+ },
+ {
+  "file": "memory-templates/LEARNINGS.md",
+  "total": 1568,
+  "core_sent": 37,
+  "core_line": 37,
+  "gate_sent": 0,
+  "all_sent": 37,
+  "all_line": 37
+ },
+ {
+  "file": "memory-templates/STATUS.md",
+  "total": 965,
+  "core_sent": 183,
+  "core_line": 395,
+  "gate_sent": 0,
+  "all_sent": 183,
+  "all_line": 395
+ },
+ {
+  "file": "references/concept-map-operations.md",
+  "total": 3900,
+  "core_sent": 280,
+  "core_line": 280,
+  "gate_sent": 0,
+  "all_sent": 280,
+  "all_line": 280
+ },
+ {
+  "file": "references/github-issue-relations.md",
+  "total": 1695,
+  "core_sent": 187,
+  "core_line": 187,
+  "gate_sent": 0,
+  "all_sent": 187,
+  "all_line": 187
+ },
+ {
+  "file": "references/issue-templates.md",
+  "total": 3107,
+  "core_sent": 439,
+  "core_line": 620,
+  "gate_sent": 0,
+  "all_sent": 439,
+  "all_line": 620
+ },
+ {
+  "file": "references/pr-body-and-ship.md",
+  "total": 4113,
+  "core_sent": 140,
+  "core_line": 570,
+  "gate_sent": 0,
+  "all_sent": 140,
+  "all_line": 570
+ },
+ {
+  "file": "references/terminal-sync-invariant.md",
+  "total": 4151,
+  "core_sent": 1145,
+  "core_line": 2240,
+  "gate_sent": 795,
+  "all_sent": 1940,
+  "all_line": 3188
+ },
+ {
+  "file": "rules/memory-protocol.md",
+  "total": 6749,
+  "core_sent": 789,
+  "core_line": 1140,
+  "gate_sent": 0,
+  "all_sent": 789,
+  "all_line": 1140
+ },
+ {
+  "file": "rules/okf-protocol.md",
+  "total": 9557,
+  "core_sent": 181,
+  "core_line": 373,
+  "gate_sent": 0,
+  "all_sent": 181,
+  "all_line": 373
+ },
+ {
+  "file": "skills/load-memory/SKILL.md",
+  "total": 1755,
+  "core_sent": 47,
+  "core_line": 50,
+  "gate_sent": 0,
+  "all_sent": 47,
+  "all_line": 50
+ },
+ {
+  "file": "workflows/0a-start-session.md",
+  "total": 2492,
+  "core_sent": 376,
+  "core_line": 454,
+  "gate_sent": 0,
+  "all_sent": 376,
+  "all_line": 454
+ },
+ {
+  "file": "workflows/0b-stop-session.md",
+  "total": 6934,
+  "core_sent": 1405,
+  "core_line": 2509,
+  "gate_sent": 435,
+  "all_sent": 1840,
+  "all_line": 2509
+ },
+ {
+  "file": "workflows/0d-nightly-consolidation.md",
+  "total": 7469,
+  "core_sent": 358,
+  "core_line": 418,
+  "gate_sent": 392,
+  "all_sent": 750,
+  "all_line": 929
+ },
+ {
+  "file": "workflows/1b-concept-framing.md",
+  "total": 13648,
+  "core_sent": 149,
+  "core_line": 155,
+  "gate_sent": 0,
+  "all_sent": 149,
+  "all_line": 155
+ },
+ {
+  "file": "workflows/1c-concept-map.md",
+  "total": 7308,
+  "core_sent": 247,
+  "core_line": 392,
+  "gate_sent": 0,
+  "all_sent": 247,
+  "all_line": 392
+ },
+ {
+  "file": "workflows/2a-write-prd.md",
+  "total": 9448,
+  "core_sent": 571,
+  "core_line": 966,
+  "gate_sent": 0,
+  "all_sent": 571,
+  "all_line": 966
+ },
+ {
+  "file": "workflows/2b-interface-design.md",
+  "total": 10850,
+  "core_sent": 764,
+  "core_line": 1020,
+  "gate_sent": 0,
+  "all_sent": 764,
+  "all_line": 1020
+ },
+ {
+  "file": "workflows/3a-version-planning.md",
+  "total": 9222,
+  "core_sent": 749,
+  "core_line": 1611,
+  "gate_sent": 317,
+  "all_sent": 1066,
+  "all_line": 1611
+ },
+ {
+  "file": "workflows/3b-create-issue.md",
+  "total": 18451,
+  "core_sent": 1166,
+  "core_line": 1916,
+  "gate_sent": 233,
+  "all_sent": 1399,
+  "all_line": 1916
+ },
+ {
+  "file": "workflows/3c-sprint-planning.md",
+  "total": 7077,
+  "core_sent": 1522,
+  "core_line": 2618,
+  "gate_sent": 374,
+  "all_sent": 1896,
+  "all_line": 2791
+ },
+ {
+  "file": "workflows/3d-implement-issue.md",
+  "total": 9802,
+  "core_sent": 786,
+  "core_line": 1368,
+  "gate_sent": 95,
+  "all_sent": 881,
+  "all_line": 1743
+ },
+ {
+  "file": "workflows/3z-afk-loop.md",
+  "total": 13819,
+  "core_sent": 2026,
+  "core_line": 2431,
+  "gate_sent": 241,
+  "all_sent": 2267,
+  "all_line": 2925
+ },
+ {
+  "file": "workflows/4a-verify-and-ship.md",
+  "total": 15978,
+  "core_sent": 1695,
+  "core_line": 2278,
+  "gate_sent": 571,
+  "all_sent": 2266,
+  "all_line": 2694
+ },
+ {
+  "file": "workflows/4b-audit-architecture-drift.md",
+  "total": 7614,
+  "core_sent": 540,
+  "core_line": 540,
+  "gate_sent": 0,
+  "all_sent": 540,
+  "all_line": 540
+ },
+ {
+  "file": "workflows/4c-codebase-health-audit.md",
+  "total": 7514,
+  "core_sent": 63,
+  "core_line": 120,
+  "gate_sent": 0,
+  "all_sent": 63,
+  "all_line": 120
+ }
+]

@@ -26,7 +26,7 @@ Exit criteria (all checkable):
 
 ## 2. Current behaviour (verified)
 
-- `cmd_apply_moves` (`src/scripts/issues.py:818-898`) refuses only: unparseable line (`:854`), unknown id (`:859`), unknown status (`:862`), `claimed_by` another branch unless `--force` (`:868-870`), epic/standalone `in review -> done` not merged unless `--force` (`:872-876`). No `blocked_by` rule **[V]**. Evidence: `C:\Users\patri\Dev\Stratosphere-OS\.tmp\l3live\b5-results\dnd.md` case 5b (main checkout, not `bt221\.tmp`) **[V]** file exists; content per the earlier draft **[U]**.
+- `cmd_apply_moves` (`src/scripts/issues.py:818-898`) refuses only: unparseable line (`:854`), unknown id (`:859`), unknown status (`:862`), `claimed_by` another branch unless `--force` (`:868-870`), epic/standalone `in review -> done` not merged unless `--force` (`:872-876`). No `blocked_by` rule **[V]**. Evidence: `experiments/probes/v5-kanban-board/dnd.md` case 5b (main checkout, not `bt221\.tmp`) **[V]** file exists; content per the earlier draft **[U]**.
 - Atomic: any problem raises `IssuesError(... nothing applied ...)` at `:888-889`; moves mutate `store.issues` in place inside the loop (`:877-884`), a refusal discards the store. `old == target` lines are skipped (`:866-867`): the board re-sends already-applied moves.
 - The board page is a static snapshot; all refusals happen when the user runs the command. The badge (BT-238) lists raw `blocked_by` edges (`board.html:461`, fed from `issues.py:546-547`) **[V per earlier read; U on re-check]**.
 - apply-moves is unreleased: `src/scripts/issues.py` and `src/references/tracker-verbs.md` are absent at fork point `b7329af` and at tag `v4.10.1` **[V]**. So v5.0.0 can define the rule with no compatibility cost.

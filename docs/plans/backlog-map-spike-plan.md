@@ -16,7 +16,7 @@ Status: **done 2026-10-20.** H0–H3 passed; decision in `backlog-map-decision.m
 
 ## Roles
 - **Router and grader:** the main session (Opus 5.5). It launches the subagents, grades each report against source, writes the decision record, and is the only writer to git, GitHub and `.memory/` (AGENTS §8).
-- **Analysts:** Sonnet 5.5 subagents at high effort. They are read-only, may write scratch files only under `.tmp/bt189/`, may run read-only `gh` queries, and never commit. Each returns a report of at most 300 words; the detail goes in its scratch file.
+- **Analysts:** Sonnet 5.5 subagents at high effort. They are read-only, wrote scratch files under `.tmp/bt189/` (archived to `experiments/evals/bt189-backlog-map-spike/`), ran read-only `gh` queries, and never committed. Each returns a report of at most 300 words; the detail is archived in `experiments/evals/bt189-backlog-map-spike/`.
 - **You:**
   - decide at each halt;
   - make the adopt/reject/partial call at H3;
@@ -46,8 +46,8 @@ Status: **done 2026-10-20.** H0–H3 passed; decision in `backlog-map-decision.m
 ## Phase 1: classify and inventory (2 analysts in parallel, background)
 | Agent | Reads | Writes | Must return |
 |---|---|---|---|
-| **A1 RAT classifier** | `src/scripts/reconcile.py` (every function and CLI mode); `src/references/terminal-sync-invariant.md`; its call sites in 0b/0d/3a/3b/3c/4a; drift history in `docs/nightly/.last-run.json`, `LEARNINGS.md` and `STATUS.md` | `.tmp/bt189/s1-classification.md`: one row per unit, giving lines, class (`map-only` / `gh-post-condition` / `shared`) and file:line evidence | the share of `map-only` across script lines, prose lines and logged incidents; verdict PASS (all three at least 80%) or FAIL; the list of `gh-post-condition` units |
-| **A2 Write inventory + verb fit** | every BACKLOG_MAP read and write in `src/` (workflows, skills, references, rules, scripts, memory-templates) | `.tmp/bt189/s2-inventory.md`: one row per site, giving file:line, read/write, field, class (`mirror write` / `local-only` / `gate`), and removable or needs a GitHub equivalent (ICE, Ref, sprint digit, BT-LOCAL) | BACKLOG-related characters per workflow and always-loaded; each distinct write kind mapped to one tracker verb with a GitHub and a local-markdown form, or the misfit named |
+| **A1 RAT classifier** | `src/scripts/reconcile.py` (every function and CLI mode); `src/references/terminal-sync-invariant.md`; its call sites in 0b/0d/3a/3b/3c/4a; drift history in `docs/nightly/.last-run.json`, `LEARNINGS.md` and `STATUS.md` | `experiments/evals/bt189-backlog-map-spike/s1-classification.md`: one row per unit, giving lines, class (`map-only` / `gh-post-condition` / `shared`) and file:line evidence | the share of `map-only` across script lines, prose lines and logged incidents; verdict PASS (all three at least 80%) or FAIL; the list of `gh-post-condition` units |
+| **A2 Write inventory + verb fit** | every BACKLOG_MAP read and write in `src/` (workflows, skills, references, rules, scripts, memory-templates) | `experiments/evals/bt189-backlog-map-spike/s2-inventory.md`: one row per site, giving file:line, read/write, field, class (`mirror write` / `local-only` / `gate`), and removable or needs a GitHub equivalent (ICE, Ref, sprint digit, BT-LOCAL) | BACKLOG-related characters per workflow and always-loaded; each distinct write kind mapped to one tracker verb with a GitHub and a local-markdown form, or the misfit named |
 
 **Grade (router):**
 - Spot-check 8 rows from each file against the source. More than 1 wrong row sends the report back once via SendMessage.
@@ -59,7 +59,7 @@ Status: **done 2026-10-20.** H0–H3 passed; decision in `backlog-map-decision.m
 
 ## Phase 2: measure A/B/C (1 analyst, background)
 **H1 outcome (2026-10-20):**
-- The RAT **failed**: map-only is 71% of `reconcile.py`, 70% of the prose and 56% of incidents (`.tmp/bt189/s1-classification.md`).
+- The RAT **failed**: map-only is 71% of `reconcile.py`, 70% of the prose and 56% of incidents (`experiments/evals/bt189-backlog-map-spike/s1-classification.md`).
 - Phase 2 is **re-scoped** to "B or C **plus** a slimmer post-condition gate" (about 254 lines survive).
 - **CleanTechHub** (`PatN-git/cleantech_jobs`, local `C:\Users\patri\Dev\CleanTechHub`) becomes the primary consumer case: a 48 KB map, 163 rows, 168 issues (56 open), 8 nightly reports. StratOS is the second case.
 

@@ -17,7 +17,7 @@ Status: **decided 2026-10-20 (H3), revised after independent review (58/100 → 
 
 **Inputs:** the brief `docs/discovery/backlog-map-generated-cache.md` and the plan `docs/plans/backlog-map-spike-plan.md`.
 
-**Evidence:** `.tmp/bt189/` (`s1-classification.md`, `s2-inventory.md`, `s3-measurements.md`, `gen_map.py`, `drift_by_ref.py`). Each analyst report was graded with 8-row spot checks.
+**Evidence:** `experiments/evals/bt189-backlog-map-spike/` (`s1-classification.md`, `s2-inventory.md`, `s3-measurements.md`, `gen_map.py`, `drift_by_ref.py`). Each analyst report was graded with 8-row spot checks.
 
 **Test repos:** CleanTechHub (`PatN-git/cleantech_jobs`, the representative consumer) and StratOS.
 
