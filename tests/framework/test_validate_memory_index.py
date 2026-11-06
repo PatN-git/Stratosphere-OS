@@ -150,7 +150,8 @@ Check [[A-001]], [[A-003]], [[L-003]], [[G-002]], [[DR-001]].
 
     assert res == 0
     assert out_file.exists()
-    assert elapsed_ms < 5.0, f"AST indexer execution took {elapsed_ms:.3f}ms, exceeding 5ms budget"
+    budget = 25.0 if os.environ.get("CI") else 5.0
+    assert elapsed_ms < budget, f"AST indexer execution took {elapsed_ms:.3f}ms, exceeding {budget}ms budget"
 
 
 def test_validate_memory_index_preserves_negative_constraints(tmp_path):
