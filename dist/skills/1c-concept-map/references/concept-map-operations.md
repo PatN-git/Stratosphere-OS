@@ -43,7 +43,7 @@ Create a child decision ticket and link it as a sub-issue.
      ```
      *(Where `<type>` is `research`, `grilling`, `prototype`, or `task`, and `mode:*` is `mode:AFK` or `mode:HITL`)*
   2. Link as sub-issue and wire blockers via `addSubIssue` / `addBlockedBy` mutations (`references/github-issue-relations.md`).
-- **Local:** `issues.py create --title "<Type>: <Title>" --label concept:<type> --label mode:<AFK|HITL> --parent <map-id> [--blocked-by <ids>] --body-file <f>` (same block body).
+- **Local:** `issues.py create --title "<Type>: <Title>" --label concept:<type> --label mode:<AFK|HITL> --parent <map-id> [--blocked-by <ids>] --body-file <f>` (write `<f>` in `.tmp/` first — `issues.py create` accepts `--body-file` only; create blockers in topological order or wire in a second pass with `issues.py set <id> --add-blocker <blocker-id>`).
 
 ---
 
@@ -71,13 +71,14 @@ Query tracker for frontier (open, unblocked, unassigned decision tickets).
      ```
   3. Filter to find the frontier:
      `state == "OPEN" && length(blockedBy.nodes containing open issues) == 0 && length(assignees) == 0`
-- **Local:** `issues.py children <map-id>`: `state == "OPEN"`, `claimed_by` is `null` or equals current branch (`issues.py branch`), and every `blocked_by` id has `state == "CLOSED"`.
+- **Local:** `issues.py children <map-id>`: `state == "OPEN"`, `claimed_by` is `null` or equals current working branch (`git branch --show-current`), and every `blocked_by` id has `state == "CLOSED"`.
 - **Tie-break:** Lowest open issue number / ID (creation order).
 
 ### 4a. Partition by Mode & Idempotent Prep Read
 - **Drainable (Phase 2A):** Frontier tickets carrying `mode:AFK`, plus the build/prep half of frontier `mode:HITL` `prototype` and `grilling` tickets.
 - **Human (Phase 2):** Frontier tickets carrying `mode:HITL` (or missing a `mode:*` label — never infer `mode:AFK` from `concept:<type>`).
-- **Idempotent Prep Check:** Before prepping a `mode:HITL` frontier ticket in Phase 2A, inspect its comments (`gh issue view <ticket#> --json comments` or `issues.py get <ticket-id>`) and skip if an `### AFK Prep` comment or linked prototype artifact is already present (unless a blocker closed after that comment).
+- **Idempotent Prep Check:** Before prepping a `mode:HITL` frontier ticket in Phase 2A, inspect its comments (`gh issue view <ticket#> --json comments` or `issues.py get <ticket-id>`) and skip if any comment contains `### AFK Prep` (substring check, since `issues.py comment` prefixes `- YYYY-MM-DD: `) or a linked prototype artifact (unless a blocker closed after that comment).
+- **Failure Demotion (`mode:AFK → mode:HITL`):** After 3 failed attempts on a `mode:AFK` ticket, demote its mode label (`gh issue edit <ticket#> --remove-label "mode:AFK" --add-label "mode:HITL"` | Local: `issues.py set <ticket-id> --remove-label mode:AFK --add-label mode:HITL`), post a failure comment (`issues.py comment`), and leave the ticket open.
 
 ---
 
