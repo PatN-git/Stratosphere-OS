@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.8.0"
-timestamp: 2026-10-22
+version: "2.9.0"
+timestamp: 2026-11-06
 ---
 
 # Implement issue
@@ -44,9 +44,10 @@ Plan every slice before coding; small slices get a short plan. **Skip only** a p
 - **Mechanical plan check (agent-run):** derive the repo's test-file naming pattern(s) from `git ls-files`; no test files yet (greenfield) → skip the pattern match and say so. Every AC needs a planned test path matching one, or an explicit `[UNCOVERED] <AC>: <reason>` plan row (one line: manual-only or design blocker; Phase 3 surfaces it), and every planned test path must match one. Any other miss → fix the plan before Phase 1.
 
 ## Phase 1: Execution via Micro-TDD Skill
-Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, or the bug loop; its Declare Seam takes the seams from the plan. Mark paths matching `references/merge-risk-paths.md` (plus the project's `## One-way paths`) as risky so they take its Risk route. For HITL slices, show RED/GREEN test results (override silent mode; Fast-Track A may run silent). 3d owns the full-suite runs; micro-tdd runs related tests per cycle.
-- micro-tdd returns `stuck` → halt the slice; commit nothing half-done. Stash uncommitted edits so the tree stays clean: `git stash push -u -m "BT-<padded> stuck"`.
-- Then HITL presents its two options; AFK returns it as `stuck` in the 3z JSON.
+Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, or the bug loop; its Declare Seam takes the seams from the plan. Mark paths matching `references/merge-risk-paths.md` (plus the project's `## One-way paths`) as risky so they take its Risk route.
+- **Silent Execution Mode:** By default, run normal RED/GREEN cycles silently without verbose step narration or monologue. Ban verbal Reflexion on expected TDD RED states (RED is the intentional starting baseline for unwritten code).
+- **Gated Diagnostic Reflexion:** Diagnostic reflection is strictly gated. On Attempt 1 failure (expected RED), implement immediately. On Attempt 2 (Failed GREEN), emit structured diagnostic reflexion (`[DIAGNOSTIC REFLEXION]`: Shared Premise, Disproving Evidence, Falsifiable Hypothesis). On Attempt 3 (Failed GREEN), trigger the Stuck Protocol immediately.
+- **Stuck Protocol:** micro-tdd returns `stuck` → halt the slice; commit nothing half-done. Stash uncommitted edits so the tree stays clean: `git stash push -u -m "BT-<padded> stuck"`. Then HITL presents its two options; AFK returns it as `stuck` in the 3z JSON.
 1. **CLI/Subprocess:** assert on stdout/stderr, not just exit code.
 2. **Requirements:** link test to requirement bare IDs from the issue (never STATUS.md) (e.g., `BT-101`).
 3. **Fallbacks:** prefer native libraries (e.g. sqlite3, argparse) over third-party in mock/simple utility environments.
