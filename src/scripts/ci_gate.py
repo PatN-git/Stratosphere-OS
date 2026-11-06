@@ -235,7 +235,7 @@ def cmd_cap(args):
 
 
 def emit(result, code):
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps(result))
     return code
 
 
