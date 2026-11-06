@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.0"
-timestamp: 2026-10-27
+version: "1.5.0"
+timestamp: 2026-11-06
 ---
 
 # Nightly Consolidation
@@ -18,7 +18,9 @@ Do not modify files without user approval, except the report, `.last-run.json` (
 ## Phase 1: Review Sessions
 1. Run `python .agents/scripts/nightly_scan.py`; its header `since` is the delta start. Run `python .agents/scripts/nightly_state.py slugs` (names of earlier findings only; read no prior report text in Phase 1).
 2. Run `git log --all --since="<since>" --stat --no-merges`. Review the scan, not transcripts; open one only to inspect a failing call. More than ~15 sessions → inspect the failing calls of the 5 with the most errors; state the sample in the report.
-3. Name inefficiencies, redundant tool calls (`repeats` in the scan) and recurring main/sub-agent mistakes with a stable kebab-case slug (`shell-quoting`, `stale-path`), reusing a listed slug for the same failure. Run `python .agents/scripts/nightly_state.py findings --slugs <a,b,…>` (skip when there are none); it prints `<slug> nights=N`.
+3. Name inefficiencies, redundant tool calls (`repeats` in the scan) and recurring main/sub-agent mistakes with a stable kebab-case slug (`shell-quoting`, `stale-path`), reusing a listed slug for the same failure. Run `python .agents/scripts/nightly_state.py findings --slugs <a,b,…>` (skip when there are none); it prints `<slug> nights=N`. Format findings into a rigid table:
+   | Slug | Nights | Ladder Rung | Finding Summary | Recommended Action |
+   |:---|:---:|:---:|:---|:---|
 4. Route each finding per `references/environment-fix-ladder.md` (escalation and hypothesis rules apply): `nights ≥ 2` also counts as a recurrence (ladder Escalation): rung 1 or 4.
 5. Report findings only: no session roster and no positive observations.
 
@@ -29,6 +31,7 @@ Do not modify files without user approval, except the report, `.last-run.json` (
 - **Retention:** delete `docs/nightly/nightly-*.md` reports older than ~90 days by filename date. Keep `.last-run.json` and `index.md`.
 
 ## Phase 3: Crystallize Memory
+- **Diff-Based Consolidation Verification:** Before proposing memory promotions or merges, run `git log --since="<since>" --stat` to verify that candidate learnings correspond to shipped and verified commit diffs rather than ephemeral transcript noise.
 - Scan `.memory/*` (except `DESIGN.md`) for:
 
     | Trigger | Proposal |

@@ -66,9 +66,9 @@
       "version": "2.0.1"
     },
     "skills/0a-start-session/SKILL.md": {
-      "sha256": "dc356b9647bd6b994a0a47ff99322a89a3d75587842d235fa8f44202a03d7056",
-      "timestamp": "2026-10-22",
-      "version": "1.2.0"
+      "sha256": "de1f27717ad66faf1e1b4afa407fee15bf84ff18fa2227ab4ed22b13115fb18a",
+      "timestamp": "2026-11-06",
+      "version": "1.3.0"
     },
     "skills/0a-start-session/references/github-issue-relations.md": {
       "sha256": "863aefd2a06b5308de28ce8675868542b38f09f096bfdd189131c955f4964a78",
@@ -96,9 +96,9 @@
       "version": "5.0.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "38eea279a84a7478f0e7f92cc8a297cd4533523d3a520981348b9f7efb86863d",
-      "timestamp": "2026-10-27",
-      "version": "1.6.0"
+      "sha256": "3ba32d46adc689697bd6065da6578c643aeb7d4502adfd7e2d365b9fe40189d9",
+      "timestamp": "2026-11-06",
+      "version": "1.7.0"
     },
     "skills/0b-stop-session/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -146,9 +146,9 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "6acd2ce2ded5f90e4b4ba3cc5ffa184af371919458dd3af887ce6c3955b153dd",
-      "timestamp": "2026-10-27",
-      "version": "1.4.0"
+      "sha256": "bac0b4abd0c5568caf91acf3b3833ebb26e4b854451bed951037fb73ff7e02c1",
+      "timestamp": "2026-11-06",
+      "version": "1.5.0"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -157,8 +157,8 @@
     },
     "skills/0e-plain-english/SKILL.md": {
       "sha256": "c321ff411f247d28e85831e0b2e1ae233df0054b02ab5323123d3748992c6206",
-      "timestamp": "2026-10-28",
-      "version": "1.1.0"
+      "timestamp": "2026-11-06",
+      "version": "1.2.0"
     },
     "skills/0e-plain-english/references/plain-language.md": {
       "sha256": "4deb380ede2adc8dbec99c6651e21707e16b542e2257dfa04777b7e6ee234030",
@@ -781,9 +781,9 @@
       "version": "1.0.0"
     },
     "skills/load-memory/SKILL.md": {
-      "sha256": "1604905ddf81f61029c3f521d428eaf1ccccd4f0db2f0b68488c25aa5a2b428e",
-      "timestamp": "2026-10-22",
-      "version": "1.2.0"
+      "sha256": "fe6e3120cfbcb315ec30ac06906e1429cec4d2371ecd7b0a0c70de7f098430c4",
+      "timestamp": "2026-11-06",
+      "version": "1.3.0"
     },
     "skills/micro-tdd/SKILL.md": {
       "sha256": "255ba0cf9592811f8397b3adda91a9db4dbddb89ceb0cc4cf6d24c3efbea6c14",
