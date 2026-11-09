@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "6b3e4208eb22d4e408736ce9951e0a5fb23c95b05ec0616b760501ab18c6a3a7",
-      "timestamp": "2026-10-27",
-      "version": "3.5.1"
+      "sha256": "b9870d1af4530879e333edf93f324bd590644f096ffe2d3850ef685f0fc85db7",
+      "timestamp": "2026-11-09",
+      "version": "3.6.0"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
@@ -96,9 +96,9 @@
       "version": "5.1.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "fd574ab8b5aae2b744b1cf84de6aad6ba987d14d8b35a35e53761d291c423fbd",
-      "timestamp": "2026-11-06",
-      "version": "1.7.0"
+      "sha256": "b3ccb26eb4599941e53800eb3244877964974957f75395608543ecff144084bc",
+      "timestamp": "2026-11-09",
+      "version": "1.8.0"
     },
     "skills/0b-stop-session/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -531,9 +531,9 @@
       "version": "1.1.0"
     },
     "skills/3z-afk-loop/references/auditor-model-tiers.md": {
-      "sha256": "3c583218ff8a372a3a66dfa66629a2419461fdffc57fe7f5c6d1169a10a76379",
+      "sha256": "7b4867737a1885d68424031754006df324077a7d5372466225a15e07909eb1f8",
       "timestamp": "2026-10-20",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "skills/3z-afk-loop/references/ci-gate.md": {
       "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
@@ -591,9 +591,9 @@
       "version": "1.0.1"
     },
     "skills/4a-verify-and-ship/references/auditor-model-tiers.md": {
-      "sha256": "3c583218ff8a372a3a66dfa66629a2419461fdffc57fe7f5c6d1169a10a76379",
+      "sha256": "7b4867737a1885d68424031754006df324077a7d5372466225a15e07909eb1f8",
       "timestamp": "2026-10-20",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "skills/4a-verify-and-ship/references/ci-gate.md": {
       "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
