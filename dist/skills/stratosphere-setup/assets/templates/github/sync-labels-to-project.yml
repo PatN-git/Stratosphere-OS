@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened, reopened, labeled, unlabeled, closed]
 
+concurrency:
+  group: sync-labels-to-project-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -35,7 +39,42 @@ jobs:
             }
 
             const issueNodeId = context.payload.issue.node_id;
-            const labels = context.payload.issue.labels || [];
+            let issueState = context.payload.issue.state;
+            let state_reason = context.payload.issue.state_reason;
+            let labels = context.payload.issue.labels || [];
+
+            // Query live issue state and labels via GraphQL to guard against out-of-order webhook runs
+            try {
+              const liveRes = await github.graphql(`
+                query($issueNodeId: ID!) {
+                  node(id: $issueNodeId) {
+                    ... on Issue {
+                      state
+                      stateReason
+                      labels(first: 50) {
+                        nodes {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { issueNodeId });
+              if (liveRes && liveRes.node) {
+                if (liveRes.node.state) {
+                  issueState = liveRes.node.state.toLowerCase();
+                }
+                if (liveRes.node.stateReason !== undefined) {
+                  state_reason = liveRes.node.stateReason ? liveRes.node.stateReason.toLowerCase() : null;
+                }
+                if (liveRes.node.labels && liveRes.node.labels.nodes) {
+                  labels = liveRes.node.labels.nodes;
+                }
+              }
+            } catch (err) {
+              console.log("Could not fetch live issue state via GraphQL, falling back to payload:", err.message);
+            }
+
             console.log(`Event Action: ${context.payload.action}`);
             console.log(`Processing issue #${context.payload.issue.number} with labels:`, labels.map(l => l.name));
 
@@ -61,11 +100,11 @@ jobs:
             // later label edit on a completed issue that still carries e.g. status:planned
             // cannot reset its card.
             let statusOverrideVal = null;
-            if (context.payload.issue.state === 'closed') {
-              if (context.payload.issue.state_reason === 'completed' || !context.payload.issue.state_reason) {
+            if (issueState === 'closed') {
+              if (state_reason === 'completed' || !state_reason) {
                 statusOverrideVal = 'done';
               } else {
-                console.log(`Issue closed as not planned (${context.payload.issue.state_reason}). Skipping done status update.`);
+                console.log(`Issue closed as not planned (${state_reason}). Skipping done status update.`);
               }
             } else if (context.payload.action === 'reopened') {
               const statusLabel = kvLabels.find(l => l.key === 'status');

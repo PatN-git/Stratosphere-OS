@@ -3,9 +3,9 @@ type: reference
 title: Status Label Integration Contract
 description: The status:* label vocabulary is an integration contract with the GitHub Projects board sync Action; renaming a label breaks the board.
 generated:
-  by: Patrick Nennewitz
-  at: 2026-09-29
-version: "1.1.0"
+  by: 3d-implement-issue
+  at: 2026-11-09
+version: "1.2.0"
 ---
 
 # Status Label Integration Contract
@@ -35,6 +35,9 @@ Lifecycle order: `needs_spec → planned → in progress → in review → done`
 
 - An issue carries exactly one `status:*` label (Single Status Invariant, `references/label-taxonomy.md`). The Action does not strip stale labels: with two, the last one in the payload wins.
 - An issue that is closed as completed is `done` on **every** event, not just the `closed` one, regardless of its label — so a later label edit cannot reset its card. Still, set `status:done` when closing (`closed ≡ status:done`) so labels and the board agree. Closing as *not planned* is not forced to `done`. Reopening restores the issue's `status:*` label, or `planned` if it has none.
+- The Action serializes execution per issue using a workflow-level `concurrency` group (`group: sync-labels-to-project-${{ github.event.issue.number }}`, `cancel-in-progress: false`), ensuring rapid consecutive webhook events process in sequence without race conditions.
+- To prevent stale status regressions from out-of-order webhook delivery (such as an `unlabeled` event completing after an issue is already closed or moved to `in review`), the Action queries the live issue node (`node(id: $issueNodeId) { ... on Issue { state stateReason labels } }`) via GraphQL, falling back to the webhook payload snapshot only if GraphQL fails.
+- Project V2's built-in workflow #5 ("Pull request linked to issue") MUST be disabled on the project board. Otherwise, linking a PR (`Closes #n.`) automatically moves linked issues to `in progress`, overwriting `done` or `in review` status without triggering an `issues` webhook event to recover the card.
 - Issues with any `concept:*` label are excluded from the board.
 - Other `key:value` labels (`type`, `size`, `priority`, …) only sync if the board has a single-select field of that name. Board #2 has none today, so they are skipped.
 
@@ -47,3 +50,5 @@ Lifecycle order: `needs_spec → planned → in progress → in review → done`
 ## Setup (per repository)
 
 The workflow reads `PROJECT_TOKEN` (secret: a classic personal access token with the `project` scope — the default `GITHUB_TOKEN` cannot write Projects v2) and the variables `PROJECT_OWNER`, `PROJECT_OWNER_TYPE` (`user` or `org`; the default is `org`), `PROJECT_NUMBER` and optionally `DRY_RUN=true`. The workflow file is a byte-identical copy of `src/github/sync-labels-to-project.yml`, which is what `stratosphere-setup` installs into consumer projects.
+
+**Project V2 Built-in Workflows Configuration:** In GitHub Projects board settings (`...` → **Workflows**), ensure built-in workflow #5 (**"Pull request linked to issue"**) is **disabled** (`Off`). Leaving it enabled allows GitHub to regress completed or in-review issues back to `in progress` upon PR linking.
