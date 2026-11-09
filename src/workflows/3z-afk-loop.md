@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.10.0"
-timestamp: 2026-11-06
+version: "1.11.0"
+timestamp: 2026-11-09
 ---
 
 # AFK END-TO-END LOOP
@@ -65,7 +65,7 @@ _Done when:_ subagent returns valid JSON and git status is clean. Then the Orche
    > Keep the auditor independent (fresh context) and give it the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (inline diff, ACs, named tests; no broad re-reads). When this slice already has an earlier Step 2B return, also pass its `coverage_map`, its `gaps` (each with its stated `bar`) and the diff since the head that audit saw: the auditor applies that reference's frozen-gap delta rule. An attempt that skipped 2B left no audit; the first audit is a full one.
    > Run the Standards auditor with `auditor_model: small` (`references/auditor-model-tiers.md`); the Spec auditor stays on the default. Return the tier as `std_tier`.
    > Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate.
-   > Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false, \"counts\": {\"spec\": 0, \"std_hard\": 0, \"std_judg\": 0, \"watch\": 0}, \"gaps\": [], \"watch\": [], \"standards\": {\"hard\": [], \"judgment\": [], \"dismissed\": []}}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80; `counts.spec` = Spec gaps ≥ 80 this round; `gaps` = those gaps, `{ac, confidence, bar}` each, `bar` = the suggested fix that would close it; add `phase1`, `std_tier`, `input` per `references/pr-body-and-ship.md` § Audit findings only when known; omit, never empty)."
+   > Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false, \"counts\": {\"spec\": 0, \"std_hard\": 0, \"std_judg\": 0, \"watch\": 0}, \"gaps\": [], \"watch\": [], \"standards\": {\"hard\": [], \"judgment\": [], \"dismissed\": []}, \"phase1\": \"PASS|FAIL\", \"std_tier\": \"small|default\", \"input\": \"user|derived\"}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80; `counts.spec` = Spec gaps ≥ 80 this round; `gaps` = those gaps, `{ac, confidence, bar}` each, `bar` = the suggested fix that would close it; add `phase1`, `std_tier`, `input` per `references/pr-body-and-ship.md` § Audit findings only when known; omit, never empty)."
 
 _Done when:_ auditor returns valid JSON verdict.
 

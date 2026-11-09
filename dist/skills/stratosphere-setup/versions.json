@@ -146,9 +146,9 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "bac0b4abd0c5568caf91acf3b3833ebb26e4b854451bed951037fb73ff7e02c1",
-      "timestamp": "2026-11-06",
-      "version": "1.5.0"
+      "sha256": "d3fd83b46140da8f963d82bc832ac0cd1cd7e80685fd046c438ecdc867ee870f",
+      "timestamp": "2026-11-09",
+      "version": "1.6.0"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -521,9 +521,9 @@
       "version": "5.1.0"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "b76f004d43a2d8c6ca93a63d328c428785643e4f34e490f0cb5301bd99a463d9",
-      "timestamp": "2026-11-06",
-      "version": "1.10.0"
+      "sha256": "20c65c98260dc12fd099a758020958c6d0e4f4ee8c8f4c0809cc2abcba969d19",
+      "timestamp": "2026-11-09",
+      "version": "1.11.0"
     },
     "skills/3z-afk-loop/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
@@ -556,9 +556,9 @@
       "version": "1.0.0"
     },
     "skills/3z-afk-loop/references/pr-body-and-ship.md": {
-      "sha256": "e60296a78a1a7a0578d12b95add8281f7ecee2e599730a558b892b69e18da3ce",
-      "timestamp": "2026-10-22",
-      "version": "1.2.0"
+      "sha256": "1b375c5d0acb74358a624881ee60d77eb8359e40abd487c42d2afa36ab72af56",
+      "timestamp": "2026-11-09",
+      "version": "1.3.0"
     },
     "skills/3z-afk-loop/references/terminal-sync-invariant.md": {
       "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",
@@ -576,9 +576,9 @@
       "version": "5.1.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "9962dfb5e3f4c7f92f4f5aab2ef77e139bbfdb5d715efe6adb79dc0e1cd1a1eb",
-      "timestamp": "2026-11-06",
-      "version": "1.9.0"
+      "sha256": "2160dd5e9b66468ed1894342ebac10527d0574ed0c9cffc5e0a595f7bc95c446",
+      "timestamp": "2026-11-09",
+      "version": "1.10.0"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
@@ -636,9 +636,9 @@
       "version": "1.0.0"
     },
     "skills/4a-verify-and-ship/references/pr-body-and-ship.md": {
-      "sha256": "e60296a78a1a7a0578d12b95add8281f7ecee2e599730a558b892b69e18da3ce",
-      "timestamp": "2026-10-22",
-      "version": "1.2.0"
+      "sha256": "1b375c5d0acb74358a624881ee60d77eb8359e40abd487c42d2afa36ab72af56",
+      "timestamp": "2026-11-09",
+      "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/references/terminal-sync-invariant.md": {
       "sha256": "13c81e421fad0ce741b67d48fe849ec5783f979e5f5ac2bbdd662a7085298971",

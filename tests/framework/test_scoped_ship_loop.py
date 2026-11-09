@@ -164,7 +164,9 @@ def test_4a_with_no_pr_skips_the_ci_gate_instead_of_halting_on_it():
     step8 = _ship_step(8)
     assert re.search(r"no PR[^\n]*skip[^\n]*CI gate", step8), "a ship that made no PR must skip the CI gate (exit 2 on `--pr 0` is not a verdict)"
     scope = _line("references/ci-gate.md", "no PR (`gh` not connected, none made)")  # the §1 scope line
-    assert scope in read_src("references/ci-gate.md").split("## 2.")[0], "the scope line belongs to ci-gate.md §1"
+    ci_sec1 = read_src("references/ci-gate.md").split("## 2.")[0]
+    assert "## 1. Scope" in ci_sec1, "ci-gate.md §1 has exact ## 1. Scope heading"
+    assert scope in ci_sec1, "the scope line belongs to ci-gate.md §1"
     assert "skip and say so, never fail, never `status --pr 0`" in scope, "ci-gate.md §1 states the same scope: skip, say so, never `--pr 0`"
     assert re.search(r"no PR[^\n]*skip", _ship_step(7)), "the standalone CI-gate twin (step 7) skips with no PR too"
     assert "standalone issue or no PR" in _ship_step(9), "the draft rule skips with no PR"
@@ -201,9 +203,11 @@ def test_3z_step_2b_return_carries_the_gaps_and_their_bars_the_retry_passes():
     assert "`Gaps` entries" not in text, "no `Gaps` entries exist in the return contract"
     keep = _line("workflows/3z-afk-loop.md", "Findings (every Step 2B return)")
     assert "`coverage_map`" in keep and "`gaps`" in keep, "2C keeps what the delta re-audit is handed"
-    table = read_src("workflows/4a-verify-and-ship.md").split("### 1.", 1)[1].split("### 2.", 1)[0]
+    ship_4a = read_src("workflows/4a-verify-and-ship.md")
+    table = ship_4a.split("### 1.", 1)[1].split("### 2.", 1)[0]
     assert "| Gap / Security Risk / Bar |" in table, "the Phase 3 Spec table header names the Bar column"
     assert "**bar** = the fix that would close it" in table, "the Spec table row defines the bar the delta rule freezes"
+    assert "confidence ≥ 80" in ship_4a, "4a defines the confidence >= 80 rule"
 
 
 def test_3z_audit_rounds_counts_audits_not_attempts_and_the_delta_needs_a_prior_audit():
@@ -226,3 +230,67 @@ def test_ci_fix_commits_before_the_suite_record_and_none_means_no_checks_without
     assert fix.index("2. commit") < fix.index("3. `test_gate.py record --suite"), "the suite record needs the clean HEAD the commit makes"
     line = _line("references/ci-gate.md", "`none` = ")
     assert "without `--expect-checks`" in line and "`pending`" in line, "with --expect-checks, no checks after the grace is pending"
+
+
+def test_4a_defines_severity_bar_once():
+    ship_4a = read_src("workflows/4a-verify-and-ship.md")
+    table = ship_4a.split("### 1.", 1)[1].split("### 2.", 1)[0]
+    assert "| Gap / Security Risk / Bar |" in table, "the Phase 3 Spec table header names the Bar column"
+    assert "**bar** = the fix that would close it" in table, "the Spec table row defines the bar the delta rule freezes"
+    assert "confidence ≥ 80" in ship_4a, "4a defines the confidence >= 80 rule"
+
+
+def test_ci_gate_reference_keeps_fix_loop_capped_and_scoped():
+    ci_ref = read_src("references/ci-gate.md")
+    sec1 = ci_ref.split("## 2.")[0]
+    assert "## 1. Scope" in sec1, "ci-gate.md has ## 1. Scope heading"
+    assert "skip and say so, never fail, never `status --pr 0`" in sec1, "ci-gate.md §1 skips when no PR"
+    assert "--wait" in ci_ref and "pending" in ci_ref, "ci-gate.md covers --wait and pending"
+    assert "without `--expect-checks`" in sec1 or "without `--expect-checks`" in ci_ref, "ci-gate.md covers expect-checks"
+
+
+def test_0d_commit_rule_empty_findings_and_cross_file_promotion():
+    text = read_src("workflows/0d-nightly-consolidation.md")
+    # (a) D1 Commit Rule
+    assert re.search(r"default branch[^\n]*chore\(nightly\): consolidate <YYYY-MM-DD>", text), \
+        "0d commits locally on default branch with chore(nightly) message"
+    assert re.search(r"accepted · applied <sha>", text), \
+        "0d appends <sha> on default branch commit"
+    assert re.search(r"feature branch[^\n]*uncommitted[^\n]*accepted · applied", text), \
+        "0d leaves changes uncommitted on feature branch without <sha>"
+    # (b) Empty-findings path
+    assert re.search(r"(?:0 `R-n`|empty findings)[^\n]*(?:omit|No recommendations)[^\n]*skip[^\n]*halt", text, re.I), \
+        "0d skips Phase 4 decision halt when 0 findings"
+    # (c) Cross-file promotion
+    assert re.search(r"\[PATTERN\][^\n]*\[LAW\][^\n]*cross-file supersession", text), \
+        "0d specifies cross-file supersession for PATTERN -> LAW"
+    assert "[SUPERSEDED BY [[A-yyy]]]" in text or "[SUPERSEDED BY [[A-" in text, \
+        "0d specifies target tombstone tag for cross-file supersession"
+
+
+def test_4a_and_pr_body_local_close_partial_cleanup_and_unified_gh_wording():
+    ship = read_src("workflows/4a-verify-and-ship.md")
+    pr_body_ref = read_src("references/pr-body-and-ship.md")
+    # (a) --close with local backend adds no Closes lines
+    assert re.search(r"tracker: local[^\n]*adds no `Closes` lines", pr_body_ref, re.I) or \
+           re.search(r"local backend[^\n]*adds no `Closes` lines", ship, re.I), \
+        "local backend adds no Closes lines on --close"
+    # (b) PARTIAL definition in status vocabulary
+    assert re.search(r"PARTIAL[^\n]*PRD §8[^\n]*later open slice", ship), \
+        "4a defines PARTIAL as a PRD §8 item owned by a later open slice"
+    # (c) .tmp/4a-pr-body-* cleanup on every outcome including no PR
+    assert re.search(r"\.tmp/4a-pr-body[^\n]*every outcome[^\n]*no PR", ship, re.I), \
+        "4a deletes .tmp/4a-pr-body on every outcome including no PR"
+    # (d) Unified when gh is connected wording
+    assert "when `gh` is connected (otherwise stay local with no PR)" in ship, \
+        "4a standardizes when gh is connected wording"
+    # (e) -m integration checklist line
+    assert re.search(r"-m integration[^\n]*harness/shim", ship), \
+        "4a mentions running -m integration when integration tests are touched or in harness/shim ship gate"
+
+
+def test_3z_step_2b_template_includes_std_tier_phase1_input():
+    ret = _line("workflows/3z-afk-loop.md", "Return JSON:", "verdict")
+    assert r'\"phase1\"' in ret and r'\"std_tier\"' in ret and r'\"input\"' in ret, \
+        "3z Step 2B Return JSON template must include phase1, std_tier, and input"
+
