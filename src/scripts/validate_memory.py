@@ -96,6 +96,8 @@ def find_id_gaps(definitions):
     return out
 
 def apply_autofix(memory_dir, file_name, line_num, cid):
+    if file_name == 'GLOSSARY.md':
+        return False
     fpath = Path(memory_dir) / file_name
     if not fpath.exists():
         return False
@@ -605,8 +607,11 @@ def main():
 
     # 4. Bidirectional Consistency (Warning only)
     for cid, rid in directed_links:
-        # Reciprocity is checked ONLY for memory-to-memory links (L/A/DR/G <-> L/A/DR/G)
-        if not (any(cid.startswith(p) for p in ['L-', 'A-', 'DR-', 'G-']) and any(rid.startswith(p) for p in ['L-', 'A-', 'DR-', 'G-'])):
+        # Reciprocity is checked ONLY for memory-to-memory links (L/A/DR <-> L/A/DR).
+        # Glossary entries carry only Avoid:/Source: and are exempt from reciprocal Refs:.
+        if cid.startswith('G-') or rid.startswith('G-'):
+            continue
+        if not (any(cid.startswith(p) for p in ['L-', 'A-', 'DR-']) and any(rid.startswith(p) for p in ['L-', 'A-', 'DR-'])):
             continue
             
         c_info = definitions.get(cid)
