@@ -89,6 +89,41 @@ def test_constitution_has_no_stray_backtick_line(rel):
     assert text.endswith("\n"), f"{rel} must end with a newline"
 
 
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_verification_mandates_targeted_execution(rel):
+    text = read(rel)
+    bullet = next(l for l in text.splitlines() if l.startswith("- **Verification:**"))
+    assert "targeted" in bullet.lower()
+    assert "touched file" in bullet.lower() or "seam" in bullet.lower()
+    assert "4a" in bullet
+    assert "test_gate.py record --suite" in bullet
+    assert "CI" in bullet
+
+
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_documentation_artifact_exception_mentions_0d(rel):
+    text = read(rel)
+    bullet = next(l for l in text.splitlines() if l.startswith("- **Documentation-artifact exception:**"))
+    assert "0d" in bullet
+    assert "default branch" in bullet
+    assert "never pushes" in bullet
+
+
+def test_pytest_ini_addopts_contains_n_auto():
+    text = (REPO_ROOT / "pytest.ini").read_text(encoding="utf-8")
+    addopts_line = next(l for l in text.splitlines() if l.strip().startswith("addopts"))
+    assert "-n auto" in addopts_line
+
+
+def test_auditor_model_tiers_documents_antigravity_model_enum():
+    text = (REPO_ROOT / "src" / "references" / "auditor-model-tiers.md").read_text(encoding="utf-8")
+    for val in ("inherit", "flash_lite", "flash", "pro"):
+        assert val in text
+    assert "invoke_subagent" in text
+    assert "Model" in text
+    assert 'version: "1.1.0"' in text
+
+
 
 
 

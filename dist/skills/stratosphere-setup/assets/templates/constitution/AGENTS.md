@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.5.1"
-timestamp: 2026-10-27
+version: "3.6.0"
+timestamp: 2026-11-09
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -29,25 +29,25 @@ timestamp: 2026-10-27
 - **Intermediates:** Store all temporary files, scratch logs, scraped data, and scratch scripts in `.tmp/` (ephemeral, regeneratable). Never inline multi-line or quote-heavy code or file content in a shell command (`python -c`, heredocs): write it with the file-write tool, code to `.tmp/`.
 
 ## 4. Version Control
-- **Granularity:** one branch + one PR per SHIP UNIT: an epic slice's release `vX.Y` (milestone `vX.Y.Z`), else its parent epic; a standalone issue is itself. Every slice of the unit commits onto that branch; its one PR accumulates them (several epics and sprints per release). Resolve with `pr_body.py unit`.
+- **Granularity:** one branch + one PR per SHIP UNIT: an epic slice's release `vX.Y` (milestone `vX.Y.Z`), else parent epic; standalone issue is itself. Every slice commits onto that branch; its single PR accumulates them. Resolve with `pr_body.py unit`.
 - **Isolation:** plain git branches (single working dir); worktrees allowed, not required.
-- **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone issue); `<type>` from the PARENT epic's `type:` label (the slice's if standalone). An in-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. An epic's slice needs a release milestone (3d halts without one).
-- **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from the SLICE's `type:` label.
-- **main/master:** never a work target for code. It is only a base to branch from and a merge target.
-- **Who does what:** 3d is the ONLY creator of branches and the owner of incremental commits. 0a only restores the chosen task's existing branch, else stays put. 4a verifies, pushes, and opens/updates the single unit PR; it never creates the first commit and never merges.
+- **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone); `<type>` from PARENT epic's `type:` label (slice's if standalone). In-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. Slice needs a release milestone (3d halts without one).
+- **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from SLICE's `type:` label.
+- **main/master:** never a work target for code; only a base to branch from and a merge target.
+- **Who does what:** 3d is the ONLY branch creator and incremental commit owner. 0a only restores chosen task's existing branch, else stays put. 4a verifies, pushes, opens/updates the single unit PR; never creates first commit and never merges.
 - **Merge:** a human merges the unit PR after review (HITL outward action). Workflows never merge.
-- **Push timing:** commits stay local during 3d; the branch (and a local tracker's `tracker_branch`) is pushed only at 4a ship, behind the HITL confirmation.
-- **Git Protocol:** Push is an authorized ship action, never an automatic side effect. A workflow may push a branch and open/update its PR only when all hold: (1) the run has explicit user authorization; (2) the slice's audit and test suite pass; (3) it is a non-`main` feature branch; (4) `gh` is connected — otherwise stay local. No workflow ever merges — a human merges the PR after review.
-- **CI-fix exception:** after ship confirmation, 4a may commit/push at most 2 `fix(BT-n): ci` commits for a small `ci_gate.py` failure; a 3z-dispatched 3d implementer only commits, `ship-only` pushes; never `main`/merge. See `.agents/skills/4a-verify-and-ship/references/ci-gate.md`.
-- **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push it when `gh`/remote is connected. Exactly one document per run, **never code**, never swept drift; nothing else may push to the default branch. Absent `gh`/remote, commit locally and say so.
+- **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind HITL confirmation.
+- **Git Protocol:** Push is an authorized ship action, never automatic side effect. Workflow pushes and opens/updates PR only when: (1) explicit user authorization; (2) slice audit and test suite pass; (3) non-`main` feature branch; (4) `gh` connected — otherwise stay local. Workflows never merge.
+- **CI-fix exception:** after ship confirmation, 4a may commit/push at most 2 `fix(BT-n): ci` commits for small `ci_gate.py` failure; 3z-dispatched 3d implementer only commits, `ship-only` pushes; never `main`/merge.
+- **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push when `gh`/remote is connected; `0d` creates a local commit on default branch for report/indices/approved Quick fixes (never pushes). Exactly one doc per run (except 0d), **never code**, never swept drift; nothing else pushes to default branch. Absent `gh`/remote, commit locally.
  
 ## 5. Operating Principles
 - **Think Before Coding:** For non-trivial tasks, state assumptions, tradeoffs, and a short plan before coding.
-- **Simplicity First:** Write the minimum amount of code necessary to solve the problem. No speculative abstractions, dependencies and configurability. Keep the code readable but add comments only where the intent is unclear.
-- **Surgical Edits:** Change only what is required. Match existing style. Do not refactor unrelated or adjacent working code.
-- **Reuse Before Creation:** Check existing code, scripts, or skills before creating new ones, extend an existing when the fit is clean.
+- **Simplicity First:** Write the minimum code needed to solve the problem. No speculative abstractions, dependencies, or configurability. Keep code readable; add comments only where intent is unclear.
+- **Surgical Edits:** Change only what is required. Match existing style. Do not refactor unrelated working code.
+- **Reuse Before Creation:** Check existing code, scripts, or skills before creating new ones; extend existing when fit is clean.
 - **Goal-Driven Execution:** Define success in verifiable terms before implementing.
-- **Verification:** Do not consider a task complete until verified by test, small but relevant sample run, or output check. If direct verification is not possible, state what remains unverified.
+- **Verification:** Targeted in-session test execution only: scope tests to touched file/seam (e.g. `pytest path/to/test.py::test_fn`). Never run bare `pytest` or full test suite during active work; full suite runs belong strictly to ship gates (`4a` / `test_gate.py record --suite`) and CI. Complete only when verified by test, sample run, or output check; state unverified explicitly.
 - **No fabrication:** Never fabricate facts, data, or sources; mark unknowns explicitly.
  
 ## 6. When to Ask vs. Act
