@@ -114,8 +114,8 @@ def test_local_reads_are_issues_py_commands_and_candidates_is_one_command():
 @pytest.mark.parametrize("rel", WRITERS)
 def test_writers_cite_the_verbs_reference(rel):
     text = read_src(rel)
-    assert "references/tracker-verbs-github.md" in text
-    assert "references/tracker-verbs-local.md" in text
+    assert ".agents/scripts/tracker.py" in text
+    assert "references/tracker-verbs-github.md" not in text
 
 
 def _project(master):
@@ -127,8 +127,10 @@ def _project(master):
 def test_projected_tracker_verbs_in_sync_with_master():
     """Build-time projection: the committed projections equal a fresh projection of the master, whole file."""
     exp_gh, exp_local = _project(read_src("references/tracker-verbs.md"))
-    assert read_src("references/tracker-verbs-github.md") == exp_gh
-    assert read_src("references/tracker-verbs-local.md") == exp_local
+    assert not (SRC / "references" / "tracker-verbs-github.md").exists()
+    assert not (SRC / "references" / "tracker-verbs-local.md").exists()
+    assert len(exp_gh) > 100
+    assert len(exp_local) > 100
 
 
 def test_every_master_line_reaches_the_projections_it_is_tagged_for():
@@ -166,7 +168,7 @@ def test_the_front_matter_description_comes_from_the_master():
 
 
 def test_projected_local_commands_are_real_issues_py_subcommands_and_children_blockers_use_their_own():
-    local = read_src("references/tracker-verbs-local.md")
+    gh, local = _project(read_src("references/tracker-verbs.md"))
     sub = next(a for a in issues.parser()._actions if a.__class__.__name__ == "_SubParsersAction")
     named = set(re.findall(r"issues\.py ([a-z][a-z-]*)", local))
     assert len(named) >= 10 and named <= set(sub.choices), f"not issues.py subcommands: {named - set(sub.choices)}"
@@ -174,14 +176,13 @@ def test_projected_local_commands_are_real_issues_py_subcommands_and_children_bl
     for verb in ("children", "blockers"):
         line = next(l for l in reads.splitlines() if l.startswith(f"- `{verb}`:"))
         assert f"issues.py {verb} <id>" in line and "issues.py get" not in line, line
-    gh_reads = _section(read_src("references/tracker-verbs-github.md"), "Reads")
+    gh_reads = _section(gh, "Reads")
     assert "- `board`" not in gh_reads and re.search(r"^- `board`:.*issues\.py board .*--md", reads, re.M)
 
 
 def test_apply_moves_and_the_web_board_reach_only_the_local_projection():
     """The board page's payload is `apply_moves` input: the local file names both, the GitHub file no local command."""
-    gh = read_src("references/tracker-verbs-github.md")
-    local = read_src("references/tracker-verbs-local.md")
+    gh, local = _project(read_src("references/tracker-verbs.md"))
     assert "- `apply_moves`: n/a" in gh and "issues.py" not in next(l for l in gh.splitlines() if l.startswith("- `apply_moves`"))
     assert "board --web" not in gh and "apply-moves" not in gh
     line = next(l for l in local.splitlines() if l.startswith("- `apply_moves`"))
@@ -192,15 +193,14 @@ def test_apply_moves_and_the_web_board_reach_only_the_local_projection():
 
 
 def test_projected_verbs_contain_all_canonical_verbs():
-    gh_text = read_src("references/tracker-verbs-github.md")
-    local_text = read_src("references/tracker-verbs-local.md")
+    gh_text, local_text = _project(read_src("references/tracker-verbs.md"))
     for verb in VERBS:
         assert f"- `{verb}`:" in gh_text, f"verb `{verb}` missing from tracker-verbs-github.md"
         assert f"- `{verb}`:" in local_text, f"verb `{verb}` missing from tracker-verbs-local.md"
 
 
 def test_projected_local_verbs_commands_match():
-    local_text = read_src("references/tracker-verbs-local.md")
+    _, local_text = _project(read_src("references/tracker-verbs.md"))
     for verb, cmd in LOCAL_COMMAND.items():
         assert f"issues.py {cmd}" in local_text, f"{verb}: command issues.py {cmd} missing in local verbs"
 
@@ -253,5 +253,6 @@ def test_the_learnings_todo_sink_points_to_the_tracker():
 
 
 def test_the_relations_and_template_references_cite_the_new_references():
-    assert "references/tracker-verbs-github.md" in read_src("references/github-issue-relations.md")
+    assert not (SRC / "references" / "github-issue-relations.md").exists()
+    assert ".agents/scripts/tracker.py" in read_src("references/issue-templates.md")
     assert "references/label-taxonomy.md" in read_src("references/issue-templates.md")

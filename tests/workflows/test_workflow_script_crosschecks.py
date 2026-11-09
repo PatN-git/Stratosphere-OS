@@ -191,7 +191,7 @@ def test_build_ships_merge_risk_paths_into_4a():
 
 def test_build_ships_post_merge_sync_into_0b_with_its_references():
     shipped = build.closure_for((WF / "0b-stop-session.md").read_text(encoding="utf-8"), SRC / "references")
-    assert {"post-merge-sync.md", "terminal-sync-invariant.md", "github-issue-relations.md"} <= shipped,         "0b must cite references/post-merge-sync.md, which cites the two references it needs"
+    assert {"post-merge-sync.md", "terminal-sync-invariant.md"} <= shipped and "github-issue-relations.md" not in shipped,         "0b must cite references/post-merge-sync.md, which cites the two references it needs"
 
 
 def test_red_flags_cite_code_smell_baseline_in_the_form_the_build_fans_out():

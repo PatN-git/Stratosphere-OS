@@ -1,7 +1,7 @@
 ---
 description: The single write surface for issue state: the runtime halt rule, each write kind as a verb, the misfits and the read forms. Workflows name a verb; this file says how the backend does it.
-version: "1.0.0"
-timestamp: 2026-10-22
+version: "1.1.0"
+timestamp: 2026-11-09
 ---
 
 # Tracker verbs
@@ -27,9 +27,9 @@ The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcil
 | `set_milestone` | `gh issue edit <n> --milestone "vX.Y.Z"` | `issues.py set <id> --milestone vX.Y.Z` (`—` unsets) |
 | `ensure_milestone` | list with `gh api --paginate 'repos/{owner}/{repo}/milestones?state=open' --jq '.[].title'`, create with `gh api repos/{owner}/{repo}/milestones -f title=vX.Y.0` | nothing to create: the field value is the milestone |
 | `close_milestone` | `gh api -X PATCH repos/{owner}/{repo}/milestones/<n> -f state=closed`, only at 0 open issues | derived: no open issue carries it |
-| `set_parent` | `addSubIssue` (`removeSubIssue` to unlink), per `references/github-issue-relations.md` | `issues.py set <id> --parent <id>` (`—` unlinks) |
-| `add_blocker` | `addBlockedBy` per `references/github-issue-relations.md` | `issues.py set <id> --add-blocker <id>` |
-| `clear_blocker` | `removeBlockedBy` per `references/github-issue-relations.md`; `reconcile.py --edges` decides which edges clear | `issues.py set <id> --remove-blocker <id>` |
+| `set_parent` | `addSubIssue` (`removeSubIssue` to unlink), per `.agents/scripts/tracker.py` | `issues.py set <id> --parent <id>` (`—` unlinks) |
+| `add_blocker` | `addBlockedBy` per `.agents/scripts/tracker.py` | `issues.py set <id> --add-blocker <id>` |
+| `clear_blocker` | `removeBlockedBy` per `.agents/scripts/tracker.py`; `reconcile.py --edges` decides which edges clear | `issues.py set <id> --remove-blocker <id>` |
 | `close` | `gh issue close <n> --reason completed` (`--reason "not planned"` for a drop). One rule, both backends: the merge closes; a workflow never closes an unmerged epic. GitHub closes natively when a PR with `Closes #<n>` merges | `issues.py close <id> [--reason "not planned"]`: `done` plus date and reason, moved to `archive/`. The rule: the merge closes; a workflow never closes an unmerged epic. 0b runs `issues.py merged --close` (ancestry check against the default branch and the newest recorded tip SHA of the issue and of each child slice) |
 | `merged` | Server-side: GitHub PR merge closes linked issues (`Closes #<n>`) | `issues.py merged [--close]`: checks ancestry of shipped branches and tip SHAs against the default branch; prints `[MERGED <id>]` (and with `--close` marks done and archives) |
 | `reopen` | `gh issue reopen <n>`, then `set_status` | `issues.py reopen <id> [--status <s>]` |

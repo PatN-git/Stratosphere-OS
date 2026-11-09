@@ -254,7 +254,6 @@ def build_bundle():
     force_rmtree(BUNDLE)
     BUNDLE.mkdir(parents=True)
     ref_dir = SRC / "references"
-    project_tracker_verbs(ref_dir)
 
     # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():

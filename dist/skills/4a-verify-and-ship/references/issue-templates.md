@@ -1,12 +1,12 @@
 ---
 description: Canonical templates for StratOS backlog issues (Spike for parked, high-uncertainty, or discovery items, Build slice for normal vertical slices).
-version: "1.1.1"
-timestamp: 2026-10-13
+version: "1.2.0"
+timestamp: 2026-11-09
 ---
 
 # Issue Templates
 
-Writes use the tracker verbs (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)); labels, statuses and milestones follow `references/label-taxonomy.md`.
+Writes use the tracker verbs (`.agents/scripts/tracker.py`); labels, statuses and milestones follow `references/label-taxonomy.md`.
 
 ## SPIKE (Template A)
 *Use for: parked, high-uncertainty, or discovery items. Label `status:needs_spec` plus `type:`, `mode:`, `tier:slice`, `size:medium`. Sprintable at the medium weight (3h), not buildable. Close on Exit Criteria; mint follow-up Build slices via `/3b-create-issue`.*

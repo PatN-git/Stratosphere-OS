@@ -40,7 +40,7 @@ def test_stage1_frontmatter_version_bumps():
     for rel_path, expected_v in [
         ("workflows/1a-research.md", "1.0.10"),
         ("workflows/1b-concept-framing.md", "1.5.1"),
-        ("workflows/1c-concept-map.md", "1.4.1"),
+        ("workflows/1c-concept-map.md", "1.5.0"),
         ("references/concept-map-template.md", "2.1.1"),
     ]:
         content = read_src(rel_path)

@@ -1,7 +1,7 @@
 ---
 description: Terminal sync invariant for workflows with a Publish/Commit & Sync phase (4a, 3b, 3c, 3a, 0b). Closes the completion-bias gap where one write silently drops. Gate: `.agents/scripts/reconcile.py`.
-version: "2.0.0"
-timestamp: 2026-10-27
+version: "2.1.0"
+timestamp: 2026-11-09
 ---
 
 # Terminal Sync Invariant
@@ -24,6 +24,6 @@ python .agents/scripts/reconcile.py --ids BT-<padded>[,...] [--pr-id BT-<padded>
 - Output: `[MIRROR-OK ...]` or `[MIRROR-DRIFT BT-<n>: <field> expect=<x> gh=<y>]`. Non-zero exit: **HALT, do not close or ship**; re-apply missing write and re-run (max 3 retries). Exit 3 (`[GH-UNAVAILABLE]`) halts likewise: GitHub mode never falls back to local.
 
 ## Boundaries
-- **Never writes the tracker store.** `reconcile.py` only reads; fixes are tracker-verbs (`references/tracker-verbs-github.md`, local: `references/tracker-verbs-local.md`) writes performed by the workflow.
+- **Never writes the tracker store.** `reconcile.py` only reads; fixes are tracker-verbs (`.agents/scripts/tracker.py`) writes performed by the workflow.
 - **An edge is stale only when `reconcile.py --edges` says CLEAR.** A `[KEEP]` edge is kept until merge via 0b.
 - **Local backend parity:** `reconcile.py` evaluates `--expect`, `--expect-file`, and `--with-edges` against `store.rows()`, reporting identical `[MIRROR-OK ...]` or `[MIRROR-DRIFT ...]` verdicts. Whole-store `issues.py check` remains available as an additional integrity check.

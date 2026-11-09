@@ -2,8 +2,8 @@
 trigger: always_on
 title: Memory Protocol
 description: Single source of truth for how the agent reads, writes, and maintains the `.memory/` layer.
-timestamp: 2026-10-27
-version: "2.2.0"
+timestamp: 2026-11-09
+version: "2.3.0"
 ---
 
 # Memory Protocol
@@ -104,4 +104,4 @@ Enforced deterministically by `.agents/scripts/validate_memory.py`. Propose fixe
 - **What to remove:** When writing real active content into a memory file, remove ONLY the dummy active items in that section (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). Real entries are always superseded per §3 (moved to `## Superseded`), never deleted.
 
 ## 8. Backlog ID Minting (Late Binding)
-- Never guess a `BT-<n>`: bind it from `gh issue create` output (local backend: `BT-LOCAL-<slug>`). IDs are flat (`BT-007`); hierarchy is `Parent`. Verbs: `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`).
+- Never guess a `BT-<n>`: bind it from `gh issue create` output (local backend: `BT-LOCAL-<slug>`). IDs are flat (`BT-007`); hierarchy is `Parent`. Verbs: python .agents/scripts/tracker.py.

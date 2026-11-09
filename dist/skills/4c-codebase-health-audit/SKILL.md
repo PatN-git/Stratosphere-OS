@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-11-06
+version: "1.6.0"
+timestamp: 2026-11-09
 ---
 
 # Codebase Health Audit
@@ -55,7 +55,7 @@ Recent-change lens feeds recently-modified files as priority targets into all pa
    Filter to resolved scan targets. This is `priority_files`.
 
 ### 1.3 Backlog Collision Check
-Read the `wip` set (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). Skip directories where modules are `status:in progress`:
+Read the `wip` set (`.agents/scripts/tracker.py`). Skip directories where modules are `status:in progress`:
 ```
 [SKIP] <path> — BT-<padded> in progress. Findings omitted.
 ```

@@ -34,9 +34,9 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Branch name:** `<type>/<unit>-<slug>`; `<unit>` = `vX.Y` or `BT-<padded>` (epic or standalone); `<type>` from PARENT epic's `type:` label (slice's if standalone). In-flight `<type>/BT-<parentPadded>-<slug>` branch stays valid. Slice needs a release milestone (3d halts without one).
 - **Commit message:** `<type>(BT-<slicePadded>): <summary>`, `<type>` from SLICE's `type:` label.
 - **main/master:** never a work target for code; only a base to branch from and a merge target.
-- **Who does what:** 3d is the ONLY branch creator and incremental commit owner. 0a only restores chosen task's existing branch, else stays put. 4a verifies, pushes, opens/updates the single unit PR; never creates first commit and never merges.
+- **Who does what:** 3d is the ONLY branch creator and incremental commit owner. 0a only restores chosen task's existing branch, else stays put. 4a verifies, pushes, opens/updates the single unit PR; never creates first commit or merges.
 - **Merge:** a human merges the unit PR after review (HITL outward action). Workflows never merge.
-- **Push timing:** commits stay local during 3d; the branch is pushed only at 4a ship, behind HITL confirmation.
+- **Push timing:** commits stay local during 3d; the branch (and `tracker_branch`) is pushed only at 4a ship, behind HITL confirmation.
 - **Git Protocol:** Push is an authorized ship action, never automatic side effect. Workflow pushes and opens/updates PR only when: (1) explicit user authorization; (2) slice audit and test suite pass; (3) non-`main` feature branch; (4) `gh` connected — otherwise stay local. Workflows never merge.
 - **CI-fix exception:** after ship confirmation, 4a may commit/push at most 2 `fix(BT-n): ci` commits for small `ci_gate.py` failure; 3z-dispatched 3d implementer only commits, `ship-only` pushes; never `main`/merge.
 - **Documentation-artifact exception:** `2a` (PRD), `2b` (interface design) and `3a` (roadmap) commit their generated document to the **default branch** and push when `gh`/remote is connected; `0d` creates a local commit on default branch for report/indices/approved Quick fixes (never pushes). Exactly one doc per run (except 0d), **never code**, never swept drift; nothing else pushes to default branch. Absent `gh`/remote, commit locally.

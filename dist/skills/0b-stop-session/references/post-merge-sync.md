@@ -1,19 +1,19 @@
 ---
 description: Merge-time tracker bookkeeping for 0b step 1: done detection, unblocking dependents, parent epic and release, abandoned feature PR, post-merge follow-ups. Read only when the 0b gate fires.
-version: "1.1.0"
-timestamp: 2026-10-22
+version: "1.2.0"
+timestamp: 2026-11-09
 ---
 
 # Post-merge sync
 
-Verbs (`set_status`, `close`, `reopen`, `clear_blocker`, `create`) and the backend rule are in `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`); local-only steps are marked.
+Verbs (`set_status`, `close`, `reopen`, `clear_blocker`, `create`) and the backend rule are in `.agents/scripts/tracker.py`; local-only steps are marked.
 
 - **Done detection (no forcing):** an epic or standalone issue is `done` only once its PR has **merged** and the issue auto-closed. A child slice is already `done` + closed at 4a ship.
   - For each epic/standalone issue **merged** in the window of 0b's PR query (`closed:>=<Last Sync date>`; no date → its newest 30 closed PRs): `set_status` `done` (the merge closed it).
     - github: the ids come from the PR query 0b ran.
     - local: `git fetch -q origin` first (non-fatal: ignore a failure; the merge check is git ancestry against `origin/HEAD`), then run `python .agents/scripts/issues.py merged --close` (git-ancestry merge detection: the newest recorded tip SHA of the issue and of each child slice, else the shipped branches). With a PR host, also read the `features:` list of each merged PR's `stratos-pr` block (`gh pr view <pr> --json body`; read once, the follow-ups step reuses it) and `close` each.
   - Then clear the edges that waited on it:
-    - github: `python .agents/scripts/reconcile.py --ids <merged ids> --edges dependents`, `<merged ids>` = every id in the merged PRs' `closingIssuesReferences`, child slices included (a slice edge such as S ← A1 clears only at merge). Clear every `[CLEAR]` edge by running its `cmd:` (`clear_blocker`, `removeBlockedBy` per `references/github-issue-relations.md`); leave `[KEEP]`.
+    - github: `python .agents/scripts/reconcile.py --ids <merged ids> --edges dependents`, `<merged ids>` = every id in the merged PRs' `closingIssuesReferences`, child slices included (a slice edge such as S ← A1 clears only at merge). Clear every `[CLEAR]` edge by running its `cmd:` (`clear_blocker`, `removeBlockedBy` per `.agents/scripts/tracker.py`); leave `[KEEP]`.
     - local: after the fetch above, `python .agents/scripts/reconcile.py --edges dependents --all-open`; clear every `[CLEAR]` edge by running its `cmd:`, leave `[KEEP]`.
     - Offline → every edge is KEEP; say so in the handoff `Blockers` line.
   - **Gate** (`references/terminal-sync-invariant.md`), over the merged issues and every dependent cleared:

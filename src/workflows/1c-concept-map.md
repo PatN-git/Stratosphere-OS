@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.4.1"
-timestamp: 2026-11-06
+version: "1.5.0"
+timestamp: 2026-11-09
 ---
 
 # Concept Map Workflow
@@ -21,7 +21,7 @@ timestamp: 2026-11-06
 ## Phase 0: Resume & Route
 
 1. **Hydrate:** Run the `load-memory` skill to restore session context (read-only).
-2. **Discover Open Maps:** `list` the open `concept:map` issues (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
+2. **Discover Open Maps:** `list` the open `concept:map` issues (`.agents/scripts/tracker.py`).
 3. **Map Selection:** Present open maps. Resume existing map (proceed to Phase 2: Work) or proceed to Phase 1: Chart to start new map.
 4. **Fog-or-Flat:** If new map, assess complexity. Single-session and no dependencies → redirect `/1b-concept-framing`; else proceed to Phase 1: Chart.
 
@@ -31,10 +31,10 @@ timestamp: 2026-11-06
 
 1. **Destination:** Define destination and scope. Keep the user's opening words unedited for the map's `## Ask (verbatim)`.
 2. **Breadth-First Scan:** Scan for ambiguity and dependencies. If no fog, compile brief inline or hand off to `/1b-concept-framing`.
-3. **Register Map:** `create` the `concept:map` issue with the body from `references/concept-map-template.md`, `## Ask (verbatim)` filled with the user's words as given (`status:in progress`, milestone-exempt; `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). The tracker is the only record.
+3. **Register Map:** `create` the `concept:map` issue with the body from `references/concept-map-template.md`, `## Ask (verbatim)` filled with the user's words as given (`status:in progress`, milestone-exempt; `.agents/scripts/tracker.py`). The tracker is the only record.
 4. **Create-and-Wire Decision Tickets:** Create child issues:
    - Label `concept:<type>` (`research`, `grilling`, `prototype`, `task`). A `prototype` title names the decision it settles (no decision, no prototype).
-   - Link as sub-issues and wire blockers with `set_parent` / `add_blocker` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
+   - Link as sub-issues and wire blockers with `set_parent` / `add_blocker` (`.agents/scripts/tracker.py`).
 5. **Declarative Mermaid Generation (Single-Pass):** Generate a valid Mermaid `flowchart TD` directly in the map issue body under `## Dependency Map`. Emit the diagram in a single pass directly from the ticket dependency graph; eliminate verbose intermediate Graph-of-Thought (GoT) text scratchpads.
 6. **Halt Charting:** Do not resolve decisions during charting; hand off map to user.
 
@@ -45,7 +45,7 @@ timestamp: 2026-11-06
 1. **Calculate Frontier:** Query the tracker to compute the "frontier" (the set of open, unblocked, unassigned decision tickets):
    - Open tickets with no open dependencies/blockers and no assignee.
 2. **Select & Claim Ticket:** Present the frontier to the user. The user select (or the agent picks) one ticket.
-   - **Claim:** `claim` the ticket (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) to lock it.
+   - **Claim:** `claim` the ticket (`.agents/scripts/tracker.py`) to lock it.
 3. **Grilling Guidelines (G1-G3):**
    - **G1 (Recommend when grounded, open when not):** If you have a defensible basis for an answer (a codebase fact, prior art, research, or a clear best practice), give your recommended answer and the rationale, then ask the user to confirm, correct, or choose. If the answer is a genuine user decision you lack signal on, ask open-ended first and let the user frame it — then reflect a synthesis back to confirm. A recommendation is a proposal to react to, never a default that passes unexamined.
    - **G2 (Facts vs Decisions):** If a codebase exists, look up facts (constants, configurations, API schemas, file structures) natively first. Do NOT grill the user on facts that are discoverable in the codebase; only grill them on decisions (preferences, constraints, desired outcomes) — a decision is the user's — put each and wait; recommending a candidate (G1) does not make the decision — only the user's confirmation does. (Also guards an AFK agent against grilling itself.)

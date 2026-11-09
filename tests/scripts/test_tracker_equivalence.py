@@ -65,10 +65,13 @@ def normalize_stdout(text: str) -> str:
 
 
 def clean_store_data(store_json: dict) -> dict:
-    """Return state dict excluding execution invocation logs."""
+    """Return state dict excluding execution invocation logs and normalizing wall-clock timestamps."""
     data = copy.deepcopy(store_json)
     data.pop("invocations", None)
     data.pop("unknown", None)
+    for issue in data.get("issues", {}).values():
+        if isinstance(issue, dict) and issue.get("closedAt"):
+            issue["closedAt"] = "<CLOSED_AT>"
     return data
 
 

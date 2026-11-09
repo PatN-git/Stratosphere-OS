@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.8.0"
-timestamp: 2026-11-06
+version: "2.9.0"
+timestamp: 2026-11-09
 ---
 
 # Create issue
@@ -21,13 +21,13 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Intake & Scope
 1. **Intake:** Receive raw idea or MVI.
-2. **Parent epic + defensive promotion (idempotent guard):** Find the parent epic with `get` of the one named, else the open epics only (GitHub `gh issue list --label tier:epic --state open --json number,title,milestone`, no body; local `issues.py list --label tier:epic`), never a whole-backlog read. If it is still `status:needs_spec` (a 2b promotion was missed or 2b was skipped), promote it `needs_spec → planned` now: `set_status(<parent>, planned)` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). No-op if already `planned` or further; skip for standalone slices with no parent. Audit-sourced: skip.
+2. **Parent epic + defensive promotion (idempotent guard):** Find the parent epic with `get` of the one named, else the open epics only (GitHub `gh issue list --label tier:epic --state open --json number,title,milestone`, no body; local `issues.py list --label tier:epic`), never a whole-backlog read. If it is still `status:needs_spec` (a 2b promotion was missed or 2b was skipped), promote it `needs_spec → planned` now: `set_status(<parent>, planned)` (`.agents/scripts/tracker.py`). No-op if already `planned` or further; skip for standalone slices with no parent. Audit-sourced: skip.
 3. **Scope:**
    - PRD-sourced → load `docs/prds/BT-<padded>-<name>.md`, frozen design doc `docs/design/BT-<padded>-interface.md` and the discovery brief. Scope is PRD §1 (intent), §6, §7 (constraints), §8 + §10 and design blueprint; the brief supplies file-level facts, which the PRD keeps path-free.
      - Brief = the PRD frontmatter `discovery:` path (`—` = none); field absent → fallback: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5).
    - Audit-sourced → load the proposal and the report named on its line 1; scope is every F-xx in the report.
    - Else raw idea/MVI is scope (no-PRD path). **Brief lookup:** a brief path the user names wins; else 2a Phase 1 step 5's slug match (several → user selects; none → no brief). Route by its frontmatter: `linked-prd: BT-<n>` → restart Phase 1 PRD-sourced for that BT; else `ready-for-prd` → name `/2a-write-prd` and HALT; `dropped` → HALT, proceed only on user confirmation; `exit-spike` → a Spike. An idea listed in its Decoupled Follow-ups seeds from Established Facts only.
-4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** `children(<parent>)` (`gh issue view <parent> --json subIssues`, `.nodes`, per `references/github-issue-relations.md`; local: `issues.py children <parent>`). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
+4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** `children(<parent>)` (`gh issue view <parent> --json subIssues`, `.nodes`, per `.agents/scripts/tracker.py`; local: `issues.py children <parent>`). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
 
 ## Phase 2: Slice, Draft & Audit
 **Audit-sourced:** skip steps 1 and 3 (the proposal is the draft). In step 2, take Impact and Confidence from `references/audit-to-slices.md` §6 — the ODI fallback HALT does not apply; still prompt for Size, then write Size and the ICE Score (Phase 3 step 1 formula) into each slice's ICE Priorities in the proposal.
@@ -97,12 +97,12 @@ Run the `load-memory` skill to restore session context (read-only).
    - (b) **Mint order:** if drafts cite siblings, extract edges and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
    - (c) **Per slice, before each mint:** run the step (a) pattern on that slice's body without the exclusion — any hit (an unminted blocker included) → HALT. Substitution is the only permitted edit to an approved draft.
    - **Audit-sourced:** run (a)–(c) against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`; in (a) also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`), and HALT if `BT-<epic>` appears without a `## Epic` section. Only after (a) and the (b) order/cycle check pass, (b0): mint the epic (step 4) and replace every `BT-<epic>` in the proposal with the returned ID, then mint slices in the (b) order.
-4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
+4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`.agents/scripts/tracker.py`).
    - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-LOCAL-<slug>` (the title slug) and stores the body; GitHub is not touched.
    - **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs.
    - **Labels:** scope label (`scope:baseline` or `scope:differentiator`) + canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`; Spikes: always `size:medium`) + Priority (`priority:high/medium/low` from the step-2 bucket; Spikes: skip) + **Status: `status:planned` for a Build slice; `status:needs_spec` for a Spike.**
    - **Milestone:** `create` every slice with milestone `<vX.Y.0>` = the parent's (`get(<parent>)` milestone title; 3a created it, so it exists; parent has none → `—`), standalone → `v1.0.0` (audit-sourced: the §8 default). Only for those defaults, `ensure_milestone` lists the open milestones to confirm it is open (local: the field value is the milestone; nothing to list); absent, closed or `—` → create without a milestone, record `—` and surface it (never mint onto a closed release). Audit epic: see its bullet below.
-   - **Sub-issue Linkage:** If derived from a parent epic, `set_parent(<slice>, <epic>)` (native `gh api graphql` per `references/github-issue-relations.md`; no `gh-sub-issue` extension).
+   - **Sub-issue Linkage:** If derived from a parent epic, `set_parent(<slice>, <epic>)` (per `.agents/scripts/tracker.py`; no `gh-sub-issue` extension).
    - **Audit epic (audit-sourced, when the proposal has `## Epic`):** `create` it before any slice, with labels `tier:epic,type:maintenance,area:<x>,status:planned`, milestone `<vX.Y.0>` and body `.tmp/3b-issue-body.md`.
      Epic body per `references/audit-to-slices.md` §10. Audit slices then mint with the rules above, body = the proposal's `## Slice <N>` section verbatim: epic children link as sub-issues; `(standalone)` slices take no parent and no sub-issue link, and take the §8 milestone. Slice `type:bug` for Security/Correctness findings, else `type:maintenance`; scope label `scope:baseline`.
    - **Dependencies:** `add_blocker(<slice>, <blocker>)` per blocker (same reference); mirror "Blocked by: [IDs]" in the issue body.
