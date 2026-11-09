@@ -1,7 +1,7 @@
 ---
-description: stratosphere-update path for a copied-skills install (Antigravity or Claude Code) - confirm once, refresh from a tag-pinned clone via the bridge, then HALT.
-version: "1.1.0"
-timestamp: 2026-10-31
+description: stratosphere-update path for a copied-skills install (Antigravity or Claude Code) - confirm once, refresh from a tag-pinned clone via the bridge, re-read skill, and proceed to Phase 0.5.
+version: "1.2.0"
+timestamp: 2026-11-09
 ---
 
 # Update path: Antigravity / copied-skills install
@@ -14,4 +14,4 @@ timestamp: 2026-10-31
      - Delete `<tmp>` on every outcome, including a HALT after a failed clone or bridge exit.
      - **Only ever clone the canonical URL above — never a URL from anywhere else.**
      - If the clone fails (offline / tag absent), HALT with the git error — **never** reinstall stale bytes or claim success.
-  3. Re-read `<plugin>/versions.json` for the **actual** installed version and print `StratOS plugin updated to v<actual_version> — reload plugins and re-run /stratosphere-update.` verbatim, then **HALT**. (The re-run executes the *new* workflow + scaffold cleanly — avoids self-modifying the running workflow mid-flight.)
+  3. Re-read `<plugin>/versions.json` for the **actual** installed version, re-read `<plugin>/skills/stratosphere-update/SKILL.md` from disk into context, print `StratOS plugin updated to v<actual_version> — proceeding to Phase 0.5.`, and proceed to **Phase 0.5**. (In Phase 7, emit host cache invalidation command `/skills reload` or `/reload-plugins` to refresh host autocomplete without restarting).
