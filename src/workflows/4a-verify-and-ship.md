@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.9.0"
-timestamp: 2026-11-06
+version: "1.10.0"
+timestamp: 2026-11-09
 ---
 
 # Verify and Ship
@@ -68,24 +68,38 @@ Advisory findings (does not block shipping):
 ### 3. Watch (Non-blocking)
 The Spec auditor's 60-79 findings (omit when empty), numbered, one line each; an ambiguity the spec does not settle is one, marked as a user decision. Never a halt or a retry. The lead settles an item only on evidence from at most one targeted grep or read (a test or text that covers it → drop it); no further subagent. HITL shows what remains at the ship halt, then, if any remain, the line `Unsure about one? /0f-walk-me-through watch <n>`; 3z's `audit-only` return carries the items and the count. Record the count as `watch` per `references/pr-body-and-ship.md` § Audit findings.
 
-## Phase 4: Handoff
-Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt, scoped by the delta rule of `.agents/skills/4a-verify-and-ship/references/audit-inputs.md`). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
+## Phase 4: Unified Ship Verification Gate
+Consolidate audit findings report, test proof summary, PR metadata, and shipping authorization into a single closing confirmation prompt:
+
+```markdown
+### Unified Ship Verification Gate
+- **Audit Verdict:** [PASS] (0 Spec gaps, 0 hard Standards breaches)
+- **Test Proof:** Reused passing suite receipt via `pr_body.py suite` (SHA: <sha>; 0 duplicate full test runs)
+- **Branch & PR Target:** <branch> -> PR #<n> (<title>)
+- **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
+
+Confirm to push branch, open/update PR, and advance issue state?
+[Confirm & Ship] / [Abort]
+```
+
+Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed directly to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). If gaps remain unresolved and unauthorized → return to TDD loop in `3d` (no PR).
 
 ## Phase 5: Isolated Ship Gate
 
 > **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard, floor guard, and cryptographic test gate verification first.
-0. **Cryptographic test gate verification:** run `python .agents/scripts/test_gate.py verify --base <base>` (with `<base>` as resolved in Phase 2). Exit non-zero → HALT: `[TEST-GATE] Committed code differs from recorded passing test run; run tests and re-record before shipping`. Mandated before push and PR opening.
+0. **Cryptographic test gate verification & suite reuse:** run `python .agents/scripts/test_gate.py verify --base <base>` (with `<base>` as resolved in Phase 2). Exit non-zero → HALT: `[TEST-GATE] Committed code differs from recorded passing test run; run tests and re-record before shipping`. Mandated before push and PR opening.
+   - Verify suite receipt via `python .agents/scripts/pr_body.py suite`. If valid for current clean `HEAD`, bypass and skip duplicate full repository test sweeps in 4a entirely (0 duplicate full test runs). If missing or HEAD has moved, execute the suite once through `test_gate.py record --suite`.
 1. **Branch isolation:** Verify branch is NOT `main`/`master` AND `branch_ok` from `python .agents/scripts/pr_body.py unit --slice BT-<padded> --milestone <Milestone> --parent <Parent> --parent-milestone <parent's Milestone> --branch "$(git branch --show-current)"` (inputs as 3d step 1) is true. Else halt `[BRANCH-UNIT]`; HITL may confirm shipping on that branch (adoption: `features:` then lists the parent).
 2. **CSS check (UI surfaces only):** Skip when the feature has no UI surface — no `theme.tokens.css` in the app and no UI block in the interface design doc (`2b` Path C). State the skip. A backend-only project has no tokens to synchronize and must not be blocked on them. Otherwise run the design validator:
    ```bash
    python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --check <app-css-dir>/theme.tokens.css
    ```
    If command exits non-zero, **halt and fail ship**. Synchronize CSS tokens first.
-3. Halt for user confirmation to ship (unless pre-authorized).
+3. Pre-authorized via Phase 4 Unified Ship Gate (skip duplicate confirmation prompt).
 4. **Release bump + push:** if `scripts/release.py` exists and the branch changes shipped content (`src/` artifacts), run `python scripts/release.py -y` at every ship and commit the result as `release: prepare v<x>` only if its output changed — CI's bump-guard fails the PR otherwise. The clean-tree guard guarantees no uncommitted slice code; commit nothing here except the release bump — never sweep unrelated `.memory/`/`docs/` drift in. (4a never creates the first commit; 3d owns commits.) Push the branch only when `gh` is connected (AGENTS.md §4); otherwise stay local with **no PR** (say so in the step-11 line); local backend: also `python .agents/scripts/issues.py sync` (the tracker-branch push waits for step 9).
 5. **PR (one per ship unit):** none exists for the branch → `gh pr create` (if connected) as **draft** (`--draft`): the unit PR accumulates slices (of several epics for a release), un-mergeable until every epic in it completes (step 8 flips it ready). **Exception:** standalone issue → non-draft. PR exists → update its body; no duplicate PR per slice, no draft-state change here. Title: `<type>(vX.Y): release vX.Y` for a release unit, else `<type>(BT-<parentPadded>): <epic or issue name>`; never retitled. Body format, build flags, suite record, risk label and read-back: `references/pr-body-and-ship.md`.
-   - **Suite:** `python .agents/scripts/pr_body.py suite`; none → run the suite once and record it per the reference.
-   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> [--audit-file .tmp/4a-audit-BT-<padded>.json] --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--deviation "<deviation line>"]... [--post-merge "noticed: <line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
+   - **Suite:** `python .agents/scripts/pr_body.py suite` (or `--allow-scoped` for intermediate draft accumulation); verified valid for current HEAD: 0 duplicate test runs.
+   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> [--audit-file .tmp/4a-audit-BT-<padded>.json] --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--allow-scoped] [--deviation "<deviation line>"]... [--post-merge "noticed: <line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
    - **Body file:** pass `--body-file .tmp/4a-pr-body-BT-<padded>.md` on `gh pr create` / `gh pr edit`; once the call succeeds, delete `.tmp/4a-pr-body-BT-<padded>.md` and `.tmp/4a-prior-body.md` (ignore absent). Never commit them.
    - **Risk label, then closing-link read-back** (skipped with no PR): per the reference, after the call.
 6. **PR-link comment (bi-directional trace):** `gh issue comment <n> --body "Shipped in PR #<pr> — <pr-url>"`, where `<pr-url>` is the full `https://github.com/<owner>/<repo>/pull/<pr>` link. The terminal gate (step 9) accepts only a comment containing that `/pull/` URL (or, with no PR, `Shipped on <branch> @ <sha>`) — a bare `#<pr>` fails it — so posting exactly this is what makes the check pass. Its own step on purpose: folded into the status write below, it is the clause that drops. Skip the post when the issue already carries a comment with that URL (a `ship-only` re-run after a CI fix). Local backend: with a PR, the same text through `comment`; with no PR, `python .agents/scripts/issues.py comment <id> --body <shipped-comment>` (where `<shipped-comment>` is `"Shipped on <branch> @ $(git rev-parse HEAD)"`).

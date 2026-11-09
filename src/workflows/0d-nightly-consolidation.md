@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-11-06
+version: "1.6.0"
+timestamp: 2026-11-09
 ---
 
 # Nightly Consolidation
@@ -52,7 +52,7 @@ Run `python .agents/scripts/okf_view.py --rebuild-indices` and report its `N ind
 ## Phase 4: Recommend & Await Direction
 The report is the record; chat is a decision brief. Never restate report sections, evidence, or no-op audits in chat.
 1. Link the report. One status line for mechanical phases (e.g. `indices: 7 rebuilt · retention: ok · memory: nothing qualifies`).
-2. ≤5 recommendations, ranked by payoff (recurrence × cost of the failure), under two headings by route. Each `pending` line carried from Phase 2 takes a slot first and is shown as a binary (`do it` / `decline`). If forced items exceed 5, keep the carried `pending` first; list the overflow as a one-line count (`+N more in the report`):
+2. ≤5 recommendations, ranked by payoff (recurrence × cost of the failure), under two headings by route. Group Tier 1 routine cleanups (dead links, formatting, index syncing, avoid-list retirement) under a pre-selected batch recommendation `R-ALL-CLEAN` to allow single-click batch approval while strictly preserving `memory-protocol.md` §5 (no silent `.memory/` mutation; explicit approval via consolidated action). Each `pending` line carried from Phase 2 takes a slot first and is shown as a binary (`do it` / `decline`). If forced items exceed 5, keep the carried `pending` first; list the overflow as a one-line count (`+N more in the report`):
    - **Quick fix** — memory, docs or config; no code. Applied in this session on approval.
    - **New issue** — this project's code, tests or tooling. Recommend `/3b-create-issue`; 0d never creates it.
 
@@ -60,6 +60,8 @@ The report is the record; chat is a decision brief. Never restate report section
    - A rung-4 finding is not an `R-n`: record it under `## Framework feedback` per the ladder, plus a one-line notice in chat.
    - A finding routed to an existing law is not an `R-n` unless it recurs; then recommend a fix for the law not reaching agents.
 3. Write the `R-n` list as `## Recommendations` at the top of the report, and one `## Decisions` stub line per `R-n` before halting: `R-n · <action> · pending`. Rewrite each carried `pending` line in its original report to `carried → nightly-<date> R-m`. Evidence and verbatim output go below.
-4. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
+4. Halt. Single-click batch approval prompt for cleanups:
+   `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Decline]`
+   Or ask: *"Which recommendations should I implement? Reply with `R-ALL-CLEAN`, R-numbers, `all`, or `none`."*
 
 After the user answers, rewrite each stub line in place (never append a second one): `accepted · applied` (append ` <sha>` only when a commit was made), `accepted · deferred`, or `declined`. `none` → every line `declined`; an accepted New issue → `accepted · deferred`. Phase 2 of later nights reads it.

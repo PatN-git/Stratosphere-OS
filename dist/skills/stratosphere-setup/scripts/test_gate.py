@@ -7,6 +7,9 @@
                                              (exit 2), records like `record`, then writes .tmp/3d-suite-BT-<NNN>.json
                                              {head_sha, cmd, observed} only if the tree and HEAD are unchanged
                                              (else exit 3). Chain commands with `bash -c "a && b"`.
+  test_gate.py record --slice BT-<n> -- <scoped command...>
+                                             record slice-level receipt for intermediate slices (draft PR accumulation);
+                                             accepts scoped commands, writes .tmp/3d-suite-BT-<NNN>.json.
   test_gate.py check                         hook body: exit 1 if a staged code file differs from the record
   test_gate.py verify [--base <base>]        verify committed code between <base> (default merge-base or HEAD~1)
                                              and HEAD matches recorded test run
@@ -124,7 +127,7 @@ def observed_line(tail):
     return "; ".join([*counts, *(lines[-1:] if lines[-1:] != counts[-1:] else [])])[:300]
 
 
-def record_suite(issue, cmd, cwd):
+def record_suite(issue, cmd, cwd, allow_scoped=False):
     try:
         import pr_body  # ships beside this script; reads the same record at reuse time
     except ImportError:
@@ -135,7 +138,7 @@ def record_suite(issue, cmd, cwd):
               "reusable at a clean HEAD", file=sys.stderr)
         return 2
     is_scoped = getattr(pr_body, "is_scoped", None)  # an older pr_body still enforces this at read time
-    if is_scoped and is_scoped(cmd):
+    if not allow_scoped and is_scoped and is_scoped(cmd):
         print(f"test-gate: refusing a scoped command ({shlex.join(cmd)}): --suite records the whole suite",
               file=sys.stderr)
         return 2
@@ -283,10 +286,11 @@ def main(argv):
     cmd = argv[0] if argv else ""
     if cmd == "record":
         rest = argv[1:]
-        if rest[:1] == ["--suite"]:
+        if rest[:1] in (["--suite"], ["--slice"]):
+            flag = rest[0]
             if len(rest) < 4 or not SUITE_ID_RE.match(rest[1]) or rest[2] != "--":
-                sys.exit("usage: test_gate.py record --suite BT-<n> -- <whole-suite command...>")
-            return record_suite(rest[1], rest[3:], cwd)
+                sys.exit(f"usage: test_gate.py record {flag} BT-<n> -- <command...>")
+            return record_suite(rest[1], rest[3:], cwd, allow_scoped=(flag == "--slice"))
         return record(rest[1:] if rest[:1] == ["--"] else rest, cwd)
     if cmd == "verify":
         rest = argv[1:]

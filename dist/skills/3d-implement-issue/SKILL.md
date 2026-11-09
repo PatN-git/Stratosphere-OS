@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.9.0"
-timestamp: 2026-11-06
+version: "2.10.0"
+timestamp: 2026-11-09
 ---
 
 # Implement issue
@@ -44,7 +44,7 @@ Plan every slice before coding; small slices get a short plan. **Skip only** a p
 - **Mechanical plan check (agent-run):** derive the repo's test-file naming pattern(s) from `git ls-files`; no test files yet (greenfield) → skip the pattern match and say so. Every AC needs a planned test path matching one, or an explicit `[UNCOVERED] <AC>: <reason>` plan row (one line: manual-only or design blocker; Phase 3 surfaces it), and every planned test path must match one. Any other miss → fix the plan before Phase 1.
 
 ## Phase 1: Execution via Micro-TDD Skill
-Run `micro-tdd` for each change: its Route table picks Direct, Fast-Track A/B, or the bug loop; its Declare Seam takes the seams from the plan. Mark paths matching `references/merge-risk-paths.md` (plus the project's `## One-way paths`) as risky so they take its Risk route.
+Run `micro-tdd` for each change: strictly scope iterative `micro-tdd` to slice unit tests (`pytest tests/<domain>/test_<slice>.py`). Constraint: Never run repo-wide test suites during 3d feature iteration. Its Route table picks Direct, Fast-Track A/B, or the bug loop; its Declare Seam takes the seams from the plan. Mark paths matching `references/merge-risk-paths.md` (plus the project's `## One-way paths`) as risky so they take its Risk route.
 - **Silent Execution Mode:** Run RED/GREEN cycles silently. Ban verbal reflection on expected RED baselines.
 - **Gated Diagnostic Reflexion:** Attempt 1 (expected RED) → implement immediately. Attempt 2 (failed GREEN) → emit `[DIAGNOSTIC REFLEXION]` (Premise, Evidence, Hypothesis). Attempt 3 (failed GREEN) → trigger Stuck Protocol.
 - **Stuck Protocol:** `micro-tdd` returns `stuck` → halt; stash uncommitted edits (`git stash push -u -m "BT-<padded> stuck"`). HITL presents options; AFK returns `stuck` in 3z JSON.
@@ -67,7 +67,9 @@ Confirm slice against AC (inline self-check, not sub-agent). Ephemeral (no track
 3. Resolve each `[UNCOVERED]`: testable → return to the micro-tdd loop and cover it; genuinely uncoverable (e.g. design blocker) → surface it explicitly, never silently ship.
 4. Done only when every AC maps to a passing test, or an `[UNCOVERED]` item is explicitly surfaced, and step 6's full run is green.
 5. Compare the coverage map with the plan's AC → test list (skipped when Phase 0.5 was skipped). Name every deviation and write them to a `## Deviations` section of `.tmp/3d-plan-BT-<padded>.md`; none → `none`.
-6. First run `python .agents/scripts/floor_guard.py`: exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Run the full suite once at HEAD (the only full run in 3d) through `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (`<cmd>` = the project's test command; it writes `.tmp/3d-suite-BT-<padded>.json`); red → return to the micro-tdd loop, do not hand off.
+6. First run `python .agents/scripts/floor_guard.py`: exit 1 → fix the cause, committing first; a justified loosening needs a human-merged `## Floor exceptions` row, never one you wrote; exit 2 (could not run) is not a pass. Branch completion logic:
+   - **Intermediate Slices** (cumulative draft PR): record slice-level receipt for the scoped unit tests at clean HEAD through `python .agents/scripts/test_gate.py record --slice BT-<padded> -- <scoped-test-cmd>` (bypasses full repository suite run on intermediate slices).
+   - **Standalone & Final Epic Slices**: execute the full repository test suite once at clean HEAD on the cumulative branch via `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (`<cmd>` = the project's test command; it writes `.tmp/3d-suite-BT-<padded>.json`). Red → return to the micro-tdd loop, do not hand off.
 7. Done also requires a clean tree after the full run, so files the suite generated are checked (`git status --porcelain` — all work committed per Phase 2.3) under the `/4a-verify-and-ship` Phase 1 step 0 guard; it halts `[UNCOMMITTED]` otherwise.
 
 **Hand-off:** Run `/4a-verify-and-ship` to verify and open/update PR (HITL; under 3z return the JSON and stop).

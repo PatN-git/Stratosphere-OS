@@ -146,9 +146,9 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "bac0b4abd0c5568caf91acf3b3833ebb26e4b854451bed951037fb73ff7e02c1",
-      "timestamp": "2026-11-06",
-      "version": "1.5.0"
+      "sha256": "d1452eaf7a56b79907586de77c6b5750f65ecfb5b2b06db3cfaf9d6af6e05b96",
+      "timestamp": "2026-11-09",
+      "version": "1.6.0"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -346,9 +346,9 @@
       "version": "5.2.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "25ce4bbc5fc6f9e23e6031dc4cf9ede2780ecac8cc255c9180fef0d6a058ca00",
-      "timestamp": "2026-11-06",
-      "version": "1.4.0"
+      "sha256": "6e18d78d1aff7f0b4984f57cef5bea4cb86f4e8d787ceeb5e09a296950f5c4f0",
+      "timestamp": "2026-11-09",
+      "version": "1.5.0"
     },
     "skills/2c-reconcile-specs/references/confidence-scale.md": {
       "sha256": "27fac984867cf7fe175322d808f117fea0675e04c9dfd292d814495695c1c113",
@@ -476,9 +476,9 @@
       "version": "5.2.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "b3c903dcecd5098db2209b6fe6ec4224fcb1b6b0918ce25b8a29566641f2025d",
-      "timestamp": "2026-11-06",
-      "version": "2.9.0"
+      "sha256": "6f34618915fa129e620d4cd457629bef5e53d0b30f9e4c439edbe1ba435dacf3",
+      "timestamp": "2026-11-09",
+      "version": "2.10.0"
     },
     "skills/3d-implement-issue/references/ci-gate.md": {
       "sha256": "b37e3399a9f2f8be729bb845dec5415b0ce6f94c7e57175c0d8538f1c609635b",
@@ -576,9 +576,9 @@
       "version": "5.2.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "9962dfb5e3f4c7f92f4f5aab2ef77e139bbfdb5d715efe6adb79dc0e1cd1a1eb",
-      "timestamp": "2026-11-06",
-      "version": "1.9.0"
+      "sha256": "0b6cecbfff0154a7b6bfc6c4b70b402c42cf4ab305660afb91b6377c1146f92a",
+      "timestamp": "2026-11-09",
+      "version": "1.10.0"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
