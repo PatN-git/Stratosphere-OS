@@ -197,14 +197,17 @@ def test_milestones_list_with_paginate_and_query_create_and_include_issue_milest
     list_argv = ["api", "--paginate", "repos/{owner}/{repo}/milestones?state=open", "--jq", ".[].title"]
     assert run(list_argv, capsys) == (0, "v0.9.0", "")
     assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0
-    assert run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)[0] == 0  # not duplicated
+    code_dup, out_dup, err_dup = run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=v1.0.0"], capsys)
+    assert code_dup != 0 and "already_exists" in (out_dup + err_dup)
     assert run(list_argv, capsys)[1].splitlines() == ["v1.0.0", "v0.9.0"]
     assert run(["issue", "create", "--title", "x", "--milestone", "v1.0.0"], capsys)[0] == 0
 
 
 def test_label_create_then_list_in_text_json_and_jq(store, capsys):
     assert run(["label", "create", "area:fe", "--description", "front end"], capsys)[0] == 0
-    assert run(["label", "create", "area:fe"], capsys)[0] == 0  # idempotent
+    code_dup, _, err_dup = run(["label", "create", "area:fe"], capsys)
+    assert code_dup != 0 and "already exists" in err_dup
+    assert run(["label", "create", "area:fe", "--force"], capsys)[0] == 0  # with --force
     _, out, _ = run(["label", "list", "--json", "name"], capsys)
     assert json.loads(out) == [{"name": n} for n in (*seed.LABELS, "area:fe")]  # the seeded taxonomy, then the new one
     assert run(["label", "list", "--json", "name", "--jq", ".[].name"], capsys)[1].splitlines() == [*seed.LABELS, "area:fe"]
@@ -881,3 +884,282 @@ def test_ci_gate_status_with_no_workflows_rollup_is_empty(clone, store, tmp_path
     res = json.loads(r.stdout)
     assert res["verdict"] == "none"
     assert res["failing"] == []
+
+
+# --- Issue #245 gap tests (BT-245 / S3) --------------------------------------
+
+def test_pr_merge_transitions_state_and_autocloses_linked_issues(store, capsys):
+    """gh pr merge transitions PR state to MERGED, sets mergedAt, closedAt, mergeCommit,
+    and auto-closes issues linked via Closes #<n> with state Reason COMPLETED."""
+    run(["issue", "create", "--title", "issue to be closed"], capsys)
+    run(["pr", "create", "--title", "fix feature", "--head", "feat/merge-test",
+         "--body", "Resolves #1.\nSome description."], capsys)
+    
+    code, out, err = run(["pr", "merge", "2", "--squash", "--delete-branch"], capsys)
+    assert code == 0, err
+    assert "Merged" in out or "merged" in out.lower()
+
+    # Verify PR state
+    _, pr_out, _ = run(["pr", "view", "2", "--json", "state,mergedAt,closedAt,mergeCommit"], capsys)
+    pr_data = json.loads(pr_out)
+    assert pr_data["state"] == "MERGED"
+    assert pr_data["mergedAt"] is not None
+    assert pr_data["closedAt"] is not None
+    assert isinstance(pr_data["mergeCommit"], dict) and "oid" in pr_data["mergeCommit"]
+
+    # Verify linked issue was auto-closed
+    _, issue_out, _ = run(["issue", "view", "1", "--json", "state,stateReason,closedAt"], capsys)
+    issue_data = json.loads(issue_out)
+    assert issue_data["state"] == "CLOSED"
+    assert issue_data["stateReason"] == "COMPLETED"
+    assert issue_data["closedAt"] is not None
+
+
+def test_issue_and_pr_state_reason_and_closed_at_fields(store, capsys):
+    """Ensure stateReason and closedAt on issue close/reopen and PR merge/view."""
+    run(["issue", "create", "--title", "task a"], capsys)
+    # Default open issue has null stateReason and closedAt
+    _, out, _ = run(["issue", "view", "1", "--json", "stateReason,closedAt"], capsys)
+    assert json.loads(out) == {"stateReason": None, "closedAt": None}
+
+    # Close with not_planned reason
+    code, _, _ = run(["issue", "close", "1", "--reason", "not planned"], capsys)
+    assert code == 0
+    _, out, _ = run(["issue", "view", "1", "--json", "state,stateReason,closedAt"], capsys)
+    closed = json.loads(out)
+    assert closed["state"] == "CLOSED"
+    assert closed["stateReason"] == "NOT_PLANNED"
+    assert closed["closedAt"] is not None
+
+    # Reopen clears stateReason and closedAt
+    run(["issue", "reopen", "1"], capsys)
+    _, out, _ = run(["issue", "view", "1", "--json", "state,stateReason,closedAt"], capsys)
+    reopened = json.loads(out)
+    assert reopened["state"] == "OPEN"
+    assert reopened["stateReason"] is None
+    assert reopened["closedAt"] is None
+
+    # Close with default reason (completed)
+    run(["issue", "close", "1", "--reason", "completed"], capsys)
+    _, out, _ = run(["issue", "view", "1", "--json", "stateReason"], capsys)
+    assert json.loads(out)["stateReason"] == "COMPLETED"
+
+
+def test_complex_jq_expressions_and_eval_support(store, capsys):
+    """jq support for object selectors, array selectors, pipelines, last, and select filters."""
+    run(["issue", "create", "--title", "first issue", "--body", "alpha body"], capsys)
+    run(["issue", "create", "--title", "second issue", "--body", "beta body"], capsys)
+    run(["issue", "comment", "1", "--body", "<!-- stratos:resume -->\ncheckpoint one"], capsys)
+    run(["issue", "comment", "1", "--body", "regular comment"], capsys)
+
+    # .[].title on issue list
+    code, out, _ = run(["issue", "list", "--json", "title", "--jq", ".[].title"], capsys)
+    assert code == 0
+    assert out.splitlines() == ["first issue", "second issue"]
+
+    # .body on single issue view
+    code, out, _ = run(["issue", "view", "1", "--json", "body", "-q", ".body"], capsys)
+    assert code == 0
+    assert out == "alpha body"
+
+    # complex resume select
+    jq = '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'
+    code, out, _ = run(["issue", "view", "1", "--json", "comments", "--jq", jq], capsys)
+    assert code == 0
+    assert "checkpoint one" in out
+
+    # contains filter
+    jq_contains = '[.comments[] | select(.body | contains("regular"))] | last | .body'
+    code, out, _ = run(["issue", "view", "1", "--json", "comments", "--jq", jq_contains], capsys)
+    assert code == 0
+    assert out == "regular comment"
+
+    # array index .[0].number
+    code, out, _ = run(["issue", "list", "--json", "number", "--jq", ".[0].number"], capsys)
+    assert code == 0
+    assert out == "1"
+
+
+def test_graphql_reads_issue_pull_request_node(store, capsys):
+    """gh api graphql queries for repository.issue, repository.pullRequest, and node(id: $id)."""
+    run(["issue", "create", "--title", "Epic One", "--label", "tier:epic"], capsys)
+    run(["issue", "create", "--title", "Slice One", "--label", "tier:slice"], capsys)
+    run(_mutation("addSubIssue", gh.node_id(1), gh.node_id(2)), capsys)
+    run(["pr", "create", "--title", "PR One", "--body", "Closes #2."], capsys)
+
+    # 1. repository.issue read
+    q_issue = """
+    query($owner: String!, $repo: String!, $num: Int!) {
+      repository(owner: $owner, name: $repo) {
+        issue(number: $num) {
+          id
+          number
+          title
+          state
+          subIssues(first: 10) {
+            nodes {
+              number
+              title
+            }
+          }
+        }
+      }
+    }
+    """
+    code, out, err = run(["api", "graphql", "-F", "owner=test", "-F", "repo=test",
+                          "-F", "num=1", "-f", f"query={q_issue}"], capsys)
+    assert code == 0, err
+    data = json.loads(out)["data"]["repository"]["issue"]
+    assert data["number"] == 1
+    assert data["subIssues"]["nodes"][0]["number"] == 2
+
+    # 2. repository.pullRequest read
+    q_pr = """
+    query {
+      repository(owner: "test", name: "test") {
+        pullRequest(number: 3) {
+          number
+          closingIssuesReferences(first: 10) {
+            nodes {
+              number
+            }
+          }
+        }
+      }
+    }
+    """
+    code, out, err = run(["api", "graphql", "-f", f"query={q_pr}"], capsys)
+    assert code == 0, err
+    pr_data = json.loads(out)["data"]["repository"]["pullRequest"]
+    assert pr_data["number"] == 3
+    assert pr_data["closingIssuesReferences"]["nodes"][0]["number"] == 2
+
+    # 3. node(id: $id) read
+    q_node = """
+    query($id: ID!) {
+      node(id: $id) {
+        ... on Issue {
+          number
+          title
+        }
+      }
+    }
+    """
+    code, out, err = run(["api", "graphql", "-f", f"id={gh.node_id(1)}", "-f", f"query={q_node}"], capsys)
+    assert code == 0, err
+    node_data = json.loads(out)["data"]["node"]
+    assert node_data["number"] == 1
+    assert node_data["title"] == "Epic One"
+
+
+def test_pr_checks_command(store, capsys):
+    """gh pr checks returns check runs list or JSON from the store."""
+    run(["pr", "create", "--title", "pr with checks", "--head", "feat/checks"], capsys)
+
+    # Default checks (1 passing CheckRun)
+    code, out, _ = run(["pr", "checks", "1"], capsys)
+    assert code == 0
+    assert "test" in out
+
+    # --json output
+    code, out, _ = run(["pr", "checks", "1", "--json", "name,status,conclusion"], capsys)
+    assert code == 0
+    checks = json.loads(out)
+    assert checks == [{"name": "test", "status": "COMPLETED", "conclusion": "SUCCESS"}]
+
+    # Failing checks exit 1
+    raw = state(store)
+    raw["issues"]["1"]["statusCheckRollup"] = [
+        {"name": "lint", "status": "COMPLETED", "conclusion": "FAILURE", "workflowName": "CI", "detailsUrl": "url"}
+    ]
+    store.write_text(json.dumps(raw), encoding="utf-8")
+    code, out, _ = run(["pr", "checks", "1"], capsys)
+    assert code == 1
+    assert "lint" in out
+
+
+def test_workflow_run_view_command(store, capsys):
+    """gh run view displays workflow run status, logs, or JSON."""
+    raw = state(store)
+    raw["runs"] = {
+        "456": {
+            "id": 456,
+            "name": "Build and Test",
+            "status": "completed",
+            "conclusion": "failure",
+            "workflowName": "CI",
+            "log": "Step 1: passed\nStep 2: AssertionError in test_foo\n",
+            "log_failed": "AssertionError in test_foo\n"
+        }
+    }
+    store.write_text(json.dumps(raw), encoding="utf-8")
+
+    # view with --json
+    code, out, _ = run(["run", "view", "456", "--json", "id,status,conclusion"], capsys)
+    assert code == 0
+    data = json.loads(out)
+    assert data["id"] == 456
+    assert data["conclusion"] == "failure"
+
+    # view with --log-failed
+    code, out, _ = run(["run", "view", "456", "--log-failed"], capsys)
+    assert code == 0
+    assert "AssertionError in test_foo" in out
+
+    # view with --exit-status fails when run failed
+    code, _, _ = run(["run", "view", "456", "--exit-status"], capsys)
+    assert code != 0
+
+
+def test_project_list_and_item_list_commands(store, capsys):
+    """gh project list and gh project item-list return project data from store."""
+    raw = state(store)
+    raw["projects"] = [
+        {
+            "number": 1,
+            "id": "PVT_001",
+            "title": "Roadmap 2026",
+            "items": [
+                {"id": "PVTI_001", "content": {"number": 10, "title": "Task 10"}}
+            ]
+        }
+    ]
+    store.write_text(json.dumps(raw), encoding="utf-8")
+
+    # project list
+    code, out, _ = run(["project", "list", "--format", "json"], capsys)
+    assert code == 0
+    data = json.loads(out)
+    assert data["projects"][0]["number"] == 1
+    assert data["projects"][0]["title"] == "Roadmap 2026"
+
+    # project item-list
+    code, out, _ = run(["project", "item-list", "1", "--format", "json"], capsys)
+    assert code == 0
+    items_data = json.loads(out)
+    assert items_data["items"][0]["id"] == "PVTI_001"
+
+
+def test_response_shape_drifts_verification(store, capsys):
+    """Verify labels, milestone, parent, subIssues, blockedBy, closingIssuesReferences shapes."""
+    run(["issue", "create", "--title", "Parent Issue", "--label", "tier:epic", "--milestone", "v1.0.0"], capsys)
+    run(["issue", "create", "--title", "Child Issue", "--label", "tier:slice"], capsys)
+    run(_mutation("addSubIssue", gh.node_id(1), gh.node_id(2)), capsys)
+    run(["pr", "create", "--title", "Ship Slice", "--body", "Fixes #2."], capsys)
+
+    # Issue view shapes
+    _, out, _ = run(["issue", "view", "1", "--json", "labels,milestone,subIssues,parent"], capsys)
+    data = json.loads(out)
+    assert isinstance(data["labels"], list)
+    assert data["labels"][0]["name"] == "tier:epic"
+    assert data["milestone"] == {"title": "v1.0.0"}
+    assert isinstance(data["subIssues"]["nodes"], list)
+    assert data["subIssues"]["totalCount"] == 1
+    assert data["parent"] is None
+
+    # PR view shapes
+    _, pr_out, _ = run(["pr", "view", "3", "--json", "closingIssuesReferences"], capsys)
+    pr_data = json.loads(pr_out)
+    assert isinstance(pr_data["closingIssuesReferences"], list)
+    assert pr_data["closingIssuesReferences"] == [{"number": 2}]
+
