@@ -117,10 +117,27 @@ def check_suite(skills_dir: Path):
 
 
 def locate_plugin_bundle() -> Path | None:
+    # 1. Explicit override via environment variable
+    env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
+    if env_skills and Path(env_skills).is_dir():
+        return Path(env_skills)
+
+    # 2. Check repo ancestors for dist/skills (development & CI check runs)
+    this_file = Path(__file__).resolve()
+    for ancestor in [this_file.parent] + list(this_file.parents):
+        dist_skills = ancestor / "dist" / "skills"
+        if dist_skills.is_dir() and (dist_skills / "stratosphere-setup" / "SKILL.md").is_file():
+            return dist_skills
+
+    # 3. Bundled layout: <skills-dir>/stratosphere-setup/scripts/check_suite.py
+    if PLUGIN_ROOT.parent.is_dir() and (PLUGIN_ROOT.parent / "stratosphere-setup" / "SKILL.md").is_file():
+        return PLUGIN_ROOT.parent
+
+    # 4. Standard host plugin directories
     home = Path.home()
     candidates = [
-        PLUGIN_ROOT.parent,
         home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills",
+        home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills",
         home / ".gemini" / "config" / "skills",
     ]
     claude_cache = home / ".claude" / "plugins" / "cache"
@@ -145,7 +162,10 @@ def cmd_suite(args):
             lock_data = {}
         if lock_data.get("skill_delivery") == "plugin":
             # 1. Plugin bundle integrity check
-            plugin_skills = locate_plugin_bundle() or PLUGIN_ROOT.parent
+            plugin_skills = locate_plugin_bundle()
+            if not plugin_skills:
+                print("[SUITE INCOMPLETE] Plugin bundle not found in host cache, dist/skills, or STRATOSPHERE_PLUGIN_SKILLS.")
+                return 1
             missing, corrupt = check_suite(plugin_skills)
             if missing or corrupt:
                 print(f"[SUITE INCOMPLETE] Plugin bundle corrupt or incomplete at {plugin_skills}")
