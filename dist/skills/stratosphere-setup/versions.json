@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "d2101a832d46e0d2db1e82f9d8178046391a95644d332ae56cd5715438183a81",
-      "timestamp": "2026-11-09",
-      "version": "3.6.0"
+      "sha256": "a78b54084969f942148afdbca9da99c7320dab336bdb4c8b49bef7c1d896b80a",
+      "timestamp": "2026-11-10",
+      "version": "3.7.0"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
@@ -71,9 +71,9 @@
       "version": "1.4.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "be850e7a9ef1f4884eed644767df36aca57f819b77dae55bd8c4a531eb934166",
-      "timestamp": "2026-11-09",
-      "version": "1.8.0"
+      "sha256": "b99b723708d8cf3fd068948bca2e59849fd7f7bef53553311bdfa7ca80b60354",
+      "timestamp": "2026-11-10",
+      "version": "1.9.0"
     },
     "skills/0b-stop-session/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -106,9 +106,9 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "c78c3ae327bf69b5a1c7d89ad34e11779300f4a7b2086ebb4167144e715d2556",
-      "timestamp": "2026-11-09",
-      "version": "1.6.0"
+      "sha256": "cfc148a9f8c146e4fce79c350c800552b4e55fa5afb2b64f25cdd41af980038f",
+      "timestamp": "2026-11-10",
+      "version": "1.7.0"
     },
     "skills/0d-nightly-consolidation/references/environment-fix-ladder.md": {
       "sha256": "b3b3c3ac573a8534f64d2534351dae58f29f583930bd8596ca7e54704446791e",
@@ -266,9 +266,9 @@
       "version": "1.2.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "6eca75daf29570bc2b9f00efac86294ac87f1142c13b0f9cd01f79f6c89173fc",
-      "timestamp": "2026-11-09",
-      "version": "1.6.0"
+      "sha256": "a73effd958a7a04ce580262b794f54c4fd618219f58f7e3abdda3c20aedcf30f",
+      "timestamp": "2026-11-10",
+      "version": "1.7.0"
     },
     "skills/3a-version-planning/references/ROADMAP-template.md": {
       "sha256": "c31d2b18dd15d5104525372b461a6d365a19fb8a10f2a866df822e4fae69d0e9",
@@ -281,9 +281,9 @@
       "version": "2.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "25c94118bf9a86178fb9f0f4f20592498140b59e3fd0e70ac56ca6e55858452b",
-      "timestamp": "2026-11-09",
-      "version": "2.9.0"
+      "sha256": "5f0a0e43ce94bc6d5c731ee3e2739ea6b92a83e61c0db3640a41cb826f4c318a",
+      "timestamp": "2026-11-10",
+      "version": "2.10.0"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
@@ -311,9 +311,9 @@
       "version": "2.1.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "522c5d65ee9dddc875c8f77a5856a8aadcee855a4a5b0b02f68ec9640096ed00",
-      "timestamp": "2026-11-09",
-      "version": "2.8.0"
+      "sha256": "1f4a769d81a7aa465e01d0b9f2899be9c9dcb6ef4dfaf7c177af5a8f852edd2c",
+      "timestamp": "2026-11-10",
+      "version": "2.9.0"
     },
     "skills/3c-sprint-planning/references/issue-templates.md": {
       "sha256": "9cc67d7674f7b4d6f5bd067cdd814fea84345fe683bf122a5b45bf8df8299d9d",
@@ -381,9 +381,9 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "d5fcb195a8b58d6c690b3e7efb18feb08b546f29eb30bd3461f73dcdf33aa07d",
-      "timestamp": "2026-11-09",
-      "version": "1.10.0"
+      "sha256": "c5379b6d4e252a0ece83e3b1a3162229d7406eaf1eb0dea4ff57cd31db2a41cc",
+      "timestamp": "2026-11-10",
+      "version": "1.11.0"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
@@ -606,5 +606,5 @@
       "version": "1.2.0"
     }
   },
-  "plugin_version": "5.2.0"
+  "plugin_version": "5.3.0"
 }

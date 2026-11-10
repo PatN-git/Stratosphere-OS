@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.0"
-timestamp: 2026-11-09
+version: "1.7.0"
+timestamp: 2026-11-10
 ---
 
 # Version Planning
@@ -61,7 +61,10 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
    - **Sequencing-rule violation:** a differentiator sequenced ahead of an unmet baseline across features (scope from PRD §6 tags), or a growth-loop-enabling feature deferred past the core go-live release → `[WARN]`.
    - **MVP cut-line coherence:** is the current release independently shippable (no dangling dependency on a deferred feature)? → `[BLOCKER]` if not.
 2. **Resolve:** the main agent folds findings into the proposal — every `[BLOCKER]` must be resolved (re-place, re-classify, or explicitly justify and downgrade) before presentation.
-3. **Present and Halt:** show, per release, `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, the auditor's findings + how each was resolved, each proposed `[NEW-DEP]` edge, and each release proposed for close (its open milestones). Await user confirmation per item; never auto-commit an X/Y bump or a milestone close.
+3. **Present and Halt:**
+   - **Presentation:** show, per release: `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, auditor findings and resolution, proposed `[NEW-DEP]` edges, and closable releases (with open milestones).
+   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve Roadmap & Close Stated Releases", "Adjust Release Placements", "Abort"]`. Fallback for non-interactive hosts: output options in markdown and halt for user response.
+   - **Safety Invariant:** never auto-commit an X/Y bump or milestone close without user confirmation.
 
 ## Phase 3: Idempotent Re-run Guard
 - Do not renumber active releases (Z ≥ 1 in the tracker). Only place unassigned features or apply user moves; ask if conflict arises.

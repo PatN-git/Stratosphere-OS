@@ -44,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "5.2.0"
+VERSION = "5.3.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
@@ -252,7 +252,7 @@ def emit_skill(src_md, name, skills_dir, ref_dir):
 
 def build_bundle():
     force_rmtree(BUNDLE)
-    BUNDLE.mkdir(parents=True)
+    BUNDLE.mkdir(parents=True, exist_ok=True)
     ref_dir = SRC / "references"
 
     # 1. Execution skills (self-containment enforced below)
@@ -371,22 +371,54 @@ def write_marketplace():
     write_lf(mk_dir / "marketplace.json", json.dumps(marketplace, indent=2) + "\n")
 
 
+def acquire_build_lock():
+    lock_dir = ROOT / ".tmp"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_dir / "build.lock"
+    for _ in range(600):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            return fd, lock_path
+        except FileExistsError:
+            try:
+                if lock_path.exists() and (time.time() - lock_path.stat().st_mtime > 120):
+                    lock_path.unlink()
+            except Exception:
+                pass
+            time.sleep(0.1)
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
+    return fd, lock_path
+
+
+def release_build_lock(fd, lock_path):
+    try:
+        os.close(fd)
+        if lock_path.exists():
+            lock_path.unlink()
+    except Exception:
+        pass
+
+
 def main():
-    DIST.mkdir(exist_ok=True)
-    force_rmtree(DIST / "claude-code")  # retired per-host trees
-    force_rmtree(DIST / "antigravity")
-    build_bundle()
-    print(f"[built] {BUNDLE.relative_to(ROOT)}")
-    if (SRC / "assets").exists():
-        copytree(SRC / "assets", DIST / "assets")
-        print("[built] dist/assets")
-    write_plugin_manifest()
-    print("[built] dist/plugin.json")
-    if (ROOT / "README.md").is_file():
-        shutil.copy2(ROOT / "README.md", DIST / "README.md")
-        print("[built] dist/README.md")
-    write_marketplace()
-    print("[built] .claude-plugin/marketplace.json")
+    fd, lock_path = acquire_build_lock()
+    try:
+        DIST.mkdir(exist_ok=True)
+        force_rmtree(DIST / "claude-code")  # retired per-host trees
+        force_rmtree(DIST / "antigravity")
+        build_bundle()
+        print(f"[built] {BUNDLE.relative_to(ROOT)}")
+        if (SRC / "assets").exists():
+            copytree(SRC / "assets", DIST / "assets")
+            print("[built] dist/assets")
+        write_plugin_manifest()
+        print("[built] dist/plugin.json")
+        if (ROOT / "README.md").is_file():
+            shutil.copy2(ROOT / "README.md", DIST / "README.md")
+            print("[built] dist/README.md")
+        write_marketplace()
+        print("[built] .claude-plugin/marketplace.json")
+    finally:
+        release_build_lock(fd, lock_path)
 
 
 if __name__ == "__main__":

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.9.0"
-timestamp: 2026-11-09
+version: "2.10.0"
+timestamp: 2026-11-10
 ---
 
 # Create issue
@@ -90,12 +90,10 @@ Run the `load-memory` skill to restore session context (read-only).
    | Slice | Type | Inferred Impact | Conf | Size | Calculated ICE | Assigned Priority |
    |:---|:---|:---:|:---:|:---:|:---:|:---:|
    | BT-<padded> | feature | 1.0 (med) | 80% | med (2) | 0.40 | priority:medium |
-
-   [Approve & Mint via gh issue create]
-   To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`).
    ```
 
-   Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
+   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve & Mint Slices", "Adjust Metrics / Slices", "Abort"]`. To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`). Fallback for non-interactive hosts: output `[Approve & Mint via gh issue create]` and halt for user response.
+   - **Verification Checks:** confirm requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
 
 ## Phase 3: Implementation & Memory Sync
 1. **Calculate ICE Score (Spikes: skip):** `ICE = (Impact * Confidence) / Effort weight` (Confidence as decimal; Effort: small=1, medium=2, large=3).

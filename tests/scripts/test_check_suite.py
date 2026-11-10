@@ -586,3 +586,55 @@ def test_legacy_json_output_flags_stale_claude_cache(proj):
     assert any("1.0.0" in p for p in data.get("stale_cache", []))
     assert not any("1.1.0" in p for p in data.get("stale_cache", []))
 
+
+# --- delivery mode (plugin vs in-repo) -----------------------------------
+
+def test_suite_plugin_mode_succeeds_with_no_duplicates(tmp_path):
+    agents_dir = tmp_path / ".agents"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / ".stratosphere-lock.json").write_text(
+        json.dumps({"plugin_id": "stratosphere-os", "skill_delivery": "plugin", "artifacts": {}}),
+        encoding="utf-8"
+    )
+    skills_dir = agents_dir / "skills"
+    skills_dir.mkdir()
+    (skills_dir / ".gitkeep").write_text("", encoding="utf-8")
+
+    r = run("suite", "--project", tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "Delivery mode: plugin" in r.stdout
+
+
+def test_suite_plugin_mode_fails_with_duplicate_bundled_skills(tmp_path):
+    agents_dir = tmp_path / ".agents"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / ".stratosphere-lock.json").write_text(
+        json.dumps({"plugin_id": "stratosphere-os", "skill_delivery": "plugin", "artifacts": {}}),
+        encoding="utf-8"
+    )
+    dup = agents_dir / "skills" / "0a-start-session"
+    dup.mkdir(parents=True)
+    (dup / "SKILL.md").write_text("# dummy", encoding="utf-8")
+
+    r = run("suite", "--project", tmp_path)
+    assert r.returncode == 1
+    assert "DUPLICATE BUNDLED SKILLS DETECTED in plugin mode" in r.stdout
+    assert "0a-start-session" in r.stdout
+
+
+def test_suite_plugin_mode_allows_third_party_skills(tmp_path):
+    agents_dir = tmp_path / ".agents"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / ".stratosphere-lock.json").write_text(
+        json.dumps({"plugin_id": "stratosphere-os", "skill_delivery": "plugin", "artifacts": {}}),
+        encoding="utf-8"
+    )
+    third_party = agents_dir / "skills" / "supabase-custom"
+    third_party.mkdir(parents=True)
+    (third_party / "SKILL.md").write_text("# dummy third party", encoding="utf-8")
+
+    r = run("suite", "--project", tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "Delivery mode: plugin" in r.stdout
+
+

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.10.0"
-timestamp: 2026-11-09
+version: "1.11.0"
+timestamp: 2026-11-10
 ---
 
 # Verify and Ship
@@ -79,12 +79,10 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 - **Test Proof:** Reused passing suite receipt via `pr_body.py suite` (SHA: <sha>; 0 duplicate full test runs)
 - **Branch & PR Target:** <branch> -> PR #<n> (<title>)
 - **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
-
-Confirm to push branch, open/update PR, and advance issue state?
-[Confirm & Ship] / [Abort]
 ```
 
-Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed directly to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). If gaps remain unresolved and unauthorized → return to TDD loop in `3d` (no PR).
+- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. Fallback for non-interactive hosts: output options in markdown and halt for user response.
+- **Decision Routing:** on `Confirm & Ship` (or user approval over gaps), proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). On `Revise in 3d` or unresolved gaps without user approval → return to TDD loop in `3d` (no PR).
 
 ## Phase 5: Isolated Ship Gate
 

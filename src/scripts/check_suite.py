@@ -11,6 +11,7 @@ Exit 0 = clean, 1 = problems found (a non-fatal halt: the caller prints the repo
 Never invoked by 0a-start-session (zero-session-overhead invariant).
 """
 import argparse
+import glob
 import json
 import os
 import re
@@ -115,7 +116,79 @@ def check_suite(skills_dir: Path):
     return missing, corrupt
 
 
+def locate_plugin_bundle() -> Path | None:
+    # 1. Explicit override via environment variable
+    env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
+    if env_skills and Path(env_skills).is_dir():
+        return Path(env_skills)
+
+    # 2. Check repo ancestors for dist/skills (development & CI check runs)
+    this_file = Path(__file__).resolve()
+    for ancestor in [this_file.parent] + list(this_file.parents):
+        dist_skills = ancestor / "dist" / "skills"
+        if dist_skills.is_dir() and (dist_skills / "stratosphere-setup" / "SKILL.md").is_file():
+            return dist_skills
+
+    # 3. Bundled layout: <skills-dir>/stratosphere-setup/scripts/check_suite.py
+    if PLUGIN_ROOT.parent.is_dir() and (PLUGIN_ROOT.parent / "stratosphere-setup" / "SKILL.md").is_file():
+        return PLUGIN_ROOT.parent
+
+    # 4. Standard host plugin directories
+    home = Path.home()
+    candidates = [
+        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills",
+        home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills",
+        home / ".gemini" / "config" / "skills",
+    ]
+    claude_cache = home / ".claude" / "plugins" / "cache"
+    if claude_cache.is_dir():
+        for p in glob.glob(str(claude_cache / "**" / "skills"), recursive=True):
+            candidates.append(Path(p))
+    for c in candidates:
+        if c.is_dir() and (c / "stratosphere-setup" / "SKILL.md").is_file():
+            return c
+    return None
+
+
 def cmd_suite(args):
+    project = Path(getattr(args, "project", ".")).resolve()
+    lock_file = project / ".agents" / ".stratosphere-lock.json"
+
+    # If project lockfile specifies 'plugin' delivery mode and --skills-dir was not explicitly provided to override:
+    if not args.skills_dir and lock_file.exists():
+        try:
+            lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+        except Exception:
+            lock_data = {}
+        if lock_data.get("skill_delivery") == "plugin":
+            # 1. Plugin bundle integrity check
+            plugin_skills = locate_plugin_bundle()
+            if not plugin_skills:
+                print("[SUITE INCOMPLETE] Plugin bundle not found in host cache, dist/skills, or STRATOSPHERE_PLUGIN_SKILLS.")
+                return 1
+            missing, corrupt = check_suite(plugin_skills)
+            if missing or corrupt:
+                print(f"[SUITE INCOMPLETE] Plugin bundle corrupt or incomplete at {plugin_skills}")
+                if missing:
+                    print(f"Missing ({len(missing)}): " + ", ".join(missing))
+                for name, reasons in corrupt.items():
+                    print(f"Corrupt: {name} - " + "; ".join(reasons))
+                return 1
+
+            # 2. Assert zero duplicate bundled skills in .agents/skills/
+            in_repo_skills = project / ".agents" / "skills"
+            if in_repo_skills.is_dir():
+                bundled_names = set(LIFECYCLE_SKILLS) | set(EXECUTION_SKILLS)
+                duplicates = [d.name for d in in_repo_skills.iterdir() if d.is_dir() and d.name in bundled_names]
+                if duplicates:
+                    print(f"[DUPLICATE BUNDLED SKILLS DETECTED in plugin mode] {', '.join(sorted(duplicates))}")
+                    print("In plugin mode, bundled skills must not be copied into .agents/skills/ (saves prompt tokens).")
+                    print("Remediation: run 'python .agents/scripts/delivery.py --set-mode plugin' to prune duplicates.")
+                    return 1
+
+            print(f"[SUITE OK] Delivery mode: plugin. Plugin bundle intact ({len(LIFECYCLE_SKILLS)}/{len(LIFECYCLE_SKILLS)}) and zero duplicate bundled skills in .agents/skills/")
+            return 0
+
     skills_dir = Path(args.skills_dir) if args.skills_dir else PLUGIN_ROOT.parent
     missing, corrupt = check_suite(skills_dir)
     present = len(LIFECYCLE_SKILLS) - len(missing)
@@ -138,8 +211,18 @@ def system_pack(registry: Path):
 def host_skill_dirs(host: str, project: Path, home: Path):
     """Skill directories the running host actually reads. Claude Code does not read `.agents/skills/`."""
     if host == "claude":
-        return [project / ".claude" / "skills", home / ".claude" / "skills"]
-    return [project / ".agents" / "skills", home / ".agents" / "skills", home / ".gemini" / "config" / "skills"]
+        claude_cache = home / ".claude" / "plugins" / "cache"
+        dirs = [project / ".claude" / "skills", home / ".claude" / "skills"]
+        if claude_cache.is_dir():
+            for p in glob.glob(str(claude_cache / "**" / "skills"), recursive=True):
+                dirs.append(Path(p))
+        return dirs
+    return [
+        project / ".agents" / "skills",
+        home / ".agents" / "skills",
+        home / ".gemini" / "config" / "skills",
+        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills",
+    ]
 
 
 def cmd_visibility(args):
@@ -359,7 +442,7 @@ def main(argv=None):
     location = argparse.ArgumentParser(add_help=False)
     location.add_argument("--project", default=".")
     location.add_argument("--home", default="~")
-    p = sub.add_parser("suite")
+    p = sub.add_parser("suite", parents=[location])
     p.add_argument("--skills-dir", help="skills directory to check (default: the one holding this script's skill)")
     p.set_defaults(fn=cmd_suite)
     p = sub.add_parser("visibility", parents=[location])

@@ -1,13 +1,48 @@
 import json
+import os
 import re
 import sys
 import subprocess
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "scripts"))
 import _versioning
 
-root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+root = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
+
+def acquire_build_lock(repo_root):
+    lock_dir = repo_root / ".tmp"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_dir / "build.lock"
+    for _ in range(600):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            return fd, lock_path
+        except FileExistsError:
+            try:
+                if lock_path.exists() and (time.time() - lock_path.stat().st_mtime > 120):
+                    lock_path.unlink()
+            except Exception:
+                pass
+            time.sleep(0.1)
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
+    return fd, lock_path
+
+
+def release_build_lock(fd, lock_path):
+    try:
+        os.close(fd)
+        if lock_path.exists():
+            lock_path.unlink()
+    except Exception:
+        pass
+
+_build_lock_fd, _build_lock_path = acquire_build_lock(root)
+try:
+    _run_validation = True
+finally:
+    pass
 errs = []
 
 # List of JSON files to validate
@@ -373,6 +408,8 @@ for p in (root / BUNDLE).rglob("*"):
 n = len(list((root / BUNDLE).glob('*/SKILL.md')))
 print(f"{BUNDLE}: {n} skills")
 print("external skills:", len(json.loads((root / 'src/external-skills.json').read_text(encoding='utf-8'))['skills']))
+
+release_build_lock(_build_lock_fd, _build_lock_path)
 
 if errs:
     print("\nERRORS:")

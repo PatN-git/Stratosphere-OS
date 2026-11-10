@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.6.0"
-timestamp: 2026-11-09
+version: "3.7.0"
+timestamp: 2026-11-10
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -59,14 +59,14 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 ## 7. Self-Annealing & Learning
 - **The Loop:** When something fails: diagnose, fix, verify.
 - **Update Rules:** Update a Workflow or Skill only if the failure reveals a reusable constraint or a better standard workflow.
-- **Capture lessons:** When a durable lesson is discovered, record it according to the Memory Protocol.
-- **Handshake Protocol:** If the user indicates they are leaving or if the task goal has been met, the agent must proactively offer to save and close out the session using the correct workflow.
+- **Capture lessons:** Record durable lessons per the Memory Protocol.
+- **Handshake Protocol:** If the user is leaving or the task goal is met, offer to save and close out the session using the correct workflow.
  
 ## 8. Pointer Directory (Offloaded Logic)
-- **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine mode for trivial/cosmetic fixes; otherwise Standard Mode enhanced with Complex Mode for tradeoffs).
-- **Memory & State:** See `.agents/rules/memory-protocol.md` (Defines trust tags, syntax [[ID]] and the strict usage protocols for all memory files).
-- **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Defines frontmatter metadata contracts, type registries, and bundle structure constraints).
+- **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine for cosmetic fixes; Standard Mode with Complex for tradeoffs).
+- **Memory & State:** See `.agents/rules/memory-protocol.md` (Trust tags, [[ID]] syntax, memory usage protocols).
+- **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Metadata contracts, type registries, bundle constraints).
 - **Host activation.** One canonical body: this file. A host that does not load it by default gets a two-line pointer file (`CLAUDE.md`, `GEMINI.md`); never restate the rules there.
-  - *Skills:* if a named skill (e.g. `code-simplifier`) is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk (`.agents/skills/` or `.claude/skills/`, project or `~`) before calling it unavailable.
+  - *Skills:* if a named skill (e.g. `code-simplifier`) is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk (`.agents/skills/` or `.claude/skills/`, project or `~`) before calling it unavailable. In plugin mode, restore skills via `python .agents/scripts/delivery.py --restore-skills`.
 - **Subagent nesting.** Use the depth the host allows, ≤ 2 below the invoking session (leaves one level for an outer orchestrator). Every subagent step must also run inline. Subagents never commit, except a `3d` implementer dispatched by `3z` (the §4 single writer for code); auditors, drafters and scanners are read-only (scratch writes to `.tmp/` excepted). Prefer workspace `shared/inherit` for sequential work: worktree isolation may branch from the default branch and lack untracked deps (e.g. `node_modules`).
 - **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only: the host's own marker field enforces it where supported, otherwise the skill's `description` says so.

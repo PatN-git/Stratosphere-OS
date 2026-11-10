@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.0"
-timestamp: 2026-11-09
+version: "1.7.0"
+timestamp: 2026-11-10
 ---
 
 # Nightly Consolidation
@@ -61,9 +61,10 @@ The report is the record; chat is a decision brief. Never restate report section
    - A rung-4 finding is not an `R-n`: record it under `## Framework feedback` per the ladder, plus a one-line notice in chat.
    - A finding routed to an existing law is not an `R-n` unless it recurs; then recommend a fix for the law not reaching agents.
 3. Write the `R-n` list as `## Recommendations` at the top of the report, and one `## Decisions` stub line per `R-n` before halting: `R-n · <action> · pending`. Rewrite each carried `pending` line in its original report to `carried → nightly-<date> R-m`. Evidence and verbatim output go below. When 0 `R-n` items exist across Phases 1–3 and carried `pending`, omit `## Recommendations` / `## Decisions` stubs (or record `No recommendations`) and skip the Phase 4 decision halt.
-4. Halt. Present single-click batch approval prompt for cleanups:
-   `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Decline]`
-   Or prompt: *"Which recommendations should I implement? Reply with `R-ALL-CLEAN`, R-numbers, `all`, or `none`."*
+4. **Decision Halt:**
+   - **Batch Approval:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Apply Cleanups (R-ALL-CLEAN)", "Review Cleanups Individually", "Decline All"]`.
+   - **Fallback (non-interactive hosts):** prompt `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Decline]` (or ask for R-numbers, `all`, or `none`) and halt for user response.
+   - **Safety Invariant:** `.memory/` writes require explicit approval; never mutate silently per `.agents/rules/memory-protocol.md` §5.
 
 After the user answers, rewrite each stub line in place (never append a second one): `accepted · applied` (append ` <sha>` only when a commit was made), `accepted · deferred`, or `declined`. `none` → every line `declined`; an accepted New issue → `accepted · deferred`. Phase 2 of later nights reads it.
 - **Commit rule (D1):** On the default branch (`main`/`master`), after rewriting `## Decisions` stub lines (or when skipping the halt on empty findings), commit ONLY explicit touched paths (`docs/nightly/`, rebuilt `index.md` files, and approved `.memory/` Quick fixes) locally on default branch as `chore(nightly): consolidate <YYYY-MM-DD>` (never push automatically) and append `<sha>` to `accepted · applied <sha>`. On a feature branch, leave changes uncommitted and write `accepted · applied` without `<sha>`.
