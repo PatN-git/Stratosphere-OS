@@ -381,9 +381,9 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "d5fcb195a8b58d6c690b3e7efb18feb08b546f29eb30bd3461f73dcdf33aa07d",
-      "timestamp": "2026-11-09",
-      "version": "1.10.0"
+      "sha256": "0622558ae7782670df6cf4647861a98d54224391123804cdca03bf415a482913",
+      "timestamp": "2026-11-10",
+      "version": "1.11.0"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
