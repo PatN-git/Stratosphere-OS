@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.8.0"
-timestamp: 2026-11-09
+version: "2.9.0"
+timestamp: 2026-11-10
 ---
 
 # Sprint planning
@@ -65,6 +65,9 @@ Output compressed readout matching capacity thresholds, displaying all alerts an
 
 Prompt: `[Activate Sprint Queue] / [Edit Queue]`
 ```
+
+Prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Activate Sprint Queue", "Edit Queue", "Abort"]`. If native question tools are unavailable in the host, output `[Activate Sprint Queue] / [Edit Queue]` in markdown and halt for user response.
+
 *Optional Fully-AFK Sprint Advisory:* If all sequenced Build slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 ## Phase 5: Commit & Sync

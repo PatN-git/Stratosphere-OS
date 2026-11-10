@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-11-09
+version: "1.9.0"
+timestamp: 2026-11-10
 ---
 
 # STOP SESSION
@@ -42,11 +42,7 @@ Leave next session with context to resume immediately. Ensure new entries are ta
    - If a step-4 learning is now codified by the new `[[A-xxx]]`, propose superseding it (`[[L-xxx]]` → `[[A-xxx]]`); apply on confirmation.
 7. If DB schema or understanding changed, update `.memory/DATABASE_SCHEMA.md` (always `[LAW]`).
 8. Propose UI structural (`[[DR-xxx]]`/immortal component) or brand token changes before updating `DESIGN_RULES.md`/`DESIGN.md`.
-8b. Intermediate session files triage (.tmp/): inspect intermediate session files in `.tmp/` and present a 3-way HITL triage proposal to the user:
-    - (a) Delete transient scratch files and logs.
-    - (b) Relocate durable artifacts (e.g. design notes, reference docs) to `docs/` (with OKF frontmatter).
-    - (c) Keep in `.tmp/` for in-flight work.
-    Active framework state files (`.tmp/3d-suite-*.json`, `.tmp/3z-loop.work.md`, `.tmp/3d-plan-*.md`, `.tmp/4a-audit-*.json`) are explicitly exempted from deletion candidates. Require user confirmation before deleting or relocating any file.
+8b. Intermediate session files triage (.tmp/): inspect intermediate session files in `.tmp/` and prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Delete Transient Scratch", "Relocate Durable Artifacts to docs/ (with OKF frontmatter)", "Keep in .tmp/ for In-Flight Work"]`. If native question tools are unavailable in the host, output options in markdown and halt for user response. Active framework state files (`.tmp/3d-suite-*.json`, `.tmp/3z-loop.work.md`, `.tmp/3d-plan-*.md`, `.tmp/4a-audit-*.json`) are explicitly exempted from deletion candidates. Require user confirmation before deleting or relocating any file.
 9. Verify: `python .agents/scripts/pr_body.py suite` prints reusable suite result (reuse it); else if no tracked file changed outside `.memory/` and `.tmp/`, report `suite: not run (no tracked change)`; otherwise run via `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (no slice: `record -- <cmd>`). Run memory lint: `python .agents/scripts/validate_memory.py`. Report errors and warnings; await confirmation.
 10. Regenerate OKF Visualizer: `python .agents/scripts/okf_view.py` after lint passes.
 11. Ensure the resume note allows resuming without re-discovery.
