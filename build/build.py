@@ -49,7 +49,7 @@ DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
 )
-AUTHOR = "Gravity Technologies"
+AUTHOR = "Patrick Nennewitz"
 
 
 # --- frontmatter helpers ---------------------------------------------------

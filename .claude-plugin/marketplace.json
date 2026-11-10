@@ -13,7 +13,7 @@
       "description": "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, a setup skill that scaffolds your project, and on-demand external skills.",
       "version": "5.2.0",
       "author": {
-        "name": "Gravity Technologies"
+        "name": "Patrick Nennewitz"
       },
       "strict": false,
       "skills": [
