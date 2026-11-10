@@ -1,7 +1,7 @@
 ---
 description: Template for a discovery brief - locked vocabulary, problem statement, framing, established facts, success state and decoupled follow-ups.
-version: "2.1.0"
-timestamp: 2026-10-13
+version: "2.2.0"
+timestamp: 2026-11-06
 ---
 
 # Discovery Brief Template
@@ -85,9 +85,15 @@ version: <plugin version>   # stamped at generation (okf-protocol §5)
 - <topic>: <why decoupled> — existing: BT-<n> | candidate
 
 ## Constraints & Settled Decisions
-<User-locked boundaries and decisions the user confirmed during the grill (G2), each with a one-line reason so the PRD does not reopen them. No solution design.>
+<User-locked boundaries and decisions the user confirmed during the grill (G2), each with a one-line reason so the PRD does not reopen them. For 1c-concept-map briefs, include the resolved decision ticket link on each entry (`- **<Decision> ([<ticket title>](<#/link>)):** <choice> — why: <reason; rejected alternative>`). No solution design.>
 
 - **<Decision>:** <choice> — why: <reason; rejected alternative>
+
+## Decision Trail
+<Optional — include for 1c-concept-map briefs only; omit for 1b-concept-framing. Links the map issue and every resolved decision ticket as primary sources.>
+
+- **Map:** [<map title>](<#/link>)
+- [<ticket title>](<#/link>) — <gist of the decision>
 
 ## Open Questions
 <Residual ambiguity. write-prd absorbs these into PRD §10.>

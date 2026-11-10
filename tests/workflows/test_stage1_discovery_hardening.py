@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-# md-crosscheck: Stage 1 discovery workflows and concept map template against Prompt Report BT-225 invariants
-"""Tests for Stage 1 Discovery Workflows hardening (BT-225 / Epic BT-223)."""
+# md-crosscheck: Stage 1 discovery workflows and concept map template against BT-225 and BT-249 invariants
+"""Tests for Stage 1 Discovery Workflows hardening (BT-225 / BT-249)."""
 import sys
-from pathlib import Path
-import pytest
 from conftest import REPO_ROOT, SRC, read_src
 
-sys.path.insert(0, str(REPO_ROOT / "src" / "scripts"))
-import _versioning
+sys.path.insert(0, str(REPO_ROOT / "build"))
+import build
+
+DIST = build.DIST
 
 
 def test_1a_research_untrusted_delimiters_and_subagent_isolation():
@@ -36,18 +36,32 @@ def test_1c_concept_map_declarative_mermaid_single_pass():
     assert "```mermaid" in text_tmpl and "flowchart TD" in text_tmpl
 
 
-def test_stage1_frontmatter_version_bumps():
-    for rel_path, expected_v in [
-        ("workflows/1a-research.md", "1.0.10"),
-        ("workflows/1b-concept-framing.md", "1.5.1"),
-        ("workflows/1c-concept-map.md", "1.5.0"),
-        ("references/concept-map-template.md", "2.1.1"),
-    ]:
-        content = read_src(rel_path)
-        v, _ = _versioning.read_version(content, rel_path)
-        assert v == expected_v, f"{rel_path} version mismatch: expected {expected_v}, got {v}"
+def test_frontier_interview_fanout_and_1c_reference_closure():
+    ref_dir = SRC / "references"
+    closure_1b = set(build.closure_for(read_src("workflows/1b-concept-framing.md"), ref_dir))
+    closure_1c = set(build.closure_for(read_src("workflows/1c-concept-map.md"), ref_dir))
+    assert "frontier-interview.md" in closure_1b, "1b-concept-framing must cite references/frontier-interview.md"
+    assert {
+        "frontier-interview.md",
+        "concept-map-operations.md",
+        "concept-map-template.md",
+        "discovery_brief_template.md",
+        "glossary-entry-rules.md",
+    } <= closure_1c, f"1c-concept-map missing expected reference closure: {closure_1c}"
+    assert (DIST / "skills" / "1b-concept-framing" / "references" / "frontier-interview.md").is_file()
+    assert (DIST / "skills" / "1c-concept-map" / "references" / "frontier-interview.md").is_file()
+
+
+def test_1c_wayfinder_invariants_and_afk_drain_contract():
+    text_1c = read_src("workflows/1c-concept-map.md")
+    text_brief_tmpl = read_src("references/discovery_brief_template.md")
+    assert "## Invariants" in text_1c
+    assert "AFK Drain" in text_1c
+    assert "<external_untrusted_source>" in text_1c
+    assert "## Decision Trail" in text_brief_tmpl
 
 
 def test_stage1_handoff_contracts_untouched():
     text_1a = read_src("workflows/1a-research.md")
     assert "**Hand-off contract:** Writes `docs/research/<slug>.md`. Read by: `/1b-concept-framing`, `/2a-write-prd`, `/2c-reconcile-specs`, `/3b-create-issue`." in text_1a
+

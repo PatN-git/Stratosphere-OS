@@ -156,14 +156,19 @@
       "version": "2.2.0"
     },
     "skills/1b-concept-framing/SKILL.md": {
-      "sha256": "6c10e6aa0a868d31e82745c752b6648db5e941be7f656cd7c49221fbc332a453",
+      "sha256": "78775866cf02f71bfb75a971c44801e179ca85917106d2f7c3e1774299617431",
       "timestamp": "2026-11-06",
-      "version": "1.5.1"
+      "version": "1.5.2"
     },
     "skills/1b-concept-framing/references/discovery_brief_template.md": {
-      "sha256": "5e3de6f3bda5e01fd074d56dff3e74626bfbbd07e89f11c0f641dcafb4cc09b3",
-      "timestamp": "2026-10-13",
-      "version": "2.1.0"
+      "sha256": "0ed9b8710988122f65e60812a4fd8d8fdc168c93495a2471f3b6c5d717843ac9",
+      "timestamp": "2026-11-06",
+      "version": "2.2.0"
+    },
+    "skills/1b-concept-framing/references/frontier-interview.md": {
+      "sha256": "e7d539a33d85637427c9170e46d06795d1f7f2a9033f45a9bff034379090980f",
+      "timestamp": "2026-11-06",
+      "version": "1.0.0"
     },
     "skills/1b-concept-framing/references/glossary-entry-rules.md": {
       "sha256": "4ba70f4952bc93815149e6ffd9e0f1aa78ba7960ce83c5e731cc67e105fd087e",
@@ -176,19 +181,29 @@
       "version": "1.0.1"
     },
     "skills/1c-concept-map/SKILL.md": {
-      "sha256": "b3755a1eac0ff05091eccaf61b60464763054b4add48a6274bde7b5ebf1f0800",
+      "sha256": "49571eb6cff09d6fe223b6395565743a3ffbb9cdb2139b714d3296b79fcec285",
       "timestamp": "2026-11-09",
       "version": "1.5.0"
     },
     "skills/1c-concept-map/references/concept-map-operations.md": {
-      "sha256": "e3df68ab99157b5af307b4a8dc7e566bcd8ac77a90a1c59850afe37ecf3f4954",
+      "sha256": "56e03cc5522e1938b68a150582b448595c5eef8f209ad43006f3b7a1928fed8a",
       "timestamp": "2026-11-09",
       "version": "1.2.0"
     },
     "skills/1c-concept-map/references/concept-map-template.md": {
-      "sha256": "32f1560992758506ff7f3db3d428b39e46576d46bb8106c67516bf5e9f322f54",
+      "sha256": "98fbb44c602e3bce18d0cfa72724ad786016afda6e32c23faa73a620872b40e2",
       "timestamp": "2026-11-06",
-      "version": "2.1.1"
+      "version": "2.2.0"
+    },
+    "skills/1c-concept-map/references/discovery_brief_template.md": {
+      "sha256": "0ed9b8710988122f65e60812a4fd8d8fdc168c93495a2471f3b6c5d717843ac9",
+      "timestamp": "2026-11-06",
+      "version": "2.2.0"
+    },
+    "skills/1c-concept-map/references/frontier-interview.md": {
+      "sha256": "e7d539a33d85637427c9170e46d06795d1f7f2a9033f45a9bff034379090980f",
+      "timestamp": "2026-11-06",
+      "version": "1.0.0"
     },
     "skills/1c-concept-map/references/glossary-entry-rules.md": {
       "sha256": "4ba70f4952bc93815149e6ffd9e0f1aa78ba7960ce83c5e731cc67e105fd087e",
