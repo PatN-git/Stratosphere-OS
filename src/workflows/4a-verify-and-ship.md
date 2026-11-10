@@ -81,9 +81,8 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 - **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
 ```
 
-Prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. If native question tools are unavailable in the host, output the options in markdown and halt for user response.
-
-Awaiting approval: on `Confirm & Ship` (or user approval over gaps), proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). On `Revise in 3d` or unresolved gaps without user approval → return to TDD loop in `3d` (no PR).
+- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. Fallback for non-interactive hosts: output options in markdown and halt for user response.
+- **Decision Routing:** on `Confirm & Ship` (or user approval over gaps), proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). On `Revise in 3d` or unresolved gaps without user approval → return to TDD loop in `3d` (no PR).
 
 ## Phase 5: Isolated Ship Gate
 

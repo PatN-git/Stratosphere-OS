@@ -71,7 +71,7 @@
       "version": "1.4.0"
     },
     "skills/0b-stop-session/SKILL.md": {
-      "sha256": "b1d0a63b47c2a13c5b8eae42ed718c5c348f6370cb36be95134e9a4016dba97a",
+      "sha256": "b99b723708d8cf3fd068948bca2e59849fd7f7bef53553311bdfa7ca80b60354",
       "timestamp": "2026-11-10",
       "version": "1.9.0"
     },
@@ -106,7 +106,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "c99748105214b6625b929b90a32db3221a51fe44cf39102f63c0562e3b5e3f60",
+      "sha256": "cfc148a9f8c146e4fce79c350c800552b4e55fa5afb2b64f25cdd41af980038f",
       "timestamp": "2026-11-10",
       "version": "1.7.0"
     },
@@ -266,7 +266,7 @@
       "version": "1.2.0"
     },
     "skills/3a-version-planning/SKILL.md": {
-      "sha256": "942489a1d0934dd064c5ffb6377178ad1fdf970bf4047ead1a121a42fa2ecb33",
+      "sha256": "a73effd958a7a04ce580262b794f54c4fd618219f58f7e3abdda3c20aedcf30f",
       "timestamp": "2026-11-10",
       "version": "1.7.0"
     },
@@ -281,7 +281,7 @@
       "version": "2.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "5efe6f23ea70e05f85f80112def2d5a97c4cce8701be152fc72e7d23416d4cfe",
+      "sha256": "5f0a0e43ce94bc6d5c731ee3e2739ea6b92a83e61c0db3640a41cb826f4c318a",
       "timestamp": "2026-11-10",
       "version": "2.10.0"
     },
@@ -311,7 +311,7 @@
       "version": "2.1.0"
     },
     "skills/3c-sprint-planning/SKILL.md": {
-      "sha256": "7b5c9a74d721bb68d928fdef7b4274a63c54b018815f5cb71b100ac29bcbc79c",
+      "sha256": "1f4a769d81a7aa465e01d0b9f2899be9c9dcb6ef4dfaf7c177af5a8f852edd2c",
       "timestamp": "2026-11-10",
       "version": "2.9.0"
     },
@@ -381,7 +381,7 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "0622558ae7782670df6cf4647861a98d54224391123804cdca03bf415a482913",
+      "sha256": "c5379b6d4e252a0ece83e3b1a3162229d7406eaf1eb0dea4ff57cd31db2a41cc",
       "timestamp": "2026-11-10",
       "version": "1.11.0"
     },
