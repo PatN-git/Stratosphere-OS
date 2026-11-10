@@ -34,13 +34,17 @@ def main() -> int:
 
     targets = list(IN_TREE_TARGETS)
     if not check:
-        # Clean up retired directory name from previous versions
+        # Clean up retired directory names from previous versions
         for t in targets + ([GLOBAL_AGY_TARGET] if GLOBAL_AGY_TARGET.parent.exists() else []):
             stale = t / "improve-workflows-skills"
             if stale.is_dir():
                 shutil.rmtree(stale)
-        if GLOBAL_AGY_TARGET.parent.exists():
-            targets.append(GLOBAL_AGY_TARGET)
+        # Ensure dev-only skills never leak into global Antigravity config
+        if GLOBAL_AGY_TARGET.is_dir():
+            for skill in SRC.iterdir():
+                stale_global = GLOBAL_AGY_TARGET / skill.name
+                if stale_global.is_dir():
+                    shutil.rmtree(stale_global)
 
     drifted: list[str] = []
     placed = 0
