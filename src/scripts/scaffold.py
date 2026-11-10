@@ -631,7 +631,7 @@ def get_bundled_project_scripts(project: Path):
     Keys are strictly POSIX format (e.g. .agents/scripts/design/design_theme.py).
     """
     scripts = []
-    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "_tracker_common.py", "_ice.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py", "tracker.py"):
+    for name in ("validate_memory.py", "reconcile.py", "tracker_switch.py", "issues.py", "_tracker_common.py", "_ice.py", "ice_read.py", "okf_view.py", "contract_check.py", "pr_body.py", "test_gate.py", "floor_guard.py", "ci_gate.py", "nightly_state.py", "nightly_scan.py", "tracker.py", "delivery.py"):
         src = PLUGIN_ROOT / "scripts" / name
         if src.exists():
             dst = project / ".agents" / "scripts" / name
@@ -674,6 +674,81 @@ def place_project_scripts(project: Path, res, dry, update: bool = False):
         place(src, dst, res, dry, update=update, tier="managed")
 
 
+def sync_skill_delivery(project: Path, delivery_mode: str, lock_data: dict, dry: bool, res: dict, update: bool = False):
+    """Synchronize bundled skills according to delivery mode:
+    - plugin: bundled skills served host-wide from plugin cache. Pristine skills in .agents/skills/
+      are unlinked, user-modified skills are quarantined to .agents/custom-skills/<skill>/, and .gitkeep is kept.
+    - in-repo: all bundled skills copied into .agents/skills/ for non-plugin hosts.
+    """
+    if delivery_mode == "plugin":
+        gitkeep = project / ".agents" / "skills" / ".gitkeep"
+        if not gitkeep.exists():
+            if dry:
+                res["would"].append(Path(".agents/skills/.gitkeep"))
+            else:
+                gitkeep.parent.mkdir(parents=True, exist_ok=True)
+                gitkeep.write_text("", encoding="utf-8")
+                res["created"].append(Path(".agents/skills/.gitkeep"))
+        else:
+            res["exists"].append(Path(".agents/skills/.gitkeep"))
+
+        for skill in sorted(bundled_skill_names()):
+            skill_dir = project / ".agents" / "skills" / skill
+            if skill_dir.is_dir():
+                is_skill_modified = False
+                for f in skill_dir.rglob("*"):
+                    if f.is_file():
+                        rel_proj = f.relative_to(project).as_posix()
+                        expected_h = lock_data.get("artifacts", {}).get(rel_proj, {}).get("sha256_at_install")
+                        pristine, _ = is_file_pristine(f, expected_h, rel_proj)
+                        if not pristine:
+                            b_f = SKILLS_SRC / skill / f.relative_to(skill_dir)
+                            if b_f.is_file():
+                                try:
+                                    if same_text(f.read_bytes(), b_f.read_bytes()):
+                                        pristine = True
+                                except Exception:
+                                    pass
+                        if not pristine:
+                            is_skill_modified = True
+                            break
+
+                if is_skill_modified:
+                    custom_dir = project / ".agents" / "custom-skills" / skill
+                    print(f"Warning: User-modified skill '{skill}' quarantined to .agents/custom-skills/{skill}/")
+                    if not dry:
+                        if custom_dir.exists():
+                            shutil.rmtree(custom_dir)
+                        custom_dir.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(skill_dir), str(custom_dir))
+                        res["refreshed"].append(Path(f".agents/custom-skills/{skill}"))
+                    else:
+                        res["would"].append(Path(f".agents/custom-skills/{skill}"))
+                else:
+                    print(f"Unlinking pristine bundled skill '{skill}' from .agents/skills/")
+                    if not dry:
+                        shutil.rmtree(skill_dir)
+                        res["refreshed"].append(Path(f".agents/skills/{skill}"))
+                    else:
+                        res["would"].append(Path(f".agents/skills/{skill}"))
+
+        if not dry:
+            lock_data["artifacts"] = {
+                k: v for k, v in lock_data.get("artifacts", {}).items()
+                if not k.startswith(".agents/skills/")
+            }
+    else:
+        for skill in sorted(bundled_skill_names()):
+            for src in sorted((SKILLS_SRC / skill).rglob("*")):
+                if src.is_file():
+                    rel = src.relative_to(SKILLS_SRC)
+                    if src.is_relative_to(PLUGIN_ROOT) and rel.parts[1] in SETUP_PAYLOAD:
+                        continue
+                    for target in SKILL_TARGETS:
+                        place(src, project.joinpath(*target.split("/")) / rel,
+                              res, dry, update=update, tier="managed")
+
+
 def main():
     plugin_root = Path(__file__).resolve().parent.parent
     plugin_root_resolved = plugin_root.resolve()
@@ -704,6 +779,7 @@ def main():
     ap.add_argument("--repair-lock", action="store_true", help="regenerate .stratosphere-lock.json from the current workspace")
     ap.add_argument("--update", action="store_true", help="refresh managed framework files in place")
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")
+    ap.add_argument("--delivery", choices=("plugin", "in-repo"), help="skill delivery mode: 'plugin' (host delivers bundled skills; zero repo clutter) or 'in-repo' (bundled skills copied to .agents/skills/ for non-plugin hosts)")
     ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend, recorded as `tracker:` in ARCHITECTURE.md; local also records `tracker_branch:` and creates that branch")
     args = ap.parse_args()
 
@@ -715,6 +791,46 @@ def main():
         "refreshed": [], "unchanged": [], "stale": [], "needs_review": []
     }
 
+    lock_file = project / ".agents" / ".stratosphere-lock.json"
+    if lock_file.exists():
+        try:
+            lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+        except Exception:
+            lock_data = {"plugin_id": "stratosphere-os", "installed_plugin_version": "unknown", "artifacts": {}}
+    else:
+        lock_data = {"plugin_id": "stratosphere-os", "installed_plugin_version": "unknown", "artifacts": {}}
+
+    delivery_mode = args.delivery
+    if not delivery_mode:
+        existing_mode = lock_data.get("skill_delivery")
+        if update and existing_mode:
+            delivery_mode = existing_mode
+        else:
+            is_plugin_host = (
+                plugin_root_resolved.is_relative_to(gemini_plugins)
+                or plugin_root_resolved.is_relative_to(claude_cache)
+                or "plugin" in scope.lower()
+                or "marketplace" in scope.lower()
+            )
+            default_choice = "1" if is_plugin_host else "2"
+            if sys.stdin.isatty():
+                print("Choose StratosphereOS Skill Delivery Mode:")
+                print("  [1] (Recommended) Plugin Mode: Zero repo clutter. 28 lifecycle skills load from Antigravity/Claude plugin.")
+                print("      -> Only third-party project skills live in .agents/skills/. Saves ~1,500 prompt tokens/turn.")
+                print("  [2] Multi-Host Mode: Copies all 28 lifecycle skills into .agents/skills/ for Cursor, Codex, Devin, or CLI agents.")
+                try:
+                    ans = input(f"Select [1/2] (default: {default_choice}): ").strip()
+                    if ans == "2":
+                        delivery_mode = "in-repo"
+                    elif ans == "1":
+                        delivery_mode = "plugin"
+                    else:
+                        delivery_mode = "plugin" if default_choice == "1" else "in-repo"
+                except (EOFError, KeyboardInterrupt):
+                    delivery_mode = "plugin" if is_plugin_host else "in-repo"
+            else:
+                delivery_mode = "plugin" if is_plugin_host else "in-repo"
+
     if not ASSETS.exists():
         raise SystemExit(f"Cannot find bundled templates at {ASSETS}. Run from a project root with the plugin installed.")
 
@@ -722,14 +838,8 @@ def main():
         if not _versioning: return False
         lock_file = project / ".agents" / ".stratosphere-lock.json"
         
-        # Load existing lockfile if not repairing
-        if not repair and lock_file.exists():
-            try:
-                lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
-            except Exception:
-                lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
-        else:
-            lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+        lock_data["plugin_id"] = "stratosphere-os"
+        lock_data["skill_delivery"] = delivery_mode
 
         try:
             versions = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8"))
@@ -744,6 +854,8 @@ def main():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path: continue
             if proj_path.startswith(".github/workflows/") or skips_map(proj_path):
+                continue
+            if delivery_mode == "plugin" and proj_path.startswith(".agents/skills/"):
                 continue
             
             p = project / proj_path
@@ -807,8 +919,14 @@ def main():
                     except Exception:
                         pass
 
+        if delivery_mode == "plugin":
+            lock_data["artifacts"] = {
+                k: v for k, v in lock_data.get("artifacts", {}).items()
+                if not k.startswith(".agents/skills/")
+            }
+
         lock_file.parent.mkdir(parents=True, exist_ok=True)
-        if not dry_run and count > 0:
+        if not dry_run:
             lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return count
 
@@ -831,15 +949,8 @@ def main():
         bundled_manifest = versions_data.get("artifacts", {})
         plugin_version = versions_data.get("plugin_version", "unknown")
         
-        # Load lockfile
-        lock_file = project / ".agents" / ".stratosphere-lock.json"
-        if lock_file.exists():
-            try:
-                lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
-            except Exception:
-                lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
-        else:
-            lock_data = {"installed_plugin_version": "unknown", "artifacts": {}}
+        lock_data["plugin_id"] = "stratosphere-os"
+        lock_data["skill_delivery"] = delivery_mode
             
         worklist = {
             "plugin_version": plugin_version,
@@ -861,6 +972,8 @@ def main():
         for rel_path, b_meta in bundled_manifest.items():
             proj_path = map_bundled_to_project(rel_path)
             if not proj_path or skips_map(proj_path):
+                continue
+            if delivery_mode == "plugin" and proj_path.startswith(".agents/skills/"):
                 continue
                 
             p = project / proj_path
@@ -1487,8 +1600,12 @@ def main():
                 except Exception:
                     pass
 
+        sync_skill_delivery(project, delivery_mode, lock_data, dry, res, update=True)
         lock_data["installed_plugin_version"] = plugin_version
-        lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        lock_data["skill_delivery"] = delivery_mode
+        lock_data["plugin_id"] = "stratosphere-os"
+        if not dry:
+            lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print("Updated .stratosphere-lock.json successfully.")
         return
 
@@ -1531,17 +1648,8 @@ def main():
         if re.search(r'^trigger:\s*glob\b', src.read_text(encoding="utf-8"), re.M):
             place(src, project / ".claude" / "rules" / src.name, res, dry, update=update, tier="managed")
 
-    # 5. Bundled skills -> one canonical body, placed per host.
-    #    A new host is an entry in SKILL_TARGETS, never a content fork (AGENTS.md §1).
-    for skill in sorted(bundled_skill_names()):
-        for src in sorted((SKILLS_SRC / skill).rglob("*")):
-            if src.is_file():
-                rel = src.relative_to(SKILLS_SRC)
-                if src.is_relative_to(PLUGIN_ROOT) and rel.parts[1] in SETUP_PAYLOAD:
-                    continue  # scaffolder payload stays in the bundle; it is not a project skill file
-                for target in SKILL_TARGETS:
-                    place(src, project.joinpath(*target.split("/")) / rel,
-                          res, dry, update=update, tier="managed")
+    # 5. Bundled skills -> configurable delivery mode
+    sync_skill_delivery(project, delivery_mode, lock_data, dry, res, update=update)
 
     # 6b. Project-local deterministic scripts (validate_memory, reconcile, design, okf viewer/view)
     place_project_scripts(project, res, dry, update=update)
