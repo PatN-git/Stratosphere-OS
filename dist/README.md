@@ -59,9 +59,9 @@ Simply copy and paste this prompt directly into your AI coding assistant (Google
 
 > **Copy & Paste into Your AI Chat:**
 > ```text
-> Install StratosphereOS from https://github.com/PatN-git/Stratosphere-OS, verify dependencies (Git, Python, GitHub CLI gh), and run /stratosphere-setup to initialize my workspace.
+> Install the StratosphereOS plugin from https://github.com/PatN-git/Stratosphere-OS using the native plugin installer (e.g. on Google Antigravity run 'agy plugin install https://github.com/PatN-git/Stratosphere-OS', on Claude Code run '/plugin marketplace add PatN-git/Stratosphere-OS' then '/plugin install stratosphere-os@stratosphere-os', or on Cursor run 'npx skills add PatN-git/Stratosphere-OS/dist/skills -a cursor --copy -y'), verify dependencies (Python, Git, GitHub CLI gh), and run /stratosphere-setup to initialize my workspace.
 > ```
-*Your AI will clone the skills, configure your environment, and walk you through setup in plain English.*
+*Your AI will install the plugin natively, configure your environment, and walk you through setup in plain English.*
 
 ---
 
@@ -73,7 +73,7 @@ Choose your platform:
 | :--- | :--- |
 | **Google Antigravity**<br>*(Recommended — Live Today)* | `agy plugin install https://github.com/PatN-git/Stratosphere-OS`<br>*(Or via the in-app UI: **Customizations > Marketplace** → Search `stratosphere-os` → Click **Install**)* |
 | **Claude Code** | `/plugin marketplace add PatN-git/Stratosphere-OS`<br>`/plugin install stratosphere-os@stratosphere-os` |
-| **Cursor / Codex / Copilot / OpenClaw**<br>*(via skills.sh / npx)* | `npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y`<br>*(e.g., `-a cursor` or `-a claude-code`. Note: `--copy` is required on Windows)* |
+| **Cursor / Codex / Copilot / OpenClaw**<br>*(via [skills.sh](https://skills.sh))* | `npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y`<br>*(Supported agents: `cursor`, `claude-code`, `codex`, `github-copilot`, `devin`, `openclaw`, `windsurf`, `zed`. Pass `-g` for global install. Note: `--copy` is required on Windows)* |
 | **Offline / Air-Gapped / No Node.js** | Download `dist/skills/` and copy into `.agents/skills/` (or `.claude/skills/`). Works 100% offline without Node or npm! |
 
 ---
