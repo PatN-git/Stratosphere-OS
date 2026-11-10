@@ -10,24 +10,12 @@ version: "1.0.4"
 # GLOSSARY
 
 ## Purpose
-<!-- SOS:BLOCK id=glossary-guidance v=1.0.4 -->
-Shared domain vocabulary. Terms used across discovery briefs, PRDs, sub-issues, and code. Each entry carries a `G-xxx` ID and trust tag.
+<!-- SOS:BLOCK id=glossary-guidance v=1.2.0 -->
 
-> Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
-> GLOSSARY follows the same protocol as `LEARNINGS.md` — not exempt from trust tags.
-> **PRESERVATION RULE:** Do NOT delete the protocol instruction line above, the `Avoid:` formatting instructions, or the format example line under `## Superseded` during setup or entry seeding. Keep them permanently as operational guidance and placeholders.
+- **Format:** One `[[G-xxx]]` entry per project-specific term, each with a trust tag (`.agents/rules/memory-protocol.md`).
+- **Scope:** Vocabulary only — no code identifiers, file paths, table or column names, formulas, or thresholds (→ `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`).
+- **Rules:** Writers follow `references/glossary-entry-rules.md`.
 
-## What belongs here
-- Names of user segments and roles
-- Business-state vocabulary
-- Domain-specific terms with project-specific or non-obvious meanings
-- Categorization terms used across features and PRDs
-
-## What does NOT belong here
-- Code identifiers, function names, file paths, or domain/structural relationships between concepts → `ARCHITECTURE.md` (Depends-on / data-flow). The GLOSSARY is vocabulary only.
-- Brand tokens → `DESIGN.md`
-- One-off terms not expected to recur across docs
-- Technical/framework terms with standard industry meanings
 <!-- SOS:/BLOCK id=glossary-guidance -->
 
 ## Active Entries

@@ -2,11 +2,4 @@
 # Bundled lifecycle skills are tracked and must not appear here.
 
 /code-simplifier/
-/composition-patterns/
-/impeccable/
-/react-best-practices/
-/react-native-skills/
 /skill-creator/
-/supabase/
-/supabase-postgres-best-practices/
-/vercel-web-design/

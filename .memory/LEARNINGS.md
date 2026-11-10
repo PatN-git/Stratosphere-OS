@@ -10,7 +10,8 @@ version: "1.0.3"
 # LEARNINGS
 
 ## Purpose
-<!-- SOS:BLOCK id=learnings-guidance v=1.0.3 -->
+<!-- SOS:BLOCK id=learnings-guidance v=1.1.0 -->
+
 Episodic memory for project-specific lessons likely to matter again. Each entry carries a unique `L-xxx` ID, a trust tag, and (where applicable) a `Source: BT-xxx` cross-reference.
 
 > Trust tags, supersession, and cross-reference rules → `.agents/rules/memory-protocol.md`.
@@ -24,11 +25,12 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 - Framework-specific traps
 
 ## What does NOT belong here
-- Temporary TODOs → `BACKLOG_MAP.md`
-- Current task status → `STATUS.md`
+- Temporary TODOs → the tracker (`.agents/scripts/tracker.py`)
+- Current task status → the issue's resume note
 - One-off debugging logs unless they reveal a reusable rule
 - `[LAW]`-tier rules → `ARCHITECTURE.md` or `DESIGN_RULES.md`
 - Domain vocabulary → `GLOSSARY.md`
+
 <!-- SOS:/BLOCK id=learnings-guidance -->
 
 ## Active Entries
