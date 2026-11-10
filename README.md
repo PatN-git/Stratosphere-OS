@@ -1,21 +1,26 @@
-# Stratosphere-OS
+# StratosphereOS
 ![StratosphereOS Architecture Banner](docs/assets/hero-banner.png)
 
 [![Version](https://img.shields.io/badge/version-5.2.0-blue.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/PatN-git/Stratosphere-OS)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
 [![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-plugin-00CED1.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A2BE2.svg)](https://github.com/PatN-git/Stratosphere-OS)
+[![Skills](https://img.shields.io/badge/skills-28%20bundled-blueviolet.svg)](https://github.com/PatN-git/Stratosphere-OS)
 
-> An agentic orchestration framework that equips AI coding assistants (Claude Code, Google Antigravity, Cursor, Codex, OpenClaw) with structured memory, automated TDD guardrails, and deterministic project lifecycles. Developed out of frustration with unstructured AI workflows and inspired by popular skill builders.
+> **The deterministic operating system for AI coding assistants.** Equip Google Antigravity, Claude Code, Cursor, Codex, and OpenClaw with persistent project memory, automated TDD guardrails, and structured lifecycle governance.
 
 ---
 
 ## Table of Contents
 - [Why StratosphereOS?](#why-stratosphereos)
-- [Workspace Directory Structure](#workspace-directory-structure)
-- [Dual Issue Tracking (GitHub & Local)](#dual-issue-tracking-github--local)
+- [⚡ Quick Start (30 Seconds)](#-quick-start-30-seconds)
+- [How It Works: 3-Layer Orchestration](#how-it-works-3-layer-orchestration)
+- [🎬 A Day in the Life: Shipping a Feature](#-a-day-in-the-life-shipping-a-feature)
+- [🧭 How to Work with StratosphereOS (Intent Router)](#-how-to-work-with-stratosphereos-intent-router)
+- [Workspace Structure & Living Memory](#workspace-structure--living-memory)
+- [Dual Issue Tracking (GitHub & Local Air-Gapped)](#dual-issue-tracking-github--local-air-gapped)
 - [Lifecycle Skills Matrix](#lifecycle-skills-matrix)
-- [Getting Started (Installation)](#getting-started-installation)
+- [Installation Tracks (Detailed Guide)](#installation-tracks-detailed-guide)
 - [Upgrading Framework Files](#upgrading-framework-files-updating)
 - [Architecture & Governance](#architecture--governance)
 
@@ -23,19 +28,160 @@
 
 ## Why StratosphereOS?
 
-### Beyond Unstructured Code Generation
-In modern AI software development, ad-hoc chat prompting quickly leads to architectural drift, subtle bugs, and unmaintainable technical debt. StratosphereOS addresses this by enforcing **Human-in-the-Loop (HITL) architecture governance**.
+### The Problem: AI Coding Without Guardrails
+Vanilla AI coding assistants act like enthusiastic junior interns—they jump straight to writing speculative code, hallucinate third-party APIs, break existing test suites, and forget your architecture the moment a chat session ends ("AI Amnesia").
 
-Developers act as **Loop Engineers**—interviewing the agent, stress-testing specifications, and establishing clear UI and logic contracts before any implementation begins. Once the human explicitly approves the requirements, small vertical slices are delegated to autonomous test-driven loops (`micro-tdd`) that execute independently until all compiler and test suite checks pass.
+### The Solution: Human-in-the-Loop Governance + Autonomous TDD
+StratosphereOS transforms your agent from a chatty assistant into a disciplined software engineer:
+1. **Loop Engineers (Human):** You act as the Tech Lead—specifying requirements, interviewing the agent, stress-testing PRDs, and setting interface contracts before code generation begins.
+2. **Deterministic Memory (`.memory/`):** Living architecture documentation, accumulated bug traps, and domain vocabulary persist across all sessions and team members.
+3. **Autonomous Execution (`micro-tdd`):** Once requirements are approved, the agent executes small, vertical slices independently in self-correcting RED→GREEN→REFACTOR loops until all tests pass.
 
-StratosphereOS structures your workspace into three cooperating layers:
-1. **Layer 1: Workflows (Human Driven)** — Interactive lifecycle stages (Discover, Design, Slice) ensuring alignment before code generation.
-2. **Layer 2: Orchestration Brain** — The agent router governing tool execution and strict precedence rules.
-3. **Layer 3: Autonomous Execution** — Self-correcting inner loops (like test suites and linters) running deterministically against local code.
+| Without StratosphereOS | With StratosphereOS |
+| :--- | :--- |
+| ❌ Agent writes code before understanding requirements | ✅ Agent interviews you (`/2a`), defining formal PRDs & UI contracts first |
+| ❌ Regressions and broken tests committed silently | ✅ Strict TDD Red→Green→Refactor (`/micro-tdd`) on isolated branches |
+| ❌ Architectural context lost across chat sessions | ✅ Living `.memory/` layer (`ARCHITECTURE.md`, `LEARNINGS.md`, `GLOSSARY.md`) |
+| ❌ Code sprawl and hallucinated dependencies | ✅ Token-efficient, surgical diffs matching existing project patterns |
 
 ---
 
-## Workspace Directory Structure
+## ⚡ Quick Start (30 Seconds)
+
+### Step 1: Install Skills into Your Agent
+
+| Agent / Environment | Install Command |
+| :--- | :--- |
+| **Google Antigravity** | `agy plugin install https://github.com/PatN-git/Stratosphere-OS` |
+| **Claude Code** | `/plugin marketplace add PatN-git/Stratosphere-OS`<br>`/plugin install stratosphere-os@stratosphere-os` |
+| **Cursor / Codex / Any Host** | `npx skills add PatN-git/Stratosphere-OS/dist/skills -a cursor --copy -y` |
+| **Offline / Air-Gapped** | Copy `dist/skills/` directly to `.agents/skills/` |
+
+---
+
+### Step 2: Initialize Project Memory
+In your project directory, open your agent chat and run:
+```text
+/stratosphere-setup
+```
+*Bootstraps `.memory/`, `ARCHITECTURE.md`, constitution rules, and your issue tracker in seconds.*
+
+---
+
+### Step 3: Start Working with Synced Context
+```text
+/0a-start-session
+```
+*Restores branch state, loads living memory, and sets up your next work unit with zero cold-start waste.*
+
+> [!TIP]
+> **Zero-Click AI Setup Shortcut**
+> Want your agent to handle the installation and setup automatically? Paste this prompt into your agent chat:  
+> `Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS. Check dependencies (Python, Git, GitHub CLI gh), verify GitHub auth/connection, and run /stratosphere-setup to initialize the workspace.`
+
+---
+
+## How It Works: 3-Layer Orchestration
+
+StratosphereOS organizes your development workspace into three cooperating layers:
+
+```mermaid
+flowchart TD
+    subgraph L1["Layer 1: Human-in-the-Loop (HITL) Workflows"]
+        H["🧑‍💻 Developer (Loop Engineer)"] -->|"/1a, /2z, /3c"| Spec["Formal Specs & Slices (PRD, Interface Contracts)"]
+    end
+
+    subgraph L2["Layer 2: Orchestration Brain & Memory"]
+        Spec --> Router["AGENTS.md Router & Precedence Engine"]
+        Router <--> Mem[("🧠 .memory/\nArchitecture, Learnings, Schema")]
+    end
+
+    subgraph L3["Layer 3: Autonomous Execution (AFK Loops)"]
+        Router -->|"/3d, /micro-tdd"| Loop["RED (Failing Test) ➔ GREEN (Passing Code) ➔ REFACTOR"]
+        Loop --> Test["Compiler, Linter & Test Suite Verification"]
+    end
+
+    Test -->|"/4a"| PR["🚀 Verified Pull Request & Synced Status"]
+```
+
+- **Layer 1: Workflows (Human-Driven)** — Interactive lifecycle stages (Discover, Design, Slice) ensuring alignment and contract clarity before code generation.
+- **Layer 2: Orchestration Brain** — Governs tool execution, token budgets, and strict precedence rules (`AGENTS.md`). Keeps living memory synced and prevents agent drift.
+- **Layer 3: Autonomous Execution** — Self-correcting inner loops (`micro-tdd`) running deterministically against local code until all tests pass.
+
+---
+
+## 🎬 A Day in the Life: Shipping a Feature
+
+Here is how a real 15-minute feature development loop works:
+
+### 1. Morning Cold-Start (0 seconds wasted)
+```text
+User: /0a-start-session
+Agent: 🪐 StratosphereOS context loaded.
+       - Active Branch: feat/BT-014-oauth-auth
+       - Active Milestone: v1.2 (Social Login)
+       - Invariants: Postgres via Supabase, strict TDD, no direct commits to main.
+       - Next Up: Issue #14: Implement GitHub OAuth callback handler.
+```
+
+### 2. Autonomous TDD Implementation
+```text
+User: /3d-implement-issue 14
+Agent: 🧪 Entering micro-tdd inner loop:
+       [1/3] RED: Created test_oauth_callback.py -> 1 test failed (OAuthHandler undefined).
+       [2/3] GREEN: Implemented OAuthHandler in auth/oauth.py -> All tests passing (3 passed in 0.42s).
+       [3/3] REFACTOR: Cleaned token extraction, verified zero architecture drift against ARCHITECTURE.md.
+       Committed: feat(BT-014): implement github oauth callback handler
+```
+
+### 3. Verification & Shipping
+```text
+User: /4a-verify-and-ship
+Agent: 🔍 Running Pre-Flight Audit:
+       - Full Test Suite: 48 passed, 0 failed.
+       - Acceptance Criteria: All 3 criteria verified against unit tests.
+       - Pushed branch: feat/BT-014-oauth-auth
+       - Opened Pull Request #22: "feat(BT-014): implement github oauth callback handler"
+       Ready for human review!
+```
+
+### 4. Session Closeout & Memory Persistence
+```text
+User: /0b-stop-session
+Agent: 💾 Saved session state:
+       - Recorded trap in .memory/LEARNINGS.md: "OAuth token exchange requires explicit state nonce verification."
+       - Updated .memory/STATUS.md.
+       Session closed cleanly.
+```
+
+---
+
+## 🧭 How to Work with StratosphereOS (Intent Router)
+
+You never need to memorize all 28 skills. Most work is handled through **5 Macro Orchestrators**:
+
+| To Do This... | Run This Macro | What It Does Under the Hood |
+| :--- | :--- | :--- |
+| **Initialize Workspace** | `/stratosphere-setup` | Scaffolds `.memory/`, rules, and issue tracking |
+| **Start / Resume Work** | `/0a-start-session` | Restores git branch, loads memory invariants, prints task context |
+| **Specify Features** | `/2z-write-spec` | Orchestrates `/2a` (PRD) → `/2b` (UI/logic) → `/2c` (Reconciliation) |
+| **Implement Slice** | `/3d-implement-issue <id>` | Dispatches autonomous `/micro-tdd` (RED→GREEN→REFACTOR) |
+| **Ship & Open PR** | `/4a-verify-and-ship` | Runs test suite, audits acceptance criteria, pushes branch, opens PR |
+| **End Session** | `/0b-stop-session` | Persists learnings, lints state, writes handoff brief |
+
+### Quick Intent Lookup
+
+- **Have a fuzzy new concept?** → `/1a-research` or `/concept-brainstorm`
+- **Need a visual HTML roadmap or matrix?** → `/plan-html`
+- **Break a PRD into backlog slices?** → `/3a-version-planning` ➔ `/3b-create-issue` ➔ `/3c-sprint-planning`
+- **Run autonomous AFK issues end-to-end?** → `/3z-afk-loop`
+- **Audit architecture drift or codebase health?** → `/4b-audit-architecture-drift` or `/4c-codebase-health-audit`
+- **Confused by what the agent just said?** → `/0e-plain-english` or `/0f-walk-me-through`
+- **Sync external ecosystem skills?** → `/sync-skills`
+
+---
+
+## Workspace Structure & Living Memory
 
 When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable project state into your repository:
 
@@ -55,12 +201,12 @@ When initialized via `/stratosphere-setup`, StratosphereOS scaffolds durable pro
 
 ### Project Memory & Git Hygiene
 StratosphereOS maintains a clean separation between persistent knowledge and ephemeral session state:
-- **Tracked in Git:** Authoritative project memory (`ARCHITECTURE.md`, `LEARNINGS.md`, `GLOSSARY.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`). These files form the living documentation of your system and are committed alongside your code.
-- **Gitignored:** Ephemeral session files (`STATUS.md`, `resume/`). These track active session health and in-flight handoff notes, preventing unnecessary merge conflicts across concurrent branches and worktrees.
+- **Tracked in Git:** Authoritative project memory (`ARCHITECTURE.md`, `LEARNINGS.md`, `GLOSSARY.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`). These form the living documentation of your system and are committed alongside your code.
+- **Gitignored:** Ephemeral session files (`STATUS.md`, `resume/`). These track active session health and in-flight handoff notes, preventing merge conflicts across concurrent branches and worktrees.
 
 ---
 
-## Dual Issue Tracking (GitHub & Local)
+## Dual Issue Tracking (GitHub & Local Air-Gapped)
 
 StratosphereOS supports two zero-friction issue-tracking backends configured in `.memory/ARCHITECTURE.md` (`tracker: github` or `tracker: local`):
 
@@ -73,15 +219,15 @@ StratosphereOS supports two zero-friction issue-tracking backends configured in 
    - Every feature branch, worktree, and offline environment reads and updates issues via `issues.py` with **zero merge conflicts** and zero external dependencies.
    - Ideal for private offline work, air-gapped environments, or solo development.
 
-### Tracker Management CLI
+### Interactive Kanban Board & CLI
 StratosphereOS includes a high-performance CLI utility (`.agents/scripts/issues.py`) to manage issues across both backends:
 
 ```bash
-# View a live summary table across all milestones and epics
-python .agents/scripts/issues.py summary
-
 # Open the visual interactive Kanban board in your browser
 python .agents/scripts/issues.py board --open
+
+# View a live summary table across all milestones and epics
+python .agents/scripts/issues.py summary
 
 # List, view, or filter issues
 python .agents/scripts/issues.py list
@@ -96,7 +242,12 @@ python .agents/scripts/tracker_switch.py --to local
 
 ## Lifecycle Skills Matrix
 
-StratosphereOS provides 28 structured skills spanning the entire development lifecycle. Each installs to `.agents/skills/<name>/SKILL.md` and is invoked as `/<name>` on Claude Code, Antigravity, Cursor, Codex, Devin, and OpenClaw.
+StratosphereOS provides 28 structured skills spanning the entire development lifecycle. Each installs to `.agents/skills/<name>/SKILL.md` and is invoked as `/<name>` on Google Antigravity, Claude Code, Cursor, Codex, Devin, and OpenClaw.
+
+<details open>
+<summary><b>Expand Full 28-Skill Reference Matrix (Click to collapse/expand)</b></summary>
+
+<br/>
 
 | Stage | Command | Purpose & Rationale | Reads | Produces |
 |:---|:---|:---|:---|:---|
@@ -122,23 +273,44 @@ StratosphereOS provides 28 structured skills spanning the entire development lif
 | | `/stratosphere-update` | Upgrades framework templates, rules, and skills in-place without touching user memory. | `.memory/*`, lockfile | Upgraded framework files |
 | | `/sync-skills` | Discovers, installs, and synchronizes external domain and ecosystem skills on demand. | `external-skills.json` | Installed external skills |
 
+</details>
+
 ---
 
-## Getting Started (Installation)
+## Installation Tracks (Detailed Guide)
 
-### 1. Install the Skills
-StratosphereOS ships as one canonical bundle, `dist/skills/` (28 skills, with HITL sidecars and references intact). Pick the track that matches your situation. Installing skills never writes `.memory/`, `AGENTS.md` or rules — that is `/stratosphere-setup` (step 2).
-
-> **Trust the project first (Codex, Gemini CLI).** Codex >= 0.150.0 skips project `AGENTS.md` until the project is trusted, and Gemini CLI >= 0.59.0 fails closed on untrusted workspaces. Nothing errors: on Codex the skills can still appear (reported, not verified) while the constitution's precedence, security and git rules are absent. Trust the folder in the host before `/stratosphere-setup`; a skill cannot check this for you.
+StratosphereOS ships as one canonical bundle, `dist/skills/` (28 skills, with HITL sidecars and references intact). Pick the track that matches your setup:
 
 | Your situation | Use |
 |:---|:---|
-| Any host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track A](#track-a--skillssh-npx) |
-| Google Antigravity (native 1-click install or CLI) | [Track B](#track-b--google-antigravity-marketplace) |
-| Claude Code, want auto-updating skills | [Track C](#track-c--claude-code-marketplace) |
-| Offline, air-gapped, or no Node.js | [Track D](#track-d--direct-copy-offline--no-nodejs) |
+| Google Antigravity (Git 1-liner or Marketplace UI) | [Track A: Google Antigravity](#track-a--google-antigravity-git-install-or-marketplace) |
+| Claude Code, want auto-updating skills | [Track B: Claude Code Marketplace](#track-b--claude-code-marketplace) |
+| Any host (Cursor, Codex, Copilot, Devin, OpenClaw, Windsurf, Zed, …) with Node.js | [Track C: skills.sh (npx)](#track-c--skillssh-npx) |
+| Offline, air-gapped, or no Node.js | [Track D: Direct Copy](#track-d--direct-copy-offline--no-nodejs) |
 
-### Track A — skills.sh (`npx`)
+### Track A — Google Antigravity (Git Install or Marketplace)
+Install in seconds via the Antigravity CLI (`agy`) or through the Antigravity App UI:
+
+- **Direct Git Install (Recommended — Live Today):**
+  Run directly from your terminal:
+  ```bash
+  agy plugin install https://github.com/PatN-git/Stratosphere-OS
+  ```
+  `agy` clones the repository, verifies the plugin manifest, and registers all 28 skills into `~/.gemini/config/plugins/stratosphere-os`.
+
+- **Antigravity App UI (1-Click Marketplace):**
+  Open the left sidebar, navigate to **Customizations > Marketplace**, search for `stratosphere-os`, and click **Install**.
+  *(Or via the interactive chat command: `/plugin install stratosphere-os` once indexed in your catalog)*
+
+All 28 skills are immediately discoverable via progressive disclosure. Project setup (`/stratosphere-setup`) and updates (`/stratosphere-update`) automatically resolve their bundled templates and scripts.
+
+### Track B — Claude Code marketplace
+```text
+/plugin marketplace add PatN-git/Stratosphere-OS
+/plugin install stratosphere-os@stratosphere-os
+```
+
+### Track C — skills.sh (`npx`)
 ```bash
 # Project-level, into one agent's skills directory
 npx skills add PatN-git/Stratosphere-OS/dist/skills -a <agent> --copy -y
@@ -155,22 +327,6 @@ npx skills update
 - **Always include the `/dist/skills` subpath.** The bundle lives there; the repository root is not a skills root.
 - **Keep `-y`** so all 28 skills install; picking a subset breaks lifecycle hand-offs (e.g. `3d` → `4a`).
 - No network? Run it against a local clone: `npx skills add ./dist/skills -a <agent> --copy -y`.
-
-### Track B — Google Antigravity Marketplace
-Install with a single click inside the Google Antigravity App, or via the command line:
-
-- **Antigravity App UI:** Open the left sidebar, navigate to **Customizations > Marketplace**, search for `stratosphere-os`, and click **Install**.
-- **Antigravity CLI:**
-  ```text
-  /plugin install stratosphere-os
-  ```
-All 28 skills are immediately discoverable via progressive disclosure. Project setup (`/stratosphere-setup`) and updates (`/stratosphere-update`) automatically resolve their bundled templates and scripts.
-
-### Track C — Claude Code marketplace
-```text
-/plugin marketplace add PatN-git/Stratosphere-OS
-/plugin install stratosphere-os@stratosphere-os
-```
 
 ### Track D — Direct copy (offline / no Node.js)
 Needs only a copy of this repo's `dist/skills/` — from `git clone https://github.com/PatN-git/Stratosphere-OS.git`, a release/ZIP download, or a USB stick. It works fully offline and air-gapped: no Node.js, `npx`, network or shell scripts required. Run the block for your shell from your **project root**, replacing `<repo>` with the path to that copy:
@@ -191,19 +347,10 @@ Copy-Item -Recurse -Force <repo>\dist\skills\* .claude\skills\
 ```
 Copy the whole folders — each skill's `agents/` sidecar and `references/` are what keep lifecycle skills user-invoked only.
 
-> [!TIP]
-> **Zero-Click AI Installation Shortcut**
-> Want your agent to handle the installation, dependency checks, and GitHub integration automatically? Simply paste this prompt into your chat:
-> `Install StratosphereOS from this repository: https://github.com/PatN-git/Stratosphere-OS. Check dependencies (Python, Git, GitHub CLI gh), verify GitHub auth/connection, and assist with setup if needed.`
+---
 
-### 2. Instantiate Project Memory
-After installing the skills, restart your app or agent session, navigate to your target project repository, and run:
-```text
-/stratosphere-setup
-```
-This interactive skill bootstraps the initial `.memory/` state layer, constitution files, and domain skills for new projects.
+## Upgrading Framework Files (Updating)
 
-### 3. Upgrading Framework Files (Updating)
 To upgrade an already-instantiated project to later plugin versions, run:
 ```text
 /stratosphere-update
@@ -212,10 +359,10 @@ Your `.memory/` data and constitution are never overwritten; framework-owned blo
 
 > [!TIP]
 > **Keeping the Plugin Fresh**
-> - **Claude Code users (Track C):** updates arrive through `/plugin update stratosphere-os` or automatically if `autoUpdate` is enabled.
-> - **Track A users:** `npx skills update`.
-> - **Google Antigravity users (Track B):** updates arrive automatically or can be installed via the **Customizations > Marketplace** tab in the Antigravity App or `/plugin install stratosphere-os`.
-> - **Track D users:** copy updated skills from the new release into your skills directory.
+> - **Google Antigravity users:** updates can be reinstalled anytime with `agy plugin install https://github.com/PatN-git/Stratosphere-OS` (or via **Customizations > Marketplace** once listed).
+> - **Claude Code users:** updates arrive through `/plugin update stratosphere-os` or automatically if `autoUpdate` is enabled.
+> - **skills.sh users:** `npx skills update`.
+> - **Direct copy users:** copy updated skills from the new release into your skills directory.
 
 ---
 

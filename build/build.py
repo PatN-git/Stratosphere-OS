@@ -382,6 +382,9 @@ def main():
         print("[built] dist/assets")
     write_plugin_manifest()
     print("[built] dist/plugin.json")
+    if (ROOT / "README.md").is_file():
+        shutil.copy2(ROOT / "README.md", DIST / "README.md")
+        print("[built] dist/README.md")
     write_marketplace()
     print("[built] .claude-plugin/marketplace.json")
 

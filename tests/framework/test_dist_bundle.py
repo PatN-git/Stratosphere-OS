@@ -80,6 +80,8 @@ def sandbox(tmp_path):
     """A throwaway copy of build/ + src/, so the real build entrypoint can be broken safely."""
     for d in ("build", "src"):
         shutil.copytree(REPO_ROOT / d, tmp_path / d, ignore=shutil.ignore_patterns("__pycache__"))
+    if (REPO_ROOT / "README.md").is_file():
+        shutil.copy2(REPO_ROOT / "README.md", tmp_path / "README.md")
     return tmp_path
 
 
@@ -150,10 +152,11 @@ def test_plugin_manifest_is_the_dist_root():
     """BT-150: dist/ is itself the plugin root (`agy plugin install dist`): the manifest sits beside
     dist/skills and no per-host directory stands next to them."""
     dist = REPO_ROOT / "dist"
-    assert sorted(p.name for p in dist.iterdir()) == ["assets", "plugin.json", "skills"]
+    assert sorted(p.name for p in dist.iterdir()) == ["README.md", "assets", "plugin.json", "skills"]
     manifest = json.loads((dist / "plugin.json").read_text(encoding="utf-8"))
     assert manifest.get("logo") == "assets/logo.png"
     assert (dist / manifest["logo"]).is_file()
+    assert (dist / "README.md").is_file()
     assert manifest["name"] == "stratosphere-os"
     assert manifest["displayName"] == "StratosphereOS"
     assert manifest["version"] == _load_build().VERSION
