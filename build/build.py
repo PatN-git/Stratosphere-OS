@@ -341,8 +341,7 @@ def write_plugin_manifest():
         "license": "MIT",
         "suggestedPrompts": [
             "/stratosphere-setup",
-            "/0a-start-session",
-            "/2a-write-prd"
+            "/stratosphere-update"
         ]
     }
     write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
