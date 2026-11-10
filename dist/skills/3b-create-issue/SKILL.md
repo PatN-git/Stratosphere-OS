@@ -35,7 +35,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - **Title:** short name.
    - **Logic/user story:** end-to-end path.
    - **Blocked by:** prerequisite slices (a real `BT-<n>` for an existing sibling).
-   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path. Migration slices have no ODI, so step 2 infers Impact (1.0 med) and Confidence (80% high).
+   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path.
    - **Inheritance:** inherit scope-class + ODI score from PRD §6. No slices for `[DEFERRED]` stories.
    - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
    - **Maximum-slice ceiling:** split a draft whose title joins two outcomes with "and", or that has >3 AC, 2+ independent subsystems, or ~5+ hand-written non-test, non-generated files.
@@ -53,20 +53,9 @@ Run the `load-memory` skill to restore session context (read-only).
      - `[MED]` → `80%` (`[MEDIUM]` accepted as legacy)
      - `[LOW]` → `50%`
    - **Calibrated Metric Inference (zero intermediate question halts when ODI is absent):**
-     - **Impact defaults:**
-       - `type:bug`: Default to `1.0 (med)`. Elevate to `2.0 (high)` only if brief specifies critical crash, data loss, or security flaw.
-       - `type:feature`: Default to `1.0 (med)` for secondary/incremental; `2.0 (high)` for core user flows.
-       - `type:improvement`: Default to `1.0 (med)`.
-       - `type:maintenance` / `type:refactor`: Default to `0.5 (low)` or `1.0 (med)`.
-       - Explicit default when unbacked: `1.0 (med)`.
-     - **Confidence defaults:**
-       - Default to `80% (high)` when ODI is absent (preserves `100%` only for frozen PRD/design contracts; prevents systematic ICE inflation).
-       - Default to `100% (certain)` when referencing frozen PRD/design contracts.
-       - Default to `50% (guess)` for exploratory spikes.
-     - **Size inference (from file touchpoints/AST scope):**
-       - `size:small` (weight 1): 1–2 files touched.
-       - `size:medium` (weight 2): 3–5 files touched.
-       - `size:large` (weight 3): >5 files touched.
+     - **Impact:** Default to `1.0 (med)` (`type:bug` critical crash/data-loss/security → `2.0 (high)`; `type:maintenance|refactor` → `0.5 (low)`).
+     - **Confidence:** Default to `80% (high)` (unbacked default; `100%` only for frozen PRD/design contracts; Spikes → `50%`).
+     - **Size:** Infer from file touchpoints: 1–2 files → `size:small` (1); 3–5 → `size:medium` (2); >5 → `size:large` (3).
 3. **Draft full specs to scratch (Spikes: skip):** expand each new slice (not an existing sibling) into a complete, self-contained Build slice in `.tmp/BT-<padded>-issue-drafts.md`, the issue body minted verbatim in Phase 3, every field inline:
    - Contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint.
    - **Brief seed:** Established Facts → Current state / Problem (file paths allowed in issue bodies). PRD-sourced: Constraints & Settled Decisions → Current state / Problem. No-PRD path: Problem → Overview; Success State → Acceptance Criteria; Constraints & Settled Decisions → constraints in The Path; Non-Goals → Notes.

@@ -18,7 +18,7 @@ TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
 Run the `load-memory` skill (read-only).
 
 ## Phase 1: Scope
-_INPUT:_ trigger naming the feature (`BT-<padded>`). Absent → HALT, ASK: `Specify the feature. Example: /2c-reconcile-specs BT-003`. Preserve user-specified context/epic across all phases.
+_INPUT:_ trigger naming feature (`BT-<padded>`). Absent → HALT, ASK: `Specify feature. Example: /2c-reconcile-specs BT-003`. Preserve user-specified context/epic across all phases.
 _Resume:_ report exists → recover findings, resume Phase 4 (re-scan only on request).
 
 **Resolve target artifacts** (missing file = a finding, not an error):
@@ -61,10 +61,10 @@ Score each finding 0–100 per `references/confidence-scale.md`. **Audit scope:*
 - Else write `.tmp/BT-<padded>-slicing-readiness.md`, grouped P0 → P1 → P2. Per finding: **Contradiction** (conflicting claims, each quoted with source path + section/line) and **`PROPOSAL`** (the single reconciling change — which artifact wins and why, or the value/rule to add; recommendation only). Link the governing law where one applies (`[[A-xxx]]`/`[[DR-xxx]]`/`[[G-xxx]]`).
 
 ## Phase 4: Resolve & Apply
-1. **Auto-Apply & Present:** Auto-apply unified patch for structural boilerplate and mechanical formatting alignments. Present remaining semantic contradictions and low-confidence conflicts in a single-turn exception table for approval:
+1. **Auto-Apply & Present:** Auto-apply unified patch for structural boilerplate and formatting. Present semantic contradictions in a single-turn exception table for approval:
    | # | Severity | Artifacts | Semantic Conflict / Contradiction | Proposed Resolution |
    |:---|:---:|:---|:---|:---|
-   Halt. All proposed resolutions apply by default; the user **Skips** exceptions (a skipped finding dies with the ephemeral report).
+   Halt. All proposed resolutions apply by default; user **Skips** exceptions (a skipped finding dies with ephemeral report).
 2. **Apply** each non-skipped `PROPOSAL` as a surgical edit **to a spec document only** — change only the reconciled claim, never adjacent prose. Edit no file outside the resolved docs + `.tmp/`; a proposal naming code is out of scope here — convert it to an Open Question or migration record, never apply it. A finding needing investigation rather than a spec correction → write into the PRD as an **Open Question** with `blocking: Y` (durable; `3b` mints it as a Spike). A missing-contract P0 → record as a PRD §10 `migration:` item (same form), never silently write the schema.
 3. **Version:** once per run (not per finding), re-stamp each edited doc's OKF `version` to the installed plugin version and refresh `generated.at` (and `generated.by` to `2c-reconcile-specs`) — per `.agents/rules/okf-protocol.md` §5 (Edited Docs).
 4. **Exit criteria:** zero P0 unaddressed; every finding applied, written as an Open Question, or skipped; no open `[UNCOVERED]`. Never mark complete on a "looks consistent" judgment.

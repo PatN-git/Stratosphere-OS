@@ -146,7 +146,7 @@
       "version": "1.1.0"
     },
     "skills/0d-nightly-consolidation/SKILL.md": {
-      "sha256": "d1452eaf7a56b79907586de77c6b5750f65ecfb5b2b06db3cfaf9d6af6e05b96",
+      "sha256": "e63258ecb951c28c5873f459e98bfab3e205401957ca3633a0a9d15dae047990",
       "timestamp": "2026-11-09",
       "version": "1.6.0"
     },
@@ -346,7 +346,7 @@
       "version": "5.2.0"
     },
     "skills/2c-reconcile-specs/SKILL.md": {
-      "sha256": "6e18d78d1aff7f0b4984f57cef5bea4cb86f4e8d787ceeb5e09a296950f5c4f0",
+      "sha256": "d1e927e059926a7a06d5333b799f78b40be276df53776366cf5f32a1d656b9da",
       "timestamp": "2026-11-09",
       "version": "1.5.0"
     },
@@ -396,7 +396,7 @@
       "version": "5.2.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "21b18c562d0ca833fe0cd450bce9be1f4bba3e404e287f7603040ac3d4083707",
+      "sha256": "ec559c0940b17ec5b3bea79a851eb503fba9d3b7e207a1ba6e212d2a65323184",
       "timestamp": "2026-11-09",
       "version": "2.9.0"
     },
@@ -476,7 +476,7 @@
       "version": "5.2.0"
     },
     "skills/3d-implement-issue/SKILL.md": {
-      "sha256": "6f34618915fa129e620d4cd457629bef5e53d0b30f9e4c439edbe1ba435dacf3",
+      "sha256": "959e456ea536e8207904272610be1d9d3db7c1e0444db6e52a979453765b2ce2",
       "timestamp": "2026-11-09",
       "version": "2.10.0"
     },
