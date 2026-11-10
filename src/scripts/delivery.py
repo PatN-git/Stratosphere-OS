@@ -89,7 +89,7 @@ def cmd_set_mode(project_root: Path, mode: str):
 
     scaffolder = locate_scaffolder(project_root)
     if scaffolder:
-        cmd = [sys.executable, str(scaffolder), "--update", "--delivery", mode]
+        cmd = [sys.executable, str(scaffolder), "--delivery", mode]
         print(f"Running scaffolder: {' '.join(cmd)}")
         res = subprocess.run(cmd, cwd=str(project_root))
         return res.returncode
@@ -105,7 +105,7 @@ def cmd_restore_skills(project_root: Path):
     print("Restoring lifecycle skills into .agents/skills/ for non-plugin host compatibility...")
     scaffolder = locate_scaffolder(project_root)
     if scaffolder:
-        cmd = [sys.executable, str(scaffolder), "--update", "--delivery", "in-repo"]
+        cmd = [sys.executable, str(scaffolder), "--delivery", "in-repo"]
         print(f"Running scaffolder: {' '.join(cmd)}")
         res = subprocess.run(cmd, cwd=str(project_root))
         if res.returncode == 0:
