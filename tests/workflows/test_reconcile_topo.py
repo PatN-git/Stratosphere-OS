@@ -194,7 +194,7 @@ def test_stage3_frontmatter_version_bumps():
         ("workflows/3a-version-planning.md", "1.5.0"),
         ("workflows/3b-create-issue.md", "2.9.0"),
         ("workflows/3c-sprint-planning.md", "2.8.0"),
-        ("workflows/3d-implement-issue.md", "2.9.0"),
+        ("workflows/3d-implement-issue.md", "2.10.0"),
         ("skills/micro-tdd/SKILL.md", "1.7.0"),
         ("workflows/3z-afk-loop.md", "1.10.0"),
     ]:

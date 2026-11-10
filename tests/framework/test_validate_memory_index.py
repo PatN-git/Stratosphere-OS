@@ -270,7 +270,7 @@ def test_stage0_frontmatter_version_bumps():
         ("skills/load-memory/SKILL.md", "1.3.0"),
         ("workflows/0a-start-session.md", "1.3.0"),
         ("workflows/0b-stop-session.md", "1.7.0"),
-        ("workflows/0d-nightly-consolidation.md", "1.5.0"),
+        ("workflows/0d-nightly-consolidation.md", "1.6.0"),
         ("workflows/0e-plain-english.md", "1.2.0"),
     ]:
         content = read_src(rel_path)
