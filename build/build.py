@@ -252,7 +252,7 @@ def emit_skill(src_md, name, skills_dir, ref_dir):
 
 def build_bundle():
     force_rmtree(BUNDLE)
-    BUNDLE.mkdir(parents=True)
+    BUNDLE.mkdir(parents=True, exist_ok=True)
     ref_dir = SRC / "references"
 
     # 1. Execution skills (self-containment enforced below)

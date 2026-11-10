@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "df24fa4a4532f79586270f5a341aab9582cc5b62728b84f02b55c5eb016d608a",
-      "timestamp": "2026-11-09",
-      "version": "3.6.0"
+      "sha256": "a78b54084969f942148afdbca9da99c7320dab336bdb4c8b49bef7c1d896b80a",
+      "timestamp": "2026-11-10",
+      "version": "3.7.0"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
