@@ -4,8 +4,8 @@ title: Learnings
 description: Episodic project-specific lessons and insights.
 generated:
   by: stratosphere-setup
-  at: 2026-09-29
-version: "1.0.5"
+  at: 2026-11-09
+version: "1.1.0"
 ---
 # LEARNINGS
 
@@ -24,7 +24,7 @@ Episodic memory for project-specific lessons likely to matter again. Each entry 
 - Framework-specific traps
 
 ## What does NOT belong here
-- Temporary TODOs → the tracker (`references/tracker-verbs-github.md`, local: `references/tracker-verbs-local.md`)
+- Temporary TODOs → the tracker (`.agents/scripts/tracker.py`)
 - Current task status → the issue's resume note
 - One-off debugging logs unless they reveal a reusable rule
 - `[LAW]`-tier rules → `ARCHITECTURE.md` or `DESIGN_RULES.md`

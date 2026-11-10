@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-11-06
+version: "1.9.0"
+timestamp: 2026-11-09
 ---
 
 # Write PRD
@@ -18,7 +18,7 @@ timestamp: 2026-11-06
 Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Precondition & Mode
-1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
+1. Ensure the active-work context is loaded; if Phase 0 skipped it (no active task yet), `list` the open issues (`.agents/scripts/tracker.py`).
 2. Detect mode from `docs/prds/BT-<n>-<name>.md` existence:
    - **New** — draft from scratch.
    - **Expand** — read file, fill thin sections and `> open:` markers.
@@ -28,7 +28,7 @@ Run the `load-memory` skill to restore session context (read-only).
    **Locate research:** same slug, fuzzy-match `docs/research/*.md` (ignore *.work.md) by 1b's External Research matching (multiple matches → list filenames, user selects; none → no research; match only, no staleness prompt). Record both paths for the PRD frontmatter `discovery:` / `research:` (Phase 5 step 1).
 
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
-`create` the parent issue (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
+`create` the parent issue (`.agents/scripts/tracker.py`) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
 > [!IMPORTANT]
 > **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns (local backend: `BT-LOCAL-<slug>`).
 

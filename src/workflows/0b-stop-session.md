@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-11-06
+version: "1.8.0"
+timestamp: 2026-11-09
 ---
 
 # STOP SESSION
@@ -22,13 +22,13 @@ Leave next session with context to resume immediately. Ensure new entries are ta
 **First entry rule:** On first entry in `STATUS.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, or `DESIGN_RULES.md`, delete placeholders only; preserve structure, guidelines, and format examples under `## Superseded`.
 
 1. Compare completed vs. planned:
-    - Post a resume note on each active issue with `comment` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`) §Resume note): the block starting `<!-- stratos:resume -->` with `Branch / Done / Open / Next step / Blockers`, written to `.tmp/resume-BT-<n>.md` and sent with `--body-file` (local backend: `.memory/resume/<id>.md`); note which issues were updated/closed.
+    - Post a resume note on each active issue with `comment` (`.agents/scripts/tracker.py` §Resume note): the block starting `<!-- stratos:resume -->` with `Branch / Done / Open / Next step / Blockers`, written to `.tmp/resume-BT-<n>.md` and sent with `--body-file` (local backend: `.memory/resume/<id>.md`); note which issues were updated/closed.
     - **Merge-time sync:** run `gh pr list --state closed --search "closed:>=<Last Sync date>" --json number,mergedAt,closingIssuesReferences,headRefName` (`Last Sync` from `.memory/STATUS.md`; empty or not a date → no `--search`, `gh` returns its newest 30 closed PRs). Any PR back (merged, or closed unmerged) → read `references/post-merge-sync.md` and run it, then use its results for the handoff `Blockers` and `Follow-ups proposed`; none → skip silently.
         - Local backend: the merged ids are each merged PR's `stratos-pr` `features:` list plus `git fetch -q origin` (non-fatal: ignore a failure, offline or no origin, the check then runs on what is local) then `python .agents/scripts/issues.py merged --close`, which needs no PR host and runs even when none is back. A `[PROBABLY-MERGED <id>]` line (squash found by id, never auto-closed): ask the user to confirm the merge, then `python .agents/scripts/issues.py close <id>`; unconfirmed → leave it `in review`.
         - `gh` unavailable → skip the PR query and note in `Blockers`; locally `issues.py merged --close` still runs.
 2. Update `.memory/STATUS.md`, folder state only, by editing single fields and lines, never a whole-file rewrite:
     - Set `Last Sync` (today), unless the merge sync was skipped (`gh` unavailable): then leave it unchanged and note the skip in `Repo notes`; set or clear `Blocker` and `Repo notes`.
-    - Remove this session's line from `Sessions` when its slice left `in progress`; prune the other lines whose issue is not in the `wip` read (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) or whose date is older than 14 days.
+    - Remove this session's line from `Sessions` when its slice left `in progress`; prune the other lines whose issue is not in the `wip` read (`.agents/scripts/tracker.py`) or whose date is older than 14 days.
     - Old-format STATUS (single-task fields or dated history instead of `Sessions`): propose the trimmed new-format file once and write it on confirmation.
 3. **Friction gate & Diff-Based Verification:** run steps 3–4 only if this session hit friction: a failed approach, a costly wrong assumption, a defect fixed, or a reviewer/audit catch. Else skip silently. Run `git diff` and inspect actual code diffs to verify candidate lessons against real code modifications rather than model recall. For each defect fixed, ask "what would have prevented it?". Route every candidate per `references/environment-fix-ladder.md`.
 4. If a candidate reaches the LEARNINGS rung and is a durable lesson:
@@ -42,6 +42,11 @@ Leave next session with context to resume immediately. Ensure new entries are ta
    - If a step-4 learning is now codified by the new `[[A-xxx]]`, propose superseding it (`[[L-xxx]]` → `[[A-xxx]]`); apply on confirmation.
 7. If DB schema or understanding changed, update `.memory/DATABASE_SCHEMA.md` (always `[LAW]`).
 8. Propose UI structural (`[[DR-xxx]]`/immortal component) or brand token changes before updating `DESIGN_RULES.md`/`DESIGN.md`.
+8b. Intermediate session files triage (.tmp/): inspect intermediate session files in `.tmp/` and present a 3-way HITL triage proposal to the user:
+    - (a) Delete transient scratch files and logs.
+    - (b) Relocate durable artifacts (e.g. design notes, reference docs) to `docs/` (with OKF frontmatter).
+    - (c) Keep in `.tmp/` for in-flight work.
+    Active framework state files (`.tmp/3d-suite-*.json`, `.tmp/3z-loop.work.md`, `.tmp/3d-plan-*.md`, `.tmp/4a-audit-*.json`) are explicitly exempted from deletion candidates. Require user confirmation before deleting or relocating any file.
 9. Verify: `python .agents/scripts/pr_body.py suite` prints reusable suite result (reuse it); else if no tracked file changed outside `.memory/` and `.tmp/`, report `suite: not run (no tracked change)`; otherwise run via `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (no slice: `record -- <cmd>`). Run memory lint: `python .agents/scripts/validate_memory.py`. Report errors and warnings; await confirmation.
 10. Regenerate OKF Visualizer: `python .agents/scripts/okf_view.py` after lint passes.
 11. Ensure the resume note allows resuming without re-discovery.
@@ -52,6 +57,7 @@ Session complete.
 - Files touched:
 - GitHub issues touched:
 - Verification & Lint results:
+- Tmp files triaged (deleted / relocated / kept):
 - New learnings (ID, tag, one-line text):
 - New glossary terms (with IDs and tags):
 - Framework feedback (skill · installed version · defect · evidence · suggested fix):

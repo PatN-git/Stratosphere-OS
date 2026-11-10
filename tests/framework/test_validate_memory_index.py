@@ -265,12 +265,32 @@ def test_0e_plain_english_standardized_prompt_structure():
     assert 'Say "more" for details' in text_0e
 
 
+def test_0b_session_tmp_files_review_and_triage_proposal():
+    text_0b = read_src("workflows/0b-stop-session.md")
+    # Procedure step assertions: inspect .tmp/ and present 3-way HITL triage proposal
+    assert ".tmp/" in text_0b
+    assert "triage" in text_0b.lower()
+    assert "delete" in text_0b.lower()
+    assert "relocate" in text_0b.lower()
+    assert "keep" in text_0b.lower()
+    assert "docs/" in text_0b
+    assert "OKF frontmatter" in text_0b
+    assert "confirmation" in text_0b.lower()
+    # Explicit exemptions for active framework state files
+    assert ".tmp/3d-suite-*.json" in text_0b
+    assert ".tmp/3z-loop.work.md" in text_0b
+    assert ".tmp/3d-plan-*.md" in text_0b
+    assert ".tmp/4a-audit-*.json" in text_0b
+    # Handoff Note Format assertion
+    assert "- Tmp files triaged (deleted / relocated / kept):" in text_0b
+
+
 def test_stage0_frontmatter_version_bumps():
     for rel_path, expected_v in [
         ("skills/load-memory/SKILL.md", "1.3.0"),
-        ("workflows/0a-start-session.md", "1.3.0"),
-        ("workflows/0b-stop-session.md", "1.7.0"),
-        ("workflows/0d-nightly-consolidation.md", "1.5.0"),
+        ("workflows/0a-start-session.md", "1.4.0"),
+        ("workflows/0b-stop-session.md", "1.8.0"),
+        ("workflows/0d-nightly-consolidation.md", "1.6.0"),
         ("workflows/0e-plain-english.md", "1.2.0"),
     ]:
         content = read_src(rel_path)

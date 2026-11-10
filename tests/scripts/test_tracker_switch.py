@@ -316,3 +316,40 @@ def test_a_failing_gh_with_no_message_still_names_a_reason(project, monkeypatch,
                         lambda a: (7, "", "") if a[:2] == ["issue", "create"] and "Login page" in a else real(a))
     assert ts.main(["--apply"]) == 1
     assert "[SWITCH-FAIL: gh issue create: exit 7;" in capsys.readouterr().out
+
+
+# --- Characterization: helper separation & CLI --------------------------------------------------------
+
+def test_tracker_switch_helper_separation():
+    import _tracker_common as tc
+    helpers = [
+        "write_key", "write_tracker", "read_tracker", "real_number", "padded",
+        "rewrite_ids", "text_files", "pending_rewrites", "apply_rewrites",
+        "report_other_hits", "LOCAL_ID", "REWRITE_ROOTS", "SKIP_DIRS",
+    ]
+    for name in helpers:
+        assert hasattr(tc, name), f"_tracker_common missing {name}"
+        assert hasattr(ts, name), f"tracker_switch missing re-export of {name}"
+        assert getattr(ts, name) is getattr(tc, name), f"tracker_switch.{name} does not match _tracker_common.{name}"
+
+
+def test_tracker_switch_cli_dry_run_vs_apply_characterization(project, capsys):
+    root, store = project
+    arch = root / ".memory" / "ARCHITECTURE.md"
+    assert reconcile.read_tracker(arch) == "local"
+
+    # 1. Unrecognized argument exits 2
+    with pytest.raises(SystemExit) as exc:
+        ts.main(["--bogus-flag"])
+    assert exc.value.code == 2
+
+    # 2. Dry-run without --apply exits 0, creates no issues and leaves tracker as local
+    code = ts.main([])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "[PLAN create BT-LOCAL-" in out
+    assert "[SWITCH: dry run," in out
+    assert "re-run with --apply" in out
+    assert reconcile.read_tracker(arch) == "local"
+    assert len(gh_state(store)["issues"]) == 3  # only initial filler issues exist
+

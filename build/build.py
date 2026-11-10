@@ -44,12 +44,12 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "5.1.0"
+VERSION = "5.2.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
 )
-AUTHOR = "Gravity Technologies"
+AUTHOR = "Patrick Nennewitz"
 
 
 # --- frontmatter helpers ---------------------------------------------------
@@ -254,7 +254,6 @@ def build_bundle():
     force_rmtree(BUNDLE)
     BUNDLE.mkdir(parents=True)
     ref_dir = SRC / "references"
-    project_tracker_verbs(ref_dir)
 
     # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():
@@ -342,8 +341,7 @@ def write_plugin_manifest():
         "license": "MIT",
         "suggestedPrompts": [
             "/stratosphere-setup",
-            "/0a-start-session",
-            "/2a-write-prd"
+            "/stratosphere-update"
         ]
     }
     write_lf(DIST / "plugin.json", json.dumps(manifest, indent=2) + "\n")
@@ -384,6 +382,9 @@ def main():
         print("[built] dist/assets")
     write_plugin_manifest()
     print("[built] dist/plugin.json")
+    if (ROOT / "README.md").is_file():
+        shutil.copy2(ROOT / "README.md", DIST / "README.md")
+        print("[built] dist/README.md")
     write_marketplace()
     print("[built] .claude-plugin/marketplace.json")
 

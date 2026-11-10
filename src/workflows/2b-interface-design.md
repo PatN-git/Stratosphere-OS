@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-11-06
+version: "1.8.0"
+timestamp: 2026-11-09
 ---
 
 # Interface Design
@@ -23,7 +23,7 @@ Run the `load-memory` skill to restore session context (read-only).
 *Resume check: if docs/design/BT-<padded>-interface.md exists with status: draft, recover path/branch (from surface/body) and resume: Path B/C at Phase 4 (or 2.5); Path A at Phase 4 if "## Design Brief" exists, else Phase 3 (or 2.5).*
 
 1. Load PRD from `docs/prds/BT-<padded>-<feature>.md`.
-2. If no external surface/code change → skip (no design doc produced); **promote parent epic `needs_spec → planned`** (`set_status(<n>, planned)`, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) since the spec is complete with no design step; then handoff to `/3b-create-issue`.
+2. If no external surface/code change → skip (no design doc produced); **promote parent epic `needs_spec → planned`** (`set_status(<n>, planned)`, `.agents/scripts/tracker.py`) since the spec is complete with no design step; then handoff to `/3b-create-issue`.
 3. If feature has no UI surface → Path C.
 4. If UI surface, read "Design Source" from `.memory/DESIGN_RULES.md` §2 and branch:
    - `stitch` or `claude-design` → Path A (generator-assisted). A1 = Whole-page; A2 = Feature-on-existing. (If generator tools absent: A1 stays Path A; A2 prompts user, or defaults to Path B if AFK).
@@ -101,7 +101,7 @@ Run the `load-memory` skill to restore session context (read-only).
 Before Phase 5, run `python .agents/scripts/contract_check.py --docs <prd> <design-doc> --schema .memory/DATABASE_SCHEMA.md [--ts <path>]` (add `--sql <schema.sql>` when the project declares one). Fix each `[CONTRACT-MISSING]` in the design doc (editable at `stable` too), or write it into the PRD's `> open:` markers when the PRD is the side that is wrong. `[CONTRACT-SKIP]` means no schema is declared; continue. Skip entirely on the no-surface skip path (no design doc).
 
 ## Phase 5: Publish & Sync
-1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). (2b never touches the PRD's editorial status — 2a owns that.)
+1. **Epic status transition (single writer for this edge):** the design freeze promotes the parent epic `needs_spec → planned`: `set_status(<n>, planned)` (`.agents/scripts/tracker.py`). (2b never touches the PRD's editorial status — 2a owns that.)
 2. **Commit & Push Doc:** `git add docs/design/BT-<padded>-interface.md && git commit -m "docs(BT-<padded>): interface design"`, then push to the **default** branch if `gh`/remote is connected (else local commit only). Never sweep unrelated drift into this commit.
 3. `set_body`: append the design doc link to the parent issue body.
 4. `set_refs(BT-<padded>, <memory IDs>)` (the body's `Refs:` line), never the design doc path.

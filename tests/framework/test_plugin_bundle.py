@@ -145,6 +145,17 @@ def test_update_deletes_the_throwaway_clone_on_every_outcome():
         assert "on every outcome" in line and "HALT" in line.split("on every outcome", 1)[1], line
 
 
+def test_update_references_do_not_mandate_host_restart_on_success():
+    """BT-252: Post-success restart HALT is replaced with dynamic rehydration and host reload commands."""
+    for ref_name in ("update-antigravity-plugin.md", "update-claude-marketplace.md", "update-copied-skills.md"):
+        text = (REPO_ROOT / "src" / "references" / ref_name).read_text(encoding="utf-8")
+        assert "restart Antigravity and re-run" not in text
+        assert "restart Claude Code, then re-run" not in text
+        assert "reload plugins and re-run" not in text
+        assert "Phase 0.5" in text
+
+
+
 def test_proposal_status_records_what_shipped():
     status = next(line for line in read(PROPOSAL).splitlines() if line.startswith("**Status:**"))
     assert "nothing implemented" not in status

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.7.0"
-timestamp: 2026-11-06
+version: "2.8.0"
+timestamp: 2026-11-09
 ---
 
 # Sprint planning
@@ -18,7 +18,7 @@ timestamp: 2026-11-06
 Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Context Intake & Triage Scan
-1. Read the candidates: `python .agents/scripts/ice_read.py candidates` (the `candidates` read, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`): scoped, open issues only, ICE already computed; both backends; local backend: the user may reorder statuses on `issues.py board --web`, apply the pasted payload with `issues.py apply-moves`).
+1. Read the candidates: `python .agents/scripts/ice_read.py candidates` (the `candidates` read, `.agents/scripts/tracker.py`: scoped, open issues only, ICE already computed; both backends; local backend: the user may reorder statuses on `issues.py board --web`, apply the pasted payload with `issues.py apply-moves`).
 2. **Audit Strategy:**
    - Candidates: `tier:slice AND status:planned|needs_spec`, excluding `concept:*` and `scope:deferred`. `needs_spec` slices are Spikes (definition: `references/issue-templates.md`). **Never flip `needs_spec → planned`.**
    - Verify Build slices belong to current release `vX.Y` (read from the parent `vX.Y.0` milestone; default `v1.0`; never invent `X.Y` — 3c owns only Z). If mismatches exist, flag and ask user. Spike outside `vX.Y` (incl. legacy milestone `—`): list as `[SPIKE-UNSCHEDULED] BT-<padded>` (set milestone `vX.Y.0` to schedule); do not sequence it.
@@ -46,32 +46,33 @@ Run the `load-memory` skill to restore session context (read-only).
 - **AFK Check:** Flag leaves containing `size:large` and `mode:AFK`.
 - **Label Check:** Verify labels exist in registry; list each `priority:*` band Phase 5 step 1 will set that is missing (github: `ensure_label` there, after the user confirms; local: `priority:*` needs none).
 
-## Phase 4: Sequence Proposal
-Output compressed readout matching capacity thresholds:
+## Phase 4: Sequence Proposal & Consolidated Verification Gate
+Output compressed readout matching capacity thresholds, displaying all alerts and warnings inline directly within the topological sequence table:
 
 ```markdown
 [TARGET SPRINT MILESTONE: <vX.Y.Z>]
 
-- [AFK] BT-<padded> | <title> (<size>) | Area: <area or —> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [HITL] BT-<padded> | <title> (<size>) | Area: <area or —> | Type: <type> | ICE Score: <score> | Priority Label: <priority>
-- [SPIKE] BT-<padded> | <title> | (<size>) | close on Exit Criteria; follow-up via /3b
-- [NEXT] BT-<padded> | <title> (<size>) | over budget; next sprint
+### Topological Sprint Sequence & Verification Gate
+| Seq | Mode | Issue | Title (Size) | Area | Type | ICE | Priority | Inline Warnings & Notes |
+|:---:|:---:|:---|:---|:---:|:---:|:---:|:---:|:---|
+| 1 | AFK | BT-<padded> | <title> (<size>) | <area or —> | <type> | <score> | <priority> | — |
+| 2 | AFK | BT-<padded> | <title> (<size>) | <area or —> | <type> | <score> | <priority> | ⚠️ WARN: size:large on mode:AFK |
+| 3 | HITL | BT-<padded> | <title> (<size>) | <area or —> | <type> | <score> | <priority> | 🔗 NEW-DEP: Blocked by BT-<prereq> |
+| 4 | HITL | BT-<padded> | <title> (med) | <area or —> | spike | — | — | [SPIKE] close on Exit Criteria |
+| — | — | BT-<padded> | <title> (<size>) | <area or —> | <type> | <score> | <priority> | [NEXT] Over budget; next sprint |
 
 [BUDGET] Build <b>h | Spike <s>h | total <t>/80h
 
-[CRITICAL ALERTS]
-⚠️ WARNING: BT-<padded> is size:large but labeled mode:AFK. Confirm auto-execution!
-🗒️ Note: BT-<padded> labeled as `[MISSING-LABELS]` lacks required labels; fix before it can be sequenced.
-🔗 New dependency: BT-<padded> should be `Blocked by` BT-<prereq> (late-discovered; confirm to record).
+Prompt: `[Activate Sprint Queue] / [Edit Queue]`
 ```
 *Optional Fully-AFK Sprint Advisory:* If all sequenced Build slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 ## Phase 5: Commit & Sync
 
-Halt for confirmation. When confirmed:
-1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, github: `ensure_label` the new `priority:*` first when the registry lacks it (user confirms; GitHub rejects an unknown label); local: `priority:*` needs none; then `set_labels` it in place of the old one (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) — it is gate-checked in step 5.
+Single activation confirmation authorizes sequence, priority updates, milestone assignment, and dependency recording in one atomic execution:
+1. **Build slices only:** update priority (ICE >= 0.5 -> high, 0.15 <= ICE < 0.5 -> medium, ICE < 0.15 -> low). If ICE recalculation shifted the band, github: `ensure_label` the new `priority:*` first when the registry lacks it (user confirms; GitHub rejects an unknown label); local: `priority:*` needs none; then `set_labels` it in place of the old one (`.agents/scripts/tracker.py`) — it is gate-checked in step 5.
 2. `ensure_milestone` `vX.Y.Z`, then `set_milestone` on every sequenced item (Build slices and Spikes; not `[NEXT]` or `[BLOCKED]`), moving it from `vX.Y.0` or an earlier sprint milestone. Refresh `generated.at` (and `generated.by`) on any `.memory/` document this step mutates. `set_status` `planned` for Build slices only; **Spikes keep `status:needs_spec`** (never set `planned`).
-3. **Record confirmed dependencies (add-only):** for each `[NEW-DEP]` the user confirmed at the halt, `add_blocker` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). 3c only adds, only on explicit confirmation (`3b` births `Blocked by`; clearing is 4a at ship / 0b at merge); never remove an entry. Skip declined edges.
+3. **Record confirmed dependencies (add-only):** for each `[NEW-DEP]` the user confirmed at the halt, `add_blocker` (`.agents/scripts/tracker.py`). 3c only adds, only on explicit confirmation (`3b` births `Blocked by`; clearing is 4a at ship / 0b at merge); never remove an entry. Skip declined edges.
 4. Comment on each updated issue: 'Sprint vX.Y.Z sync: ICE <score> → priority:<priority>; milestone vX.Y.Z; status:planned.' Spike: 'Sprint vX.Y.Z sync: Spike; milestone vX.Y.Z; status:needs_spec; close on Exit Criteria.'
 5. **Terminal sync gate** (`references/terminal-sync-invariant.md`), over all sequenced `BT-<padded>`, Spikes included:
    - As steps 1-3 land, write the intended end state to `.tmp/3c-expect.txt`, one line per field (`BT-<n>:status=planned`, or `status=needs_spec` for a Spike; `BT-<n>:milestone=vX.Y.Z`, `BT-<n>:labels=<its full non-status label set>`, `BT-<n>:blocked_by=<its full blocker set>`), then run `python .agents/scripts/reconcile.py --ids <comma-list> --expect-file .tmp/3c-expect.txt`.

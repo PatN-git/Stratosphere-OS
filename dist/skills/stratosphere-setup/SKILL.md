@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-10-31
+version: "1.8.0"
+timestamp: 2026-11-09
 ---
 
 # Instantiate StratosphereOS
@@ -291,7 +291,7 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
-2. If issues or active tasks exist, seed them through the `create` verb (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
+2. If issues or active tasks exist, seed them through the `create` verb (`.agents/scripts/tracker.py`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)

@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.8.0"
-timestamp: 2026-11-06
+version: "2.9.0"
+timestamp: 2026-11-09
 ---
 
 # Create issue
@@ -21,21 +21,21 @@ Run the `load-memory` skill to restore session context (read-only).
 
 ## Phase 1: Intake & Scope
 1. **Intake:** Receive raw idea or MVI.
-2. **Parent epic + defensive promotion (idempotent guard):** Find the parent epic with `get` of the one named, else the open epics only (GitHub `gh issue list --label tier:epic --state open --json number,title,milestone`, no body; local `issues.py list --label tier:epic`), never a whole-backlog read. If it is still `status:needs_spec` (a 2b promotion was missed or 2b was skipped), promote it `needs_spec → planned` now: `set_status(<parent>, planned)` (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). No-op if already `planned` or further; skip for standalone slices with no parent. Audit-sourced: skip.
+2. **Parent epic + defensive promotion (idempotent guard):** Find the parent epic with `get` of the one named, else the open epics only (GitHub `gh issue list --label tier:epic --state open --json number,title,milestone`, no body; local `issues.py list --label tier:epic`), never a whole-backlog read. If it is still `status:needs_spec` (a 2b promotion was missed or 2b was skipped), promote it `needs_spec → planned` now: `set_status(<parent>, planned)` (`.agents/scripts/tracker.py`). No-op if already `planned` or further; skip for standalone slices with no parent. Audit-sourced: skip.
 3. **Scope:**
    - PRD-sourced → load `docs/prds/BT-<padded>-<name>.md`, frozen design doc `docs/design/BT-<padded>-interface.md` and the discovery brief. Scope is PRD §1 (intent), §6, §7 (constraints), §8 + §10 and design blueprint; the brief supplies file-level facts, which the PRD keeps path-free.
      - Brief = the PRD frontmatter `discovery:` path (`—` = none); field absent → fallback: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5).
    - Audit-sourced → load the proposal and the report named on its line 1; scope is every F-xx in the report.
    - Else raw idea/MVI is scope (no-PRD path). **Brief lookup:** a brief path the user names wins; else 2a Phase 1 step 5's slug match (several → user selects; none → no brief). Route by its frontmatter: `linked-prd: BT-<n>` → restart Phase 1 PRD-sourced for that BT; else `ready-for-prd` → name `/2a-write-prd` and HALT; `dropped` → HALT, proceed only on user confirmation; `exit-spike` → a Spike. An idea listed in its Decoupled Follow-ups seeds from Established Facts only.
-4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** `children(<parent>)` (`gh issue view <parent> --json subIssues`, `.nodes`, per `references/github-issue-relations.md`; local: `issues.py children <parent>`). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
+4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** `children(<parent>)` (`gh issue view <parent> --json subIssues`, `.nodes`, per `.agents/scripts/tracker.py`; local: `issues.py children <parent>`). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
 
 ## Phase 2: Slice, Draft & Audit
-**Audit-sourced:** skip steps 1 and 3 (the proposal is the draft). In step 2, take Impact and Confidence from `references/audit-to-slices.md` §6 — the ODI fallback HALT does not apply; still prompt for Size, then write Size and the ICE Score (Phase 3 step 1 formula) into each slice's ICE Priorities in the proposal.
+**Audit-sourced:** skip steps 1 and 3 (the proposal is the draft). In step 2, take Impact and Confidence from `references/audit-to-slices.md` §6; infer Size from touchpoints (small 1–2 files, med 3–5, large >5), then write Size and the ICE Score (Phase 3 step 1 formula) into each slice's ICE Priorities in the proposal.
 1. **Slices List:** propose breakdown per slice:
    - **Title:** short name.
    - **Logic/user story:** end-to-end path.
    - **Blocked by:** prerequisite slices (a real `BT-<n>` for an existing sibling).
-   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path. Migration slices have no ODI, so the step-2 fallback HALT asks the user for Impact and Confidence.
+   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path.
    - **Inheritance:** inherit scope-class + ODI score from PRD §6. No slices for `[DEFERRED]` stories.
    - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
    - **Maximum-slice ceiling:** split a draft whose title joins two outcomes with "and", or that has >3 AC, 2+ independent subsystems, or ~5+ hand-written non-test, non-generated files.
@@ -52,11 +52,10 @@ Run the `load-memory` skill to restore session context (read-only).
      - `[HIGH]` → `100%`
      - `[MED]` → `80%` (`[MEDIUM]` accepted as legacy)
      - `[LOW]` → `50%`
-    - **Fallback (ODI absent): HALT** and ask the user for Impact and Confidence; never infer them (an inferred value can move the priority bucket). Resume drafting only after both are given:
-      - **Impact:** ∈ {0.25 (min), 0.5 (low), 1.0 (med), 2.0 (high), 3.0 (crit)}
-      - **Confidence:** ∈ {50% (guess), 80% (high), 100% (certain)}
-   - Prompt for **Size** (Effort):
-     - **Size:** ∈ {size:small (weight 1), size:medium (weight 2), size:large (weight 3)}
+   - **Calibrated Metric Inference (zero intermediate question halts when ODI is absent):**
+     - **Impact:** Default to `1.0 (med)` (`type:bug` critical crash/data-loss/security → `2.0 (high)`; `type:maintenance|refactor` → `0.5 (low)`).
+     - **Confidence:** Default to `80% (high)` (unbacked default; `100%` only for frozen PRD/design contracts; Spikes → `50%`).
+     - **Size:** Infer from file touchpoints: 1–2 files → `size:small` (1); 3–5 → `size:medium` (2); >5 → `size:large` (3).
 3. **Draft full specs to scratch (Spikes: skip):** expand each new slice (not an existing sibling) into a complete, self-contained Build slice in `.tmp/BT-<padded>-issue-drafts.md`, the issue body minted verbatim in Phase 3, every field inline:
    - Contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint.
    - **Brief seed:** Established Facts → Current state / Problem (file paths allowed in issue bodies). PRD-sourced: Constraints & Settled Decisions → Current state / Problem. No-PRD path: Problem → Overview; Success State → Acceptance Criteria; Constraints & Settled Decisions → constraints in The Path; Non-Goals → Notes.
@@ -84,7 +83,19 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Brief-only finding** (a constraint or settled decision present in the brief but absent from PRD + interface; Established Facts used as Current-state evidence are expected, not a gap) → flag `[BRIEF-GAP]` the same way.
    - **No PRD:** restate intent as a requirement list; map slices; the brief (if located) is the top source, so `[BRIEF-GAP]` and the precedence clause do not apply, and every Success State item and settled decision maps to a draft AC or constraint; check each draft body against the spec bar, a missing element is a finding; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
    - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `.agents/skills/3b-create-issue/references/audit-to-slices.md`; the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
-5. **Approval Request:** present the audited drafts + coverage map. Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Halt until user approves.
+5. **Single Final Verification Gate:** present a high-density compact summary table before the full draft bodies:
+
+   ```markdown
+   ### Slices Proposed for Minting
+   | Slice | Type | Inferred Impact | Conf | Size | Calculated ICE | Assigned Priority |
+   |:---|:---|:---:|:---:|:---:|:---:|:---:|
+   | BT-<padded> | feature | 1.0 (med) | 80% | med (2) | 0.40 | priority:medium |
+
+   [Approve & Mint via gh issue create]
+   To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`).
+   ```
+
+   Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
 
 ## Phase 3: Implementation & Memory Sync
 1. **Calculate ICE Score (Spikes: skip):** `ICE = (Impact * Confidence) / Effort weight` (Confidence as decimal; Effort: small=1, medium=2, large=3).
@@ -97,12 +108,12 @@ Run the `load-memory` skill to restore session context (read-only).
    - (b) **Mint order:** if drafts cite siblings, extract edges and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
    - (c) **Per slice, before each mint:** run the step (a) pattern on that slice's body without the exclusion — any hit (an unminted blocker included) → HALT. Substitution is the only permitted edit to an approved draft.
    - **Audit-sourced:** run (a)–(c) against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`; in (a) also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`), and HALT if `BT-<epic>` appears without a `## Epic` section. Only after (a) and the (b) order/cycle check pass, (b0): mint the epic (step 4) and replace every `BT-<epic>` in the proposal with the returned ID, then mint slices in the (b) order.
-4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)).
+4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`.agents/scripts/tracker.py`).
    - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-LOCAL-<slug>` (the title slug) and stores the body; GitHub is not touched.
    - **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs.
    - **Labels:** scope label (`scope:baseline` or `scope:differentiator`) + canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`; Spikes: always `size:medium`) + Priority (`priority:high/medium/low` from the step-2 bucket; Spikes: skip) + **Status: `status:planned` for a Build slice; `status:needs_spec` for a Spike.**
    - **Milestone:** `create` every slice with milestone `<vX.Y.0>` = the parent's (`get(<parent>)` milestone title; 3a created it, so it exists; parent has none → `—`), standalone → `v1.0.0` (audit-sourced: the §8 default). Only for those defaults, `ensure_milestone` lists the open milestones to confirm it is open (local: the field value is the milestone; nothing to list); absent, closed or `—` → create without a milestone, record `—` and surface it (never mint onto a closed release). Audit epic: see its bullet below.
-   - **Sub-issue Linkage:** If derived from a parent epic, `set_parent(<slice>, <epic>)` (native `gh api graphql` per `references/github-issue-relations.md`; no `gh-sub-issue` extension).
+   - **Sub-issue Linkage:** If derived from a parent epic, `set_parent(<slice>, <epic>)` (per `.agents/scripts/tracker.py`; no `gh-sub-issue` extension).
    - **Audit epic (audit-sourced, when the proposal has `## Epic`):** `create` it before any slice, with labels `tier:epic,type:maintenance,area:<x>,status:planned`, milestone `<vX.Y.0>` and body `.tmp/3b-issue-body.md`.
      Epic body per `references/audit-to-slices.md` §10. Audit slices then mint with the rules above, body = the proposal's `## Slice <N>` section verbatim: epic children link as sub-issues; `(standalone)` slices take no parent and no sub-issue link, and take the §8 milestone. Slice `type:bug` for Security/Correctness findings, else `type:maintenance`; scope label `scope:baseline`.
    - **Dependencies:** `add_blocker(<slice>, <blocker>)` per blocker (same reference); mirror "Blocked by: [IDs]" in the issue body.

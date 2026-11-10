@@ -28,7 +28,7 @@ def test_no_deleted_mirror_heal_or_drift_text_remains_in_src(pattern):
 
 def test_terminal_sync_invariant_is_the_github_gate_only():
     text = read_src("references/terminal-sync-invariant.md")
-    assert 'version: "2.0.0"' in text
+    assert 'version: "2.1.0"' in text
     assert "--expect" in text and "--with-edges" in text and "--pr-id" in text
     assert "## Heal" not in text and "BACKLOG_MAP" not in text
     assert "mirror" not in re.sub(r"\[MIRROR-[A-Z]+", "", text).lower()  # the gate's output tokens keep their names
@@ -48,7 +48,7 @@ def test_the_always_loaded_memory_protocol_shrinks_by_at_least_600_characters():
 def test_memory_protocol_points_to_the_tracker_verbs_and_keeps_the_minting_anchor():
     text = read_src("rules/memory-protocol.md")
     assert "## 8. Backlog ID Minting (Late Binding)" in text  # 3b links this anchor
-    assert "references/tracker-verbs-github.md" in text
+    assert ".agents/scripts/tracker.py" in text
     assert "BACKLOG_MAP" not in text
 
 

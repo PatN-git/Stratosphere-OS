@@ -167,8 +167,10 @@ def main():
         # Check for removals
         for path in baseline_manifest:
             if path not in new_manifest:
-                changes_summary.append((path, "removed", "major"))
-                overall_bump = "major"
+                lvl = "minor" if "/references/" in path else "major"
+                changes_summary.append((path, "removed", lvl))
+                if lvl == "major" or overall_bump != "major":
+                    overall_bump = lvl
 
         if overall_bump == "none":
             print("\nNo changes detected across artifacts. No version bump is derived.")

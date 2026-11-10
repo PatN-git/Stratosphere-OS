@@ -224,6 +224,38 @@ def preserve_packs(root: Path, packs):
     return True
 
 
+def parse_version_key(v_str: str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip("v")
+    parts = []
+    for part in re.split(r"[-.+_]", cleaned):
+        if part.isdigit():
+            parts.append((0, int(part)))
+        else:
+            parts.append((1, part))
+    return tuple(parts)
+
+
+def find_stale_claude_cache(home: Path):
+    """Older version directories in ~/.claude/plugins/cache/*/stratosphere-os/ (sparing the newest)."""
+    cache_root = home / ".claude" / "plugins" / "cache"
+    if not cache_root.is_dir():
+        return []
+    stale = []
+    for marketplace in sorted(cache_root.iterdir()):
+        if not marketplace.is_dir():
+            continue
+        stratos_dir = marketplace / "stratosphere-os"
+        if not stratos_dir.is_dir():
+            continue
+        version_dirs = [d for d in stratos_dir.iterdir() if d.is_dir()]
+        if len(version_dirs) <= 1:
+            continue
+        sorted_dirs = sorted(version_dirs, key=lambda d: parse_version_key(d.name))
+        stale.extend(sorted_dirs[:-1])
+    return stale
+
+
 def find_legacy(project: Path, home: Path):
     """[(path, files_or_None)]: None = remove the whole directory, else remove only those files."""
     old = old_layout_roots(project, home)
@@ -243,6 +275,8 @@ def find_legacy(project: Path, home: Path):
     runtime_dir = home / ".gemini" / "antigravity" / "skills"
     if runtime_dir.is_dir():
         found += [(runtime_dir / name, None) for name in BUNDLED_SKILLS if (runtime_dir / name).is_dir()]
+    for stale_dir in find_stale_claude_cache(home):
+        found.append((stale_dir, None))
     return found
 
 
@@ -271,18 +305,32 @@ def old_layout_note(root: Path, packs):
 def cmd_legacy(args):
     project, home = Path(args.project).resolve(), Path(args.home).expanduser()
     old = old_layout_roots(project, home)
+    stale_claude = set(find_stale_claude_cache(home))
     found = find_legacy(project, home)
     if not found:
-        print("[LEGACY OK] no pre-canonical-bundle paths found")
+        if getattr(args, "json", False):
+            print(json.dumps({"found": [], "stale_cache": []}, indent=2))
+        else:
+            print("[LEGACY OK] no pre-canonical-bundle paths found")
         return 0
+    if getattr(args, "json", False) and not args.apply:
+        print(json.dumps({
+            "found": [str(p) for p, _ in found],
+            "stale_cache": [str(p) for p in sorted(stale_claude)],
+        }, indent=2))
+        return 1
     print(f"[LEGACY PATHS FOUND] {len(found)}")
     for path, files in found:
-        note = old_layout_note(path, old[path]) if path in old else files and f"files: {', '.join(f.name for f in files)}"
+        note = old_layout_note(path, old[path]) if path in old else (
+            "stale Claude plugin cache (older version)" if path in stale_claude else (
+                files and f"files: {', '.join(f.name for f in files)}"
+            )
+        )
         print(f"  {path}" + (f"  ({note})" if note else ""))
     if not args.apply:
         print("Nothing deleted. After the user confirms, re-run with --apply.")
         return 1
-    kept = False
+    kept, removed_paths = False, []
     for path, files in found:
         if path in old and not preserve_packs(path, old[path]):
             print(f"Kept: {path}")
@@ -296,6 +344,12 @@ def cmd_legacy(args):
             if not any(path.iterdir()):
                 path.rmdir()
         print(f"Removed: {path}")
+        removed_paths.append(str(path))
+    if getattr(args, "json", False):
+        print(json.dumps({
+            "removed": removed_paths,
+            "stale_cache": [str(p) for p in sorted(stale_claude)],
+        }, indent=2))
     return 1 if kept else 0
 
 
@@ -314,6 +368,7 @@ def main(argv=None):
     p.set_defaults(fn=cmd_visibility)
     p = sub.add_parser("legacy", parents=[location])
     p.add_argument("--apply", action="store_true", help="delete what was found (only after user confirmation)")
+    p.add_argument("--json", action="store_true", help="output found legacy entries as JSON")
     p.set_defaults(fn=cmd_legacy)
     args = ap.parse_args(argv)
     return args.fn(args)

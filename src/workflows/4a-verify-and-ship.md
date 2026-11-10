@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.9.0"
-timestamp: 2026-11-06
+version: "1.10.0"
+timestamp: 2026-11-09
 ---
 
 # Verify and Ship
@@ -52,6 +52,8 @@ Map the slice's Acceptance Criteria (AC), plus the PRD/design requirements the a
 |---|---|---:|---:|---|
 | [AC description] | [test_function_name] or [NONE] | FAIL | [80-100] | [Missing coverage or gap; **bar** = the fix that would close it] |
 
+- **Status vocabulary:** `PASS` (test verified), `PARTIAL` (a PRD §8 item owned by a later open slice; non-blocking for this slice), `FAIL` (unmet requirement or missing coverage; ship-blocking when confidence ≥ 80).
+
 *Anti-Hallucination Invariant:* Test targets must reference semantic function or method identifiers (e.g. `test_verify_clean_match`), never arbitrary line numbers (`app.py:142`) which churn across edits and trigger hallucination. Reject line number hallucination.
 
 *(Optional Footnote)* If sub-threshold findings (40-59) were withheld, append: "Note: <N> sub-threshold findings were withheld."
@@ -68,28 +70,42 @@ Advisory findings (does not block shipping):
 ### 3. Watch (Non-blocking)
 The Spec auditor's 60-79 findings (omit when empty), numbered, one line each; an ambiguity the spec does not settle is one, marked as a user decision. Never a halt or a retry. The lead settles an item only on evidence from at most one targeted grep or read (a test or text that covers it → drop it); no further subagent. HITL shows what remains at the ship halt, then, if any remain, the line `Unsure about one? /0f-walk-me-through watch <n>`; 3z's `audit-only` return carries the items and the count. Record the count as `watch` per `references/pr-body-and-ship.md` § Audit findings.
 
-## Phase 4: Handoff
-Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed to Phase 5: Isolated Ship Gate (clean re-audit without second halt, scoped by the delta rule of `.agents/skills/4a-verify-and-ship/references/audit-inputs.md`). If gaps remain unresolved and unauthorized → return to TDD loop (no PR).
+## Phase 4: Unified Ship Verification Gate
+Consolidate audit findings report, test proof summary, PR metadata, and shipping authorization into a single closing confirmation prompt:
+
+```markdown
+### Unified Ship Verification Gate
+- **Audit Verdict:** [PASS] (0 Spec gaps, 0 hard Standards breaches)
+- **Test Proof:** Reused passing suite receipt via `pr_body.py suite` (SHA: <sha>; 0 duplicate full test runs)
+- **Branch & PR Target:** <branch> -> PR #<n> (<title>)
+- **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
+
+Confirm to push branch, open/update PR, and advance issue state?
+[Confirm & Ship] / [Abort]
+```
+
+Halt. Await human approval. If approved, or if user response to gap report authorizes shipping, proceed directly to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). If gaps remain unresolved and unauthorized → return to TDD loop in `3d` (no PR).
 
 ## Phase 5: Isolated Ship Gate
 
 > **Named gate — `ship-only`:** this phase alone. Branch-safety + design-drift gate, push, open/update PR, status flip. Never reached by an `audit-only` run. `ship-only` skips Phases 1–2, so it runs the Phase 1 step 0 clean-tree guard, floor guard, and cryptographic test gate verification first.
-0. **Cryptographic test gate verification:** run `python .agents/scripts/test_gate.py verify --base <base>` (with `<base>` as resolved in Phase 2). Exit non-zero → HALT: `[TEST-GATE] Committed code differs from recorded passing test run; run tests and re-record before shipping`. Mandated before push and PR opening.
+0. **Cryptographic test gate verification & suite reuse:** run `python .agents/scripts/test_gate.py verify --base <base>` (with `<base>` as resolved in Phase 2). Exit non-zero → HALT: `[TEST-GATE] Committed code differs from recorded passing test run; run tests and re-record before shipping`. Mandated before push and PR opening.
+   - Verify suite receipt via `python .agents/scripts/pr_body.py suite`. If valid for current clean `HEAD`, bypass and skip duplicate full repository test sweeps in 4a entirely (0 duplicate full test runs). If missing or HEAD has moved, execute the suite once through `test_gate.py record --suite`.
 1. **Branch isolation:** Verify branch is NOT `main`/`master` AND `branch_ok` from `python .agents/scripts/pr_body.py unit --slice BT-<padded> --milestone <Milestone> --parent <Parent> --parent-milestone <parent's Milestone> --branch "$(git branch --show-current)"` (inputs as 3d step 1) is true. Else halt `[BRANCH-UNIT]`; HITL may confirm shipping on that branch (adoption: `features:` then lists the parent).
 2. **CSS check (UI surfaces only):** Skip when the feature has no UI surface — no `theme.tokens.css` in the app and no UI block in the interface design doc (`2b` Path C). State the skip. A backend-only project has no tokens to synchronize and must not be blocked on them. Otherwise run the design validator:
    ```bash
    python .agents/scripts/design/design_theme.py --design .memory/DESIGN.md --check <app-css-dir>/theme.tokens.css
    ```
    If command exits non-zero, **halt and fail ship**. Synchronize CSS tokens first.
-3. Halt for user confirmation to ship (unless pre-authorized).
-4. **Release bump + push:** if `scripts/release.py` exists and the branch changes shipped content (`src/` artifacts), run `python scripts/release.py -y` at every ship and commit the result as `release: prepare v<x>` only if its output changed — CI's bump-guard fails the PR otherwise. The clean-tree guard guarantees no uncommitted slice code; commit nothing here except the release bump — never sweep unrelated `.memory/`/`docs/` drift in. (4a never creates the first commit; 3d owns commits.) Push the branch only when `gh` is connected (AGENTS.md §4); otherwise stay local with **no PR** (say so in the step-11 line); local backend: also `python .agents/scripts/issues.py sync` (the tracker-branch push waits for step 9).
-5. **PR (one per ship unit):** none exists for the branch → `gh pr create` (if connected) as **draft** (`--draft`): the unit PR accumulates slices (of several epics for a release), un-mergeable until every epic in it completes (step 8 flips it ready). **Exception:** standalone issue → non-draft. PR exists → update its body; no duplicate PR per slice, no draft-state change here. Title: `<type>(vX.Y): release vX.Y` for a release unit, else `<type>(BT-<parentPadded>): <epic or issue name>`; never retitled. Body format, build flags, suite record, risk label and read-back: `references/pr-body-and-ship.md`.
-   - **Suite:** `python .agents/scripts/pr_body.py suite`; none → run the suite once and record it per the reference.
-   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> [--audit-file .tmp/4a-audit-BT-<padded>.json] --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--deviation "<deviation line>"]... [--post-merge "noticed: <line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
-   - **Body file:** pass `--body-file .tmp/4a-pr-body-BT-<padded>.md` on `gh pr create` / `gh pr edit`; once the call succeeds, delete `.tmp/4a-pr-body-BT-<padded>.md` and `.tmp/4a-prior-body.md` (ignore absent). Never commit them.
+3. Pre-authorized via Phase 4 Unified Ship Gate (skip duplicate confirmation prompt).
+4. **Release bump + push:** if `scripts/release.py` exists and the branch changes shipped content (`src/` artifacts), run `python scripts/release.py -y` at every ship and commit the result as `release: prepare v<x>` only if its output changed — CI's bump-guard fails the PR otherwise. The clean-tree guard guarantees no uncommitted slice code; commit nothing here except the release bump — never sweep unrelated `.memory/`/`docs/` drift in. (4a never creates the first commit; 3d owns commits.) Push the branch only when `gh` is connected (otherwise stay local with no PR) (AGENTS.md §4; say so in the step-11 line); local backend: also `python .agents/scripts/issues.py sync` (the tracker-branch push waits for step 9).
+5. **PR (one per ship unit):** none exists for the branch → `gh pr create` (when `gh` is connected (otherwise stay local with no PR)) as **draft** (`--draft`): the unit PR accumulates slices (of several epics for a release), un-mergeable until every epic in it completes (step 8 flips it ready). **Exception:** standalone issue → non-draft. PR exists → update its body; no duplicate PR per slice, no draft-state change here. Title: `<type>(vX.Y): release vX.Y` for a release unit, else `<type>(BT-<parentPadded>): <epic or issue name>`; never retitled. Body format, build flags, suite record, risk label and read-back: `references/pr-body-and-ship.md`. **Ordering invariant:** Step 5 (`gh pr create` / `gh pr edit`) MUST precede Step 7 (`set-status` + `close`) so PR-link events never overwrite terminal slice or epic status on Project V2 boards.
+   - **Suite:** `python .agents/scripts/pr_body.py suite` (or `--allow-scoped` for intermediate draft accumulation); verified valid for current HEAD: 0 duplicate test runs. When `-m integration` tests are touched or in the ship gate for harness/shim slices, run/record `-m integration` alongside the suite check.
+   - **Build:** save PR's current body to `.tmp/4a-prior-body.md` (`gh pr view <n> --json body -q .body`; none yet → omit the flag), then run `python .agents/scripts/pr_body.py build --slice BT-<padded> --summary "<one line>" --verdict <PASS|WAIVED|SKIP> --audit-rounds <n> [--audit-file .tmp/4a-audit-BT-<padded>.json] --prior-body-file .tmp/4a-prior-body.md --parent BT-<parent> [--allow-scoped] [--deviation "<deviation line>"]... [--post-merge "noticed: <line>"]... [--manual-qa] --out .tmp/4a-pr-body-BT-<padded>.md`. Flags per `references/pr-body-and-ship.md`.
+   - **Body file:** pass `--body-file .tmp/4a-pr-body-BT-<padded>.md` on `gh pr create` / `gh pr edit`; once the call succeeds, delete `.tmp/4a-pr-body-BT-<padded>.md` and `.tmp/4a-prior-body.md` (ignore absent) on every outcome, including when staying local with no PR. Never commit them.
    - **Risk label, then closing-link read-back** (skipped with no PR): per the reference, after the call.
 6. **PR-link comment (bi-directional trace):** `gh issue comment <n> --body "Shipped in PR #<pr> — <pr-url>"`, where `<pr-url>` is the full `https://github.com/<owner>/<repo>/pull/<pr>` link. The terminal gate (step 9) accepts only a comment containing that `/pull/` URL (or, with no PR, `Shipped on <branch> @ <sha>`) — a bare `#<pr>` fails it — so posting exactly this is what makes the check pass. Its own step on purpose: folded into the status write below, it is the clause that drops. Skip the post when the issue already carries a comment with that URL (a `ship-only` re-run after a CI fix). Local backend: with a PR, the same text through `comment`; with no PR, `python .agents/scripts/issues.py comment <id> --body <shipped-comment>` (where `<shipped-comment>` is `"Shipped on <branch> @ $(git rev-parse HEAD)"`).
-7. **Ship-status:** move the slice to its shipped status (code complete + verified + pushed) with the verbs of `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`):
+7. **Ship-status:** move the slice to its shipped status (code complete + verified + pushed) with `.agents/scripts/tracker.py` (**Ordering invariant:** Step 7 MUST follow Step 5 so PR-link events never overwrite terminal status):
    - **Child slice:** `set_status` `done`, then `close` (`gh issue close <n> --reason completed`; skip if already closed). Never `not planned`: the board Action maps only completed closes to done.
    - **Standalone issue:** `set_status` `in review`; the merge closes it and sets `done`.
    - **Clear blockers (single writer for this edge):** this slice is now shipped (`done`; standalone `in review`). github: step 9's combined call decides and clears them. Local backend: run `python .agents/scripts/reconcile.py --edges dependents --ids BT-<slice>` and `clear_blocker` each `[CLEAR D <- B]` edge. Leave every `[KEEP]` edge (it clears at merge via 0b).
@@ -101,7 +117,7 @@ Halt. Await human approval. If approved, or if user response to gap report autho
      - `green` | `pending` | `none` → continue (`pending`: `ci:pending` in ship line). `conflict` → report only.
      - `red`+`small` → fix per `ci-gate.md` §3, re-run once `--attempt 2`. Under 3z (dispatch carries `verdict`/`audit_rounds`): return `[CI-FIX]` + `log_tail`, 4a does not commit.
      - `red`+`big`, or exit 2 from `status`/`cap` → HALT `[CI-RED] <check>` (`could not check` on exit 2): slice keeps its shipped status, PR stays draft, each epic in N stays `in progress`, step 9 for the slice and its dependents (epics not flipped), `/3b-create-issue` with `log_tail` as brief (`ci-gate.md` §4).
-   - If R, rebuild the body: re-save the PR's current body to `.tmp/4a-prior-body.md` (step 5 deleted it; `gh pr view <n> --json body -q .body`), then run `pr_body.py build … --prior-body-file .tmp/4a-prior-body.md --close BT-<P>` for every P in E (adds `Closes #<P>.`; without the prior body earlier slices become `PENDING` and lose their `Closes` lines). `gh pr edit --body-file` it, delete both scratch files as in step 5, re-run the `closingIssuesReferences` read-back for **each** P in E, then `gh pr ready <n>` (if connected; no-op if opened non-draft) and state `"All slices for <unit> shipped! PR #<n> ready to merge."`.
+   - If R, rebuild the body: re-save the PR's current body to `.tmp/4a-prior-body.md` (step 5 deleted it; `gh pr view <n> --json body -q .body`), then run `pr_body.py build … --prior-body-file .tmp/4a-prior-body.md --close BT-<P>` for every P in E (adds `Closes #<P>.`; local backend adds no `Closes` lines; without the prior body earlier slices become `PENDING` and lose their `Closes` lines). `gh pr edit --body-file` it, delete both scratch files as in step 5, re-run the `closingIssuesReferences` read-back for **each** P in E, then `gh pr ready <n>` (when `gh` is connected (otherwise stay local with no PR); no-op if opened non-draft) and state `"All slices for <unit> shipped! PR #<n> ready to merge."`.
    - If not R: state `"BT-<P> complete; PR #<n> stays draft (waiting on BT-<Q>)"` per P in N; no CI gate, no `Closes` rebuild.
    - `set_status` each P in N `in review`. Its dependents' edges clear in step 9. Local backend: run `python .agents/scripts/reconcile.py --edges dependents --ids <each P in N>` and clear its `[CLEAR]` edges as in step 7; leave `[KEEP]`.
    - Each epic moves to `status:done` on PR **merge** (`Closes #<P>`), not here; its slices are already `done`.
@@ -109,6 +125,6 @@ Halt. Await human approval. If approved, or if user response to gap report autho
    - One combined call over the slice and each epic flipped in step 8; the intended end state is inline and the dependents' edges come from the same fetch (standalone issue: `status=in review`): `python .agents/scripts/reconcile.py --ids BT-<slice>[,BT-<epic flipped>] --pr-id BT-<slice> --expect "BT-<slice>:status=done[;BT-<epic>:status=in review]" --with-edges dependents`. For each `[CLEAR]` line run its `cmd:` (`clear_blocker`), then re-run `python .agents/scripts/reconcile.py --edges dependents --ids <the same ids>` once and require no `[CLEAR]` left; `[KEEP]` edges clear at merge via 0b.
    - Non-zero → re-apply the missing write and re-run, **at most 3 attempts**; still non-zero, or `[GH-UNAVAILABLE]` (exit 3) → halt and surface the drift. Never loop unbounded; do not emit the ship line until it passes.
    - **Draft rule** (skip for a standalone issue or no PR): if any sibling slice of an epic in E (the `features:` list; `children(<P>)`) is not `in review`/`done`, the PR must be draft (`gh pr view <n> --json isDraft`). Not draft → heal once with `gh pr ready <n> --undo` and re-check; still not draft → halt `[DRAFT-RULE]`.
-   - **Local backend, gate passed:** when `gh` is connected (otherwise no PR, step 4; `merged --close` needs no remote), `git push origin "$(python .agents/scripts/issues.py branch)"` (a rejected push: `issues.py sync` again, then push), so the pushed tracker carries steps 6-7.
-10. **Cleanup:** delete `.tmp/3d-plan-BT-<padded>.md` and `.tmp/4a-audit-BT-<padded>.json` (ignore absent; last step). Keep `.tmp/3d-suite-BT-<padded>.json`.
+   - **Local backend, gate passed:** when `gh` is connected (otherwise stay local with no PR; `merged --close` needs no remote), `git push origin "$(python .agents/scripts/issues.py branch)"` (a rejected push: `issues.py sync` again, then push), so the pushed tracker carries steps 6-7.
+10. **Cleanup:** delete `.tmp/3d-plan-BT-<padded>.md`, `.tmp/4a-audit-BT-<padded>.json`, `.tmp/4a-pr-body-*.md`, and `.tmp/4a-prior-body.md` (ignore absent; last step). Keep `.tmp/3d-suite-BT-<padded>.json`.
 11. Output: `[SHIPPED] PR #<n> open for BT-<padded>.` (append `risk:one-way` when the label was applied, `ci:pending` when the CI check was still running). No PR: `[SHIPPED] BT-<padded> on <branch> @ <sha>; no PR (<why>).` Never merge.

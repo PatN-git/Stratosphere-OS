@@ -1,19 +1,19 @@
 ---
 name: obsidian-vault-and-agent-linking-proposal
 title: "Proposal: Obsidian-Compatible Knowledge Vault & Backlink Graph for Agent-First Workflows"
-description: Architectural proposal to replace IDE-coupled graph visualization with an optional, zero-overhead Obsidian vault configuration over docs/ and .memory/, harmonizing OKF index.md MOCs, hybrid memory atomicity, and local tracker backlinks.
+description: Architectural proposal to replace IDE-coupled graph visualization with an optional, zero-overhead Obsidian vault configuration over docs/ and .memory/, harmonizing OKF v0.2 index.md MOCs, hybrid memory atomicity, and link validator reconciliation for v5.0.0+.
 type: proposal
-version: "1.0.0"
+version: "2.0.0"
 generated:
-  by: Antigravity
-  at: 2026-11-02
+  by: Antigravity Architect
+  at: 2026-11-09
 ---
 
 # Proposal: Obsidian-Compatible Knowledge Vault & Backlink Graph for Agent-First Workflows
 
-**Status:** Open Proposal / Parked for Implementation  
-**Track:** 0 Constitution & Lifecycle Hardening (BT-223)  
-**Target Delivery:** Stage 0 / Setup Expansion  
+**Status:** Parked Proposal (Deferred under BT-242 / Slice S7 #233)  
+**Track:** BT-242 (v5.1 follow-ups from the v5.0.0 work)  
+**Target Delivery:** Stage 0 / Setup Expansion (Deferred)  
 **Author:** Antigravity Architect  
 
 ---
@@ -46,12 +46,12 @@ Nobody is forced to use Obsidian. Plain Markdown is the universal standard.
 - **If Disabled:** No `.obsidian/` folder is generated. The repository remains pure markdown.
 - **If Enabled:** A lightweight `.obsidian/` configuration directory is scaffolded with:
   - `app.json`: Configures wikilinks (`useMarkdownLinks: false`) and `newLinkFormat: "shortest"`.
-  - `graph.json`: Color-codes graph nodes by OKF `type` (`prd`: green, `architecture`: blue, `learnings`: orange, `research`: purple, `backlog`: red).
+  - `graph.json`: Color-codes graph nodes by OKF `type` (`prd`: green, `architecture`: blue, `learnings`: orange, `research`: purple, `design-doc` / `interface-design`: teal, `proposal`: magenta).
   - `core-plugins.json`: Enables native backlinks, graph view, and page preview.
-  - Project `.gitignore` automatically ignores `.obsidian/workspace*.json` and cache directories while tracking the shared configuration.
+  - Project `.gitignore` automatically ignores `.obsidian/workspace*.json`, `.obsidian/cache/`, and `.obsidian/graph-cache.json` while tracking the shared configuration.
 
 ### 2.2 `index.md` per Folder as Maps of Content (MOCs)
-Open Knowledge Format (OKF v0.2) already reserves `index.md` as a frontmatter-free progressive disclosure file:
+Open Knowledge Format (OKF v0.2 §4) reserves directory `index.md` as a frontmatter-free progressive disclosure listing:
 ```markdown
 # Product Requirements Documents (PRDs)
 * [BT-108: Host-Agnostic Skill Distribution](BT-108-host-agnostic-skill-distribution.md) - Universal skill delivery spec.
@@ -62,34 +62,45 @@ In Obsidian, `index.md` seamlessly acts as a **Map of Content (MOC)**:
 - **Agent Token Efficiency:** An agent cold-starting on a subfolder reads `index.md` (~150 tokens) to identify the relevant file instead of globbing and reading 40 separate documents.
 - **Backlink Reciprocity:** Opening any child document displays `index.md` in Obsidian's Backlinks pane.
 
-### 2.3 Monolithic vs. Atomic Memory (Pragmatic Hybrid Model)
-To avoid the dual pitfalls of "token-heavy monolithic files" (e.g., 2,000-line memory files dumped into agent context) and "file-read thrashing" (agents having to make 40 separate tool calls to read individual learning snippets):
+### 2.3 Monolithic vs. Atomic Memory (Pragmatic Hybrid Model in v5.0.0+)
+In StratOS v5.0.0 (`[[A-005]]`), `BACKLOG_MAP.md` is retired. Issue tracking lives in GitHub (`tracker: github`) or on the orphan `<repo>/issues` branch via `issues.py` (`tracker: local`), keeping working trees clean of issue mirrors. The working tree knowledge graph is structured as:
+
 1. **Atomic Concepts (High Context, Low Churn):**
    - `docs/prds/BT-xxx-<slug>.md`
    - `docs/plans/<slug>.md`
    - `docs/research/<slug>.md`
    - `docs/discovery/<slug>.md`
+   - `docs/proposals/<slug>.md`
+   - `docs/design/<slug>.md` (interface designs and architectural design docs)
    - `docs/decisions/ADR-xxx-<slug>.md` (Architecture Decision Records)
 2. **Consolidated References (High Density, Fast Ingestion):**
    - `.memory/ARCHITECTURE.md` (System laws, stack boundaries, vocabulary)
    - `.memory/GLOSSARY.md` (Ubiquitous language dictionary)
    - `.memory/DESIGN_RULES.md` (Structural UI invariants)
-   - `.memory/BACKLOG_MAP.md` (Authoritative ledger for `tracker: local`)
+   - `.memory/DATABASE_SCHEMA.md` (Database models and migration contracts)
 3. **Episodic Learnings (`.memory/LEARNINGS.md`):**
    - Remains consolidated during early project stages.
    - Uses anchor tags (`[[LEARNINGS#^L-001|L-001]]` or standard `[[L-001]]` parsed by `validate_memory.py`) so both Obsidian and agent scripts resolve citations precisely.
 
-### 2.4 Local Tracker Integration (`tracker: local`)
-When `tracker: local` is active:
-- `BACKLOG_MAP.md` remains the authoritative database table.
-- Epic rows link to atomic PRD documents: `| BT-LOCAL-001 | Host-Agnostic Skill Distribution | ... | [[BT-LOCAL-001-skill-distribution]] |`.
-- In Obsidian, opening the PRD note instantly displays all child slices from `BACKLOG_MAP.md` in the Backlinks panel, providing a visual dependency tree with zero custom code.
+### 2.4 Link Resolution & Validation Engine (Reconciling `memory-protocol.md` §2 and `validate_memory.py`)
+To prevent false-positive validation errors while maintaining strict memory guarantees, the link resolution contract is partitioned into two distinct categories:
+
+1. **Memory Concept Cross-References (`[[ID]]` where ID is `L-xxx`, `A-xxx`, `DR-xxx`, `G-xxx`):**
+   - Must be defined in the corresponding `.memory/*.md` target file.
+   - Governed by strict trust tags (`[LAW]`, `[PATTERN]`, `[ASSUMED]`).
+   - Bidirectional reciprocity is enforced (or flagged with warnings): if `A` cites `B`, `B` must cite `A` back.
+2. **Document Wikilinks (`[[<doc-stem>]]`):**
+   - Used in `docs/**` or `.memory/**` to link directly to other tracked documents (e.g., `[[BT-108-host-agnostic-skill-distribution]]` or `[[overview]]`).
+   - Validated by `validate_memory.py` by resolving `<doc-stem>.md` against git-tracked files in `docs/**` and `.memory/**`.
+   - One-way link semantics: existence of the target file is verified, but memory reciprocity is **not** required.
+3. **Issue Identifiers (External Provenance):**
+   - Bare issue handles (`BT-xxx`, `Source: BT-042`) remain plain text per `memory-protocol.md` §2. They are external provenance pointers to the tracker (GitHub or orphan branch), not peer concept links in the memory graph, and are not bracketed.
 
 ---
 
 ## 3. Implementation Plan & Scope of Changes
 
-### Phase 1: Scaffolder & Setup Integration (`stratosphere-setup`)
+### Phase 1: Scaffolder & Setup Integration (`stratosphere-setup`, `scaffold.py`)
 - [ ] Add `--vault [none|obsidian]` flag and interactive prompt to `src/scripts/scaffold.py`.
 - [ ] Bundle preconfigured `.obsidian/` template assets under `src/assets/templates/obsidian/`:
   - `app.json` (wikilinks enabled, shortest path).
@@ -99,13 +110,14 @@ When `tracker: local` is active:
 
 ### Phase 2: Memory & Link Validator Hardening (`validate_memory.py`)
 - [ ] Update `validate_memory.py` link resolution engine:
-  - Recognize bare filename wikilinks pointing into `docs/**` (e.g. `[[BT-108-host-agnostic-skill-distribution]]`).
-  - Continue validating internal `[[L-xxx]]`, `[[A-xxx]]`, `[[DR-xxx]]`, and `[[G-xxx]]` anchors.
+  - Recognize bare filename wikilinks pointing into `docs/**` (e.g. `[[BT-108-host-agnostic-skill-distribution]]`) and validate target file existence.
+  - Continue validating internal `[[L-xxx]]`, `[[A-xxx]]`, `[[DR-xxx]]`, and `[[G-xxx]]` anchors against `.memory/` definitions with bidirectional checks.
+  - Keep `BT-xxx` bare references excluded from graph linking.
 - [ ] Ensure non-destructive reconciliation during `/0b-stop-session` and `/0d-nightly-consolidation`.
 
-### Phase 3: Visualizer Streamlining
-- [ ] Retire or relegate `okf_view.py` and `okf_viewer/` to a legacy/fallback headless HTML generator.
-- [ ] Document Obsidian workspace recommendations in `docs/okf-spec-essentials.md` and `AGENTS.md`.
+### Phase 3: Visualizer Streamlining & Documentation
+- [ ] Relegate legacy `okf_view.py` and `okf_viewer/` to a fallback headless HTML previewer.
+- [ ] Document Obsidian workspace recommendations in `docs/okf-spec-essentials.md`, `src/rules/okf-protocol.md`, and `AGENTS.md`.
 
 ---
 

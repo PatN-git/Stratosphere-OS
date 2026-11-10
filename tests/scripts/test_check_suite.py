@@ -527,3 +527,62 @@ def test_legacy_apply_unlinks_a_symlinked_runtime_skill_without_touching_its_tar
     assert not (runtime / "3d-implement-issue").exists() and not (runtime / "3d-implement-issue").is_symlink()
     assert not (runtime / "load-memory").exists()
     assert (target / "SKILL.md").read_text(encoding="utf-8") == "keep me"
+
+
+# --- legacy: Claude Code marketplace cache pruning ----------------------
+
+def test_legacy_detects_older_claude_plugin_cache_versions(proj):
+    project, home = proj
+    market_stratos = home / ".claude" / "plugins" / "cache" / "test-marketplace" / "stratosphere-os"
+    v1 = market_stratos / "1.0.0"
+    v2 = market_stratos / "1.1.0"
+    touch(v1 / "package.json")
+    touch(v2 / "package.json")
+    r = legacy(project, home)
+    assert r.returncode == 1
+    assert "1.0.0" in r.stdout
+    assert "1.1.0" not in r.stdout
+    assert v1.exists()
+    assert v2.exists()
+
+
+def test_legacy_apply_prunes_older_claude_plugin_cache_versions(proj):
+    project, home = proj
+    market_stratos = home / ".claude" / "plugins" / "cache" / "test-marketplace" / "stratosphere-os"
+    v1 = market_stratos / "1.0.0"
+    v2 = market_stratos / "1.1.0"
+    v3 = market_stratos / "1.2.0"
+    for v in (v1, v2, v3):
+        touch(v / "package.json")
+    r = legacy(project, home, "--apply")
+    assert r.returncode == 0
+    assert not v1.exists()
+    assert not v2.exists()
+    assert v3.exists()
+    assert legacy(project, home).returncode == 0
+
+
+def test_legacy_single_claude_plugin_cache_version_is_spared(proj):
+    project, home = proj
+    market_stratos = home / ".claude" / "plugins" / "cache" / "test-marketplace" / "stratosphere-os"
+    v1 = market_stratos / "1.0.0"
+    touch(v1 / "package.json")
+    r = legacy(project, home)
+    assert r.returncode == 0 and "[LEGACY OK]" in r.stdout
+    assert v1.exists()
+
+
+def test_legacy_json_output_flags_stale_claude_cache(proj):
+    project, home = proj
+    market_stratos = home / ".claude" / "plugins" / "cache" / "test-marketplace" / "stratosphere-os"
+    v1 = market_stratos / "1.0.0"
+    v2 = market_stratos / "1.1.0"
+    touch(v1 / "package.json")
+    touch(v2 / "package.json")
+    r = legacy(project, home, "--json")
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert any("1.0.0" in p for p in data.get("found", []))
+    assert any("1.0.0" in p for p in data.get("stale_cache", []))
+    assert not any("1.1.0" in p for p in data.get("stale_cache", []))
+

@@ -1,7 +1,7 @@
 ---
 description: The label vocabulary and the rules around it: label list, composition, status lifecycle, milestone scheme, concept exemptions. The registry is the live GitHub label set, or locally this list plus the project's `area:*` slugs.
-version: "1.0.0"
-timestamp: 2026-10-22
+version: "1.1.0"
+timestamp: 2026-11-09
 ---
 
 # Label taxonomy
@@ -22,7 +22,7 @@ The one place for label rules. With `tracker: github` the registry is the live l
 
 ## Rules
 - **Label Composition Rules**: each leaf issue carries exactly one `type:` + one `mode:` + `tier:slice` + one `size:`. Each epic carries `tier:epic` + one `type:` (no `mode:`, no `size:`).
-- **Single Status Invariant**: an issue has exactly one `status:*` label. A transition removes the prior `status:*` label first (the `set_status` verb owns this, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)). Locally the status is the issue's bare `status:` field, never a label. The `status:*` names are an integration contract with the Projects board Action: see `docs/status-label-contract.md` before renaming one.
+- **Single Status Invariant**: an issue has exactly one `status:*` label. A transition removes the prior `status:*` label first (the `set_status` verb owns this, `.agents/scripts/tracker.py`). Locally the status is the issue's bare `status:` field, never a label. The `status:*` names are an integration contract with the Projects board Action: see `docs/status-label-contract.md` before renaming one.
 - **Milestone**: `vX.Y.Z` (`vMAJOR.MINOR.SPRINT`, e.g. `v1.2.3` = release 1.2, sprint 3). `MAJOR.MINOR` = the product release, owned by `/3a-version-planning`; `SPRINT` (Z) is owned by `/3c-sprint-planning`. `vX.Y.0` = release planned, not yet sprinted. No leading zeros. It is the project's product-release tracker, not a tool/library version. An epic has no milestone until 3a assigns one.
 - **Concept Exemptions**: an issue carrying a `concept:*` label is exempt from `/3c-sprint-planning`, `[NEEDS_SPEC]` alerts and the Single Status Invariant.
 - **`concept:map` issue**: the `concept:map` issue carries `concept:map` + `status:*` (`status:in progress` while active, `status:done` on convergence) and is milestone-exempt. Child decision tickets (`concept:research`, `concept:grilling`, ...) are sub-issues of their tracking issue (`parent` = the map issue).

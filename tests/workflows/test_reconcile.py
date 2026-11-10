@@ -760,5 +760,42 @@ def test_reconcile():
     assert main(), f"reconcile checks failed: {FAILS}"
 
 
+def test_reconcile_reexports_and_helper_separation():
+    import _tracker_common as tc
+    helpers = [
+        "topological_sort", "parse_edges", "compare", "parse_expect",
+        "STATUS_RE", "ALL_FIELDS", "EXPECT_FIELDS", "read_tracker",
+        "closed_on_github", "open_on_github", "issue_number", "_canon_id", "_padded",
+    ]
+    for name in helpers:
+        assert hasattr(tc, name), f"_tracker_common missing {name}"
+        assert hasattr(rec, name), f"reconcile missing re-export of {name}"
+        assert getattr(rec, name) is getattr(tc, name), f"reconcile.{name} does not match _tracker_common.{name}"
+
+
+def test_reconcile_cli_characterization(tmp_path, capsys):
+    # 1. Missing required scope exits 2
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            code = rec.main([])
+        except SystemExit as exc:
+            code = exc.code
+    assert code == 2
+
+    # 2. --topo-sort with acyclic edges exits 0
+    edges_file = tmp_path / "edges.txt"
+    edges_file.write_text("BT-002: BT-001\nBT-003: BT-002\n", encoding="utf-8")
+    code = rec.main(["--topo-sort", "--edges-file", str(edges_file)])
+    assert code == 0
+    assert "[TOPO-ORDER BT-001,BT-002,BT-003]" in capsys.readouterr().out
+
+    # 3. --topo-sort with cyclic edges exits 1
+    cycle_file = tmp_path / "cycle.txt"
+    cycle_file.write_text("BT-001: BT-002\nBT-002: BT-001\n", encoding="utf-8")
+    code = rec.main(["--topo-sort", "--edges-file", str(cycle_file)])
+    assert code == 1
+    assert "[CYCLE-DETECTED" in capsys.readouterr().out
+
+
 if __name__ == "__main__":
     sys.exit(0 if main() else 1)

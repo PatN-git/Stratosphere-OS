@@ -1,16 +1,16 @@
 ---
 name: concept-map-operations
 description: GitHub CLI and local `issues.py` forms of the concept map tracker operations.
-timestamp: 2026-10-22
-version: "1.1.0"
+timestamp: 2026-11-09
+version: "1.2.0"
 ---
 
 # Concept Map Tracker Operations
 
-The operations (reusing `3b` primitives) for charting, working, and querying a concept map issue tree, in GitHub and local (`tracker: local`, `references/tracker-verbs-github.md` (local: `references/tracker-verbs-local.md`)) form. Both backends hold the same issues: the map issue and its decision tickets.
+The operations (reusing `3b` primitives) for charting, working, and querying a concept map issue tree, in GitHub and local (`tracker: local`, `.agents/scripts/tracker.py`) form. Both backends hold the same issues: the map issue and its decision tickets.
 
 ## Issue relations
-Wire sub-issue and blocked-by relations via `github-issue-relations.md` (native `gh api graphql`). Local: `--parent` and `--blocked-by` on `issues.py create`.
+Wire sub-issue and blocked-by relations via `.agents/scripts/tracker.py` (native `gh api graphql`). Local: `--parent` and `--blocked-by` on `issues.py create`.
 
 ---
 
@@ -32,46 +32,53 @@ Create the root tracking issue for the concept map.
 Create a child decision ticket and link it as a sub-issue.
 
 - **GitHub CLI:**
-  1. Create the issue:
+  1. Create the issue with both `concept:<type>` and `mode:<AFK|HITL>` labels:
      ```bash
-     gh issue create --title "<Type>: <Title>" --label "concept:<type>" --body "<!-- SOS:BLOCK id=concept-ticket v=1.0.0 -->
-Blocked by: 
-<!-- SOS:/BLOCK id=concept-ticket -->"
+     gh issue create --title "<Type>: <Title>" --label "concept:<type>" --label "mode:<AFK|HITL>" --body "<!-- SOS:BLOCK id=concept-ticket v=1.1.0 -->
+     ## Question
+     <1–3 targeted decision questions, sized to one ~100k-token agent session>
+
+     Blocked by: 
+     <!-- SOS:/BLOCK id=concept-ticket -->"
      ```
-     *(Where `<type>` is research, grilling, prototype, or task)*
-  2. Link as sub-issue and wire blockers via the `addSubIssue` / `addBlockedBy` mutations (see `github-issue-relations.md`).
-- **Local:** `issues.py create --title "<Type>: <Title>" --label concept:<type> --parent <map-id> [--blocked-by <ids>] --body-file <f>` (same block body).
+     *(Where `<type>` is `research`, `grilling`, `prototype`, or `task`, and `mode:*` is `mode:AFK` or `mode:HITL`)*
+  2. Link as sub-issue and wire blockers via `addSubIssue` / `addBlockedBy` mutations (`.agents/scripts/tracker.py`).
+- **Local:** `issues.py create --title "<Type>: <Title>" --label concept:<type> --label mode:<AFK|HITL> --parent <map-id> [--blocked-by <ids>] --body-file <f>` (write `<f>` in `.tmp/` first — `issues.py create` accepts `--body-file` only; create blockers in topological order or wire in a second pass with `issues.py set <id> --add-blocker <blocker-id>`).
 
 ---
 
-## 3. Claim Ticket
+## 3. Claim Ticket & Claim Release
 Claim an open decision ticket to prevent concurrent agent execution.
 
 - **GitHub CLI:**
-  Assign yourself to the issue (concurrency arbitrated by GitHub remote):
-  ```bash
-  gh issue edit <ticket#> --add-assignee @me
-  ```
-- **Local:** `issues.py claim <ticket-id>` (compare-and-set; `[CLAIMED …]` → pick another ticket).
+  - Claim: `gh issue edit <ticket#> --add-assignee @me`
+  - Release claim on unresolved halt: `gh issue edit <ticket#> --remove-assignee @me`
+- **Local:** `issues.py claim <ticket-id>` (compare-and-set to the current branch; `[CLAIMED …]` → pick another ticket). Local claims are branch-scoped (`claimed_by == current_branch()`); §4 keeps tickets claimed by the current branch selectable across sessions on the same branch.
 
 ---
 
-## 4. Query Frontier
-Identify the set of open, unblocked, unassigned decision tickets (the "frontier").
+## 4. Query Frontier & Partition by Mode
+Query tracker for frontier (open, unblocked, unassigned decision tickets).
 
 - **GitHub CLI:**
-  Query the tracking issue's sub-issues, resolving their dependencies:
   1. Retrieve all open sub-issues under the map:
      ```bash
      gh issue view <map#> --json subIssues
      ```
   2. For each sub-issue, fetch its details:
      ```bash
-     gh issue view <ticket#> --json state,blockedBy,assignees
+     gh issue view <ticket#> --json number,title,state,blockedBy,assignees,labels
      ```
   3. Filter to find the frontier:
      `state == "OPEN" && length(blockedBy.nodes containing open issues) == 0 && length(assignees) == 0`
-- **Local:** `issues.py children <map-id>`: `state == "OPEN"`, no `claimed_by`, and every `blocked_by` id `CLOSED`.
+- **Local:** `issues.py children <map-id>`: `state == "OPEN"`, `claimed_by` is `null` or equals current working branch (`git branch --show-current`), and every `blocked_by` id has `state == "CLOSED"`.
+- **Tie-break:** Lowest open issue number / ID (creation order).
+
+### 4a. Partition by Mode & Idempotent Prep Read
+- **Drainable (Phase 2A):** Frontier tickets carrying `mode:AFK`, plus the build/prep half of frontier `mode:HITL` `prototype` and `grilling` tickets.
+- **Human (Phase 2):** Frontier tickets carrying `mode:HITL` (or missing a `mode:*` label — never infer `mode:AFK` from `concept:<type>`).
+- **Idempotent Prep Check:** Before prepping a `mode:HITL` frontier ticket in Phase 2A, inspect its comments (`gh issue view <ticket#> --json comments` or `issues.py get <ticket-id>`) and skip if any comment contains `### AFK Prep` (substring check, since `issues.py comment` prefixes `- YYYY-MM-DD: `) or a linked prototype artifact (unless a blocker closed after that comment).
+- **Failure Demotion (`mode:AFK → mode:HITL`):** After 3 failed attempts on a `mode:AFK` ticket, demote its mode label (`gh issue edit <ticket#> --remove-label "mode:AFK" --add-label "mode:HITL"` | Local: `issues.py set <ticket-id> --remove-label mode:AFK --add-label mode:HITL`), post a failure comment (`issues.py comment`), and leave the ticket open.
 
 ---
 
@@ -87,6 +94,24 @@ Post the decision answer, close the ticket, and index it on the map.
      ```bash
      gh issue close <ticket#>
      ```
-  3. Update the map: Append a line to the `Decisions so far` section in the `concept:map` body:
-     `- [<ticket title>](<#/link>) — <gist>`
-- **Local:** the same three steps: `issues.py comment <ticket-id> --body "<answer>"`, `issues.py close <ticket-id>`, then the `Decisions so far` line through `issues.py set <map-id> --body-file <f>`.
+  3. Re-read the latest map body (`gh issue view <map#> --json body`), append `- [<ticket title>](<#/link>) — <gist>` under `## Decisions so far`, and regenerate `## Dependency Map` in a single `gh issue edit <map#> --body-file <f>` write.
+- **Local:** the same three steps: `issues.py comment <ticket-id> --body "<answer>"`, `issues.py close <ticket-id>`, then re-read with `issues.py get <map-id>` and write `## Decisions so far` + `## Dependency Map` through `issues.py set <map-id> --body-file <f>`.
+
+---
+
+## 6. Rule Out of Scope
+Exclude a fog patch or mis-scoped decision ticket without recording it as a settled decision.
+
+- **Fog patch:** Move the bullet from `## Not yet specified (fog)` to `## Out of scope` with a one-line reason and regenerate `## Dependency Map`.
+- **Decision ticket (two-step close):**
+  1. Comment reason: `gh issue comment <ticket#> --body "Out of scope: <why>"` (Local: `issues.py comment <ticket-id> --body "Out of scope: <why>"`).
+  2. Close as not planned: `gh issue close <ticket#> --reason "not planned"` (Local: `issues.py close <ticket-id> --reason "not planned"`).
+  3. Record under `## Out of scope` (never under `## Decisions so far`) and remove from `## Dependency Map`.
+
+---
+
+## 7. Graduate Fog
+When resolving a ticket sharpens an entry in `## Not yet specified (fog)` into a concrete question:
+1. Create and wire the new child ticket(s) per §2 (with explicit `concept:<type>` and `mode:<AFK|HITL>` labels).
+2. Remove the graduated bullet from `## Not yet specified (fog)`.
+3. Regenerate `## Dependency Map` in the same map body write.

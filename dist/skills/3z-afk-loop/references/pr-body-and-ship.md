@@ -1,7 +1,7 @@
 ---
 description: PR body format, `pr_body.py` build flags and verdicts, suite record, risk label and closing-link read-back for 4a Phase 5 step 5.
-version: "1.2.0"
-timestamp: 2026-10-22
+version: "1.3.0"
+timestamp: 2026-11-09
 ---
 
 # PR Body & Ship Details
@@ -31,7 +31,7 @@ refs: [<only IDs that constrained the change>]
 `pr_body.py build` rebuilds the slice list from `git log` (others keep their prior verdicts; commits not yet through 4a are `PENDING`), unions follow-ups with the prior block, writes the `Closes` lines, `test:` and `risk:`.
 - **Verdicts:** `PASS` = audited clean; `WAIVED` = shipped on user authorization over gaps (Phase 4); `SKIP` = audit bypassed by the Value-Add Gate; `DROPPED` = deferred and closed not planned: a human sets it once in the prior body block (never `--verdict`), the row is kept and gets no `Closes` line. Commits scoped to any epic in `features:` (`tier:epic` in the tracker's labels, or `--epic BT-<n>` when it is unreadable, e.g. CI) are skipped, never a slice row. A `ship-only` run never audited: take verdict and rounds from the dispatcher (3z Step 3A).
 - **Base:** `--base`, else the remote default branch (`origin/HEAD`), else the `main`/`master` candidates (it scopes the slice list and `risk:`). None resolves → `[PR-BODY-ERROR]` (status 2), never `risk: [none]`: pass `--base <default-branch>` then.
-- **Parent flags:** `--parent` = the shipped slice's parent (joins `features:`; omit when standalone). `--close BT-<n>` (repeatable) = an epic this PR completes: adds `Closes #<n>.` after the slice lines. `--close-parent` = alias for `--close <--parent>`.
+- **Parent flags:** `--parent` = the shipped slice's parent (joins `features:`; omit when standalone). `--close BT-<n>` (repeatable) = an epic this PR completes: adds `Closes #<n>.` after the slice lines (when `tracker: local`, adds no `Closes` lines as GitHub cannot close local issues; local issues close post-merge via `issues.py merged --close`). `--close-parent` = alias for `--close <--parent>`.
 - **Optional flags:** `--manual-qa` (`needs_manual_qa` true: 3z Step 3A dispatch, or a manual-only AC the Phase 2 table marks `[NONE]`), `--post-merge "<step>"` (also `noticed: <line>` per the 3d plan's `Noticed, not touched`; `none` → omit), `--deviation "<decision>"` (one per line of the 3d plan's `## Deviations`; `none` → omit), `--ref <ID>`.
 
 ## Audit findings
@@ -53,6 +53,6 @@ Pass the object with `--audit-file <F>` (`--audit-json '<json>'` is the same pay
 `risk:` follows `references/merge-risk-paths.md` (plus the project's `## One-way paths`). Not `[none]` → `gh label create risk:one-way --force --description "Hard-to-reverse change; human must read before merge"` (`--add-label` fails on a missing label), then `gh pr edit <n> --add-label risk:one-way`.
 
 ## Closing-link read-back
-Local backend: skip (local ids carry no `Closes` line; `issues.py merged --close` closes after merge). Otherwise, after `gh pr create` / `gh pr edit`, run `gh pr view <pr> --json closingIssuesReferences` and confirm the slice issue **and each closed epic** are listed. Not listed → correct the closing lines and re-check **once**, after ~5 s (GitHub lags a few seconds after an edit); still unlisted → report `[NO-AUTOCLOSE #<n>]` in the ship output and leave it to `/0b` done-detection to close after merge (GitHub only auto-closes what is linked; #128/#129 were not, whatever the wording). Never loop.
+Local backend: skip (local ids carry no `Closes` line; `issues.py merged --close` closes after merge). Otherwise, when `gh` is connected (otherwise stay local with no PR), after `gh pr create` / `gh pr edit`, run `gh pr view <pr> --json closingIssuesReferences` and confirm the slice issue **and each closed epic** are listed. Not listed → correct the closing lines and re-check **once**, after ~5 s (GitHub lags a few seconds after an edit); still unlisted → report `[NO-AUTOCLOSE #<n>]` in the ship output and leave it to `/0b` done-detection to close after merge (GitHub only auto-closes what is linked; #128/#129 were not, whatever the wording). Never loop.
 
 Never write a closing keyword followed by an issue number in free prose (Notes): GitHub parses `<keyword> #<n>` anywhere in the body, even inside backticks, and closes the issue on merge.

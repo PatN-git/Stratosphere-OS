@@ -70,7 +70,7 @@ def test_the_reads_reference_defines_the_wip_set_and_the_candidates_read():
 @pytest.mark.parametrize("rel", WIP_READERS)
 def test_wip_readers_use_a_scoped_query(rel):
     text = read_src(rel)
-    assert 'status:in progress' in text and ("gh issue list" in text or "tracker-verbs.md" in text or "tracker-verbs-github.md" in text), \
+    assert 'status:in progress' in text and ("gh issue list" in text or "tracker-verbs.md" in text or "tracker-verbs-github.md" in text or "tracker.py" in text), \
         f"{rel} has no scoped WIP read"
 
 

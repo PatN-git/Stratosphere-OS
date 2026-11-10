@@ -51,3 +51,30 @@ def test_update_skill_text_helper_joins_the_skill_and_every_cited_reference():
     assert combined.startswith(skill_text())
     for name in REFS:
         assert (REFS_DIR / name).read_text(encoding="utf-8") in combined
+
+
+def test_skill_contains_ordered_phase_markers_including_phase_7():
+    text = skill_text()
+    expected_markers = [
+        "## Phase 0:",
+        "## Phase 0.5:",
+        "## Phase 1:",
+        "## Phase 2",
+        "## Phase 4:",
+        "## Phase 5:",
+        "## Phase 6:",
+        "## Phase 7: Host Cache Invalidation",
+    ]
+    indices = [text.find(marker) for marker in expected_markers]
+    for marker, idx in zip(expected_markers, indices):
+        assert idx != -1, f"Missing marker: {marker}"
+    assert indices == sorted(indices), f"Phase markers not in order: {expected_markers}"
+
+
+def test_skill_phase_7_emits_host_specific_reload_directives():
+    text = skill_text()
+    assert "## Phase 7: Host Cache Invalidation" in text
+    phase_7 = text[text.find("## Phase 7:"):]
+    assert "/skills reload" in phase_7
+    assert "/reload-plugins" in phase_7
+

@@ -44,8 +44,12 @@ import re
 import subprocess
 import sys
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 VERSION = "gh version 0.0.0-l3-shim (l3-lifecycle-harness)"
 REPO = "l3-harness/throwaway"
@@ -150,32 +154,81 @@ def positional(argv: list[str]) -> list[str]:
     return out
 
 
-_JQ = re.compile(r"^\.([A-Za-z_][A-Za-z0-9_]*)$")
-_JQ_LAST_COMMENT = re.compile(r'^\[\.comments\[\]\s*\|\s*select\(\.body\s*\|\s*startswith\("([^"]*)"\)\)\]\s*\|\s*last\s*\|\s*\.body$')
-_JQ_EACH = re.compile(r"^\.\[\]\.([A-Za-z_][A-Za-z0-9_]*)$")  # `.[].name`, for a list of rows
+_JQ_LAST_SELECT = re.compile(
+    r'^\[\s*(\.[\w]+)?\[\]\s*\|\s*select\(\.([\w]+)\s*\|\s*(startswith|contains)\("([^"]*)"\)\)\s*\]\s*\|\s*last\s*\|\s*\.([\w]+)$'
+)
+_JQ_INDEX_FIELD = re.compile(r"^\.\[(\d+)\](?:\.([\w.]+))?$")
+_JQ_EACH_FIELD = re.compile(r"^\.\[\](?:\.([\w.]+))?$")
+_JQ_FIELD = re.compile(r"^\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)$")
+
+
+def get_path(val, path: str):
+    for part in path.split("."):
+        if not part:
+            continue
+        if isinstance(val, dict):
+            val = val.get(part)
+        elif isinstance(val, list) and part.isdigit():
+            idx = int(part)
+            val = val[idx] if idx < len(val) else None
+        else:
+            return None
+    return val
+
+
+def _format_jq_val(value):
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "null"
+    return str(value)
 
 
 def apply_jq(data, expr: str):
-    """The jq the chain uses: `-q .<field>` (github-issue-relations.md:9), `.[].<field>` and the resume_note read.
-
-    Anything else fails by name rather than returning something plausible: a
-    silently wrong node id produces a mutation against the wrong issue.
-    """
-    note = _JQ_LAST_COMMENT.match(expr.strip())
-    if note and isinstance(data, dict):  # the resume_note read; real gh prints an empty line when nothing matches
-        hits = [c["body"] for c in data.get("comments", []) if c["body"].startswith(note.group(1))]
+    """The jq the chain uses: `-q .<field>`, array iteration, index selection, and select/filter expressions."""
+    s = expr.strip()
+    sel_match = _JQ_LAST_SELECT.match(s)
+    if sel_match:
+        arr_field = (sel_match.group(1) or "").lstrip(".")
+        target_arr = data.get(arr_field, []) if arr_field and isinstance(data, dict) else (data if isinstance(data, list) else [])
+        cond_field = sel_match.group(2)
+        op = sel_match.group(3)
+        needle = sel_match.group(4)
+        out_field = sel_match.group(5)
+        hits = []
+        for item in target_arr:
+            val = str(item.get(cond_field, ""))
+            if (op == "startswith" and val.startswith(needle)) or (op == "contains" and needle in val):
+                hits.append(item.get(out_field, ""))
         return hits[-1] if hits else ""
-    each = _JQ_EACH.match(expr.strip())
-    if each and isinstance(data, list):
-        return "\n".join(str(row[each.group(1)]) for row in data)
-    m = _JQ.match(expr.strip())
-    if not m:
+
+    m_idx = _JQ_INDEX_FIELD.match(s)
+    if m_idx and isinstance(data, list):
+        idx = int(m_idx.group(1))
+        field_path = m_idx.group(2)
+        if idx >= len(data):
+            return "null"
+        row = data[idx]
+        val = get_path(row, field_path) if field_path else row
+        return _format_jq_val(val)
+
+    m_each = _JQ_EACH_FIELD.match(s)
+    if m_each and isinstance(data, list):
+        field_path = m_each.group(1)
+        return "\n".join(_format_jq_val(get_path(row, field_path) if field_path else row) for row in data)
+
+    m_field = _JQ_FIELD.match(s)
+    if not m_field:
         raise Failure(EXIT_UNKNOWN,
                       f"the shim implements only `-q .<field>`, not {expr!r}")
-    if not isinstance(data, dict) or m.group(1) not in data:
-        raise Failure(EXIT_UNKNOWN, f"no field {m.group(1)!r} to select")
-    value = data[m.group(1)]
-    return {True: "true", False: "false"}.get(value, value) if isinstance(value, bool) else value  # jq prints JSON booleans
+    path = m_field.group(1)
+    if not isinstance(data, dict):
+        raise Failure(EXIT_UNKNOWN, f"cannot select field {path!r} from non-dict")
+    top_key = path.split(".")[0]
+    if top_key not in data:
+        raise Failure(EXIT_UNKNOWN, f"no field {top_key!r} to select")
+    value = get_path(data, path)
+    return _format_jq_val(value)
 
 
 # --- the issue store ---------------------------------------------------------
@@ -234,6 +287,8 @@ def mint(state: dict, *, title: str, body: str, labels: list[str],
         "labels": [{"name": n} for n in labels],
         "milestone": {"title": milestone} if milestone else None,
         "state": "OPEN",
+        "stateReason": None,
+        "closedAt": None,
         "comments": [],
         "subIssues": [],
         "blockedBy": [],
@@ -244,6 +299,9 @@ def mint(state: dict, *, title: str, body: str, labels: list[str],
         "mergeStateStatus": "CLEAN",
         "url": f"https://github.com/{state['repo']}/{kind}/{number}",
     }
+    if is_pr:
+        issue["mergedAt"] = None
+        issue["mergeCommit"] = None
     state["issues"][str(number)] = issue
     return issue
 
@@ -355,11 +413,15 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
                     if labels <= {l["name"] for l in i["labels"]}]
         rows.sort(key=lambda i: i["number"])
         fields = take(rest, "--json")
+        jq = take(rest, "-q", "--jq")
         if not fields:
             return "\n".join(f"#{i['number']}\t{i['title']}\t{i['state']}"
                              for i in rows)
         names = [f.strip() for f in fields.split(",") if f.strip()]
-        return json.dumps([project(i, names, state) for i in rows])
+        data = [project(i, names, state) for i in rows]
+        if jq:
+            return str(apply_jq(data, jq))
+        return json.dumps(data)
 
     if action == "comment":
         issue = get(state, positional(rest)[0])
@@ -368,12 +430,21 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
 
     if action == "close":
         issue = get(state, positional(rest)[0])
-        issue["state"] = "CLOSED"
+        reason = take(rest, "--reason", "-r")
+        reason_val = "NOT_PLANNED" if reason and "not" in reason.lower() else "COMPLETED"
+        if issue["state"] != "CLOSED":
+            issue["state"] = "CLOSED"
+            issue["stateReason"] = reason_val
+            issue["closedAt"] = now_iso()
+        elif reason:
+            issue["stateReason"] = reason_val
         return f"Closed issue #{issue['number']}"
 
     if action == "reopen":
         issue = get(state, positional(rest)[0])
         issue["state"] = "OPEN"
+        issue["stateReason"] = None
+        issue["closedAt"] = None
         comment = take(rest, "--comment", "-c")
         if comment:
             issue["comments"].append({"body": comment})
@@ -384,10 +455,23 @@ def cmd_issue(state: dict, argv: list[str]) -> str:
 
 def cmd_label(state: dict, argv: list[str]) -> str:
     """The registry is `state["labels"]`: `label create` plus whatever the seed made. `issue|pr create|edit` refuse
-    a label outside it (`require_labels`). `label create` is idempotent, as with `--force`."""
+    a label outside it (`require_labels`). `label create` without `--force` fails if duplicate; with `--force` updates."""
     action, rest = argv[0], argv[1:]
     if action == "create":
         name = positional(rest)[0]
+        force = "--force" in rest or "-f" in rest
+        registry = state.setdefault("labels", [])
+        existing = next((l for l in registry if l["name"].lower() == name.lower()), None)
+        if existing and not force:
+            raise Failure(EXIT_UNKNOWN, f"label already exists: '{name}'", bare=True)
+        if existing and force:
+            desc = take(rest, "--description", "-d")
+            color = take(rest, "--color", "-c")
+            if desc is not None:
+                existing["description"] = desc
+            if color is not None:
+                existing["color"] = color
+            return f'Label "{name}" updated'
         register_label(state, name, take(rest, "--description", "-d") or "", take(rest, "--color", "-c") or "")
         return f'Label "{name}" created'
     if action == "list":
@@ -471,6 +555,69 @@ def cmd_pr(state: dict, argv: list[str]) -> str:
         return (f"Pull request #{pr['number']} is converted to draft" if undo
                 else f"Pull request #{pr['number']} is marked as ready for review")
 
+    if action == "merge":
+        pr = find_pr(state, _pr_ref(rest))
+        if pr["state"] == "MERGED":
+            return f"Pull request #{pr['number']} is already merged"
+        ts = now_iso()
+        pr["state"] = "MERGED"
+        pr["mergedAt"] = ts
+        pr["closedAt"] = ts
+        oid = remote_oid(pr.get("head")) or "a" * 40
+        pr["mergeCommit"] = {"oid": oid}
+        linked_nums = re.findall(r"(?i)\b(?:closes|fixes|resolves)\s+#(\d+)", pr.get("body", ""))
+        for n in linked_nums:
+            if n in state["issues"]:
+                target = state["issues"][n]
+                target["state"] = "CLOSED"
+                target["stateReason"] = "COMPLETED"
+                target["closedAt"] = ts
+        method = "squash" if "--squash" in rest else ("rebase" if "--rebase" in rest else "merge")
+        return f"Merged pull request #{pr['number']} ({method})"
+
+    if action == "checks":
+        pr = find_pr(state, _pr_ref(rest))
+        rec = pr_record(pr)
+        rollup = rec.get("statusCheckRollup", [])
+        fields = take(rest, "--json")
+        jq = take(rest, "-q", "--jq")
+        has_failure = any(
+            c.get("conclusion") in ("FAILURE", "ACTION_REQUIRED", "TIMED_OUT", "CANCELLED") or
+            c.get("status") == "FAILED"
+            for c in rollup
+        )
+        if fields:
+            names = [f.strip() for f in fields.split(",") if f.strip()]
+            data = []
+            for c in rollup:
+                row = {}
+                for f in names:
+                    if f in c:
+                        row[f] = c[f]
+                    elif f == "link":
+                        row[f] = c.get("detailsUrl", "")
+                    elif f == "workflow":
+                        row[f] = c.get("workflowName", "")
+                    elif f == "state":
+                        row[f] = c.get("status", "")
+                    else:
+                        row[f] = c.get(f)
+                data.append(row)
+            out = str(apply_jq(data, jq)) if jq else json.dumps(data)
+            if has_failure:
+                raise Partial(out)
+            return out
+        lines = []
+        for c in rollup:
+            name = c.get("name", "test")
+            status = c.get("conclusion") or c.get("status") or "PENDING"
+            url = c.get("detailsUrl", "")
+            lines.append(f"{name}\t{status}\t{url}")
+        out = "\n".join(lines)
+        if has_failure:
+            raise Partial(out)
+        return out
+
     raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh pr {action}")
 
 
@@ -552,7 +699,16 @@ def pr_record(pr: dict, want: list[str] | None = None) -> dict:
     refs = [{"number": int(n)} for n in dict.fromkeys(
         re.findall(r"(?i)\b(?:closes|fixes|resolves)\s+#(\d+)", pr["body"]))]
     rec = {**pr, "headRefName": pr.get("head", ""), "baseRefName": pr.get("base", ""),
-           "mergedAt": pr.get("mergedAt"), "closingIssuesReferences": refs}
+           "mergedAt": pr.get("mergedAt"), "closedAt": pr.get("closedAt"),
+           "stateReason": pr.get("stateReason"), "mergeCommit": pr.get("mergeCommit"),
+           "closingIssuesReferences": refs}
+    if rec.get("state") == "MERGED":
+        if not rec.get("mergedAt"):
+            rec["mergedAt"] = now_iso()
+        if not rec.get("closedAt"):
+            rec["closedAt"] = rec["mergedAt"]
+        if not rec.get("mergeCommit"):
+            rec["mergeCommit"] = {"oid": rec.get("headRefOid") or remote_oid(pr.get("head")) or "0" * 40}
     if "statusCheckRollup" not in rec:
         rec["statusCheckRollup"] = [{"__typename": "CheckRun", "name": "test", "workflowName": "CI",
                                      "status": "COMPLETED", "conclusion": "SUCCESS",
@@ -591,14 +747,21 @@ def _pr_list(state: dict, rest: list[str]) -> str:
     rows = [p for p in rows if all(w in f"{p['title']} {p['body']}".lower() for w in words)]
     rows.sort(key=lambda p: p["number"])
     fields = take(rest, "--json")
+    jq = take(rest, "-q", "--jq")
     if not fields:
         return "\n".join(f"#{p['number']}\t{p['title']}\t{p['state']}" for p in rows)
     names = [f.strip() for f in fields.split(",") if f.strip()]
-    return json.dumps([project(pr_record(p, names), names, state) for p in rows])
+    data = [project(pr_record(p, names), names, state) for p in rows]
+    if jq:
+        return str(apply_jq(data, jq))
+    return json.dumps(data)
 
 
 _MUTATION = re.compile(r"\b(addSubIssue|removeSubIssue|addBlockedBy|removeBlockedBy)\b")
 _ALIAS = re.compile(r"\b(\w+):\s*issue\(number:\s*(\d+)\)")
+_SINGLE_ISSUE = re.compile(r"\bissue\(number:\s*(?:\$([A-Za-z0-9_]+)|(\d+))\)")
+_SINGLE_PR = re.compile(r"\bpullRequest\(number:\s*(?:\$([A-Za-z0-9_]+)|(\d+))\)")
+_NODE_QUERY = re.compile(r"\bnode\(id:\s*(?:\$([A-Za-z0-9_]+)|[\"']([^\"']+)[\"'])\)")
 
 
 def cmd_api(state: dict, argv: list[str]) -> str:
@@ -613,9 +776,11 @@ def cmd_api(state: dict, argv: list[str]) -> str:
         known = {m["title"] for m in state["milestones"]}
         if title and title.startswith("title="):
             # create: `gh api repos/{o}/{r}/milestones -f title=vX.Y.0`
-            m = {"title": title[len("title="):], "number": len(state["milestones"]) + 1, "state": "open"}
-            if m["title"] not in known:
-                state["milestones"].append(m)
+            m_title = title[len("title="):]
+            if m_title in known:
+                raise Failure(EXIT_UNKNOWN, "gh: Validation Failed (HTTP 422)\nresource: Milestone, code: already_exists", bare=True)
+            m = {"title": m_title, "number": len(state["milestones"]) + 1, "state": "open"}
+            state["milestones"].append(m)
             return json.dumps(m)
         # list: milestones made through the shim plus any an issue already carries (seeded epics)
         used = {i.get("milestone", {}).get("title") if isinstance(i.get("milestone"), dict) else i.get("milestone")
@@ -642,7 +807,9 @@ def _fields(argv: list[str]) -> dict:
 
 def _ref(state: dict, number: int) -> dict:
     i = get(state, number)
-    return {"number": i["number"], "state": i["state"], "milestone": i["milestone"],
+    return {"id": i["id"], "number": i["number"], "title": i["title"],
+            "state": i["state"], "stateReason": i.get("stateReason"),
+            "closedAt": i.get("closedAt"), "milestone": i["milestone"],
             "labels": {"nodes": i["labels"]}}
 
 
@@ -679,6 +846,8 @@ def _read(state: dict, query: str) -> str:
             blockedBy={"nodes": [_with_parent(state, b["number"]) for b in issue["blockedBy"]]},
             blocking={"nodes": [_with_parent(state, o["number"]) for o in state["issues"].values()
                                 if any(b["number"] == issue["number"] for b in o["blockedBy"])]},
+            subIssues={"nodes": [_with_parent(state, s["number"]) for s in issue.get("subIssues", [])],
+                       "totalCount": len(issue.get("subIssues", []))},
             comments={"nodes": issue["comments"]})
     out = json.dumps({"data": {"repository": repo}, **({"errors": errors} if errors else {})})
     if errors:
@@ -686,18 +855,85 @@ def _read(state: dict, query: str) -> str:
     return out
 
 
-def _graphql(state: dict, argv: list[str]) -> str:
-    """The three mutations `3b` and `4a` use, per github-issue-relations.md.
+def _graphql_issue_or_pr_node(state: dict, item: dict, query: str) -> dict:
+    is_pr = item.get("isPR", False)
+    refs = [{"number": int(n)} for n in dict.fromkeys(
+        re.findall(r"(?i)\b(?:closes|fixes|resolves)\s+#(\d+)", item.get("body", "")))]
+    sub_issues = [brief(by_node_id(state, s["id"]) or s) for s in item.get("subIssues", [])]
+    blocked_by = [brief(by_node_id(state, b["id"]) or b) for b in item.get("blockedBy", [])]
+    parent = brief(by_node_id(state, item["parent"]["id"]) or item["parent"]) if item.get("parent") else None
 
-    Node ids arrive already resolved, because the documented form nests
-    `gh issue view <n> --json id -q .id` inside the call - so an unresolvable id
-    here means the shim handed out one it cannot recognise, which is a bug worth
-    failing on rather than a relation worth silently dropping.
-    """
+    out = {
+        "id": item["id"],
+        "number": item["number"],
+        "title": item["title"],
+        "body": item["body"],
+        "state": item["state"],
+        "stateReason": item.get("stateReason"),
+        "closedAt": item.get("closedAt"),
+        "url": item["url"],
+        "milestone": item.get("milestone"),
+        "labels": {"nodes": item.get("labels", [])},
+        "assignees": {"nodes": [{"login": a} if isinstance(a, str) else a for a in item.get("assignees", [])]},
+        "comments": {"nodes": item.get("comments", [])},
+        "subIssues": {"nodes": sub_issues, "totalCount": len(sub_issues)},
+        "blockedBy": {"nodes": blocked_by, "totalCount": len(blocked_by)},
+        "parent": parent,
+    }
+    if is_pr:
+        out["closingIssuesReferences"] = {"nodes": refs, "totalCount": len(refs)}
+        out["mergedAt"] = item.get("mergedAt")
+        out["mergeCommit"] = item.get("mergeCommit") or ({"oid": remote_oid(item.get("head")) or "0" * 40} if item.get("state") == "MERGED" else None)
+    return out
+
+
+def _graphql(state: dict, argv: list[str]) -> str:
+    """GraphQL queries and mutations used across workflows and scripts."""
     args = _fields(argv)
     query = args.get("query", "")
     if _ALIAS.search(query):
         return _read(state, query)
+
+    m_node = _NODE_QUERY.search(query)
+    if m_node:
+        var_name, lit = m_node.group(1), m_node.group(2)
+        nid = args.get(var_name) if var_name else lit
+        item = by_node_id(state, nid) if nid else None
+        if item is None:
+            err = {"type": "NOT_FOUND", "path": ["node"], "message": f"Could not resolve to a node with the ID of '{nid}'."}
+            raise Partial(json.dumps({"data": {"node": None}, "errors": [err]}))
+        return json.dumps({"data": {"node": _graphql_issue_or_pr_node(state, item, query)}})
+
+    m_issue = _SINGLE_ISSUE.search(query)
+    m_pr = _SINGLE_PR.search(query)
+    if m_issue or m_pr:
+        repo_data = {}
+        errors = []
+        if m_issue:
+            var_name, lit = m_issue.group(1), m_issue.group(2)
+            num = args.get(var_name) if var_name else lit
+            issue = state["issues"].get(str(num)) if num else None
+            if issue is None or issue.get("isPR"):
+                repo_data["issue"] = None
+                errors.append({"type": "NOT_FOUND", "path": ["repository", "issue"],
+                               "message": f"Could not resolve to an Issue with the number of {num}."})
+            else:
+                repo_data["issue"] = _graphql_issue_or_pr_node(state, issue, query)
+        if m_pr:
+            var_name, lit = m_pr.group(1), m_pr.group(2)
+            num = args.get(var_name) if var_name else lit
+            pr = state["issues"].get(str(num)) if num else None
+            if pr is None or not pr.get("isPR"):
+                repo_data["pullRequest"] = None
+                errors.append({"type": "NOT_FOUND", "path": ["repository", "pullRequest"],
+                               "message": f"Could not resolve to a PullRequest with the number of {num}."})
+            else:
+                repo_data["pullRequest"] = _graphql_issue_or_pr_node(state, pr, query)
+        out = json.dumps({"data": {"repository": repo_data}, **({"errors": errors} if errors else {})})
+        if errors:
+            raise Partial(out)
+        return out
+
     m = _MUTATION.search(query)
     if not m:
         raise Failure(EXIT_UNKNOWN,
@@ -756,6 +992,80 @@ def cmd_repo(state: dict, argv: list[str]) -> str:
     raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh repo {action}")
 
 
+def cmd_run(state: dict, argv: list[str]) -> str:
+    action, rest = argv[0], argv[1:]
+    if action == "view":
+        pos = positional(rest)
+        run_id = pos[0] if pos else None
+        runs = state.setdefault("runs", {})
+        run_data = None
+        if run_id:
+            run_data = runs.get(str(run_id))
+        elif runs:
+            run_data = next(iter(runs.values()))
+        if run_data is None:
+            raise Failure(EXIT_UNKNOWN, f"no workflow run #{run_id or ''} in the fixture store")
+
+        if "--log-failed" in rest:
+            return run_data.get("log_failed") or run_data.get("log") or ""
+        if "--log" in rest:
+            return run_data.get("log") or ""
+
+        fields = take(rest, "--json")
+        jq = take(rest, "-q", "--jq")
+        if fields:
+            names = [f.strip() for f in fields.split(",") if f.strip()]
+            data = {f: run_data.get(f) for f in names}
+            out = str(apply_jq(data, jq)) if jq else json.dumps(data)
+            if "--exit-status" in rest and run_data.get("conclusion") not in ("success", "SUCCESS"):
+                raise Partial(out)
+            return out
+
+        out = f"{run_data.get('name', 'Run')}\t{run_data.get('status', '')}\t{run_data.get('conclusion', '')}\t{run_data.get('url', '')}"
+        if "--exit-status" in rest and run_data.get("conclusion") not in ("success", "SUCCESS"):
+            raise Partial(out)
+        return out
+
+    raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh run {action}")
+
+
+def cmd_project(state: dict, argv: list[str]) -> str:
+    action, rest = argv[0], argv[1:]
+    projects = state.setdefault("projects", [])
+    if action == "list":
+        is_json = take(rest, "--format") == "json" or "--json" in rest
+        if is_json:
+            return json.dumps({"projects": projects, "totalCount": len(projects)})
+        return "\n".join(f"#{p.get('number')}\t{p.get('title')}\t{p.get('id', '')}" for p in projects)
+    if action == "item-list":
+        pos = positional(rest)
+        num = pos[0] if pos else None
+        p = next((proj for proj in projects if str(proj.get("number")) == str(num) or proj.get("id") == str(num)), None)
+        if p is None:
+            raise Failure(EXIT_UNKNOWN, f"no project #{num} in the fixture store")
+        items = p.get("items", [])
+        is_json = take(rest, "--format") == "json" or "--json" in rest
+        if is_json:
+            return json.dumps({"items": items, "totalCount": len(items)})
+        return "\n".join(str(i) for i in items)
+    if action == "view":
+        pos = positional(rest)
+        num = pos[0] if pos else None
+        p = next((proj for proj in projects if str(proj.get("number")) == str(num) or proj.get("id") == str(num)), None)
+        if p is None:
+            raise Failure(EXIT_UNKNOWN, f"no project #{num} in the fixture store")
+        fields = take(rest, "--json")
+        jq = take(rest, "-q", "--jq")
+        if fields:
+            names = [f.strip() for f in fields.split(",") if f.strip()]
+            data = {f: p.get(f) for f in names}
+            return str(apply_jq(data, jq)) if jq else json.dumps(data)
+        if take(rest, "--format") == "json":
+            return json.dumps(p)
+        return f"#{p.get('number')}\t{p.get('title')}"
+    raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh project {action}")
+
+
 def dispatch(state: dict, argv: list[str]) -> tuple[str, str]:
     """Return (stdout, stderr) for one invocation."""
     repo_override = take(argv, "-R", "--repo")
@@ -786,7 +1096,8 @@ def dispatch(state: dict, argv: list[str]) -> tuple[str, str]:
             return "", (f"github.com\n  x Logged in to github.com as l3-harness "
                         f"(L3 shim)\n  - Active account: true\n")
         raise Failure(EXIT_UNKNOWN, f"unknown subcommand: gh auth {argv[1:]}")
-    table = {"issue": cmd_issue, "pr": cmd_pr, "api": cmd_api, "repo": cmd_repo, "label": cmd_label}
+    table = {"issue": cmd_issue, "pr": cmd_pr, "api": cmd_api, "repo": cmd_repo, "label": cmd_label,
+             "run": cmd_run, "project": cmd_project}
     handler = table.get(argv[0])
     if handler is None or len(argv) < 2:
         raise Failure(EXIT_UNKNOWN, f"unknown command: gh {' '.join(argv)}")
