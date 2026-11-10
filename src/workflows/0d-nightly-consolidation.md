@@ -52,8 +52,8 @@ Run `python .agents/scripts/okf_view.py --rebuild-indices` and report its `N ind
 
 ## Phase 4: Recommend & Await Direction
 The report is the record; chat is a decision brief. Never restate report sections, evidence, or no-op audits in chat.
-1. Link the report. One status line for mechanical phases (e.g. `indices: 7 rebuilt · retention: ok · memory: nothing qualifies`).
-2. ≤5 recommendations, ranked by payoff (recurrence × cost of the failure), under two headings by route. Each `pending` line carried from Phase 2 takes a slot first and is shown as a binary (`do it` / `decline`). If forced items exceed 5, keep the carried `pending` first; list the overflow as a one-line count (`+N more in the report`):
+1. Link report. One status line for mechanical phases (e.g. `indices: 7 rebuilt · retention: ok · memory: nothing qualifies`).
+2. ≤5 recommendations, ranked by payoff (recurrence × cost of failure), under two headings by route. Group routine Tier 1 cleanups (dead links, formatting, index syncing, avoid-list retirement) under batch recommendation `R-ALL-CLEAN` for single-click approval (`.memory/` writes require explicit approval; never mutate silently per `.agents/rules/memory-protocol.md` §5). Each `pending` line carried from Phase 2 takes a slot first and is shown as a binary (`do it` / `decline`). If forced items exceed 5, keep carried `pending` first; list overflow as one-line count (`+N more in the report`):
    - **Quick fix** — memory, docs or config; no code. Applied in this session on approval.
    - **New issue** — this project's code, tests or tooling. Recommend `/3b-create-issue`; 0d never creates it.
 
@@ -61,7 +61,9 @@ The report is the record; chat is a decision brief. Never restate report section
    - A rung-4 finding is not an `R-n`: record it under `## Framework feedback` per the ladder, plus a one-line notice in chat.
    - A finding routed to an existing law is not an `R-n` unless it recurs; then recommend a fix for the law not reaching agents.
 3. Write the `R-n` list as `## Recommendations` at the top of the report, and one `## Decisions` stub line per `R-n` before halting: `R-n · <action> · pending`. Rewrite each carried `pending` line in its original report to `carried → nightly-<date> R-m`. Evidence and verbatim output go below. When 0 `R-n` items exist across Phases 1–3 and carried `pending`, omit `## Recommendations` / `## Decisions` stubs (or record `No recommendations`) and skip the Phase 4 decision halt.
-4. Halt. Ask: *"Which recommendations should I implement? Reply with R-numbers, `all`, or `none`."*
+4. Halt. Present single-click batch approval prompt for cleanups:
+   `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Decline]`
+   Or prompt: *"Which recommendations should I implement? Reply with `R-ALL-CLEAN`, R-numbers, `all`, or `none`."*
 
 After the user answers, rewrite each stub line in place (never append a second one): `accepted · applied` (append ` <sha>` only when a commit was made), `accepted · deferred`, or `declined`. `none` → every line `declined`; an accepted New issue → `accepted · deferred`. Phase 2 of later nights reads it.
 - **Commit rule (D1):** On the default branch (`main`/`master`), after rewriting `## Decisions` stub lines (or when skipping the halt on empty findings), commit ONLY explicit touched paths (`docs/nightly/`, rebuilt `index.md` files, and approved `.memory/` Quick fixes) locally on default branch as `chore(nightly): consolidate <YYYY-MM-DD>` (never push automatically) and append `<sha>` to `accepted · applied <sha>`. On a feature branch, leave changes uncommitted and write `accepted · applied` without `<sha>`.

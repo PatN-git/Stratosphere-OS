@@ -30,12 +30,12 @@ Run the `load-memory` skill to restore session context (read-only).
 4. **Siblings (PRD-sourced only; no PRD / audit-sourced / standalone: skip):** `children(<parent>)` (`gh issue view <parent> --json subIssues`, `.nodes`, per `.agents/scripts/tracker.py`; local: `issues.py children <parent>`). Existing Build-slice siblings already cover their scope (a Spike does not): Phase 2 drafts only §6/§8/design items no sibling covers.
 
 ## Phase 2: Slice, Draft & Audit
-**Audit-sourced:** skip steps 1 and 3 (the proposal is the draft). In step 2, take Impact and Confidence from `references/audit-to-slices.md` §6 — the ODI fallback HALT does not apply; still prompt for Size, then write Size and the ICE Score (Phase 3 step 1 formula) into each slice's ICE Priorities in the proposal.
+**Audit-sourced:** skip steps 1 and 3 (the proposal is the draft). In step 2, take Impact and Confidence from `references/audit-to-slices.md` §6; infer Size from touchpoints (small 1–2 files, med 3–5, large >5), then write Size and the ICE Score (Phase 3 step 1 formula) into each slice's ICE Priorities in the proposal.
 1. **Slices List:** propose breakdown per slice:
    - **Title:** short name.
    - **Logic/user story:** end-to-end path.
    - **Blocked by:** prerequisite slices (a real `BT-<n>` for an existing sibling).
-   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path. Migration slices have no ODI, so the step-2 fallback HALT asks the user for Impact and Confidence.
+   - **§10:** an open blocking Question (not a `migration:` item; incl. an `untested | running | failed` RAT; no PRD: the brief's Open Questions and Riskiest Assumption stand in, non-blocking ones → slice Notes) → a Spike in this list, before any drafting. Each `migration:`-tagged item → a Build slice listed first (Slices 1..k), a blocker of every slice that touches the contract it changes. One that removes or renames an existing contract follows expand/contract: the additive slice leads, the destructive step is its own later slice, Blocked by every slice that moves callers; every migration slice's AC includes a tested down path.
    - **Inheritance:** inherit scope-class + ODI score from PRD §6. No slices for `[DEFERRED]` stories.
    - **Minimum-slice floor (value, not LOC):** do not emit a slice with no independent verification/demo value beyond its sibling — fold it into the sibling or keep the feature whole (a one-line change is rarely its own slice). Judge by vertical value, never line count. **Do not over-fold across surfaces** (e.g. merging a backend slice with its UI slice to save cost) — that yields a multi-file/UI slice that triggers the full independent audit anyway and erodes isolation; fold only a child that has no standalone verification value.
    - **Maximum-slice ceiling:** split a draft whose title joins two outcomes with "and", or that has >3 AC, 2+ independent subsystems, or ~5+ hand-written non-test, non-generated files.
@@ -52,11 +52,10 @@ Run the `load-memory` skill to restore session context (read-only).
      - `[HIGH]` → `100%`
      - `[MED]` → `80%` (`[MEDIUM]` accepted as legacy)
      - `[LOW]` → `50%`
-    - **Fallback (ODI absent): HALT** and ask the user for Impact and Confidence; never infer them (an inferred value can move the priority bucket). Resume drafting only after both are given:
-      - **Impact:** ∈ {0.25 (min), 0.5 (low), 1.0 (med), 2.0 (high), 3.0 (crit)}
-      - **Confidence:** ∈ {50% (guess), 80% (high), 100% (certain)}
-   - Prompt for **Size** (Effort):
-     - **Size:** ∈ {size:small (weight 1), size:medium (weight 2), size:large (weight 3)}
+   - **Calibrated Metric Inference (zero intermediate question halts when ODI is absent):**
+     - **Impact:** Default to `1.0 (med)` (`type:bug` critical crash/data-loss/security → `2.0 (high)`; `type:maintenance|refactor` → `0.5 (low)`).
+     - **Confidence:** Default to `80% (high)` (unbacked default; `100%` only for frozen PRD/design contracts; Spikes → `50%`).
+     - **Size:** Infer from file touchpoints: 1–2 files → `size:small` (1); 3–5 → `size:medium` (2); >5 → `size:large` (3).
 3. **Draft full specs to scratch (Spikes: skip):** expand each new slice (not an existing sibling) into a complete, self-contained Build slice in `.tmp/BT-<padded>-issue-drafts.md`, the issue body minted verbatim in Phase 3, every field inline:
    - Contracts/invariants (e.g. Zod/Pydantic/TS types), selectors/patterns, and edge cases from PRD §6/§8 + the frozen design blueprint.
    - **Brief seed:** Established Facts → Current state / Problem (file paths allowed in issue bodies). PRD-sourced: Constraints & Settled Decisions → Current state / Problem. No-PRD path: Problem → Overview; Success State → Acceptance Criteria; Constraints & Settled Decisions → constraints in The Path; Non-Goals → Notes.
@@ -84,7 +83,19 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Brief-only finding** (a constraint or settled decision present in the brief but absent from PRD + interface; Established Facts used as Current-state evidence are expected, not a gap) → flag `[BRIEF-GAP]` the same way.
    - **No PRD:** restate intent as a requirement list; map slices; the brief (if located) is the top source, so `[BRIEF-GAP]` and the precedence clause do not apply, and every Success State item and settled decision maps to a draft AC or constraint; check each draft body against the spec bar, a missing element is a finding; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
    - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `.agents/skills/3b-create-issue/references/audit-to-slices.md`; the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
-5. **Approval Request:** present the audited drafts + coverage map. Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Halt until user approves.
+5. **Single Final Verification Gate:** present a high-density compact summary table before the full draft bodies:
+
+   ```markdown
+   ### Slices Proposed for Minting
+   | Slice | Type | Inferred Impact | Conf | Size | Calculated ICE | Assigned Priority |
+   |:---|:---|:---:|:---:|:---:|:---:|:---:|
+   | BT-<padded> | feature | 1.0 (med) | 80% | med (2) | 0.40 | priority:medium |
+
+   [Approve & Mint via gh issue create]
+   To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`).
+   ```
+
+   Confirm: requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm the epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
 
 ## Phase 3: Implementation & Memory Sync
 1. **Calculate ICE Score (Spikes: skip):** `ICE = (Impact * Confidence) / Effort weight` (Confidence as decimal; Effort: small=1, medium=2, large=3).

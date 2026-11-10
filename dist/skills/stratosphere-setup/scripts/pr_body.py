@@ -6,7 +6,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
   build  --slice BT-n --summary "..." --verdict PASS|WAIVED|SKIP --audit-rounds N
          [--manual-qa] [--post-merge S]... [--deviation S]... [--ref ID]... [--notes TEXT]
          [--audit-json J | --audit-file F] [--prior-body-file F] [--base REF] [--risk-paths F] [--suite-json F]
-         [--parent BT-n] [--epic BT-n]... [--close BT-n]... [--close-parent] [--out F]
+         [--parent BT-n] [--epic BT-n]... [--close BT-n]... [--close-parent] [--allow-scoped] [--out F]
     Prints the PR body: `Closes #n.` lines, one ```stratos-pr block, optional `## Notes`.
     Slices = BT scope of every `<type>(BT-n):` commit in `git log --no-merges <base>..HEAD`. The shipped slice
     gets the fresh values; others keep summary/verdict/audit_rounds from the prior block; no prior entry ->
@@ -24,11 +24,12 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     `audit: {"BT-n": {...}}` (a top-level line, only when non-empty) holds each slice's auditor findings: spec_r1,
     spec_final, std_hard, std_judg, watch (counts), phase1, std_tier (text), input (lean|full). --audit-json/--audit-file
     replaces the shipped slice's entry; a rebuild without either keeps every prior entry. Old readers ignore the line.
-  suite  [--dir .tmp]
+  suite  [--dir .tmp] [--allow-scoped]
     Prints the newest reusable `.tmp/3d-suite-BT-*.json` (cmd, observed, head_sha) or nothing + exit 1 with
     `[NO-SUITE] <none|head moved|dirty tree|scoped>` on stderr. Reusable = head_sha is HEAD, or an ancestor with only
     `release: prepare` commits since (a bump changes no tested behaviour), the tree is clean outside .memory/, docs/,
-    .tmp/ (4a's clean-tree guard), and `cmd` is a whole-suite command (`is_scoped`: unknown shapes count as scoped).
+    .tmp/ (4a's clean-tree guard), and `cmd` is a whole-suite command (`is_scoped`: unknown shapes count as scoped,
+    unless --allow-scoped is passed).
     Write the record with `test_gate.py record --suite BT-n -- <cmd>`, never by hand.
   unit   --slice BT-n [--milestone M] [--parent BT-n] [--parent-milestone M] [--epic] [--type T] [--slug S] [--branch B]
     Prints one JSON object `{unit, kind, globs, needs_milestone?, branch?, branch_ok?}`: the ship unit of the slice (`--epic`: of an
@@ -285,7 +286,7 @@ def is_scoped(cmd):
     return not _command_full(shlex.join(cmd) if isinstance(cmd, (list, tuple)) else cmd)
 
 
-def suite_status(dirpath):
+def suite_status(dirpath, allow_scoped=False):
     """(record, reason): the newest reusable `<dirpath>/3d-suite-BT-*.json`, else (None, why not)."""
     if not tree_is_clean():
         return None, "dirty tree"
@@ -305,19 +306,21 @@ def suite_status(dirpath):
             if subjects is None or not all(RELEASE_RE.match(s) for s in subjects.splitlines()):
                 continue
         if is_scoped(rec["cmd"]):
+            if allow_scoped:
+                return rec, ""
             scoped_hit = True
             continue
         return rec, ""
     return None, "scoped" if scoped_hit else ("head moved" if files else "none")
 
 
-def reusable_suite(dirpath):
+def reusable_suite(dirpath, allow_scoped=False):
     """Newest reusable suite record from `<dirpath>/3d-suite-BT-*.json`, else None."""
-    return suite_status(dirpath)[0]
+    return suite_status(dirpath, allow_scoped=allow_scoped)[0]
 
 
 def cmd_suite(args):
-    rec, reason = suite_status(args.dir)
+    rec, reason = suite_status(args.dir, allow_scoped=getattr(args, "allow_scoped", False))
     if not rec:
         print(f"[NO-SUITE] {reason}", file=sys.stderr)
         return 1
@@ -509,16 +512,17 @@ def cmd_build(args):
         return 2
     prior_features, prior, prior_lists, prior_notes = parse_prior(prior_text)
 
+    allow_scoped = getattr(args, "allow_scoped", False) or (not args.close and bool(args.parent))
     if args.suite_json:
         try:
             rec = check_suite(json.loads(Path(args.suite_json).read_text(encoding="utf-8-sig")))
-            if is_scoped(rec["cmd"]):
+            if not allow_scoped and is_scoped(rec["cmd"]):
                 raise ValueError("cmd is a scoped run, not the whole suite; record it with test_gate.py record --suite")
         except (OSError, ValueError) as e:
             print(f"[PR-BODY-ERROR] bad --suite-json {args.suite_json}: {e}", file=sys.stderr)
             return 2
     else:
-        rec, reason = suite_status(".tmp")
+        rec, reason = suite_status(".tmp", allow_scoped=allow_scoped)
     if not rec:
         print(f"[NO-SUITE] {reason}: no reusable suite result. Run the suite once through "
               "`python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (it writes "
@@ -614,9 +618,11 @@ def build_parser():
     b.add_argument("--close", action="append", default=[],
                    help="BT-n of an epic this PR completes: adds `Closes #n.` after the slice lines (repeatable)")
     b.add_argument("--close-parent", action="store_true", help="alias: close --parent")
+    b.add_argument("--allow-scoped", action="store_true", help="allow scoped/slice test receipts (for intermediate slices / draft PR accumulation)")
     b.add_argument("--out")
     s = sub.add_parser("suite")
     s.add_argument("--dir", default=".tmp")
+    s.add_argument("--allow-scoped", action="store_true", help="allow scoped/slice test receipts (for intermediate slices)")
     u = sub.add_parser("unit", help="resolve the ship unit (release vX.Y, parent epic or issue) of a slice")
     u.add_argument("--slice", required=True, help="BT-n of the slice (of the epic with --epic)")
     u.add_argument("--milestone", help="its milestone v<X>.<Y>.<Z>; empty, -, or — = none")

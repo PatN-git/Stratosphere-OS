@@ -543,6 +543,23 @@ def test_build_rejects_a_scoped_suite_json(repo):
     assert "scoped" in r.stderr
 
 
+def test_build_allows_scoped_suite_for_intermediate_slice(repo):
+    c = commit(repo, "feat(BT-11): one")
+    scoped = write_suite(repo, "scoped.json", sha=c, cmd="pytest tests/x.py")
+    r = build_raw(repo, "--parent", "BT-10", suite=scoped)
+    assert r.returncode == 0, r.stderr
+    assert "pytest tests/x.py" in r.stdout
+
+
+def test_suite_allows_scoped_when_flag_passed(repo):
+    c = commit(repo, "feat(BT-11): one")
+    write_suite(repo, "3d-suite-BT-11.json", sha=c, cmd="pytest tests/x.py")
+    assert "[NO-SUITE] scoped" in suite_run(repo).stderr
+    r = run(repo, "suite", "--allow-scoped")
+    assert r.returncode == 0, r.stderr
+    assert "pytest tests/x.py" in r.stdout
+
+
 def test_build_no_suite_message_names_the_recorder(repo):
     commit(repo, "feat(BT-11): one")
     r = build_raw(repo)
