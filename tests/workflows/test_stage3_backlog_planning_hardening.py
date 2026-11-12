@@ -43,8 +43,8 @@ def test_3c_inline_topological_warnings_and_single_activation_gate():
 
 def test_stage3_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/3b-create-issue.md", "2.10.0"),
-        ("workflows/3c-sprint-planning.md", "2.9.0"),
+        ("workflows/3b-create-issue.md", "2.11.0"),
+        ("workflows/3c-sprint-planning.md", "2.10.0"),
     ]:
         content = read_src(rel_path)
         v, _ = _versioning.read_version(content, rel_path)

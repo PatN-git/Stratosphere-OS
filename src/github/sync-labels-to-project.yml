@@ -242,6 +242,9 @@ jobs:
               }
             };
 
+            let lifecycleSet = false;
+            const explicitLifecycle = kvLabels.find(l => normKey(l.key) === 'lifecycle');
+
             // If this is a close or reopen event, override the status field
             if (statusOverrideVal) {
               console.log(`Close/Reopen event: Force updating status field to '${statusOverrideVal}'`);
@@ -249,6 +252,126 @@ jobs:
             } else {
               // Otherwise, sync all key:value labels
               for (const { key, val, original } of kvLabels) {
+                if (normKey(key) === 'lifecycle') {
+                  lifecycleSet = true;
+                }
                 await updateFieldVal(key, val);
+              }
+            }
+
+            // 4. Lifecycle & Area Inference / Inheritance (Option 3C)
+            const hasLifecycleField = Boolean(fieldsMap[normKey('lifecycle')]);
+            if (hasLifecycleField && !lifecycleSet && !explicitLifecycle) {
+              // 3A: Parent-to-Child Inheritance (For Slices / Sub-issues)
+              const parentQuery = `
+                query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $issueNumber) {
+                      parent {
+                        number
+                        title
+                        projectItems(first: 10) {
+                          nodes {
+                            project { number }
+                            fieldValues(first: 20) {
+                              nodes {
+                                ... on ProjectV2ItemFieldSingleSelectValue {
+                                  field {
+                                    ... on ProjectV2SingleSelectField { name }
+                                  }
+                                  name
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+
+              let parentLifecycleVal = null;
+              let parentAreaVal = null;
+
+              try {
+                const parentRes = await github.graphql(parentQuery, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issueNumber: context.payload.issue.number
+                });
+                const parent = parentRes?.repository?.issue?.parent;
+                if (parent) {
+                  console.log(`Found parent issue #${parent.number}: "${parent.title}"`);
+                  const projectItems = parent.projectItems?.nodes || [];
+                  const parentProjectItem = projectItems.find(node => node?.project?.number === projectNum);
+                  if (parentProjectItem) {
+                    const fvNodes = parentProjectItem.fieldValues?.nodes || [];
+                    for (const fv of fvNodes) {
+                      if (!fv?.field?.name) continue;
+                      const normName = normKey(fv.field.name);
+                      if (normName === normKey('lifecycle')) {
+                        parentLifecycleVal = fv.name;
+                      } else if (normName === normKey('area')) {
+                        parentAreaVal = fv.name;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.log("GraphQL error querying parent issue:", err.message);
+              }
+
+              if (parentLifecycleVal) {
+                console.log(`Inheriting Lifecycle '${parentLifecycleVal}' from parent issue`);
+                await updateFieldVal('lifecycle', parentLifecycleVal);
+                lifecycleSet = true;
+              }
+
+              const hasAreaField = Boolean(fieldsMap[normKey('area')]);
+              const explicitArea = kvLabels.some(l => normKey(l.key) === 'area');
+              if (hasAreaField && !explicitArea && parentAreaVal) {
+                console.log(`Inheriting Area '${parentAreaVal}' from parent issue`);
+                await updateFieldVal('area', parentAreaVal);
+              }
+
+              // 3B: Domain Heuristic (For Epics, standalone issues, or when parent has no lifecycle)
+              if (!lifecycleSet) {
+                const HEURISTICS = [
+                  { option: '0 Constitution & Memory', regex: /\b0[a-d]\b|constitution|memory|okf|glossary|architecture/i },
+                  { option: '1 Analysis & Research', regex: /\b1[a-z]\b|concept|discovery|research/i },
+                  { option: '2 Plan & Design', regex: /\b2[a-z]\b|prd|interface|wireframe|direction/i },
+                  { option: '3 Implement', regex: /\b3[a-z]\b|slice|micro-tdd|sprint/i },
+                  { option: '4 Ship & Audit', regex: /\b4[a-b]\b|audit|verify|ship|review/i },
+                  { option: '5 Grow', regex: /\b5[a-z]\b|growth|distribution/i },
+                  { option: 'Maintenance & Safety', regex: /scaffold|upgrade|release|test|ci|hygiene|refactor|clean/i }
+                ];
+
+                const title = context.payload.issue.title || '';
+                const body = context.payload.issue.body || '';
+
+                let matchedOption = null;
+                for (const { option, regex } of HEURISTICS) {
+                  if (regex.test(title)) {
+                    matchedOption = option;
+                    break;
+                  }
+                }
+                if (!matchedOption) {
+                  for (const { option, regex } of HEURISTICS) {
+                    if (regex.test(body)) {
+                      matchedOption = option;
+                      break;
+                    }
+                  }
+                }
+
+                if (matchedOption) {
+                  console.log(`Inferred Lifecycle '${matchedOption}' from domain heuristic`);
+                  await updateFieldVal('lifecycle', matchedOption);
+                  lifecycleSet = true;
+                } else {
+                  console.log("No Lifecycle matched by domain heuristics.");
+                }
               }
             }

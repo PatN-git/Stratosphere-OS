@@ -138,7 +138,7 @@ Check [[A-001]], [[A-003]], [[L-003]], [[G-002]], [[DR-001]].
     )
 
     times = []
-    for _ in range(3):
+    for _ in range(10):
         start = time.perf_counter()
         res = validate_memory.extract_active_refs(
             issue_body=body,
@@ -289,8 +289,8 @@ def test_stage0_frontmatter_version_bumps():
     for rel_path, expected_v in [
         ("skills/load-memory/SKILL.md", "1.3.0"),
         ("workflows/0a-start-session.md", "1.4.0"),
-        ("workflows/0b-stop-session.md", "1.9.0"),
-        ("workflows/0d-nightly-consolidation.md", "1.7.0"),
+        ("workflows/0b-stop-session.md", "1.10.0"),
+        ("workflows/0d-nightly-consolidation.md", "1.8.0"),
         ("workflows/0e-plain-english.md", "1.2.0"),
     ]:
         content = read_src(rel_path)

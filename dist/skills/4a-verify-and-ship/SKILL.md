@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.11.0"
-timestamp: 2026-11-10
+version: "1.12.0"
+timestamp: 2026-11-12
 ---
 
 # Verify and Ship
@@ -81,7 +81,10 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 - **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
 ```
 
-- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. Fallback for non-interactive hosts: output options in markdown and halt for user response.
+- **Tool Execution Barrier:** ensure all audit inspections, spec reviews, test verifications, and background tools finish 100% prior to opening the gate turn. Never invoke a question tool in the same turn as background commands or scripts.
+- **Mandatory Visible Markdown Content:** emit the complete `Unified Ship Verification Gate` card directly in visible message `content` (never empty content or hidden inside tool calls).
+- **Synchronous Pairing:** call the question tool in the same turn accompanying the visible verification card.
+- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. Fallback for non-interactive hosts: output card and options in markdown and halt for user response.
 - **Decision Routing:** on `Confirm & Ship` (or user approval over gaps), proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). On `Revise in 3d` or unresolved gaps without user approval → return to TDD loop in `3d` (no PR).
 
 ## Phase 5: Isolated Ship Gate

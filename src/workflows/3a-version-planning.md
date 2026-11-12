@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.7.0"
-timestamp: 2026-11-10
+version: "1.8.0"
+timestamp: 2026-11-12
 ---
 
 # Version Planning
@@ -62,8 +62,10 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
    - **MVP cut-line coherence:** is the current release independently shippable (no dangling dependency on a deferred feature)? → `[BLOCKER]` if not.
 2. **Resolve:** the main agent folds findings into the proposal — every `[BLOCKER]` must be resolved (re-place, re-classify, or explicitly justify and downgrade) before presentation.
 3. **Present and Halt:**
-   - **Presentation:** show, per release: `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, auditor findings and resolution, proposed `[NEW-DEP]` edges, and closable releases (with open milestones).
-   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve Roadmap & Close Stated Releases", "Adjust Release Placements", "Abort"]`. Fallback for non-interactive hosts: output options in markdown and halt for user response.
+   - **Tool Execution Barrier:** complete all candidate discovery, dependency checks, release auditing, and finding resolutions 100% before opening the authorization turn. Never invoke a question tool in the same turn as background scripts or subagents.
+   - **Mandatory Visible Markdown Content:** emit the full roadmap presentation directly in visible message `content` (show, per release: `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, auditor findings and resolution, proposed `[NEW-DEP]` edges, and closable releases with open milestones; never empty content).
+   - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible roadmap proposal.
+   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve Roadmap & Close Stated Releases", "Adjust Release Placements", "Abort"]`. Fallback for non-interactive hosts: output proposal and options in markdown and halt for user response.
    - **Safety Invariant:** never auto-commit an X/Y bump or milestone close without user confirmation.
 
 ## Phase 3: Idempotent Re-run Guard
