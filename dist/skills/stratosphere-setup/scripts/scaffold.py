@@ -727,14 +727,23 @@ def get_bundled_project_scripts(project: Path):
     design_dir = PLUGIN_ROOT / "scripts" / "design"
     if design_dir.is_dir():
         for src in sorted(design_dir.rglob("*")):
-            if src.is_file() and "test" not in src.parts:
+            if (
+                src.is_file()
+                and "test" not in src.parts
+                and "__pycache__" not in src.parts
+                and src.suffix not in (".pyc", ".pyo")
+            ):
                 rel = src.relative_to(design_dir).as_posix()
                 dst = project / ".agents" / "scripts" / "design" / rel
                 scripts.append((src, dst, f".agents/scripts/design/{rel}"))
     viewer_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
     if viewer_dir.is_dir():
         for src in sorted(viewer_dir.rglob("*")):
-            if src.is_file():
+            if (
+                src.is_file()
+                and "__pycache__" not in src.parts
+                and src.suffix not in (".pyc", ".pyo")
+            ):
                 rel = src.relative_to(viewer_dir).as_posix()
                 dst = project / ".agents" / "scripts" / "okf_viewer" / rel
                 scripts.append((src, dst, f".agents/scripts/okf_viewer/{rel}"))

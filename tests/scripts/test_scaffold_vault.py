@@ -192,3 +192,24 @@ def test_dist_bundle_scaffolds_obsidian_vault(tmp_path: Path):
     assert (tmp_path / ".obsidian" / "graph.json").is_file()
     assert (tmp_path / ".obsidian" / "core-plugins.json").is_file()
     assert not (REPO_ROOT / "dist" / "assets" / "templates").exists()
+
+
+def test_get_bundled_project_scripts_skips_pycache_and_pyc(tmp_path: Path, monkeypatch):
+    fake_plugin = tmp_path / "plugin"
+    (fake_plugin / "scripts" / "okf_viewer" / "__pycache__").mkdir(parents=True)
+    (fake_plugin / "scripts" / "okf_viewer" / "__init__.py").write_text("", encoding="utf-8")
+    (fake_plugin / "scripts" / "okf_viewer" / "__pycache__" / "__init__.cpython-313.pyc").write_bytes(
+        b"\xf3\x0d\x0d\x0a\x00"
+    )
+    (fake_plugin / "scripts" / "design" / "__pycache__").mkdir(parents=True)
+    (fake_plugin / "scripts" / "design" / "design_theme.py").write_text("# ok\n", encoding="utf-8")
+    (fake_plugin / "scripts" / "design" / "__pycache__" / "design_theme.cpython-313.pyc").write_bytes(
+        b"\xf3\x0d\x0d\x0a\x00"
+    )
+
+    monkeypatch.setattr(scaffold, "PLUGIN_ROOT", fake_plugin)
+    bundled = scaffold.get_bundled_project_scripts(tmp_path / "proj")
+    rels = [rel for _, _, rel in bundled]
+    assert ".agents/scripts/okf_viewer/__init__.py" in rels
+    assert ".agents/scripts/design/design_theme.py" in rels
+    assert not any("__pycache__" in rel or rel.endswith(".pyc") for rel in rels), rels
