@@ -28,7 +28,7 @@ This interface design specifies the non-UI architecture, configuration schemas, 
 
 ### 1. The Human System Architect / PKM Explorer
 - **Flow:** Launches `stratosphere-setup` or `stratosphere-update`, selects `Obsidian Vault`, and opens the project root in Obsidian.
-- **Experience:** Obsidian immediately loads with an interactive force-directed graph color-coded by OKF type (`prd`: green, `architecture`: blue, `learnings`: orange, `research`: purple, `design-doc`: teal, `proposal`: magenta), cleanly clustered around directory MOC hubs (`index.md`) without any background Python server running.
+- **Experience:** Obsidian immediately loads with an interactive force-directed graph color-coded by OKF area/type (memory: gold, prds: green, research: purple, design: teal, discovery: violet, proposals: magenta, MOC centroids: white), cleanly clustered around directory MOC hubs (`index.md`) without any background Python server running.
 
 ### 2. The Headless AI Agent (Google Antigravity, Claude Code, Cursor)
 - **Flow:** Authors a new PRD, research brief, or design doc referencing existing concepts.
@@ -62,7 +62,7 @@ This interface design specifies the non-UI architecture, configuration schemas, 
 
 | Adverse Condition | Failure Mode | Required Handling / Defensive Invariant |
 | :--- | :--- | :--- |
-| **1. Active duplicate stems across sibling directories** (e.g. `docs/discovery/foo.md` vs `docs/research/foo.md`) | Non-deterministic resolution in Obsidian; validator cannot resolve target deterministically. | **Minimum Path Qualification Invariant:** `validate_memory.py` detects multiple matches in `docs/**`. In default mode, issues a warning with candidate paths and suggested minimum prefix (`[[discovery/foo]]`). Under `--warnings-as-errors`, halts code 1. `migrate_obsidian_links.py` automatically injects shortest disambiguating path prefix. |
+| **1. Active duplicate stems across sibling directories** (e.g. `docs/discovery/foo.md` vs `docs/research/foo.md`) | Non-deterministic resolution in Obsidian; validator cannot resolve target deterministically. | **Minimum Path Qualification Invariant:** `validate_memory.py` detects multiple matches in `docs/**`. In default mode, issues a warning with candidate paths and suggested minimum vault-root prefix (`[[docs/discovery/foo]]`). Under `--warnings-as-errors`, halts code 1. `migrate_obsidian_links.py` automatically injects shortest disambiguating path prefix. |
 | **2. Active stem colliding with archived document** (`docs/proposals/foo.md` vs `docs/archive/foo.md`) | Bare `[[foo]]` links to deprecated archive note; false ambiguity warnings. | **Vault Ignore Alignment Invariant:** `validate_memory.py` and `migrate_obsidian_links.py` strictly ignore paths matching archive patterns (`*/.archive/*`, `docs/archive/*`, `.tmp/*`), mirroring Obsidian's `userIgnoreFilters` in `app.json`. Bare `[[foo]]` resolves cleanly to the active note. |
 | **3. Reserved stem collisions on `index.md` or `README.md`** | Hundreds of collision matches; Obsidian generates circular hub tangles. | **Reserved Stem Disambiguation Invariant:** Bare `[[index]]` and `[[README]]` without path prefix are explicitly rejected with an error. Authors and MOC generators must qualify directory hubs using parent folder prefix (e.g. `[[docs/prds/index\|PRDs MOC]]`). |
 | **4. Document stem colliding with Memory Handle namespace** (e.g. `docs/prds/L-001.md`) | Regex conflates conceptual memory handle `[[L-001]]` with a file wikilink. | **Namespace Reservation Invariant:** Pattern `^(L\|A\|G\|DR)-\d{3,}$` is strictly reserved for `.memory/` handles. `validate_memory.py` emits a purity error if any file under `docs/**` uses a filename stem matching this pattern. |
@@ -85,7 +85,7 @@ This interface design specifies the non-UI architecture, configuration schemas, 
   - Update `scaffold.py` to append `.obsidian/workspace*.json`, `.obsidian/cache/`, `.obsidian/graph-cache.json` to `.gitignore` idempotently.
   - In `src/scripts/validate_memory.py`:
     - Mask fenced code blocks, inline code, and HTML comments before extracting handles.
-    - Bifurcate `[[token]]` matches into Memory Handles (matching `^(L|A|G|DR)-\d{3,}$`) vs Document Wikilinks (all other bracketed tokens).
+    - Bifurcate `[[token]]` matches into Memory Handles (matching `^(L|A|G|DR)-\d{3,}$`) vs Document Wikilinks (all other bracketed tokens). Placeholder tokens matching `^(L|A|G|DR)-X+$` (e.g. `[[A-XXX]]`) are recognized as memory placeholders and exempt from document wikilink resolution.
     - Strip anchor (`#...`) and alias (`|...`) before testing document existence.
     - Check target existence against `tracked_files()`. Check exact case against git index.
     - If a stem matches multiple tracked files, issue warning or error with suggested prefix.
@@ -129,9 +129,9 @@ python scripts/migrations/migrate_obsidian_links.py --write
 - Bare stem in reference bullet:
   - [[BT-108-host-agnostic-skill-distribution]]
   - [[target-verification-and-subagent-scoping]]
-- Minimum path prefix for collision disambiguation:
-  - [[discovery/host-agnostic-skill-distribution|Discovery Brief]]
-  - [[research/host-agnostic-skill-distribution|Research Exploration]]
+- Minimum vault-root path prefix for collision disambiguation:
+  - [[docs/discovery/host-agnostic-skill-distribution|Discovery Brief]]
+  - [[docs/research/host-agnostic-skill-distribution|Research Exploration]]
 - Memory handle cross-reference:
   - Governed by [[A-006]] and [[G-005]].
 - External tracker provenance:
@@ -218,6 +218,7 @@ def get_dynamic_ignore_filters(project_root: Path) -> list[str]:
 ##### C. Link Validation Engine (`src/scripts/validate_memory.py`)
 ```python
 _MEMORY_HANDLE_RE = re.compile(r'^(L|A|G|DR)-\d{3,}$')
+_MEMORY_PLACEHOLDER_RE = re.compile(r'^(L|A|G|DR)-X+$')
 _WIKILINK_TOKEN_RE = re.compile(r'\[\[([^\]\n]+)\]\]')
 
 def mask_code_and_comments(content: str) -> str:
@@ -233,11 +234,12 @@ def resolve_document_wikilink(stem_or_path: str, tracked_files: set[str], doc_st
     """
     Resolves a document wikilink against git-tracked files.
     Returns (resolved_rel_path, error_or_warning_message).
-    - If path-qualified (contains '/'), directly checks tracked_files.
+    - If token matches _MEMORY_PLACEHOLDER_RE (e.g. A-XXX), returns (None, None) — exempt placeholder.
+    - If path-qualified (contains '/'), checks f"{stem_or_path}.md" directly in tracked_files.
     - If bare stem, looks up doc_stems_map:
       - 0 matches -> returns (None, 'Dangling document link')
       - 1 match -> returns (resolved_path, None)
-      - >1 matches -> returns (resolved_path, 'Stem collision: multiple matches, use prefix to disambiguate')
+      - >1 matches -> returns (resolved_path, 'Stem collision: multiple matches, use vault-root prefix [[docs/<folder>/stem]] to disambiguate')
     """
 ```
 
@@ -257,7 +259,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def rewrite_markdown_links(file_path: Path, content: str, tracked_stems: dict[str, list[str]]) -> tuple[str, int]:
     """
-    Transforms [Label](path/to/stem.md) into [[stem|Label]] (or [[folder/stem|Label]] on collision).
+    Transforms [Label](path/to/stem.md) into [[stem|Label]] (or [[docs/folder/stem|Label]] on collision).
     Preserves external URLs (http/https/mailto) and image links without alteration.
     Returns (updated_content, replacement_count).
     """
@@ -293,7 +295,7 @@ def rebuild_moc_index(dir_path: Path, files: list[Path]) -> str:
 | `validate_memory.py` on heading anchor `[[ARCHITECTURE#Known Constraints]]` | `ARCHITECTURE.md` exists | Strips `#...`, resolves stem; passes clean. | 0 |
 | `validate_memory.py` on dangling wikilink `[[missing-file]]` | File does not exist | Emits `[ERROR] Dangling document link: '[[missing-file]]'`; halts. | 1 |
 | `validate_memory.py` on ambiguous stem `[[foo]]` (exists in discovery/ and research/) | Multiple matches in `docs/**` | Emits `[WARNING] Ambiguous stem 'foo' matches multiple files; qualify with folder prefix`. (If `--warnings-as-errors`, halts code 1). | 0 (or 1) |
-| `validate_memory.py` on path-qualified link `[[discovery/foo\|Brief]]` | `docs/discovery/foo.md` exists | Resolves cleanly to specific target; no collision warning. | 0 |
+| `validate_memory.py` on path-qualified link `[[docs/discovery/foo\|Brief]]` | `docs/discovery/foo.md` exists | Resolves cleanly to specific target; no collision warning. | 0 |
 | `validate_memory.py` on case-mismatched link `[[bt-233-obsidian]]` on Windows | Disk has `BT-233-obsidian.md` | Emits `[ERROR] Case mismatch against git index`; halts code 1. | 1 |
 | `validate_memory.py` on backslash link `[[docs\prds\BT-233]]` | Any OS | Emits `[ERROR] Invalid backslash in wikilink; use POSIX forward slash /`; halts code 1. | 1 |
 | `migrate_obsidian_links.py --dry-run` | Any working tree state | Scans all markdown files, logs proposed link replacements and MOCs; modifies 0 files. | 0 |

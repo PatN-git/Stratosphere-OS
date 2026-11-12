@@ -19,7 +19,7 @@ version: "5.3.0"
 
 ## Vocabulary
 
-- **Document Wikilink:** A double-bracketed note reference (`[[<doc-stem>]]` or `[[<doc-stem>|<alias>]]`, with minimum path qualification `[[<folder>/<doc-stem>|<alias>]]` for disambiguating collisions) resolving to a distinct git-tracked markdown document in `docs/**` or `.memory/**`.
+- **Document Wikilink:** A double-bracketed note reference (`[[<doc-stem>]]` or `[[<doc-stem>|<alias>]]`, with minimum vault-root path qualification `[[docs/<folder>/<doc-stem>|<alias>]]` for disambiguating collisions) resolving to a distinct git-tracked markdown document in `docs/**` or `.memory/**`.
 - **Memory Handle:** An internal location-agnostic cross-reference token `[[<ID>]]` (where ID is `L-xxx`, `A-xxx`, `DR-xxx`, or `G-xxx`), defined inside consolidated `.memory/*.md` files and parsed deterministically by `validate_memory.py` without requiring brittle synthetic block anchors (`^ID`).
 - **Map of Content (MOC):** Directory-level `index.md` files serving as clustering hubs and progressive disclosure entrypoints without frontmatter, conforming to OKF v0.2 §4.
 - **Vault Scoping:** Preconfigured Obsidian configuration filters (`path:docs OR path:.memory` in `graph.json` and dynamic `userIgnoreFilters` in `app.json` ignoring code, build artifacts, and archive directories) ensuring only active documentation and memory participate in the vault.
@@ -42,7 +42,7 @@ Human creators experience cognitive friction and mental fragmentation when navig
 - `validate_memory.py` currently flags any bracketed `[[token]]` not defined in `.memory/*.md` as a dangling reference error — source: `src/scripts/validate_memory.py:598-604`.
 - Open Knowledge Format (OKF v0.2 §7) specifies standard markdown links between concepts but explicitly requires consumers to tolerate broken or bracketed links (e.g. `[[G-001]]`) — source: `docs/okf-spec-essentials.md`.
 - Empirical stem collision scan across `docs/` and `.memory/` detected existing duplicate stems (`host-agnostic-skill-distribution`, `0f-walk-me-through-concept`, `README.md`, `index.md`) — source: `Get-ChildItem -Recurse -Filter *.md | Group-Object BaseName`.
-- Obsidian shortest-path link resolution natively supports minimum path qualification (e.g. `[[discovery/host-agnostic-skill-distribution]]`) to disambiguate collisions — source: Obsidian link resolution specification.
+- Obsidian shortest-path link resolution natively supports minimum path qualification relative to the vault root (e.g. `[[docs/discovery/host-agnostic-skill-distribution]]`) to disambiguate collisions — source: Obsidian link resolution specification.
 - Project scaffolding and update routines are unified under `scaffold.py` (`stratosphere-setup` and `--update`) — source: `src/scripts/scaffold.py:596-788`.
 - Stratosphere-OS system version is `5.3.0` — source: `build/build.py:VERSION`.
 
@@ -56,7 +56,7 @@ We commit to providing a decoupled, out-of-process knowledge graph experience in
 
 ## Success State
 1. **Scaffold Opt-in:** Running `python src/scripts/scaffold.py --vault obsidian` (or selecting Obsidian in setup/update prompts) scaffolds a preconfigured `.obsidian/` directory (`app.json`, `graph.json`, `core-plugins.json`) and updates `.gitignore` to track shared settings while ignoring workspace caches.
-2. **Deterministic Link Validation:** `python src/scripts/validate_memory.py` passes cleanly on both memory handles (`[[L-001]]`) and document wikilinks (`[[BT-108-host-agnostic-skill-distribution]]` or `[[discovery/host-agnostic-skill-distribution|Skill Distribution]]`), while failing with explicit errors on genuinely dangling references or unresolvable stems.
+2. **Deterministic Link Validation:** `python src/scripts/validate_memory.py` passes cleanly on both memory handles (`[[L-001]]`) and document wikilinks (`[[BT-108-host-agnostic-skill-distribution]]` or `[[docs/discovery/host-agnostic-skill-distribution|Skill Distribution]]`), while failing with explicit errors on genuinely dangling references or unresolvable stems.
 3. **Graph Scoping & Visual Clustering:** Opening the repository root in Obsidian renders a graph scoped strictly to `docs/` and `.memory/`, with nodes color-coded by OKF `type` and clustered cleanly around directory `index.md` MOC hubs.
 4. **Migration Execution:** Running `python scripts/migrations/migrate_obsidian_links.py --write` rewrites existing Markdown links across `Stratosphere-OS` and `CleanTechHub` into valid Obsidian wikilinks and regenerates all directory `index.md` MOCs without broken references.
 

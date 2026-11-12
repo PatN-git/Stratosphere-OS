@@ -81,12 +81,12 @@ Stratosphere-OS provides an optional, out-of-process knowledge graph experience 
 - **Universal Plain Markdown:** Plain Markdown is universal: all documentation and memory files must remain 100% functional, readable, and editable without Obsidian installed.
 - **Zero-Friction Opt-In:** Vault initialization and updates must remain strictly opt-in via interactive CLI prompt and command-line argument during project onboarding and refresh workflows.
 - **Git Hygiene for Vault Settings:** Shared vault configuration schemas must be tracked in version control while user workspace state and local caches are ignored by version control.
-- **Authoring Syntax Standard:** Authoring syntax standardizes on wikilinks `[[<doc-stem>|<alias>]]` inline in prose sentences, bare `[[<doc-stem>]]` in reference lists, and minimum path qualification `[[<folder>/<doc-stem>|<alias>]]` for collision disambiguation.
+- **Authoring Syntax Standard:** Authoring syntax standardizes on wikilinks `[[<doc-stem>|<alias>]]` inline in prose sentences, bare `[[<doc-stem>]]` in reference lists, and minimum vault-root path qualification `[[docs/<folder>/<doc-stem>|<alias>]]` for collision disambiguation.
 - **Memory Handle Integrity:** Memory handles remain location-agnostic conceptual IDs (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) indexed by AST search; synthetic block anchors (`^ID`) are prohibited.
 - **OKF v0.2 MOC Centroids:** Directory-level `index.md` files conform to OKF v0.2 §4 as frontmatter-free Maps of Content (MOCs), acting as cluster centroids in the knowledge graph.
 - **External Issue Provenance:** Bare issue identifiers (`BT-xxx`) remain unbracketed plain text as external tracker provenance pointers.
 - **Deterministic Migration Tooling:** A deterministic migration capability must rewrite legacy markdown links and rebuild MOCs with dry-run verification before writing changes.
-- **Proposed Architectural Law ([[A-006]]):** Propose [[A-006]] for `[LAW]` structural decision: Knowledge base linking strictly bifurcates into (1) Location-agnostic conceptual memory handles (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) validated with bidirectional reciprocity, and (2) Document wikilinks (`[[<doc-stem>]]` or `[[<doc-stem>|<alias>]]`, with minimum path qualification `[[<folder>/<doc-stem>|<alias>]]` on collision) resolving to git-tracked markdown files without reciprocity. Issue identifiers remain bare plain text (`BT-xxx`). Repository root is the vault root, scoped via documentation and memory search filters. Synthetic block anchors (`^ID`) are prohibited.
+- **Proposed Architectural Law ([[A-006]]):** Propose [[A-006]] for `[LAW]` structural decision: Knowledge base linking strictly bifurcates into (1) Location-agnostic conceptual memory handles (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) validated with bidirectional reciprocity, and (2) Document wikilinks (`[[<doc-stem>]]` or `[[<doc-stem>|<alias>]]`, with minimum vault-root path qualification `[[docs/<folder>/<doc-stem>|<alias>]]` on collision) resolving to git-tracked markdown files without reciprocity. Issue identifiers remain bare plain text (`BT-xxx`). Repository root is the vault root, scoped via documentation and memory search filters. Synthetic block anchors (`^ID`) are prohibited.
 - **Boundaries:**
   - **Always:**
     - Always treat standard markdown as the primary source of truth, fully operational in headless and terminal environments without Obsidian.
@@ -106,7 +106,7 @@ Stratosphere-OS provides an optional, out-of-process knowledge graph experience 
 
 ## 8. Definition of Done
 - Project setup and update flows provide an interactive choice and CLI argument for Obsidian vault scaffolding, correctly creating git-tracked shared configurations while ignoring workspace caches.
-- Memory validation deterministically parses and verifies both location-agnostic memory handles (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) and document wikilinks (`[[<doc-stem>]]` or `[[<folder>/<doc-stem>]]`), passing on valid references and failing on unresolvable stems.
+- Memory validation deterministically parses and verifies both location-agnostic memory handles (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) and document wikilinks (`[[<doc-stem>]]` or `[[docs/<folder>/<doc-stem>]]`), passing on valid references and failing on unresolvable stems.
 - Bare issue identifiers (`BT-xxx`) are ignored by the link validator as external tracker provenance pointers.
 - Opening the repository root in Obsidian renders a scoped knowledge graph filtered strictly to documentation and memory, excluding code, build artifacts, and archives.
 - Directory `index.md` files conform to OKF v0.2 §4 as frontmatter-free MOCs that act as centroid hubs in Obsidian graph view.
@@ -130,7 +130,7 @@ Stratosphere-OS provides an optional, out-of-process knowledge graph experience 
   - *Why Fatal:* Active stem collisions (`host-agnostic-skill-distribution`, `0f-walk-me-through-concept`, `index.md`) cause non-deterministic resolution in Obsidian and false ambiguity errors in `validate_memory.py`.
   - *Cheapest Test:* Read-only empirical stem collision scan across `docs/` and `.memory/` via production probe.
   - *Est. Setup Time:* 1 day (completed during concept framing on 2026-11-12).
-  - *Status:* **Survived**. Empirical scan detected duplicates, which were successfully resolved by defining the minimum path prefix disambiguation rule (`[[<folder>/<doc-stem>|<alias>]]`) and excluding `archive/` folders in vault ignore filters.
+  - *Status:* **Survived**. Empirical scan detected duplicates, which were successfully resolved by defining the minimum vault-root path prefix disambiguation rule (`[[docs/<folder>/<doc-stem>|<alias>]]`) and excluding `archive/` folders in vault ignore filters.
 - **Prior Art & Heritage:** Evolved from parked slice under BT-242 and proposal `docs/proposals/obsidian-vault-and-agent-linking-proposal.md`. Aligned with [[A-005]] (removal of `BACKLOG_MAP.md`, issue state on GitHub) and OKF v0.2 specifications.
 
 ## 12. Viability & Cost
