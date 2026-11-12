@@ -72,6 +72,7 @@ Crystallized, durable map of how the system is organized. All entries are `[LAW]
 
 ## Known Architectural Constraints
 - **[[A-005]] [LAW]** Issue state lives on GitHub only (`tracker: github` in this file's frontmatter): no `BACKLOG_MAP.md`, no `BT-LOCAL-*` id and no mirror file. Workflows write through the verbs of `references/tracker-verbs.md`; a `gh` failure is retried, then the workflow halts, never a local fallback. Source: BT-194, BT-199.
+- **[[A-006]] [LAW]** Knowledge base linking strictly bifurcates: (1) Location-agnostic conceptual memory handles (`[[L-xxx]]`, `[[A-xxx]]`, `[[G-xxx]]`, `[[DR-xxx]]`) validated with bidirectional reciprocity; (2) Document wikilinks (`[[<doc-stem>]]` or `[[<doc-stem>|<alias>]]`, with minimum path prefix `[[<folder>/<doc-stem>|<alias>]]` on collision) resolving to git-tracked markdown files without reciprocity. Issue identifiers remain bare plain text (`BT-xxx`). Repository root is the vault root, scoped via documentation and memory query filters. Synthetic block anchors (`^ID`) are prohibited. Source: BT-233, docs/prds/BT-233-obsidian-document-linking.md.
 - **[[A-XXX]] [LAW]** Example placeholder. Source: BT-XXX.
 
 ## Superseded
