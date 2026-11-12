@@ -1,0 +1,16 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "showLineNumber": true,
+  "userIgnoreFilters": [
+    "^\\.git/",
+    "^\\.tmp/",
+    "^node_modules/",
+    "^dist/",
+    "^build/",
+    "^src/",
+    "^tests/",
+    "^docs/.*/\\.archive/",
+    "^docs/archive/"
+  ]
+}

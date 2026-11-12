@@ -277,7 +277,7 @@ to `dist/`.
 - **§4 branch model** (Plan B B3, Plan C): feature branch still born at 3d; 0a restores, 4a pushes/PRs, human merges. Docs backed up via B1 commit-owner, not by moving branch birth.
 - **Read-only hydrate guard** (Plan B invariants): Phase 0 never checks out/pulls, transitions status, or writes memory — side effects live only in `0a` Phase B and `3d` Phase 0.
 - **Single Status Invariant + single-writer-per-edge** (Plan C): exactly one `status:*` per issue; no two workflows write the same transition edge; concept issues stay exempt.
-- **No token-bloat migrations** ([[stratos-no-token-bloat-migrations]]): migration is throwaway external (Phase 8); drift-heal stays the deterministic `/0d` check, not agent passes.
+- **No token-bloat migrations** (`[[stratos-no-token-bloat-migrations]]`): migration is throwaway external (Phase 8); drift-heal stays the deterministic `/0d` check, not agent passes.
 
 ## Compliance with `docs/improve-workflows-skills` (dev-time playbook)
 

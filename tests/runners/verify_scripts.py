@@ -156,7 +156,7 @@ def test_orphan_guard():
             print("Scaffold on Fixture 1 failed:", sc1.stderr)
             return False
             
-        sc2 = subprocess.run([sys.executable, str(scaffold_script)], cwd=str(tmp_with_board), capture_output=True, text=True)
+        sc2 = subprocess.run([sys.executable, str(scaffold_script), "--vault", "obsidian"], cwd=str(tmp_with_board), capture_output=True, text=True)
         if sc2.returncode != 0:
             print("Scaffold on Fixture 2 failed:", sc2.stderr)
             return False
@@ -248,10 +248,10 @@ def test_orphan_guard():
             # Verify existence in the fixtures
             # 1. No Board Fixture
             p_no_board = tmp_no_board / proj_rel_path
-            if proj_rel_path == ".github/workflows/sync-labels-to-project.yml":
-                # Excluded on no-board fixture because not opted-in
+            if proj_rel_path == ".github/workflows/sync-labels-to-project.yml" or proj_rel_path.startswith(".obsidian/"):
+                # Excluded on default fixture because opt-in only
                 if p_no_board.exists():
-                    failures.append(f"Optional action '{proj_rel_path}' exists in 'no board' project, but shouldn't.")
+                    failures.append(f"Optional asset '{proj_rel_path}' exists in 'no board' project, but shouldn't.")
             else:
                 if not p_no_board.exists():
                     failures.append(f"Bundled file '{rel_str}' (expected at '{proj_rel_path}') is missing from 'no board' project.")

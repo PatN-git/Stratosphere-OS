@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # md-crosscheck: Stage 4 execution and verification workflows against BT-255 interaction streamlining plan
 """Tests for Stage 4 Execution & Verification Pipeline Streamlining (BT-261 / Epic BT-255)."""
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -94,9 +95,13 @@ def test_stage4_frontmatter_version_bumps():
         assert v == expected_v, f"{rel_path} version mismatch: expected {expected_v}, got {v}"
 
 
-def test_build_and_validate_clean():
-    res_build = subprocess.run([sys.executable, str(REPO_ROOT / "build" / "build.py")], capture_output=True, text=True)
+def test_build_and_validate_clean(tmp_path):
+    shutil.copytree(REPO_ROOT / "build", tmp_path / "build", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(REPO_ROOT / "src", tmp_path / "src", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copy2(REPO_ROOT / "README.md", tmp_path / "README.md")
+
+    res_build = subprocess.run([sys.executable, str(tmp_path / "build" / "build.py")], capture_output=True, text=True)
     assert res_build.returncode == 0, f"build.py failed: {res_build.stdout}\n{res_build.stderr}"
     
-    res_val = subprocess.run([sys.executable, str(REPO_ROOT / "build" / "validate.py")], capture_output=True, text=True)
+    res_val = subprocess.run([sys.executable, str(tmp_path / "build" / "validate.py"), str(tmp_path)], capture_output=True, text=True)
     assert res_val.returncode == 0, f"validate.py failed: {res_val.stdout}\n{res_val.stderr}"
