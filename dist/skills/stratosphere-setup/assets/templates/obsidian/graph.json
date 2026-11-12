@@ -1,0 +1,12 @@
+{
+  "search": "path:docs OR path:.memory",
+  "colorGroups": [
+    {"query": "file:.memory", "color": {"a": 1, "rgb": 15918608}},
+    {"query": "path:docs/prds", "color": {"a": 1, "rgb": 4048700}},
+    {"query": "path:docs/research", "color": {"a": 1, "rgb": 10565885}},
+    {"query": "path:docs/design", "color": {"a": 1, "rgb": 3125673}},
+    {"query": "path:docs/discovery", "color": {"a": 1, "rgb": 14757340}},
+    {"query": "path:docs/proposals", "color": {"a": 1, "rgb": 14766520}},
+    {"query": "file:index.md", "color": {"a": 1, "rgb": 16777215}}
+  ]
+}

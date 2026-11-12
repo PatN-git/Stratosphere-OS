@@ -290,6 +290,8 @@ def build_bundle():
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "github", assets / "github")
+    if (SRC / "assets" / "templates" / "obsidian").is_dir():
+        copytree(SRC / "assets" / "templates" / "obsidian", assets / "obsidian")
 
     # 5. Post-copy pass to stamp version into asset templates
     for path in assets.rglob("*.md"):
@@ -408,7 +410,12 @@ def main():
         build_bundle()
         print(f"[built] {BUNDLE.relative_to(ROOT)}")
         if (SRC / "assets").exists():
-            copytree(SRC / "assets", DIST / "assets")
+            shutil.copytree(
+                SRC / "assets",
+                DIST / "assets",
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "test", "templates"),
+            )
             print("[built] dist/assets")
         write_plugin_manifest()
         print("[built] dist/plugin.json")
