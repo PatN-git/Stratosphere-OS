@@ -33,6 +33,14 @@ SECRET_PATTERNS = {
 
 _ACTIVE_HANDLE_RE = re.compile(r'\[\[([A-Za-z0-9_-]+)\]\]')
 _ACTIVE_DEF_LINE_RE = re.compile(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\](.*)')
+_MEMORY_HANDLE_RE = re.compile(r'^(L|A|G|DR)-\d{3,}$')
+_MEMORY_PLACEHOLDER_RE = re.compile(r'^(L|A|G|DR)-X+$')
+_MEMORY_PLACEHOLDER_ALT_RE = re.compile(r'^(L|A|G|DR)-Y+$')
+_WIKILINK_TOKEN_RE = re.compile(r'\[\[([^\]\n]+)\]\]')
+_DEF_LINE_RE = re.compile(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\]')
+_FENCE_OPEN_RE = re.compile(r'^[ \t]*(`{3,}|~{3,})')
+_IGNORED_DOC_SEGMENTS = ('archive', '.archive', '.tmp', '.templates', 'knowledge')
+_RESERVED_DOC_STEMS = ('index', 'readme')
 
 def scan_file_for_secrets(file_path):
     errors = []
@@ -47,7 +55,124 @@ def scan_file_for_secrets(file_path):
     return errors
 
 def is_placeholder(cid):
-    return not cid.rsplit('-', 1)[-1].isdigit()
+    return bool(_MEMORY_PLACEHOLDER_RE.match(cid) or _MEMORY_PLACEHOLDER_ALT_RE.match(cid))
+
+
+def mask_code_and_comments(content: str) -> str:
+    """Strip fenced code blocks, HTML comments, and inline code spans while preserving line numbers."""
+    normalized = content.replace("\r\n", "\n")
+    lines = normalized.split("\n")
+    masked_lines = []
+    fence_char = None
+    fence_len = 0
+    for line in lines:
+        if fence_char is None:
+            m = _FENCE_OPEN_RE.match(line)
+            if m:
+                marker = m.group(1)
+                fence_char = marker[0]
+                fence_len = len(marker)
+                masked_lines.append("")
+                continue
+            masked_lines.append(line)
+        else:
+            stripped = line.strip()
+            if stripped and all(ch == fence_char for ch in stripped) and len(stripped) >= fence_len:
+                fence_char = None
+                fence_len = 0
+            masked_lines.append("")
+    text = "\n".join(masked_lines)
+    text = re.sub(r'<!--[\s\S]*?-->', lambda m: "\n" * m.group(0).count("\n"), text)
+    text = re.sub(r'(`+)([^\n]*?)\1', '', text)
+    return text
+
+
+def parse_wikilink_token(raw_token: str) -> tuple[str, str | None, str | None]:
+    """Parse 'stem#section|alias' into (stem, section, alias), preserving backslashes for validation."""
+    target_part, has_pipe, alias_part = raw_token.partition('|')
+    alias = alias_part.strip() or None if has_pipe else None
+    stem_part, has_hash, section_part = target_part.partition('#')
+    section = section_part.strip() or None if has_hash else None
+    stem = stem_part.strip()
+    while '//' in stem:
+        stem = stem.replace('//', '/')
+    if stem.startswith('./'):
+        stem = stem[2:]
+    return stem, section, alias
+
+
+def _is_ignored_doc_path(rel_posix: str) -> bool:
+    parts = rel_posix.split('/')
+    if any(seg in _IGNORED_DOC_SEGMENTS for seg in parts[:-1]):
+        return True
+    if parts[0] == '.memory' and (len(parts) > 2 and parts[1] == 'resume' or parts[-1] == 'STATUS.md'):
+        return True
+    return False
+
+
+def build_doc_index(tracked: set[str]) -> dict[str, list[str]]:
+    """Build bare-stem -> sorted tracked POSIX path index across docs/** and .memory/**."""
+    stems: dict[str, list[str]] = {}
+    for rel in sorted(tracked):
+        if not rel.endswith('.md') or not (rel.startswith('docs/') or rel.startswith('.memory/')):
+            continue
+        if _is_ignored_doc_path(rel):
+            continue
+        stem = rel.rsplit('/', 1)[-1][:-3]
+        stems.setdefault(stem, []).append(rel)
+    return stems
+
+
+def resolve_document_wikilink(
+    stem_or_path: str,
+    tracked_files: set[str],
+    doc_stems_map: dict[str, list[str]],
+    _tracked_lower: dict[str, str] | None = None,
+    _stems_lower: dict[str, list[str]] | None = None,
+) -> tuple[str | None, str | None]:
+    """Resolve a document wikilink against git-tracked files.
+
+    Returns (resolved_rel_path, message):
+      - (None, None): exempt placeholder
+      - (path, None): resolved cleanly
+      - (path, warning): ambiguous stem collision
+      - (None, error): unresolvable, case-mismatch, backslash, or reserved stem
+    """
+    if is_placeholder(stem_or_path):
+        return None, None
+    if '\\' in stem_or_path:
+        return None, f"Invalid backslash in wikilink '[[{stem_or_path}]]'; use POSIX forward slash /"
+    if not stem_or_path or stem_or_path.startswith('/') or '..' in stem_or_path.split('/'):
+        return None, f"Invalid document link path: '[[{stem_or_path}]]'"
+
+    if '/' in stem_or_path:
+        cand = stem_or_path if stem_or_path.endswith('.md') else f"{stem_or_path}.md"
+        if cand in tracked_files:
+            return cand, None
+        tracked_lower = _tracked_lower if _tracked_lower is not None else {p.lower(): p for p in tracked_files}
+        actual = tracked_lower.get(cand.lower())
+        if actual:
+            return None, f"Case mismatch against git index: '[[{stem_or_path}]]' does not match tracked path '{actual}'"
+        return None, f"Dangling document link: '[[{stem_or_path}]]' ('{cand}' is not tracked by git)"
+
+    stem = stem_or_path[:-3] if stem_or_path.endswith('.md') else stem_or_path
+    if stem.lower() in _RESERVED_DOC_STEMS:
+        return None, f"Reserved stem '[[{stem_or_path}]]' must be path-qualified (e.g. '[[docs/<folder>/{stem}]]')"
+    matches = doc_stems_map.get(stem, [])
+    if len(matches) == 1:
+        return matches[0], None
+    if len(matches) > 1:
+        suggestions = ", ".join(f"[[{m[:-3]}]]" for m in matches)
+        return matches[0], (
+            f"Ambiguous stem '{stem}' matches multiple files ({', '.join(matches)}); "
+            f"qualify with minimum vault-root prefix: {suggestions}"
+        )
+
+    stems_lower = _stems_lower if _stems_lower is not None else {k.lower(): v for k, v in doc_stems_map.items()}
+    ci_matches = stems_lower.get(stem.lower())
+    if ci_matches:
+        return None, f"Case mismatch against git index: '[[{stem_or_path}]]' does not match tracked file '{ci_matches[0]}'"
+    return None, f"Dangling document link: '[[{stem_or_path}]]'"
 
 def tracked_files(start):
     """Repo-relative tracked paths (forward slashes), or None without git or outside a repository."""
@@ -275,14 +400,16 @@ def main():
         sys.exit(res)
 
     memory_dir = Path(args.path)
-    
+    repo_root = memory_dir.resolve().parent if memory_dir.name == '.memory' else Path.cwd().resolve()
+    docs_dir = repo_root / 'docs'
+
     errors = []
     warnings = []
-    
+
     # A missing .memory/ must NOT skip the docs/ OKF conformance walk below.
     # Coupling them meant the framework repo (which has no .memory/) never
     # validated docs/ at all, which is how unregistered types accumulated.
-    docs_present = Path('docs').is_dir()
+    docs_present = docs_dir.is_dir()
     if not memory_dir.exists() or not memory_dir.is_dir():
         if not docs_present:
             if not args.quiet:
@@ -306,10 +433,10 @@ def main():
         if size > STATUS_BUDGET:
             warnings.append(f"STATUS.md is {size} chars (budget {STATUS_BUDGET:,}): keep folder state only; history and next steps live on the issue.")
         try:
-            tracked = subprocess.run(['git', '-C', str(memory_dir), 'ls-files', '--error-unmatch', 'STATUS.md'], capture_output=True).returncode == 0
+            tracked_status = subprocess.run(['git', '-C', str(memory_dir), 'ls-files', '--error-unmatch', 'STATUS.md'], capture_output=True).returncode == 0
         except OSError:
-            tracked = False
-        if tracked:
+            tracked_status = False
+        if tracked_status:
             warnings.append("STATUS.md is tracked by git: run `git rm --cached .memory/STATUS.md` and add `.memory/STATUS.md` to .gitignore.")
 
     # Files to parse for IDs and protocol compliance
@@ -323,29 +450,55 @@ def main():
 
     definitions = {}
     references = []
-    
+    doc_links = []
+
+    def _record_token(raw_tok, file_label, line_idx, context_id, stripped_line, *, memory_handles=True):
+        stem, section, alias = parse_wikilink_token(raw_tok)
+        if section is None and alias is None and _MEMORY_HANDLE_RE.match(stem):
+            if memory_handles:
+                references.append({
+                    'id': stem,
+                    'file': file_label,
+                    'line_num': line_idx,
+                    'context_id': context_id,
+                    'content': stripped_line,
+                })
+        elif section is None and alias is None and is_placeholder(stem):
+            return
+        elif not stem and section is not None:
+            return
+        else:
+            doc_links.append({
+                'raw': raw_tok,
+                'stem': stem,
+                'file': file_label,
+                'line_num': line_idx,
+            })
+
     # Parse target memory files
     for fname in target_files:
         fpath = memory_dir / fname
         if not fpath.exists():
             continue
-            
+
         try:
-            with open(fpath, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+            raw_text = fpath.read_text(encoding='utf-8')
         except Exception as e:
             errors.append(f"Could not read {fname}: {e}")
             continue
-            
+
+        lines = raw_text.replace('\r\n', '\n').split('\n')
+        masked_lines = mask_code_and_comments(raw_text).split('\n')
+
         in_superseded = False
         current_context_id = None
         current_list_indent = None
-        
-        for line_idx, line in enumerate(lines, 1):
+
+        for line_idx, (line, masked_line) in enumerate(zip(lines, masked_lines), 1):
             stripped = line.strip()
             if not stripped:
                 continue
-                
+
             # Detect section transitions
             if line.startswith('#'):
                 current_context_id = None
@@ -358,23 +511,24 @@ def main():
                         in_superseded = True
                     elif level == 2:
                         in_superseded = False
-            
+
             # Standard list/heading item parsing
             list_match = re.match(r'^(\s*)([-*+])\s+(.*)', line)
             is_list_item = list_match is not None
-            
-            id_matches = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
-            
-            DEF_RE = re.compile(r'^\s*[-*+]\s+\**\s*\[\[([A-Za-z0-9_-]+)\]\]')
-            def_match = DEF_RE.search(line)
-            is_heading_def = line.startswith('#') and id_matches and line.lstrip('#').strip().startswith('[[')
+
+            tokens = _WIKILINK_TOKEN_RE.findall(masked_line)
+            def_match = _DEF_LINE_RE.search(masked_line)
+            is_heading_def = (
+                masked_line.startswith('#')
+                and bool(tokens)
+                and masked_line.lstrip('#').strip().startswith('[[')
+            )
 
             if def_match or is_heading_def:
-                def_id = def_match.group(1) if def_match else id_matches[0]
-                
+                def_id = def_match.group(1) if def_match else tokens[0]
+
                 if is_placeholder(def_id):
-                    # Placeholder definition is ignored. All valid refs on this line are just references.
-                    ref_ids = [rid for rid in id_matches if not is_placeholder(rid)]
+                    remaining_tokens = tokens[1:] if (tokens and tokens[0] == def_id) else tokens
                     if is_list_item:
                         indent = len(list_match.group(1))
                         if current_list_indent is not None and indent > current_list_indent:
@@ -386,7 +540,7 @@ def main():
                     # Parse trust tag
                     tag_match = re.search(r'\[(LAW|PATTERN|ASSUMED)\]', line)
                     tag = tag_match.group(1) if tag_match else None
-                    
+
                     # Parse superseded target
                     sup_match = re.search(r'\[SUPERSEDED BY\s+(?:\[\[)?([A-Za-z0-9_-]+)(?:\]\])?\]', line, re.IGNORECASE)
                     superseded_by = sup_match.group(1) if sup_match else None
@@ -410,13 +564,12 @@ def main():
                             'in_superseded': in_superseded,
                             'content': stripped
                         }
-                    
+
                     if is_list_item:
                         current_list_indent = len(list_match.group(1))
                         current_context_id = def_id
-                        
-                    # Remaining matches are references
-                    ref_ids = [rid for rid in id_matches[1:] if not is_placeholder(rid)]
+
+                    remaining_tokens = tokens[1:] if (tokens and tokens[0] == def_id) else tokens
             else:
                 if is_list_item:
                     indent = len(list_match.group(1))
@@ -434,38 +587,45 @@ def main():
                     else:
                         current_list_indent = None
                         current_context_id = None
-                ref_ids = [rid for rid in id_matches if not is_placeholder(rid)]
-                
-            for rid in ref_ids:
-                references.append({
-                    'id': rid,
-                    'file': fname,
-                    'line_num': line_idx,
-                    'context_id': current_context_id,
-                    'content': stripped
-                })
+                remaining_tokens = tokens
 
-    # Scan external files (e.g., docs/ directory) for references to GLOSSARY or other memory items
-    docs_dir = Path('docs')
-    if docs_dir.exists() and docs_dir.is_dir():
-        for root, _, files in os.walk(docs_dir):
-            for file in files:
-                if file.endswith('.md'):
-                    fpath = Path(root) / file
-                    try:
-                        with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
-                            for line_idx, line in enumerate(f, 1):
-                                id_matches = re.findall(r'\[\[([A-Za-z0-9_-]+)\]\]', line)
-                                for rid in id_matches:
-                                    references.append({
-                                        'id': rid,
-                                        'file': str(fpath.relative_to(Path.cwd())),
-                                        'line_num': line_idx,
-                                        'context_id': None,
-                                        'content': line.strip()
-                                    })
-                    except Exception:
-                        pass
+            for raw_tok in remaining_tokens:
+                _record_token(raw_tok, fname, line_idx, current_context_id, stripped)
+
+    # Also scan secondary .memory/ files (e.g. DESIGN.md, DATABASE_SCHEMA.md) for document wikilinks
+    for fname in ('DESIGN.md', 'DATABASE_SCHEMA.md'):
+        fpath = memory_dir / fname
+        if not fpath.is_file():
+            continue
+        try:
+            raw_text = fpath.read_text(encoding='utf-8', errors='ignore')
+        except Exception:
+            continue
+        for line_idx, masked_line in enumerate(mask_code_and_comments(raw_text).split('\n'), 1):
+            for raw_tok in _WIKILINK_TOKEN_RE.findall(masked_line):
+                _record_token(raw_tok, f".memory/{fname}", line_idx, None, '', memory_handles=False)
+
+    # Scan external files (docs/ directory, ignoring archives/templates) for memory handles and document wikilinks
+    if docs_present:
+        for path in sorted(docs_dir.rglob('*.md')):
+            rel = path.relative_to(docs_dir)
+            if any(seg in _IGNORED_DOC_SEGMENTS for seg in rel.parts):
+                continue
+            display_path = path.resolve().relative_to(repo_root).as_posix()
+            if _MEMORY_HANDLE_RE.match(path.stem):
+                errors.append(
+                    f"Namespace collision: '{display_path}' uses reserved memory handle stem "
+                    f"'{path.stem}' (reserved for .memory/ handles)."
+                )
+            try:
+                raw_text = path.read_text(encoding='utf-8', errors='ignore')
+            except Exception:
+                continue
+            raw_lines = raw_text.replace('\r\n', '\n').split('\n')
+            masked_lines = mask_code_and_comments(raw_text).split('\n')
+            for line_idx, (raw_line, masked_line) in enumerate(zip(raw_lines, masked_lines), 1):
+                for raw_tok in _WIKILINK_TOKEN_RE.findall(masked_line):
+                    _record_token(raw_tok, display_path, line_idx, None, raw_line.strip())
 
     # 1.5 OKF Conformance Check (Error tier: a missing/empty type field is a validation error)
     okf_as_error = True
@@ -475,9 +635,8 @@ def main():
             if path.name == "index.md" or 'resume' in path.relative_to(memory_dir).parts[:-1]:
                 continue  # resume/ holds per-task resume notes, local scratch with no frontmatter
             okf_files_to_check.append(path)
-            
-    docs_dir = Path('docs')
-    if docs_dir.exists() and docs_dir.is_dir():
+
+    if docs_present:
         for path in docs_dir.glob('**/*.md'):
             if path.name == "index.md":
                 continue
@@ -494,7 +653,7 @@ def main():
 
     for path in okf_files_to_check:
         try:
-            display_path = str(path.relative_to(Path.cwd()))
+            display_path = path.resolve().relative_to(repo_root).as_posix()
         except ValueError:
             display_path = str(path)
             
@@ -580,9 +739,12 @@ def main():
 
     # 2.4 Check bindings: a [LAW] naming its check must name a file git tracks, so a stale binding cannot
     # silently switch the 4a Standards auditor off for that rule. No git: one warning, only when a binding exists.
+    tracked = None
+    tracked_checked = False
     bindings = [(i, info) for i, info in definitions.items() if info.get('check') and not info['in_superseded']]
     if bindings:
-        tracked = tracked_files(memory_dir)
+        tracked = tracked_files(repo_root)
+        tracked_checked = True
         if tracked is None:
             warnings.append("Check bindings: could not verify Check bindings (not a git repository, or git is unavailable).")
         else:
@@ -625,6 +787,27 @@ def main():
                                 print(f"[AUTO-FIXED] Added reciprocal reference to '{cid}' in {r_info['file']}:{r_info['line_num']}")
                             continue
                     warnings.append(f"One-way reference: '{cid}' references '{rid}' in {c_info['file']}:{c_info['line_num']}, but '{rid}' does not reference '{cid}' back.")
+
+    # 5. Document Wikilink Existence & Hygiene Validation (git-tracked authority)
+    if doc_links:
+        if not tracked_checked:
+            tracked = tracked_files(repo_root)
+        if tracked is None:
+            warnings.append("Document wikilinks: could not verify document links (not a git repository, or git is unavailable).")
+        else:
+            doc_stems_map = build_doc_index(tracked)
+            tracked_lower = {p.lower(): p for p in tracked}
+            stems_lower = {k.lower(): v for k, v in doc_stems_map.items()}
+            for link in doc_links:
+                resolved, msg = resolve_document_wikilink(
+                    link['stem'], tracked, doc_stems_map, tracked_lower, stems_lower
+                )
+                if msg:
+                    loc = f"{link['file']}:{link['line_num']}"
+                    if resolved is None:
+                        errors.append(f"{msg} in {loc}")
+                    else:
+                        warnings.append(f"{msg} in {loc}")
 
     # Print human-readable report if not quiet
     if not args.quiet:

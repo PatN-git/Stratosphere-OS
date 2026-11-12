@@ -25,7 +25,7 @@ version: "1.0.4"
 - **[[G-002]] [ASSUMED] [2026-10-20]** Tracker backend: where issues live (GitHub or local markdown), chosen once at setup. Avoid: offline mode, BT-LOCAL mode (BT-LOCAL is only an ID prefix). Source: BT-189, docs/discovery/backlog-map-generated-cache.md.
 - **[[G-003]] [ASSUMED] [2026-10-20]** Tracker verb: a backend-neutral read or write named in workflow prose (e.g. set status, add blocker), resolved by the chosen tracker backend. Source: BT-189.
 - **[[G-004]] [ASSUMED] [2026-10-20]** Mirror write: the second write of a GitHub-owned field (status, labels, milestone, parent, blocked-by) into BACKLOG_MAP. Avoid: dual write, sync write. Source: BT-189.
-- **[[G-005]] [ASSUMED] [2026-11-12]** Document wikilink: a double-bracketed note reference ([[doc-stem]] or [[doc-stem|alias]]) resolving to a distinct git-tracked markdown document. Source: BT-233, docs/discovery/obsidian-document-linking.md.
+- **[[G-005]] [ASSUMED] [2026-11-12]** Document wikilink: a double-bracketed note reference (`[[doc-stem]]` or `[[doc-stem|alias]]`) resolving to a distinct git-tracked markdown document. Source: BT-233, docs/discovery/obsidian-document-linking.md.
 - **[[G-006]] [ASSUMED] [2026-11-12]** Map of Content (MOC): directory-level index.md file serving as a clustering hub and progressive disclosure entrypoint without frontmatter (OKF v0.2 §4). Avoid: folder index, directory readme. Source: BT-233, docs/discovery/obsidian-document-linking.md.
 
 *`Avoid:` is optional — populate it only when a term was canonicalized over rejected alternatives. Plain text only (never `[[ ]]`), so it is not parsed as a cross-reference.*
