@@ -138,7 +138,7 @@ Check [[A-001]], [[A-003]], [[L-003]], [[G-002]], [[DR-001]].
     )
 
     times = []
-    for _ in range(3):
+    for _ in range(10):
         start = time.perf_counter()
         res = validate_memory.extract_active_refs(
             issue_body=body,
