@@ -242,22 +242,31 @@ def emit_skill(src_md, name, skills_dir, ref_dir):
         write_lf(dst / "agents" / "openai.yaml", CODEX_SIDECAR)
 
     refs = closure_for(body, ref_dir)
+    ref_dst = dst / "references"
+    if ref_dst.exists():
+        for existing_ref in ref_dst.glob("*.md"):
+            if existing_ref.name not in refs:
+                try:
+                    existing_ref.unlink()
+                except OSError:
+                    pass
     for rname in sorted(refs):
-        (dst / "references").mkdir(exist_ok=True)
-        shutil.copy2(ref_dir / rname, dst / "references" / rname)
+        ref_dst.mkdir(exist_ok=True)
+        shutil.copy2(ref_dir / rname, ref_dst / rname)
     return len(refs)
 
 
 # --- bundle assembly --------------------------------------------------------
 
 def build_bundle():
-    force_rmtree(BUNDLE)
     BUNDLE.mkdir(parents=True, exist_ok=True)
+    built_skills = set()
     ref_dir = SRC / "references"
 
     # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():
         if skill.is_dir():
+            built_skills.add(skill.name)
             dst = BUNDLE / skill.name
             copytree(skill, dst)
             sk = dst / "SKILL.md"
@@ -273,11 +282,18 @@ def build_bundle():
     #    every host: <skills dir>/<name>/SKILL.md, invocable as /<name>.
     total_refs = 0
     for wf in sorted((SRC / "workflows").glob("*.md")):
+        built_skills.add(wf.stem)
         total_refs += emit_skill(wf, wf.stem, BUNDLE, ref_dir)
 
     # 3. Install/upgrade/sync drivers - skills like everything else
     for name in ("stratosphere-setup", "stratosphere-update", "sync-skills"):
+        built_skills.add(name)
         total_refs += emit_skill(SRC / "commands" / name / "SKILL.md", name, BUNDLE, ref_dir)
+
+    for item in BUNDLE.iterdir():
+        if item.is_dir() and item.name not in built_skills:
+            force_rmtree(item)
+
     print(f"  {len(list(BUNDLE.iterdir()))} skills, {total_refs} reference copies")
 
     # 4. Scaffolder payload rides inside stratosphere-setup: skill installers place only

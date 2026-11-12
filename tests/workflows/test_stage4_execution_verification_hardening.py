@@ -85,8 +85,8 @@ def test_2c_reconcile_specs_streamlining():
 def test_stage4_frontmatter_version_bumps():
     for rel_path, expected_v in [
         ("workflows/3d-implement-issue.md", "2.10.0"),
-        ("workflows/4a-verify-and-ship.md", "1.11.0"),
-        ("workflows/0d-nightly-consolidation.md", "1.7.0"),
+        ("workflows/4a-verify-and-ship.md", "1.12.0"),
+        ("workflows/0d-nightly-consolidation.md", "1.8.0"),
         ("workflows/2c-reconcile-specs.md", "1.5.0"),
     ]:
         content = read_src(rel_path)

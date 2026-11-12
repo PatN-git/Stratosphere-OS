@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.9.0"
-timestamp: 2026-11-09
+version: "1.10.0"
+timestamp: 2026-11-12
 ---
 
 # StratosphereOS Update Flow
@@ -89,7 +89,10 @@ Skills refresh from the canonical `dist/skills/` bundle. Before computing scope,
    ```bash
    python <plugin>/scripts/check_suite.py legacy
    ```
-   Exit 0 → continue. Exit 1 → show listed paths and ask once (`AskUserQuestion` / `ask_question`): delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
+   Exit 0 → continue. Exit 1:
+   - **Tool Execution Barrier:** complete the legacy path check 100% before opening the prompt turn. Never invoke a question tool in the same turn as background check scripts.
+   - **Mandatory Visible Markdown Content:** emit the full list of detected legacy paths directly in visible message `content` (never empty content or hidden inside tool calls).
+   - **Synchronous Pairing:** call the question tool (`AskUserQuestion` / `ask_question`) in the same turn accompanying the visible list: delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
 
 _Completion criterion:_ Suite confirmed whole, legacy paths removed, declined, or absent.
 
@@ -117,8 +120,9 @@ For each block in `preserved_files` flagged with `status: "conflict"`, perform a
 
 ### 2. Constitution Files (`needs_review_constitution`)
 For each constitution file that has changed:
-- Show side-by-side diff comparing workspace file against new template under `<plugin>/assets/templates/constitution/`.
-- Ask user for confirmation: *"Found updates to constitution file `<filename>`. Merge them?"*
+- **Tool Execution Barrier:** complete diff generation 100% before opening the review turn. Never invoke a question tool in the same turn as background diff commands.
+- **Mandatory Visible Markdown Content:** emit the side-by-side diff comparing workspace file against new template under `<plugin>/assets/templates/constitution/` directly in visible message `content` (never empty content or hidden inside tool calls).
+- **Synchronous Pairing:** call the question tool in the same turn accompanying the visible diff: *"Found updates to constitution file `<filename>`. Merge them?"*
 - If confirmed, merge new rules/sections while keeping user customizations (pointer directory, vision) and write to `<filepath>.stratosphere-new`.
 - If declined, copy existing workspace file verbatim to `<filepath>.stratosphere-new` to ensure it passes Phase 4 invariants during commit.
 

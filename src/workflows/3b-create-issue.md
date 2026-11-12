@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.10.0"
-timestamp: 2026-11-10
+version: "2.11.0"
+timestamp: 2026-11-12
 ---
 
 # Create issue
@@ -92,6 +92,9 @@ Run the `load-memory` skill to restore session context (read-only).
    | BT-<padded> | feature | 1.0 (med) | 80% | med (2) | 0.40 | priority:medium |
    ```
 
+   - **Tool Execution Barrier:** all background script executions, analysis, and file generation in `.tmp/` must complete 100% before opening the gate turn. Never invoke a question tool in the same turn as background commands or scripts.
+   - **Mandatory Visible Markdown Content:** emit the complete `### Slices Proposed for Minting` table directly in visible message `content` (never empty content or hidden inside tool calls).
+   - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible markdown table.
    - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve & Mint Slices", "Adjust Metrics / Slices", "Abort"]`. To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`). Fallback for non-interactive hosts: output `[Approve & Mint via gh issue create]` and halt for user response.
    - **Verification Checks:** confirm requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
 

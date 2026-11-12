@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-11-09
+version: "1.9.0"
+timestamp: 2026-11-12
 ---
 
 # Instantiate StratosphereOS
@@ -263,6 +263,9 @@ GitHub labels already exist and may differ from the registry.
    - **ADD** — in registry but not yet in GitHub. Create it.
 
 4. **Present the custom table** to the user.
+   - **Tool Execution Barrier:** complete GitHub label inspection and mapping comparison 100% prior to opening the confirmation turn. Never invoke a question tool in the same turn as background inspection commands.
+   - **Mandatory Visible Markdown Content:** emit the full label mapping table directly in visible message `content` (never empty content or hidden inside tool calls).
+   - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible markdown label table.
    - `KEEP` and `ADD` are auto-approved.
    - `MAP` and `DROP` require explicit user confirmation. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to obtain the user's confirmation — do not ask in prose.
 
