@@ -13,7 +13,7 @@ SRC_SCRIPTS = REPO_ROOT / "src" / "scripts"
 SCRIPT = SRC_SCRIPTS / "validate_memory.py"
 
 sys.path.insert(0, str(SRC_SCRIPTS))
-import validate_memory  # noqa: E402
+import validate_memory
 
 ARCH_FM = """---
 type: architecture
