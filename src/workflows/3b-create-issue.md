@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.10.0"
-timestamp: 2026-11-10
+version: "2.10.1"
+timestamp: 2026-11-17
 ---
 
 # Create issue
@@ -82,7 +82,7 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Research-only finding** (a requirement/constraint present in research but absent from PRD + interface) → flag `[RESEARCH-GAP]` for HITL before implementing; never fold it into the draft unilaterally.
      - **Brief-only finding** (a constraint or settled decision present in the brief but absent from PRD + interface; Established Facts used as Current-state evidence are expected, not a gap) → flag `[BRIEF-GAP]` the same way.
    - **No PRD:** restate intent as a requirement list; map slices; the brief (if located) is the top source, so `[BRIEF-GAP]` and the precedence clause do not apply, and every Success State item and settled decision maps to a draft AC or constraint; check each draft body against the spec bar, a missing element is a finding; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
-   - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `.agents/skills/3b-create-issue/references/audit-to-slices.md`; the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
+   - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `<skill-dir>/references/audit-to-slices.md` (parent resolves `<skill-dir>` to an absolute path for the subagent); the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
 5. **Single Final Verification Gate:** present a high-density compact summary table before the full draft bodies:
 
    ```markdown

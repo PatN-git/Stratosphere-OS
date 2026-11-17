@@ -261,9 +261,9 @@
       "version": "1.2.0"
     },
     "skills/2z-write-spec/SKILL.md": {
-      "sha256": "3aff20c23553813fef9608fff10f7b58acb86a9d686efdc5fee364604cee78dc",
-      "timestamp": "2026-11-06",
-      "version": "1.2.0"
+      "sha256": "f07d851659ab0bdd51874fac2ef0c67e41eb19feb3bcf75cd8577baf4be9c831",
+      "timestamp": "2026-11-17",
+      "version": "1.2.1"
     },
     "skills/3a-version-planning/SKILL.md": {
       "sha256": "a73effd958a7a04ce580262b794f54c4fd618219f58f7e3abdda3c20aedcf30f",
@@ -281,9 +281,9 @@
       "version": "2.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "5f0a0e43ce94bc6d5c731ee3e2739ea6b92a83e61c0db3640a41cb826f4c318a",
-      "timestamp": "2026-11-10",
-      "version": "2.10.0"
+      "sha256": "28af344ec2821b38ed6d018cefa982ab1cbaf06125d579dae2339642e8339b0e",
+      "timestamp": "2026-11-17",
+      "version": "2.10.1"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",
@@ -351,9 +351,9 @@
       "version": "1.0.2"
     },
     "skills/3z-afk-loop/SKILL.md": {
-      "sha256": "7387f5f382995e1b8837b98849846c7ae1f05b341a418cac718b97b784cde23b",
-      "timestamp": "2026-11-09",
-      "version": "1.11.0"
+      "sha256": "c4b19f6ff42db3b744dc1bfa75bb42757e8eee30efffb5faf8182290f56a1a03",
+      "timestamp": "2026-11-17",
+      "version": "1.11.1"
     },
     "skills/3z-afk-loop/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
@@ -381,9 +381,9 @@
       "version": "1.3.0"
     },
     "skills/4a-verify-and-ship/SKILL.md": {
-      "sha256": "c5379b6d4e252a0ece83e3b1a3162229d7406eaf1eb0dea4ff57cd31db2a41cc",
-      "timestamp": "2026-11-10",
-      "version": "1.11.0"
+      "sha256": "e3800175e526a37ad02d0a1d206a8de05f1955e58f86edf5a2b783e1339f60f0",
+      "timestamp": "2026-11-17",
+      "version": "1.11.1"
     },
     "skills/4a-verify-and-ship/references/audit-inputs.md": {
       "sha256": "a3a617d5239cb95945055f10f676cc8051b08d3cb3aed654fc6eef647c3e83e9",
@@ -416,9 +416,9 @@
       "version": "1.2.0"
     },
     "skills/4a-verify-and-ship/references/feature-acceptance-audit.md": {
-      "sha256": "75ac30d820d72b4bf6c0506071e1c063918aee5c66ca7a5ff6ad3dae60f8f02d",
-      "timestamp": "2026-11-03",
-      "version": "1.1.2"
+      "sha256": "301a2e415e662e15df571c474e43513e9c9352554988d5de041da1b8ede98c7c",
+      "timestamp": "2026-11-17",
+      "version": "1.1.3"
     },
     "skills/4a-verify-and-ship/references/issue-templates.md": {
       "sha256": "9cc67d7674f7b4d6f5bd067cdd814fea84345fe683bf122a5b45bf8df8299d9d",
@@ -446,9 +446,9 @@
       "version": "2.1.0"
     },
     "skills/4b-audit-architecture-drift/SKILL.md": {
-      "sha256": "2cda0b82e59ad75fa7eade1e27b9c5002ca91dfbb1a4a6dd8658543c1f85bbc4",
-      "timestamp": "2026-11-09",
-      "version": "1.5.0"
+      "sha256": "832f2124d8d7c5a496f573a3d5da3a0de6e9e5bb7f0eb928444fd17d6750e131",
+      "timestamp": "2026-11-17",
+      "version": "1.5.1"
     },
     "skills/4b-audit-architecture-drift/references/arch-drift-report-template.md": {
       "sha256": "47bf468c03007158a6a4bead449e995fea489a12785aa7f417156db2e659bf3a",
@@ -486,9 +486,9 @@
       "version": "1.1.0"
     },
     "skills/4c-codebase-health-audit/SKILL.md": {
-      "sha256": "0e8404ed47d99f3c11c761b5c6096beaf137969a42df83485bb5c5517f674c54",
-      "timestamp": "2026-11-09",
-      "version": "1.6.0"
+      "sha256": "2a213b546ee81b353e7a0a9f4ec35602d5d497e2f266aaeb19072a05bcb1065e",
+      "timestamp": "2026-11-17",
+      "version": "1.6.1"
     },
     "skills/4c-codebase-health-audit/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",

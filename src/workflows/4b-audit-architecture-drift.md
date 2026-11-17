@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.5.0"
-timestamp: 2026-11-09
+version: "1.5.1"
+timestamp: 2026-11-17
 ---
 
 TYPE: HITL EXECUTION: Manual trigger only. Do not run autonomously.
@@ -34,7 +34,7 @@ _CONSTRAINTS:_
 - **Guardrails:** *"Return findings + confidence only; do not modify production code or write refactor files (matches Phase 1/3 constraints)."*
 - **Output Contract:** the subagent returns the findings + confidence mapping + `Dismissed (deliberate)` lines; the main agent handles subsequent logic.
 
-_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/` including `.memory/ARCHITECTURE.md` negative invariants (`Never: ...`, `[LAW]`, `Avoid: ...`), `.agents/skills/4b-audit-architecture-drift/references/confidence-scale.md` and `.agents/skills/4b-audit-architecture-drift/references/design-red-flags.md`.
+_INPUT:_ The parent-resolved explicit file list for the target directory, all files in `.memory/` including `.memory/ARCHITECTURE.md` negative invariants (`Never: ...`, `[LAW]`, `Avoid: ...`), `<skill-dir>/references/confidence-scale.md` and `<skill-dir>/references/design-red-flags.md` (parent resolves `<skill-dir>` to absolute paths before dispatch).
 _PERSONA:_ Staff-Level System Architect enforcing structural invariants. Surgically target architectural drift, domain-boundary violations, scalability risks, maintainability blockers, and repeated violations of documented system rules.
 
 ## Deep Scan Matrix

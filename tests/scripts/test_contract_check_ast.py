@@ -244,7 +244,7 @@ def test_stage2_frontmatter_version_bumps():
         ("workflows/2a-write-prd.md", "1.9.0"),
         ("workflows/2b-interface-design.md", "1.8.0"),
         ("workflows/2c-reconcile-specs.md", "1.5.0"),
-        ("workflows/2z-write-spec.md", "1.2.0"),
+        ("workflows/2z-write-spec.md", "1.2.1"),
     ]:
         content = read_src(rel_path)
         v, _ = _versioning.read_version(content, rel_path)

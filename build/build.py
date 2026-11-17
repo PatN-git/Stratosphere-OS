@@ -146,12 +146,11 @@ def command_name(stem: str) -> str:
     return stem
 
 
-# Two citation forms: the relative `references/<file>.md` a skill uses for itself,
-# and the absolute `.agents/skills/<name>/references/<file>.md` required wherever a
-# path is handed to an isolated subagent (whose cwd is the repo root, not the skill).
+# Two citation forms: the skill-relative `references/<file>.md` or `<skill-dir>/references/<file>.md`,
+# and the `.agents/skills/<name>/references/<file>.md` form used at subagent boundaries.
 REF_CITE = re.compile(
-    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
-    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+    r'(?:\.agents/skills/[a-z0-9-]+|<skill-dir>)/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.>])references/([A-Za-z0-9_.-]+\.md)')
 
 
 def cited_refs(text):

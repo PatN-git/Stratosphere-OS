@@ -3,6 +3,7 @@
 Seam: the `check_suite.py` CLI (stdout + exit code). Fixtures copy the committed
 `dist/skills` bundle into tmp_path so every case starts from a known-good suite.
 """
+import importlib.util
 import json
 import os
 import re
@@ -477,6 +478,44 @@ def test_ref_cite_pattern_matches_build_py():
     build_src = (REPO_ROOT / "build" / "build.py").read_text(encoding="utf-8")
     m = re.search(r"REF_CITE = re\.compile\(\s*r'(.*?)'\s*r'(.*?)'\)", build_src, re.S)
     assert m and check_suite.REF_CITE.pattern == m.group(1) + m.group(2)
+
+
+def test_ref_cite_closure_and_cited_refs_support_skill_dir_without_double_match(tmp_path):
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    spec = importlib.util.spec_from_file_location("build_mod", REPO_ROOT / "build" / "build.py")
+    build_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(build_mod)
+
+    sample = (
+        "Read <skill-dir>/references/alpha.md, "
+        ".agents/skills/other/references/beta.md, "
+        "and references/gamma.md (ignore custom/references/ignored.md)."
+    )
+    expected_matches = [("alpha.md", ""), ("beta.md", ""), ("", "gamma.md")]
+    assert build_mod.REF_CITE.findall(sample) == expected_matches
+    assert check_suite.REF_CITE.findall(sample) == expected_matches
+    assert build_mod.cited_refs(sample) == {"alpha.md", "beta.md", "gamma.md"}
+    assert check_suite.cited_refs(sample) == {"alpha.md", "beta.md", "gamma.md"}
+
+    ref_dir = tmp_path / "references"
+    ref_dir.mkdir()
+    (ref_dir / "alpha.md").write_text("See <skill-dir>/references/delta.md\n", encoding="utf-8")
+    (ref_dir / "delta.md").write_text("Leaf\n", encoding="utf-8")
+    assert build_mod.closure_for("Read <skill-dir>/references/alpha.md", ref_dir) == {"alpha.md", "delta.md"}
+
+
+def test_suite_detects_missing_skill_dir_cited_reference(suite):
+    md = suite / "4a-verify-and-ship" / "SKILL.md"
+    md.write_text(md.read_text(encoding="utf-8") + "\nSee <skill-dir>/references/missing-skill-dir.md\n", encoding="utf-8")
+    ref_dir = suite / "3b-create-issue" / "references"
+    first_ref = sorted(ref_dir.glob("*.md"))[0]
+    first_ref.write_text(first_ref.read_text(encoding="utf-8") + "\nSee <skill-dir>/references/missing-nested.md\n", encoding="utf-8")
+
+    r = run("suite", "--skills-dir", suite)
+    assert r.returncode == 1
+    assert "4a-verify-and-ship" in r.stdout and "missing-skill-dir.md" in r.stdout
+    assert "3b-create-issue" in r.stdout and "missing-nested.md" in r.stdout
 
 
 def test_setup_and_update_halt_cleanly_when_installed_plugin_predates_check_suite():

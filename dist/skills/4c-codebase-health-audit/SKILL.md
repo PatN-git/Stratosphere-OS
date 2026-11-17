@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.6.0"
-timestamp: 2026-11-09
+version: "1.6.1"
+timestamp: 2026-11-17
 ---
 
 # Codebase Health Audit
@@ -70,12 +70,12 @@ Invoke 4 orthogonal quiet subagents in parallel with zero-bleed context isolatio
 - Explicit file list for assigned scan targets
 - `priority_files` from Phase 1.2
 - `.memory/LEARNINGS.md`
-- Confidence threshold: **≥60** (overrides default ≥80 in `.agents/skills/4c-codebase-health-audit/references/confidence-scale.md`)
+- Confidence threshold: **≥60** (overrides default ≥80 in `<skill-dir>/references/confidence-scale.md`; parent resolves `<skill-dir>` to an absolute path before dispatch)
 
 **Zero-Bleed Guardrail (inject into every subagent):**
 > "Scan and report findings only with zero-bleed context isolation (use read-only helpers without cross-pass context bleed). Do not modify any file. Do not create, commit, or push. Return findings to parent."
 
-**Scan matrix:** `.agents/skills/4c-codebase-health-audit/references/health-audit-scan-matrix.md`
+**Scan matrix:** `<skill-dir>/references/health-audit-scan-matrix.md` (parent resolves `<skill-dir>` to an absolute path before dispatch)
 
 | Subagent | Passes |
 |:---|:---|

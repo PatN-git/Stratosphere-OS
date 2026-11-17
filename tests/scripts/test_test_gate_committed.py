@@ -160,9 +160,9 @@ def test_4c_workflow_decomposed_audit_passes():
 
 def test_stage4_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/4a-verify-and-ship.md", "1.11.0"),
-        ("workflows/4b-audit-architecture-drift.md", "1.5.0"),
-        ("workflows/4c-codebase-health-audit.md", "1.6.0"),
+        ("workflows/4a-verify-and-ship.md", "1.11.1"),
+        ("workflows/4b-audit-architecture-drift.md", "1.5.1"),
+        ("workflows/4c-codebase-health-audit.md", "1.6.1"),
     ]:
         content = read_src(rel_path)
         v, _ = _versioning.read_version(content, rel_path)

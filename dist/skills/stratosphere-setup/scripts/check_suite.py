@@ -41,8 +41,8 @@ SUITE_REMEDIATION = "npx skills add PatN-git/Stratosphere-OS/dist/skills -a <age
 
 # Mirrors build/build.py REF_CITE: relative and absolute reference citations.
 REF_CITE = re.compile(
-    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
-    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+    r'(?:\.agents/skills/[a-z0-9-]+|<skill-dir>)/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.>])references/([A-Za-z0-9_.-]+\.md)')
 
 
 def cited_refs(text):

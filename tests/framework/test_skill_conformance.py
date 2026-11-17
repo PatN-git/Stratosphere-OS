@@ -20,8 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 HOSTS = ["dist"]  # one canonical bundle: dist/skills
 NAME_RE = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 
-# a citation is either skill-relative or, at a subagent boundary, absolute
-REL_CITE = re.compile(r'(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+# a citation is either skill-relative (bare or <skill-dir>/) or, at a subagent boundary, absolute
+REL_CITE = re.compile(r'(?:(?<![\w/.>])|<skill-dir>/)references/([A-Za-z0-9_.-]+\.md)')
 ABS_CITE = re.compile(r'\.agents/skills/([a-z0-9-]+)/references/([A-Za-z0-9_.-]+\.md)')
 
 
@@ -84,6 +84,42 @@ def test_every_cited_reference_ships(host):
                 if not (d / "references" / fname).exists():
                     broken.append(f"{d.name}/references/{ref.name} -> {fname}")
     assert not broken, "dangling reference citations:\n  " + "\n  ".join(broken)
+
+
+def test_rel_cite_recognizes_skill_dir_without_double_match():
+    sample = (
+        "Read <skill-dir>/references/alpha.md, "
+        ".agents/skills/other/references/beta.md, "
+        "and references/gamma.md (ignore custom/references/delta.md)."
+    )
+    assert REL_CITE.findall(sample) == ["alpha.md", "gamma.md"]
+
+
+def test_every_cited_reference_ships_validates_skill_dir_in_skill_and_references(tmp_path, monkeypatch):
+    demo = tmp_path / "dist" / "skills" / "demo"
+    refs = demo / "references"
+    refs.mkdir(parents=True)
+    (demo / "SKILL.md").write_text(
+        "---\nname: demo\ndescription: demo\nversion: \"1.0.0\"\n---\n"
+        "See <skill-dir>/references/parent.md and <skill-dir>/references/missing-from-skill.md\n",
+        encoding="utf-8",
+    )
+    (refs / "parent.md").write_text(
+        "---\nversion: \"1.0.0\"\n---\n"
+        "See <skill-dir>/references/missing-from-ref.md\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys.modules[__name__], "REPO_ROOT", tmp_path)
+
+    with pytest.raises(AssertionError) as exc:
+        test_every_cited_reference_ships("dist")
+    msg = str(exc.value)
+    assert "demo -> references/missing-from-skill.md" in msg
+    assert "demo/references/parent.md -> missing-from-ref.md" in msg
+
+    (refs / "missing-from-skill.md").write_text("---\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+    (refs / "missing-from-ref.md").write_text("---\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+    test_every_cited_reference_ships("dist")
 
 
 @pytest.mark.parametrize("host", HOSTS)
