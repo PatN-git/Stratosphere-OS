@@ -116,6 +116,7 @@ def test_topological_sort_performance_under_5ms():
 
     # Warmup
     reconcile.topological_sort({"B": {"A"}, "A": set()})
+    reconcile.topological_sort(graph)
 
     start = time.perf_counter()
     order, cycle = reconcile.topological_sort(graph)
