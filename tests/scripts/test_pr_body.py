@@ -41,8 +41,8 @@ def develop_repo(tmp_path):
     return init_repo(tmp_path, "develop")
 
 
-def run(repo, *args):
-    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)], cwd=repo, capture_output=True, text=True)
+def run(repo, *args, env=None):
+    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)], cwd=repo, capture_output=True, text=True, env=env)
 
 
 def write_suite(repo, name="3d-suite-BT-1.json", sha=None, cmd="pytest -q", observed="5 passed"):
@@ -1197,3 +1197,74 @@ def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatc
     monkeypatch.chdir(repo)
     code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
     assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err
+
+
+def _isolated_env(home: Path, **extra):
+    env = {k: v for k, v in os.environ.items() if k != "STRATOSPHERE_PLUGIN_SKILLS"}
+    env["HOME"] = str(home)
+    env["USERPROFILE"] = str(home)
+    env.update(extra)
+    return env
+
+
+def test_omitted_risk_paths_resolves_plugin_bundle_and_src_references_without_warn(repo, tmp_path):
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    suite = write_suite(repo, "3d-suite-BT-11.json")
+    home = tmp_path / "home"
+    home.mkdir()
+
+    # 1. STRATOSPHERE_PLUGIN_SKILLS fallback
+    plugin_skills = tmp_path / "env_skills"
+    ref_dst = plugin_skills / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    ref_dst.parent.mkdir(parents=True)
+    ref_dst.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+
+    base_args = ["build", "--slice", "BT-11", "--summary", "did a thing", "--verdict", "PASS",
+                 "--audit-rounds", "1", "--base", "main", "--suite-json", str(suite), "--parent", "BT-10"]
+    r_env = run(repo, *base_args, env=_isolated_env(home, STRATOSPHERE_PLUGIN_SKILLS=str(plugin_skills)))
+    assert r_env.returncode == 0, r_env.stderr
+    assert "[PR-BODY-WARN]" not in r_env.stderr
+    assert field(r_env.stdout, "risk") == "[db-migration]"
+
+    # 2. Installed plugin bundle fallback (~/.gemini/config/plugins/<id>/skills)
+    mk_ref = home / ".gemini" / "config" / "plugins" / "12345" / "skills" / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    mk_ref.parent.mkdir(parents=True)
+    mk_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+    r_mk = run(repo, *base_args, env=_isolated_env(home))
+    assert r_mk.returncode == 0, r_mk.stderr
+    assert "[PR-BODY-WARN]" not in r_mk.stderr
+    assert field(r_mk.stdout, "risk") == "[db-migration]"
+
+    # 3. src/references/ fallback in dev repo
+    empty_home = tmp_path / "empty_home"
+    empty_home.mkdir()
+    src_ref = repo / "src" / "references" / "merge-risk-paths.md"
+    src_ref.parent.mkdir(parents=True)
+    src_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+    r_src = run(repo, *base_args, env=_isolated_env(empty_home))
+    assert r_src.returncode == 0, r_src.stderr
+    assert "[PR-BODY-WARN]" not in r_src.stderr
+    assert field(r_src.stdout, "risk") == "[db-migration]"
+
+    # 4. When no rules file exists anywhere and --risk-paths is omitted, warns with DEFAULT_RISK_PATHS
+    src_ref.unlink()
+    r_none = run(repo, *base_args, env=_isolated_env(empty_home))
+    assert r_none.returncode == 0, r_none.stderr
+    assert "[PR-BODY-WARN] risk rules not found at .agents/skills/4a-verify-and-ship/references/merge-risk-paths.md" in r_none.stderr
+    assert field(r_none.stdout, "risk") == "[none]"
+
+
+def test_explicit_missing_risk_paths_warns_even_when_plugin_bundle_exists(repo, tmp_path):
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    suite = write_suite(repo, "3d-suite-BT-11.json")
+    home = tmp_path / "home"
+    mk_ref = home / ".gemini" / "config" / "plugins" / "12345" / "skills" / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    mk_ref.parent.mkdir(parents=True)
+    mk_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+
+    r = run(repo, "build", "--slice", "BT-11", "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
+            "--base", "main", "--risk-paths", str(repo / "missing.md"), "--suite-json", str(suite),
+            env=_isolated_env(home, STRATOSPHERE_PLUGIN_SKILLS=str(mk_ref.parents[2])))
+    assert r.returncode == 0, r.stderr
+    assert "[PR-BODY-WARN] risk rules not found at" in r.stderr
+    assert field(r.stdout, "risk") == "[none]"

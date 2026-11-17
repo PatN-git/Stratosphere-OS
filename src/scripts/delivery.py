@@ -8,6 +8,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -31,6 +32,32 @@ def get_lockfile_data(project_root: Path) -> tuple[Path, dict]:
         return lock_file, {}
 
 
+def _parse_version_key(v_str: str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip("v")
+    return tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r"[-.+_]", cleaned))
+
+
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a scaffold.py path inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if "stratosphere-os" in rel:
+        idx = rel.index("stratosphere-os")
+        if idx + 1 < len(rel):
+            return _parse_version_key(rel[idx + 1])
+    if "skills" in rel:
+        idx = rel.index("skills")
+        if idx >= 2 and rel[idx - 1] == "dist":
+            return _parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    if "stratosphere-setup" in rel:
+        idx = rel.index("stratosphere-setup")
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    return _parse_version_key("")
+
+
 def locate_scaffolder(project_root: Path) -> Path | None:
     """Locates the scaffold.py script in dev workspaces or global plugin caches."""
     if "STRATOSPHERE_SCAFFOLD_SCRIPT" in os.environ:
@@ -38,23 +65,33 @@ def locate_scaffolder(project_root: Path) -> Path | None:
         if p.is_file():
             return p
 
+    env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
+    if env_skills:
+        p = Path(env_skills) / "stratosphere-setup" / "scripts" / "scaffold.py"
+        if p.is_file():
+            return p
+
+    rel_scaffold = Path("stratosphere-setup") / "scripts" / "scaffold.py"
+
     # 1. Dev repository / workspace root check (ancestors of cwd or project_root)
     for start in [Path.cwd().resolve(), project_root.resolve()]:
         for p in [start] + list(start.parents):
-            c = p / "dist" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py"
+            c = p / "dist" / "skills" / rel_scaffold
             if c.is_file():
                 return c
 
     # 2. Global plugin caches
     home = Path.home()
     candidates = [
-        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py",
-        home / ".gemini" / "config" / "skills" / "stratosphere-setup" / "scripts" / "scaffold.py",
+        *sorted((home / ".gemini" / "config" / "plugins").glob(f"*/skills/{rel_scaffold.as_posix()}"), reverse=True),
+        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills" / rel_scaffold,
+        home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills" / rel_scaffold,
+        home / ".gemini" / "config" / "skills" / rel_scaffold,
     ]
     claude_cache = home / ".claude" / "plugins" / "cache"
     if claude_cache.is_dir():
-        for p in glob.glob(str(claude_cache / "**" / "stratosphere-setup" / "scripts" / "scaffold.py"), recursive=True):
-            candidates.append(Path(p))
+        hits = [Path(p) for p in glob.glob(str(claude_cache / "**" / rel_scaffold), recursive=True)]
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
 
     for c in candidates:
         if c.is_file():

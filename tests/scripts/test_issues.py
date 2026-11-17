@@ -1480,3 +1480,71 @@ def test_apply_moves_reports_the_line_of_the_last_move_of_a_card(repo, tmp_path)
     code, text = run('apply-moves', _moves(tmp_path, f"{dep} -> in progress\n{dep} -> blocked\n", 'back.txt'))
     assert code == 0, text
 
+
+def _place_board_template(skills_dir):
+    dst = skills_dir / 'plan-html' / 'assets' / 'templates' / 'board.html'
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src = REPO_ROOT / 'src' / 'skills' / 'plan-html' / 'assets' / 'templates' / 'board.html'
+    dst.write_text(src.read_text(encoding='utf-8'), encoding='utf-8')
+    return dst
+
+
+def test_find_board_template_resolves_plugin_mode_locations(repo, tmp_path, monkeypatch):
+    fake_script = repo / '.agents' / 'scripts' / 'issues.py'
+    home = tmp_path / 'home'
+    home.mkdir()
+    monkeypatch.setattr(issues, '__file__', str(fake_script))
+    monkeypatch.delenv('STRATOSPHERE_PLUGIN_SKILLS', raising=False)
+    monkeypatch.setenv('HOME', str(home))
+    monkeypatch.setenv('USERPROFILE', str(home))
+
+    # Absent everywhere -> IssuesError
+    with pytest.raises(issues.IssuesError):
+        issues._find_board_template()
+
+    # 1. STRATOSPHERE_PLUGIN_SKILLS (also overrides sibling src/skills even without __file__ patch)
+    env_skills = tmp_path / 'env_skills'
+    env_tpl = _place_board_template(env_skills)
+    monkeypatch.setenv('STRATOSPHERE_PLUGIN_SKILLS', str(env_skills))
+    assert issues._find_board_template() == env_tpl
+
+    # 2. ~/.gemini/config/plugins/<id>/skills (newest match wins)
+    monkeypatch.delenv('STRATOSPHERE_PLUGIN_SKILLS', raising=False)
+    _place_board_template(home / '.gemini' / 'config' / 'plugins' / '100' / 'skills')
+    newer_tpl = _place_board_template(home / '.gemini' / 'config' / 'plugins' / '200' / 'skills')
+    assert issues._find_board_template() == newer_tpl
+
+    # 3. Version-sorted ~/.claude/plugins/cache/*/stratosphere-os/<ver>/...
+    home_claude = tmp_path / 'home_claude'
+    monkeypatch.setenv('HOME', str(home_claude))
+    monkeypatch.setenv('USERPROFILE', str(home_claude))
+    mkt = home_claude / '.claude' / 'plugins' / 'cache' / 'mkt' / 'stratosphere-os'
+    _place_board_template(mkt / '5.2.1' / 'dist' / 'skills')
+    tpl_530 = _place_board_template(mkt / '5.3.0' / 'dist' / 'skills')
+    assert issues._find_board_template() == tpl_530
+
+    _place_board_template(mkt / '1.9.0' / 'dist' / 'skills')
+    tpl_5100 = _place_board_template(mkt / '5.10.0' / 'dist' / 'skills')
+    assert issues._find_board_template() == tpl_5100
+
+    # Dedicated 1.9.0 vs 1.10.0 check
+    home_claude2 = tmp_path / 'home_claude2'
+    monkeypatch.setenv('HOME', str(home_claude2))
+    monkeypatch.setenv('USERPROFILE', str(home_claude2))
+    mkt2 = home_claude2 / '.claude' / 'plugins' / 'cache' / 'mkt' / 'stratosphere-os'
+    _place_board_template(mkt2 / '1.9.0' / 'dist' / 'skills')
+    tpl_1100 = _place_board_template(mkt2 / '1.10.0' / 'dist' / 'skills')
+    assert issues._find_board_template() == tpl_1100
+
+
+def test_find_board_template_env_override_beats_src_sibling(repo, tmp_path, monkeypatch):
+    env_skills = tmp_path / 'env_skills'
+    env_tpl = _place_board_template(env_skills)
+    monkeypatch.setenv('STRATOSPHERE_PLUGIN_SKILLS', str(env_skills))
+    assert issues._find_board_template() == env_tpl
+    ok('init')
+    ok('create', '--title', 'Plugin Board', '--label', SLICE)
+    out_html = tmp_path / 'plugin_board.html'
+    code, text = run('board', '--web', '--out', str(out_html))
+    assert code == 0 and out_html.is_file(), text
+

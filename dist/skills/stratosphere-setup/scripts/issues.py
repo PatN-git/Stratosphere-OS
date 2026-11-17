@@ -505,17 +505,55 @@ def cmd_merged(store, a):
     return changes, out_text
 
 
+def _parse_version_key(v_str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip('v')
+    return tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r'[-.+_]', cleaned))
+
+
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a path inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if 'stratosphere-os' in rel:
+        idx = rel.index('stratosphere-os')
+        if idx + 1 < len(rel):
+            return _parse_version_key(rel[idx + 1])
+    if 'skills' in rel:
+        idx = rel.index('skills')
+        if idx >= 2 and rel[idx - 1] == 'dist':
+            return _parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    return _parse_version_key('')
+
+
 def _find_board_template():
+    rel_tpl = Path('plan-html') / 'assets' / 'templates' / 'board.html'
     candidates = [
-        at_top('.agents/skills/plan-html/assets/templates/board.html'),
-        at_top('src/skills/plan-html/assets/templates/board.html'),
-        at_top('dist/skills/plan-html/assets/templates/board.html'),
-        Path(__file__).resolve().parent.parent / 'skills/plan-html/assets/templates/board.html'
+        at_top(f'.agents/skills/{rel_tpl.as_posix()}'),
+        at_top(f'src/skills/{rel_tpl.as_posix()}'),
+        at_top(f'dist/skills/{rel_tpl.as_posix()}'),
     ]
+    env_skills = os.environ.get('STRATOSPHERE_PLUGIN_SKILLS')
+    if env_skills:
+        candidates.append(Path(env_skills) / rel_tpl)
+    home = Path.home()
+    candidates.extend([
+        *sorted((home / '.gemini' / 'config' / 'plugins').glob(f'*/skills/{rel_tpl.as_posix()}'), reverse=True),
+        home / '.gemini' / 'config' / 'plugins' / 'stratosphere-os' / 'skills' / rel_tpl,
+        home / '.gemini' / 'antigravity' / 'plugins' / 'stratosphere-os' / 'skills' / rel_tpl,
+        home / '.gemini' / 'config' / 'skills' / rel_tpl,
+        home / '.claude' / 'skills' / rel_tpl,
+    ])
+    claude_cache = home / '.claude' / 'plugins' / 'cache'
+    if claude_cache.is_dir():
+        hits = list(claude_cache.glob(f'**/{rel_tpl.as_posix()}'))
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
+    candidates.append(Path(__file__).resolve().parent.parent / 'skills' / rel_tpl)
     for p in candidates:
         if p.is_file():
             return p
-    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, or dist/skills")
+    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, dist/skills, or installed plugin bundles")
 
 
 def _render_board_html(store, issues_list, a):

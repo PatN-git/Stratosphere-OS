@@ -43,6 +43,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
 import argparse
 import fnmatch
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -117,11 +118,64 @@ def glob_rx(glob):
     return re.compile(rf"^{rx}$")
 
 
-def risk_rules(risk_paths):
+def _parse_version_key(v_str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip("v")
+    return tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r"[-.+_]", cleaned))
+
+
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a path inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if "stratosphere-os" in rel:
+        idx = rel.index("stratosphere-os")
+        if idx + 1 < len(rel):
+            return _parse_version_key(rel[idx + 1])
+    if "skills" in rel:
+        idx = rel.index("skills")
+        if idx >= 2 and rel[idx - 1] == "dist":
+            return _parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    return _parse_version_key("")
+
+
+def _resolve_risk_paths(risk_paths):
+    """Resolve merge-risk-paths.md; explicit --risk-paths never falls back."""
+    if risk_paths is not None:
+        p = Path(risk_paths)
+        return p if p.is_file() else None
+    rel_ref = Path("4a-verify-and-ship") / "references" / "merge-risk-paths.md"
+    top = git("rev-parse", "--show-toplevel")
+    candidates = []
+    for rel in (DEFAULT_RISK_PATHS, "src/references/merge-risk-paths.md", f"dist/skills/{rel_ref.as_posix()}"):
+        candidates.append(Path(rel))
+        if top:
+            candidates.append(Path(top) / rel)
+    env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
+    if env_skills:
+        candidates.append(Path(env_skills) / rel_ref)
+    home = Path.home()
+    candidates.extend([
+        *sorted((home / ".gemini" / "config" / "plugins").glob(f"*/skills/{rel_ref.as_posix()}"), reverse=True),
+        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills" / rel_ref,
+        home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills" / rel_ref,
+        home / ".gemini" / "config" / "skills" / rel_ref,
+        home / ".claude" / "skills" / rel_ref,
+    ])
+    claude_cache = home / ".claude" / "plugins" / "cache"
+    if claude_cache.is_dir():
+        hits = list(claude_cache.glob(f"**/{rel_ref.as_posix()}"))
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
+    return next((c for c in candidates if c.is_file()), None)
+
+
+def risk_rules(risk_paths=None):
     rules = []
-    p = Path(risk_paths)
-    if not p.is_file():
-        print(f"[PR-BODY-WARN] risk rules not found at {risk_paths}; risk: [none] is unverified", file=sys.stderr)
+    p = _resolve_risk_paths(risk_paths)
+    if p is None:
+        shown = DEFAULT_RISK_PATHS if risk_paths is None else risk_paths
+        print(f"[PR-BODY-WARN] risk rules not found at {shown}; risk: [none] is unverified", file=sys.stderr)
     else:
         for cell, tag in TABLE_RULE_RE.findall(p.read_text(encoding="utf-8-sig")):
             rules += [(glob_rx(g), tag) for g in re.findall(r"`([^`]+)`", cell)]
@@ -432,7 +486,7 @@ def slice_rows(args, prior, features, base):
     return rows
 
 
-def changed_risk_tags(base, risk_paths):
+def changed_risk_tags(base, risk_paths=None):
     files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines()
     rules = risk_rules(risk_paths)
     return sorted({tag for f in files for rx, tag in rules if rx.match(f.replace("\\", "/"))})
@@ -610,7 +664,7 @@ def build_parser():
     b.add_argument("--prior-body-file")
     b.add_argument("--base", help="base ref; default: merge-base with origin/HEAD's branch, then origin/main|master, "
                                   "main|master; none resolves -> exit 2")
-    b.add_argument("--risk-paths", default=DEFAULT_RISK_PATHS)
+    b.add_argument("--risk-paths", default=None)
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
     b.add_argument("--epic", action="append", default=[],

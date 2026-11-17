@@ -685,3 +685,49 @@ def test_suite_plugin_mode_allows_third_party_skills(tmp_path):
     assert "Delivery mode: plugin" in r.stdout
 
 
+def _isolated_check_suite(tmp_path, monkeypatch):
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    fake_script = tmp_path / "consumer" / ".agents" / "scripts" / "check_suite.py"
+    home = tmp_path / "home"
+    home.mkdir(exist_ok=True)
+    monkeypatch.setattr(check_suite, "__file__", str(fake_script))
+    monkeypatch.setattr(check_suite, "PLUGIN_ROOT", fake_script.parent.parent)
+    monkeypatch.delenv("STRATOSPHERE_PLUGIN_SKILLS", raising=False)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    return check_suite, home
+
+
+def test_locate_plugin_bundle_resolves_gemini_marketplace_newest(tmp_path, monkeypatch):
+    check_suite, home = _isolated_check_suite(tmp_path, monkeypatch)
+    older = home / ".gemini" / "config" / "plugins" / "100" / "skills"
+    newer = home / ".gemini" / "config" / "plugins" / "200" / "skills"
+    for d in (older, newer):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+
+    assert check_suite.locate_plugin_bundle() == newer
+
+
+def test_locate_plugin_bundle_sorts_claude_cache_by_semver(tmp_path, monkeypatch):
+    check_suite, home = _isolated_check_suite(tmp_path, monkeypatch)
+    mkt = home / ".claude" / "plugins" / "cache" / "stratosphere-marketplace" / "stratosphere-os"
+    v_low = mkt / "5.2.1" / "dist" / "skills"
+    v_high = mkt / "5.3.0" / "dist" / "skills"
+    for d in (v_low, v_high):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+
+    assert check_suite.locate_plugin_bundle() == v_high
+
+    # Also verify multi-digit minor version (1.10.0 > 1.9.0) regardless of glob return order.
+    v_1_9 = mkt / "1.9.0" / "dist" / "skills"
+    v_1_10 = mkt / "1.10.0" / "dist" / "skills"
+    for d in (v_low, v_high):
+        shutil.rmtree(d.parent.parent)
+    for d in (v_1_9, v_1_10):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+    monkeypatch.setattr(check_suite.glob, "glob", lambda *a, **k: [str(v_1_9), str(v_1_10)])
+    assert check_suite.locate_plugin_bundle() == v_1_10
+
+
+
