@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Tests for BT-270: Obsidian wikilink migration CLI (scripts/migrations/migrate_obsidian_links.py)."""
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
-
-import pytest
 
 from conftest import REPO_ROOT, git
 
