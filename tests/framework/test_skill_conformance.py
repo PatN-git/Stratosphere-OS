@@ -87,6 +87,35 @@ def test_every_cited_reference_ships(host):
 
 
 @pytest.mark.parametrize("host", HOSTS)
+def test_self_contained_execution_skills_anchor_paths_to_skill_dir(host):
+    """plan-html and concept-brainstorm must anchor assets/ and references/ to <skill-dir>,
+    never bare relative paths or <workspace>/skills/... that fail in plugin mode (BT-275)."""
+    skills = {d.name: d for d in skill_dirs(host)}
+    plan_dir = skills["plan-html"]
+    plan_skill = (plan_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/assets/templates/index.md`" in plan_skill
+    assert "`<skill-dir>/assets/templates/`" in plan_skill
+    assert "`<skill-dir>/references/html-patterns.md`" in plan_skill
+    assert "directory containing this `SKILL.md`" in plan_skill
+    assert "never the workspace root" in plan_skill
+    assert "<workspace>/skills/" not in plan_skill
+    assert (plan_dir / "assets" / "templates" / "index.md").is_file()
+    assert (plan_dir / "references" / "html-patterns.md").is_file()
+
+    plan_index = (plan_dir / "assets" / "templates" / "index.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/references/html-patterns.md`" in plan_index
+    assert "never the workspace root" in plan_index
+
+    brainstorm_dir = skills["concept-brainstorm"]
+    brainstorm = (brainstorm_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/references/techniques.md`" in brainstorm
+    assert "directory containing this `SKILL.md`" in brainstorm
+    assert "never the workspace root" in brainstorm
+    assert "<workspace>/skills/" not in brainstorm
+    assert (brainstorm_dir / "references" / "techniques.md").is_file()
+
+
+@pytest.mark.parametrize("host", HOSTS)
 def test_lifecycle_skills_declare_user_only(host):
     """Every host that honours a manual-only signal must get one."""
     missing = []

@@ -1,9 +1,9 @@
 {
   "artifacts": {
     "assets/templates/constitution/AGENTS.md": {
-      "sha256": "a78b54084969f942148afdbca9da99c7320dab336bdb4c8b49bef7c1d896b80a",
-      "timestamp": "2026-11-10",
-      "version": "3.7.0"
+      "sha256": "bee8a57f0bac4b2f2b0613bb5d4ffb6090d6ac059188ece9d256ed20f3bed553",
+      "timestamp": "2026-11-17",
+      "version": "3.7.1"
     },
     "assets/templates/constitution/CLAUDE.md": {
       "sha256": "5764d6def9e0c6bd0ed43d007fc2cca000858a52e4993b0c356b6bb19176b708",
@@ -521,9 +521,9 @@
       "version": "1.1.0"
     },
     "skills/concept-brainstorm/SKILL.md": {
-      "sha256": "624e09595f2d8dbb94854f4318a558ff373cd8223a662aad0f63002c30f7e66c",
-      "timestamp": "2026-07-24",
-      "version": "1.5.0"
+      "sha256": "b255b0f5934001b6cb04f9ed8e7f41a09c94eb4635948fec9e92f87bdf744aa9",
+      "timestamp": "2026-11-17",
+      "version": "1.5.1"
     },
     "skills/concept-brainstorm/references/techniques.md": {
       "sha256": "00cf966dd2c058066bebc05aa08a3876048775393ab2cb81200e6c73631e06f4",
@@ -541,14 +541,14 @@
       "version": "1.7.0"
     },
     "skills/plan-html/SKILL.md": {
-      "sha256": "e685f83ef0e5bca925f022be73abd4e0fe6e9252624ba05a6a4478e4eb8f1582",
-      "timestamp": "2026-11-02",
-      "version": "1.2.2"
+      "sha256": "44297912eeddcdd1f77af31de63c53df4ac0670a9e91beada94901bc4e2e9e24",
+      "timestamp": "2026-11-17",
+      "version": "1.2.3"
     },
     "skills/plan-html/assets/templates/index.md": {
-      "sha256": "3975b5f55c58453360d3962a629f6bc9d850f7cfb4aecab8b59d6c9a1814a24c",
-      "timestamp": "2026-11-02",
-      "version": "1.3.4"
+      "sha256": "9387a722050b8f39a0834bf6c71698e73b21e53adfe1a39870e986f7db935226",
+      "timestamp": "2026-11-17",
+      "version": "1.3.5"
     },
     "skills/plan-html/references/html-patterns.md": {
       "sha256": "b269ca899f6013da71c6176b396d0ad1c1e1377ad3a3129c7244c4d02453253f",

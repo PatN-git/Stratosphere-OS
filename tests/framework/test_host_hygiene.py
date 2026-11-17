@@ -82,6 +82,20 @@ def test_constitution_section_8_identical_across_copies():
 
 
 @pytest.mark.parametrize("rel", CONSTITUTIONS)
+def test_constitution_skill_resolution_supports_plugin_mode(rel):
+    text = read(rel)
+    sec1 = text[text.index("## 1."):text.index("## 2.")]
+    sec2 = text[text.index("## 2."):text.index("## 3.")]
+    sec8 = text[text.index("## 8."):]
+    assert "`<skills-dir>/`" in sec1 and "`.agents/skills/`" not in sec1
+    assert "resolve to `<skills-dir>/`" in sec2 and "active plugin bundle" in sec2
+    assert "plugin bundle" in sec8
+    assert "`references/` & `assets/` resolve from `<skill-dir>`" in sec8
+    assert "Without plugin support: `python .agents/scripts/delivery.py --restore-skills`" in sec8
+    assert "In plugin mode, restore skills" not in sec8
+
+
+@pytest.mark.parametrize("rel", CONSTITUTIONS)
 def test_constitution_has_no_stray_backtick_line(rel):
     # BT-154 F5: a backtick-only last line shipped to consumers.
     text = read(rel)

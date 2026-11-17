@@ -1,8 +1,8 @@
 ---
 name: StratosphereOS Architect
 description: High-density 3-layer orchestration constitution with Karpathy-style behavior and token optimized deterministic execution.
-version: "3.7.0"
-timestamp: 2026-11-10
+version: "3.7.1"
+timestamp: 2026-11-17
 ---
  
 # STRATOSPHEREOS ARCHITECT
@@ -11,14 +11,14 @@ timestamp: 2026-11-10
 <project vision — set during stratosphere-setup>
  
 ## 1. Architecture
-- **Layer 1: Lifecycle Skills** (`.agents/skills/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent (§8). Only an **orchestrator** (below) may invoke other skills.
+- **Layer 1: Lifecycle Skills** (`<skills-dir>/`, `metadata.stratos.layer: lifecycle`) -> Human-In-The-Loop (HITL) processes (e.g., Discover, Design, Implement, Review). These dictate the step-by-step lifecycle. **Do not execute them autonomously** — enforcement is host-dependent (§8). Only an **orchestrator** (below) may invoke other skills.
 - **Layer 2: Orchestration** -> You are the router and decision-maker. Check for existing Skills and execution tools before acting and execute via the smallest reversible step.
-- **Layer 3: Execution Skills** (`.agents/skills/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
+- **Layer 3: Execution Skills** (`<skills-dir>/`, `metadata.stratos.layer: execution`) -> Deterministic, autonomous (AFK) tools and specialized playbooks. **Layers 1 and 3 share one directory** — they are distinguished by **frontmatter, never by location**. (Note: Main application code lives in `/src` — adhere to `ARCHITECTURE.md` for structure).
 - **Orchestrators:** user-invoked lifecycle skills that sequence other skills by command name within their authorized run, the only sanctioned skill-invoking-skill. An orchestrator follows each unit's own body, never copies it; units stay standalone and keep their own commits and HITL halts. Mode `HITL` (units' halts reach the user) or `AFK` (autonomous within the run). Nesting budget: §8.
 
 ## 2. Strict Precedence
 - **Precedence:** 1. Core Rules (`.agents/rules/`) | 2. Direct User Request | 3. Active Lifecycle Skill (`metadata.stratos.layer: lifecycle`) | 4. Autonomous Execution Skill (`metadata.stratos.layer: execution`) | 5. Core Operating Principles.
-- **Discriminator:** levels 3 and 4 both resolve to `.agents/skills/`. Read `metadata.stratos.layer` to tell them apart — never the path. `metadata.stratos.mode` (`HITL` | `AFK`) describes execution style **after** invocation and plays no part in precedence.
+- **Discriminator:** levels 3 and 4 both resolve to `<skills-dir>/` (active plugin bundle or `.agents/skills/`). Read `metadata.stratos.layer` to tell them apart — never the path. `metadata.stratos.mode` (`HITL` | `AFK`) describes execution style **after** invocation and plays no part in precedence.
 - **Safety:** Core safety, security, and environment hygiene are invariant. If a user request or skill instruction violates a Core Rule or architecture constraint, stop execution immediately, surface the violation, and await user confirmation.
 
 ## 3. Files, Security & Environments
@@ -66,7 +66,7 @@ timestamp: 2026-11-10
 - **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine for cosmetic fixes; Standard Mode with Complex for tradeoffs).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Trust tags, [[ID]] syntax, memory usage protocols).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Metadata contracts, type registries, bundle constraints).
-- **Host activation.** One canonical body: this file. A host that does not load it by default gets a two-line pointer file (`CLAUDE.md`, `GEMINI.md`); never restate the rules there.
-  - *Skills:* if a named skill (e.g. `code-simplifier`) is not in the host's registered list, read `<skills-dir>/<name>/SKILL.md` on disk (`.agents/skills/` or `.claude/skills/`, project or `~`) before calling it unavailable. In plugin mode, restore skills via `python .agents/scripts/delivery.py --restore-skills`.
+- **Host activation.** Canonical body: this file; pointer files (`CLAUDE.md`, `GEMINI.md`) never restate it.
+  - *Skills:* if `code-simplifier` or another skill is unlisted, read `<skills-dir>/<name>/SKILL.md` on disk (plugin bundle, `.agents/skills/`, `.claude/skills/`, project/`~`) before calling it unavailable; `references/` & `assets/` resolve from `<skill-dir>`. Without plugin support: `python .agents/scripts/delivery.py --restore-skills`.
 - **Subagent nesting.** Use the depth the host allows, ≤ 2 below the invoking session (leaves one level for an outer orchestrator). Every subagent step must also run inline. Subagents never commit, except a `3d` implementer dispatched by `3z` (the §4 single writer for code); auditors, drafters and scanners are read-only (scratch writes to `.tmp/` excepted). Prefer workspace `shared/inherit` for sequential work: worktree isolation may branch from the default branch and lack untracked deps (e.g. `node_modules`).
-- **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only: the host's own marker field enforces it where supported, otherwise the skill's `description` says so.
+- **HITL enforcement is host-dependent.** A Layer 1 skill is user-invoked only: enforced by the host's marker field, else `description`.

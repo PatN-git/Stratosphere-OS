@@ -432,6 +432,14 @@ def test_constitution_states_skill_locations_and_disk_resolution_rule():
     assert ".claude/skills" in text and ".agents/skills" in text
     assert "code-simplifier" in text
     assert "read `<skills-dir>/<name>/SKILL.md` on disk" in text and "before calling it unavailable" in text
+    assert "plugin bundle" in text
+    assert "`references/` & `assets/` resolve from `<skill-dir>`" in text
+    assert "Without plugin support: `python .agents/scripts/delivery.py --restore-skills`" in text
+    assert "In plugin mode, restore skills" not in text
+    sec1 = text[text.index("## 1."):text.index("## 2.")]
+    sec2 = text[text.index("## 2."):text.index("## 3.")]
+    assert "`<skills-dir>/`" in sec1 and "(.agents/skills/" not in sec1
+    assert "resolve to `<skills-dir>/`" in sec2
 
 
 def test_start_session_without_memory_gives_one_line_setup_guidance():
