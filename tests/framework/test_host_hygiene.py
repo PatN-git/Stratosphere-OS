@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# md-crosscheck: constitution, host-matrix, and authoring guides vs scaffold, check_suite, and build REF_CITE
 """BT-148 host-hygiene contract: the always-loaded docs and shipped files must match what the
 hosts actually do (upstream-watch 2026-10-06), and two dead artifacts must stay gone.
 
@@ -6,6 +7,7 @@ Pins the machine-checkable acceptance criteria only; prose wording beyond these 
 """
 from __future__ import annotations
 
+import importlib.util
 import re
 from pathlib import Path
 
@@ -14,6 +16,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONSTITUTIONS = ["src/constitution/AGENTS.md", "AGENTS.md"]  # product source + this repo's installed copy
 HOST_MATRIX = "src/dev-skills/improve-lifecycle-skills/references/host-matrix.md"
+AUTHORING_SKILL = "src/dev-skills/improve-lifecycle-skills/SKILL.md"
+AUTHORING_PLAYBOOK = "src/dev-skills/improve-lifecycle-skills/references/playbook.md"
 HOST_NAMES = ("Claude Code", "Gemini CLI", "Antigravity", "Codex", "Cursor", "Devin", "Copilot", "OpenClaw")
 HOST_SECTION_BUDGET = 700  # chars, ~175 tokens: AGENTS.md is always loaded, so per-host facts live in HOST_MATRIX
 OKF_PROTOCOL = "src/rules/okf-protocol.md"
@@ -151,4 +155,50 @@ def test_plan_html_hooks_json_removed():
     for root in ("src", "dist"):
         dead = REPO_ROOT / root / "skills" / "plan-html" / "hooks.json"
         assert not dead.exists(), f"{dead.relative_to(REPO_ROOT).as_posix()} must stay deleted (rebuild dist after removing the source)"
+
+
+def _load_module(name: str, rel: str):
+    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / rel)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_host_matrix_documents_plugin_dirs_and_delivery_modes():
+    text = read(HOST_MATRIX)
+    check_suite_src = read("src/scripts/check_suite.py")
+    scaffold_src = read("src/scripts/scaffold.py")
+
+    for plugin_dir in (
+        "~/.gemini/config/plugins/stratosphere-os/skills/",
+        "~/.gemini/config/plugins/*/skills/",
+        "~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/",
+    ):
+        assert plugin_dir in text, f"{HOST_MATRIX} must document {plugin_dir}"
+
+    assert ".gemini" in check_suite_src and ".claude" in check_suite_src
+    assert 'SKILL_TARGETS = [".agents/skills"]' in scaffold_src
+    assert "SKILL_TARGETS" in text and '[".agents/skills"]' in text
+    assert "`plugin`" in text and "`in-repo`" in text
+
+
+def test_authoring_guides_prescribe_skill_dir_and_skills_dir_citations():
+    build_mod = _load_module("build_mod_hygiene", "build/build.py")
+    check_suite_mod = _load_module("check_suite_mod_hygiene", "src/scripts/check_suite.py")
+    sample = "Read <skill-dir>/references/sample.md"
+    assert build_mod.cited_refs(sample) == {"sample.md"}
+    assert check_suite_mod.cited_refs(sample) == {"sample.md"}
+
+    playbook = read(AUTHORING_PLAYBOOK)
+    skill_md = read(AUTHORING_SKILL)
+
+    for rel, text in ((AUTHORING_PLAYBOOK, playbook), (AUTHORING_SKILL, skill_md)):
+        assert "<skill-dir>/references/<file>.md" in text, f"{rel} must prescribe <skill-dir>/references/<file>.md"
+        assert "<skills-dir>/<name>/SKILL.md" in text, f"{rel} must prescribe <skills-dir>/<name>/SKILL.md"
+        assert ".agents/skills/<name>/references/<file>.md" not in text, (
+            f"{rel} must not prescribe hardcoded .agents/skills/<name>/references/<file>.md"
+        )
+        assert "`plugin`" in text and "`in-repo`" in text, f"{rel} must document plugin vs in-repo delivery"
+
+    assert "code-simplifier" in playbook and "on disk" in playbook
 

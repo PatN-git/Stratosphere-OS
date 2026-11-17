@@ -8,6 +8,7 @@ an installed bundle, and check_suite legacy cleans leftovers), and the release c
 plugin validators.
 """
 import glob
+import importlib.util
 import re
 from pathlib import Path
 
@@ -162,3 +163,31 @@ def test_proposal_status_records_what_shipped():
     for needle in ("PR #151", "BT-148", "BT-149", "BT-150", "host-matrix.md", "kept as evidence"):
         assert needle in status, f"Status line must mention {needle}"
     assert "`AGENTS.md:69-71`" in status and "no longer exists" in status
+
+
+def test_setup_documents_plugin_and_in_repo_delivery_with_accurate_counts():
+    spec = importlib.util.spec_from_file_location("check_suite_pb", REPO_ROOT / "src" / "scripts" / "check_suite.py")
+    check_suite = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(check_suite)
+
+    expected_bundled = len(check_suite.BUNDLED_SKILLS)
+    expected_lifecycle = len(check_suite.LIFECYCLE_SKILLS)
+    dist_count = len([p for p in (REPO_ROOT / "dist" / "skills").iterdir() if (p / "SKILL.md").is_file()])
+    assert dist_count == expected_bundled
+
+    text = read(SETUP_SKILL)
+    assert "`plugin`" in text and "`in-repo`" in text
+    assert f"{expected_bundled} bundled skills" in text or f"**{expected_bundled}** bundled skills" in text
+    assert f"{expected_lifecycle} lifecycle skills" in text or f"**{expected_lifecycle}** lifecycle skills" in text
+    for stale in ("22 bundled", "23 bundled", "25 lifecycle"):
+        assert stale not in text.lower(), f"{SETUP_SKILL} still contains stale count {stale!r}"
+
+
+def test_environment_fix_ladder_rung4_supports_plugin_and_in_repo():
+    src_text = read("src/references/environment-fix-ladder.md")
+    rung4 = next(l for l in src_text.splitlines() if l.startswith("4. **Framework feedback:**"))
+    assert "<name> under plugin bundle or .agents/skills/" in rung4
+    assert "(`.agents/skills/<name>`)" not in rung4
+    dist_text = read("dist/skills/0b-stop-session/references/environment-fix-ladder.md")
+    dist_rung4 = next(l for l in dist_text.splitlines() if l.startswith("4. **Framework feedback:**"))
+    assert dist_rung4 == rung4

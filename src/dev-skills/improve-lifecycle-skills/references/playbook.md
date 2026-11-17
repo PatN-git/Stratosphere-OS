@@ -2,10 +2,10 @@
 type: reference
 title: Improving Lifecycle Skills
 description: Dev-time discipline for authoring and improving StratOS's own lifecycle skills (src/workflows) and execution skills (src/skills). Repo-local guidance — NOT shipped to consumer projects.
-version: "2.2.0"
+version: "2.3.0"
 generated:
   by: Patrick Nennewitz
-  at: 2026-11-05
+  at: 2026-11-17
 ---
 
 # Improving Lifecycle Skills
@@ -24,7 +24,7 @@ Both install to the same place. The distinction is **frontmatter, never location
 
 | | **Lifecycle skill** (`src/workflows/`) | **Execution skill** (`src/skills/`) |
 |---|---|---|
-| Installs as | `.agents/skills/<name>/SKILL.md` (+ `.claude/skills/`) — `/<name>` on every host | same path, same shape |
+| Installs as | `<skills-dir>/<name>/SKILL.md` (`plugin` delivery: host plugin bundle; `in-repo` delivery: `.agents/skills/<name>/SKILL.md`) — `/<name>` on every host | same path, same shape |
 | `metadata.stratos.layer` | `lifecycle` | `execution` |
 | `metadata.stratos.mode` | `HITL` or `AFK` | — |
 | Invoked by | **user only** — enforced by frontmatter, not by channel | model **or** user, via its `description` |
@@ -33,8 +33,8 @@ Both install to the same place. The distinction is **frontmatter, never location
 | Role | orchestrates a phase; **may delegate to** execution skills | reusable discipline |
 
 **Consequences you'll keep hitting:**
-- An execution skill can fire in an unscaffolded project, so it **cannot depend on a scaffolded file** — bundle its discipline inline.
-- Both kinds live in `.agents/skills/`. To tell them apart, read `metadata.stratos.layer`. Never infer from the path.
+- An execution skill can fire in an unscaffolded project, so it **cannot depend on a scaffolded file** — bundle its discipline inline (and anchor its own `references/` / `assets/` to `<skill-dir>/` so `plugin` mode resolves against the plugin directory, never the workspace root).
+- Both kinds resolve under `<skills-dir>/` (the host plugin bundle in `plugin` delivery, or `.agents/skills/` in `in-repo` delivery). To tell them apart, read `metadata.stratos.layer`. Never infer from the path.
 - `AGENTS.md` §2 precedence keys off `layer`. An artifact without one cannot be placed in the precedence order.
 
 ### Frontmatter contract
@@ -56,9 +56,9 @@ A reference used by several skills is authored **once** in `src/references/` and
 
 ### Distribution — bundled vs on-demand (and where a launcher must live)
 
-- **Bundled skills** live in `src/skills/` → build → `dist/*/skills/`; they ship with the plugin and register globally.
-- **On-demand packs** (opt-in / experimental) live in `src/experimental/<name>/`, are registered in `external-skills.json`, and are fetched by **`sync-skills`** into `.agents/skills/<name>/`. `build/validate.py` guards that no `experimental/` path leaks into `dist/`.
-- **`sync_skills.py` installs by *name* under `.agents/skills/<name>/`** — the same namespace bundled lifecycle skills occupy. A fetched pack is therefore `/<name>`-invocable on every host, including Antigravity. `sync_skills.py` carries a **reserved-name guard**: it must never overwrite a bundled skill directory.
+- **Bundled skills** (`src/workflows/`, `src/commands/`, `src/skills/` → build → `dist/skills/`) ship with the plugin (28 skills: 24 lifecycle + 4 execution). Under **`plugin` delivery** (default for plugin hosts), the host serves them directly from its plugin bundle and `.agents/skills/` stays free of bundled copies (`check_suite.py suite` rejects duplicates). Under **`in-repo` delivery** (fallback for non-plugin hosts, or `delivery.py --restore-skills`), `scaffold.py` copies all 28 bundled skills into workspace `.agents/skills/<name>/`.
+- **On-demand packs** (opt-in / experimental) live in `src/experimental/<name>/`, are registered in `external-skills.json`, and are fetched by **`sync-skills`** into `.agents/skills/<name>/` (regardless of `plugin` vs `in-repo` delivery). `build/validate.py` guards that no `experimental/` path leaks into `dist/`.
+- **`sync_skills.py` installs by *name* under `.agents/skills/<name>/`** — the same namespace bundled skills occupy in `in-repo` delivery. A fetched pack is therefore `/<name>`-invocable on every host, including Antigravity. `sync_skills.py` carries a **reserved-name guard**: it must never overwrite a bundled skill directory.
 - **A bundled launcher is now optional, not structural.** An on-demand pack is directly invocable once fetched, so a launcher earns its place only by existing when the pack does **not** (e.g. to guide the user to run `/sync-skills`). Name it distinctly from the pack it fronts.
 
 ## 2. Shared components over duplication — propose the refactor
@@ -74,7 +74,7 @@ Keep each meaning in **one place** (**single source of truth**). Duplication cos
 3. **Propose the refactoring — don't silently rewrite.** State *what* to extract, *where* it lives, *who points at it*; get approval (especially for load-bearing content); then extract, repoint consumers, rebuild.
 
 ### Where it lives — and which artifact may use it (ties to §1)
-- **Shared reference → `src/references/*`** → fans out to `.agents/skills/<consumer>/references/<name>.md`. Skills cite it by that path; consumers **point, never re-paste, never cross-read another skill's body**. Fix a weak **context pointer**'s *wording*, don't inline. **When the citation is passed to an isolated subagent, use the absolute `.agents/skills/<name>/references/<file>.md`** — a relative path resolves against repo-root cwd and fails silently.
+- **Shared reference → `src/references/*`** → fans out to `dist/skills/<consumer>/references/<name>.md` (`<skill-dir>/references/<name>.md`). Skills cite it as `references/<file>.md` or `<skill-dir>/references/<file>.md`; consumers **point, never re-paste, never cross-read another skill's body**. Fix a weak **context pointer**'s *wording*, don't inline. **When the citation is passed to an isolated subagent, write `<skill-dir>/references/<file>.md` (or `<skills-dir>/<name>/SKILL.md`) and instruct the parent to resolve `<skill-dir>`/`<skills-dir>` to an absolute path before dispatch** — a relative path resolves against repo-root cwd and fails silently, and hardcoded `.agents/skills/` paths break in `plugin` delivery.
 - **Execution skills can't rely on a scaffolded path** (§1). Instead of extracting their content to a project-local file, **have the lifecycle skill delegate to the execution skill** and keep the latter self-contained.
 
 ### Worked examples in this repo
@@ -91,7 +91,7 @@ Each is one move; reach for the **leading-word palette** in [`glossary.md`](glos
 - **Completion criterion** — end every step on a bound that is *checkable* and, where it matters, *exhaustive* ("every AC maps to a passing test", not "looks complete"). This is the defence against **premature completion**. Live example: `3d`'s Slice Completion Gate.
 - **Progressive disclosure** — inline what every branch needs; push branch-specific **reference** behind a **context pointer** whose *wording* is reliable. Respect the skill self-containment limit (§1).
 - **Single source of truth** — one meaning, one place → §2.
-- **Cite skills by name, never by path** — a workflow names the skill (`code-simplifier`), not its `.agents/skills/…` path; the constitution's disk rule (read `<skills-dir>/<name>/SKILL.md` on disk before calling it unavailable) resolves the name on any host.
+- **Cite skills by name, never by path** — a workflow names the skill (`code-simplifier`), not a hardcoded `.agents/skills/…` path; the constitution's disk rule (read `<skills-dir>/<name>/SKILL.md` on disk — plugin bundle, `.agents/skills/`, `.claude/skills/`, project/`~` — before calling it unavailable) resolves the name on any host.
 - **Three nesting levels** — design every skill to work at level 0 (inline), 1 (one subagent) and 2 (subagent inside subagent), using whatever depth the host offers (AGENTS.md §8). Give each subagent step an inline fallback; never name host depth limits in skill text.
 - **One write, one step, one command** — every side-effecting action gets its own numbered step *and* its own command literal. A write left as prose next to a copy-pasteable command for a **different** action is the one that gets dropped: the agent anchors on the literal and the clause evaporates. Live example: `4a` Phase 5 — the PR-link comment was the opening clause of the status-write step and the only Phase 5 action without a command form; it was also the only one that reliably failed its own terminal gate (`[MIRROR-DRIFT: pr-link absent from issue comments]`). Splitting it out with `gh issue comment` ended the failure class. A deterministic gate (`terminal-sync-invariant.md`) catches the drop *after* it happens; this is the emission-side fix that stops it.
 
@@ -110,7 +110,7 @@ They read like over-statement but are the lever. Do **not** cut, dilute, summari
 - **Safety / irreversible-action invariants** — branch checks, "don't modify production code", PR-dup guards. Keep them universal — don't narrow one to sub-agent scope only.
 - **Sub-agent guardrails** (§2) — a dispatched sub-agent runs isolated and never sees surrounding prose; the guardrail is its **entire contract**. Keep every copy, verbatim.
 - **Leading-word tokens** — `[UNCOVERED]`, `seam`, `depth`, `[[G-xxx]]`/`[[A-xxx]]`/`[[DR-xxx]]`. Keep the **exact token**, never a synonym; never drop a `[[…]]` reference.
-- **Context-pointer paths** — cite the full installed path (`.agents/skills/<name>/references/<file>.md`, `.agents/rules/okf-protocol.md`), not a bare basename.
+- **Context-pointer paths** — cite the full anchored path (`<skill-dir>/references/<file>.md` or `references/<file>.md` inside a skill, `<skills-dir>/<name>/SKILL.md` across skills, `.agents/rules/okf-protocol.md` for workspace rules), not a bare basename.
 - **Per-action steps and their command literals** (§3) — never merge two side-effecting steps into one, and never demote a command literal to prose. The economy is real and the cost is a silently dropped write.
 
 ### Over-prune — the anti-pattern (guard against each)

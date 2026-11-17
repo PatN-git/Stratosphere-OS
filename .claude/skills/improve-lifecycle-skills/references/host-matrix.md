@@ -1,16 +1,16 @@
 ---
 type: reference
 title: Host Matrix
-description: Per-host facts StratOS depends on (AGENTS.md loading, skill directories, manual-only fields, trust, version floors) and why the pointer files stay. Dev-only; never shipped; kept out of the always-loaded constitution.
-version: "1.0.0"
+description: Per-host facts StratOS depends on (AGENTS.md loading, skill directories, plugin bundle paths, manual-only fields, trust, version floors) and why the pointer files stay. Dev-only; never shipped; kept out of the always-loaded constitution.
+version: "1.1.0"
 generated:
   by: Claude
-  at: "2026-10-06"
+  at: "2026-11-17"
 ---
 
 # Host Matrix
 
-As of 2026-10-06. Evidence and sources: `docs/research/upstream-watch-2026-10-06.md` (re-check when the watermarks in `docs/research/.upstream-watch.json` move). "reported" = from release notes or docs not re-verified here.
+As of 2026-10-06 (plugin bundle directories and delivery modes updated 2026-11-17). Evidence and sources: `docs/research/upstream-watch-2026-10-06.md` (re-check when the watermarks in `docs/research/.upstream-watch.json` move). "reported" = from release notes or docs not re-verified here.
 
 `AGENTS.md` §8 stays host-name-free on purpose: it is loaded in every session of every project, so each host fact there costs tokens everywhere. Every per-host fact lives here, read only when authoring or auditing skills.
 
@@ -27,20 +27,25 @@ As of 2026-10-06. Evidence and sources: `docs/research/upstream-watch-2026-10-06
 - **Trust cannot be stated in `AGENTS.md`**: an untrusted project never loads it, so the note could not reach the agent. It lives in the README install section and the setup skill (Checkpoint 1); a skill cannot read host trust state, so it is documented, not checked.
 
 ## Skills
-| Host | Project skill dirs | Manual-only field |
-|---|---|---|
-| Claude Code | `.claude/skills/`, `~/.claude/skills/` (never `.agents/skills/`) | `disable-model-invocation` |
-| Cursor, OpenClaw | `.agents/skills/` | `disable-model-invocation` |
-| Copilot (VS Code) | `.agents/skills/`, `.github/skills/`, `.claude/skills/` | `disable-model-invocation` |
-| Devin | `.agents/skills/` | `triggers: ["user"]` |
-| Codex | `.agents/skills/` | `agents/openai.yaml` sidecar |
-| Antigravity | `.agents/skills/`; app global `~/.gemini/config/skills/` | none: `description` only |
-| Gemini CLI | `.agents/skills/` (reported) | none: `description` only |
+| Host | Project / global skill dirs | Plugin bundle dirs | Manual-only field |
+|---|---|---|---|
+| Claude Code | `.claude/skills/`, `~/.claude/skills/` (never `.agents/skills/`) | `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/` | `disable-model-invocation` |
+| Cursor, OpenClaw | `.agents/skills/` | — (use `in-repo` delivery) | `disable-model-invocation` |
+| Copilot (VS Code) | `.agents/skills/`, `.github/skills/`, `.claude/skills/` | — (use `in-repo` delivery) | `disable-model-invocation` |
+| Devin | `.agents/skills/` | — (use `in-repo` delivery) | `triggers: ["user"]` |
+| Codex | `.agents/skills/` | — (use `in-repo` delivery) | `agents/openai.yaml` sidecar |
+| Antigravity | `.agents/skills/`; app global `~/.gemini/config/skills/` | `~/.gemini/config/plugins/stratosphere-os/skills/` (`agy plugin install dist`), `~/.gemini/config/plugins/*/skills/` (marketplace) | none: `description` only |
+| Gemini CLI | `.agents/skills/` (reported) | — | none: `description` only |
 
 - **Observed (`agy` 1.3.0, one run each):** the Antigravity CLI read a skill in `~/.gemini/config/skills/` and not one in `~/.gemini/antigravity-cli/skills/`, whatever its docs say.
 - **Copilot** reads `.agents/skills/` natively, so StratOS writes no second copy (`SKILL_TARGETS` is `[".agents/skills"]`); `.github/skills/` would double-list.
-- **Claude Code** skills arrive by marketplace, `npx skills add -a claude-code`, or a plain copy; the marketplace plugin also registers the bundled suite.
+- **Claude Code** skills arrive by marketplace cache (`~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/`), `npx skills add -a claude-code`, or a plain copy; the marketplace plugin registers the bundled suite host-wide.
 - **Antigravity** honours none of the manual-only fields, so every lifecycle `description` restates its user-only status (a prompt-level signal, not enforcement).
+
+### Skill delivery modes (`plugin` vs `in-repo`)
+`scaffold.py` records `skill_delivery` in `.agents/.stratosphere-lock.json` (`delivery.py --set-mode <plugin|in-repo>` switches modes; `delivery.py --restore-skills` restores bundled skills into `.agents/skills/`):
+- **`plugin` delivery (default for plugin hosts — Antigravity, Claude Code):** the host serves all 28 bundled skills directly from its plugin bundle directory above. Workspace `.agents/skills/` holds only `.gitkeep` and on-demand third-party packs (`check_suite.py suite` rejects duplicate bundled skills in `.agents/skills/`, and `scaffold.py` quarantines modified copies to `.agents/custom-skills/`).
+- **`in-repo` delivery (fallback for non-plugin hosts — Cursor, Codex, Devin, OpenClaw, Copilot):** `scaffold.py` copies all 28 bundled skills into workspace `.agents/skills/<name>/` (`SKILL_TARGETS` stays `[".agents/skills"]`).
 
 ## Glob-scoped rules
 `.agents/rules/` (Antigravity `trigger`/`globs`) and `.claude/rules/` (Claude Code `paths:`; >= 2.1.288 loads them when a file is written). Contract: `okf-protocol.md` §2.1.
