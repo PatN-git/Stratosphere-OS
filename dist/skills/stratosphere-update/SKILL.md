@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.10.0"
-timestamp: 2026-11-12
+version: "1.11.0"
+timestamp: 2026-11-18
 ---
 
 # StratosphereOS Update Flow
@@ -100,11 +100,8 @@ _Completion criterion:_ Suite confirmed whole, legacy paths removed, declined, o
 
 ## Phase 1: Compute Update Scope
 
-1. **Preview dry-run:**
-   Run `python <plugin>/scripts/scaffold.py --update --dry-run` (using `<plugin>` located in Phase 0) from project root to inspect workspace, match versions, and write `.tmp/stratosphere-update-worklist.json`.
-
-2. **Read worklist:**
-   Load and parse `.tmp/stratosphere-update-worklist.json`.
+1. **Preview dry-run:** Run `python <plugin>/scripts/scaffold.py --update --dry-run` (using `<plugin>` from Phase 0) from project root to inspect workspace, match versions, and write `.tmp/stratosphere-update-worklist.json`.
+2. **Read worklist:** Load and parse `.tmp/stratosphere-update-worklist.json`.
 
 ---
 
@@ -119,12 +116,12 @@ For each block in `preserved_files` flagged with `status: "conflict"`, perform a
 - **Frontmatter:** Copy project file's frontmatter verbatim; never adopt template's (a changed frontmatter, e.g. `timestamp:` → `generated:`, aborts update).
 
 ### 2. Constitution Files (`needs_review_constitution`)
-For each constitution file that has changed:
-- **Tool Execution Barrier:** complete diff generation 100% before opening the review turn. Never invoke a question tool in the same turn as background diff commands.
-- **Mandatory Visible Markdown Content:** emit the side-by-side diff comparing workspace file against new template under `<plugin>/assets/templates/constitution/` directly in visible message `content` (never empty content or hidden inside tool calls).
-- **Synchronous Pairing:** call the question tool in the same turn accompanying the visible diff: *"Found updates to constitution file `<filename>`. Merge them?"*
-- If confirmed, merge new rules/sections while keeping user customizations (pointer directory, vision) and write to `<filepath>.stratosphere-new`.
-- If declined, copy existing workspace file verbatim to `<filepath>.stratosphere-new` to ensure it passes Phase 4 invariants during commit.
+If `needs_review_constitution` is empty, skip silently. Otherwise, batch all changed constitution files:
+- **Tool Execution Barrier:** complete all diff generation before opening the review turn; never invoke a question tool alongside background diff commands.
+- **Mandatory Visible Markdown Content:** emit one consolidated summary + side-by-side diffs vs. `<plugin>/assets/templates/constitution/` in visible message `content` (never empty or hidden in tool calls).
+- **Synchronous Pairing:** call the question tool once in that same turn via native multi-select (`is_multi_select: true` / `multiSelect: true`) listing each changed file plus `"Keep all current (skip merges)"` (fallback: output the summary, diffs, and selectable options in markdown and halt).
+- Selected files: merge new rules/sections while keeping user customizations (pointer directory, vision) → `<filepath>.stratosphere-new`.
+- Unselected/declined files (including 0-selection or `"Keep all current (skip merges)"`): copy workspace file verbatim to `<filepath>.stratosphere-new` for Phase 4 invariants.
 
 ### 3. Unmarked Preserved Files (`status: "unmarked"`)
 - If file has no `SOS:BLOCK` markers, do **NOT** overwrite or merge.
@@ -172,10 +169,7 @@ For each constitution file that has changed:
 
 ## Phase 6: Skill Synchronization (Advisory)
 
-1. **Verify and synchronize domain skills:**
-   Domain skills are third-party, gitignored, and fetched on-demand. Remind user to run, or offer to run:
-   `/sync-skills`
-   to ensure local skill definitions are synchronized with upstreams.
+1. **Verify and synchronize domain skills:** Domain skills are third-party, gitignored, and fetched on-demand. Remind or offer `/sync-skills` to sync local definitions with upstreams.
 
 2. **Host-visibility check (also after a sync):** ensure system pack (`code-simplifier`, `skill-creator`) is visible to running host (`--host claude` on Claude Code, `--host agents` otherwise):
    ```bash
@@ -187,20 +181,7 @@ For each constitution file that has changed:
 
 ## Phase 7: Host Cache Invalidation
 
-Refresh host-cached slash commands and tool registries without terminating conversation or restarting host. Subprocesses and `AGENTS.md` §8 disk fallbacks are already live.
-
-1. **Detect Host Environment:**
-   Check running host (`CLAUDECODE` env or `--host claude` → Claude Code; else Antigravity).
-
-2. **Emit Host Reload Snippet:**
-   - **Antigravity:** Output reload command:
-     ```
-     /skills reload
-     ```
-     *(If MCP schemas changed, reload window instead).*
-   - **Claude Code:** Output reload command:
-     ```
-     /reload-plugins
-     ```
+Refresh host-cached slash commands and tool registries without restarting host (`AGENTS.md` §8 disk fallbacks are already live):
+1. **Detect Host:** `CLAUDECODE` env or `--host claude` → Claude Code (`/reload-plugins`); else Antigravity (`/skills reload`). *(If MCP schemas changed, reload window instead).*
 
 _Completion criterion:_ Project framework files updated, suite intact, host invalidation directive emitted.

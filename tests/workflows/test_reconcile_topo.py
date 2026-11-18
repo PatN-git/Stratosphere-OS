@@ -191,7 +191,7 @@ def test_stage3_workflow_markdown_assertions():
 
 def test_stage3_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/3a-version-planning.md", "1.8.0"),
+        ("workflows/3a-version-planning.md", "1.9.0"),
         ("workflows/3b-create-issue.md", "2.11.0"),
         ("workflows/3c-sprint-planning.md", "2.10.0"),
         ("workflows/3d-implement-issue.md", "2.10.0"),

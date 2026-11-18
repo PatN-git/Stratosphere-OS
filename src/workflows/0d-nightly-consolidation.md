@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-11-12
+version: "1.9.0"
+timestamp: 2026-11-18
 ---
 
 # Nightly Consolidation
@@ -65,8 +65,10 @@ The report is the record; chat is a decision brief. Never restate report section
    - **Tool Execution Barrier:** ensure all audit scans, index generation, report writing, and background scripts complete 100% prior to opening the decision turn. Never invoke a question tool in the same turn as background scripts.
    - **Mandatory Visible Markdown Content:** emit the mechanical phase status, linked report reference, and `R-n` recommendations summary directly in visible message `content` (never empty content or hidden inside tool calls).
    - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible recommendations summary.
-   - **Batch Approval:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Apply Cleanups (R-ALL-CLEAN)", "Review Cleanups Individually", "Decline All"]`.
-   - **Fallback (non-interactive hosts):** prompt `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Decline]` (or ask for R-numbers, `all`, or `none`) with the visible summary and halt for user response.
+   - **Batch Approval:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) branched on Tier 1 cleanup count:
+     - **≥ 1 Tier 1 cleanup qualifies (`R-ALL-CLEAN` non-empty):** `["(Recommended) Apply Cleanups (R-ALL-CLEAN)", "Review Cleanups Individually", "Decline All"]`.
+     - **0 Tier 1 cleanups qualify:** `["(Recommended) Review Recommendations Individually", "Decline All"]`.
+   - **Fallback (non-interactive hosts):** when ≥ 1 Tier 1 cleanup qualifies, prompt `[Apply Recommended Cleanups (R-ALL-CLEAN)] / [Review Cleanups Individually] / [Decline]` (or ask for R-numbers, `all`, or `none`); when 0 Tier 1 cleanups qualify, prompt `[Review Recommendations Individually] / [Decline]` (or ask for R-numbers or `none`) with the visible summary and halt for user response.
    - **Safety Invariant:** `.memory/` writes require explicit approval; never mutate silently per `.agents/rules/memory-protocol.md` §5.
 
 After the user answers, rewrite each stub line in place (never append a second one): `accepted · applied` (append ` <sha>` only when a commit was made), `accepted · deferred`, or `declined`. `none` → every line `declined`; an accepted New issue → `accepted · deferred`. Phase 2 of later nights reads it.

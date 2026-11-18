@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.12.0"
-timestamp: 2026-11-12
+version: "1.13.0"
+timestamp: 2026-11-18
 ---
 
 # Verify and Ship
@@ -23,9 +23,9 @@ Run the `load-memory` skill to restore session context (read-only).
 *Input:* slice issue + parent PRD §8 (`<parentId>` resolved as in Phase 2).
 0. **Clean-tree guard (every gate, incl. `ship-only`):** run `git status --porcelain`. Any path outside `.memory/`, `docs/`, `.tmp/` (untracked files and generated output such as `dist/` or `theme.tokens.css` included) → HALT: `[UNCOMMITTED] <paths> — commit via /3d-implement-issue first (or stash/remove unrelated files); 4a audits committed work only.` Then run `python .agents/scripts/floor_guard.py`: exit 1 → HALT `[FLOOR] <findings> — fix via /3d-implement-issue (a loosening needs a human-merged Floor exceptions row)`; exit 2 (could not run) halts the same, never a pass. Both run before the bypasses below.
    Record the decision below as `phase1` per `references/pr-body-and-ship.md` § Audit findings: `bypass` for steps 1 and 3, `trigger:<name>` (first match in step 2's order) for step 2.
-1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → proceed directly to Phase 5: Isolated Ship Gate (Output: `[SKIP] Cosmetic task. Audit bypassed.`).
+1. If task is pure UI/cosmetic (layout/CSS/view/copy/visual polish with no data/logic invariants) → Output: `[SKIP] Cosmetic task. Audit bypassed.` In HITL, proceed directly to Phase 4: Unified Ship Verification Gate (under `audit-only`, return `[SKIP]` without entering Phase 4).
 2. If task touches security/RLS, auth, billing/entitlements, core math/algorithms, covers a PRD §8 Definition of Done item, or is `[size:large]` / `[mode:AFK]` → proceed to Phase 2: Execution (Context Isolation).
-3. Else, bypass audit and proceed directly to Phase 5: Isolated Ship Gate.
+3. Else, bypass audit (Output: `[SKIP] Audit bypassed.`): in HITL, proceed directly to Phase 4: Unified Ship Verification Gate (under `audit-only`, return `[SKIP]` without entering Phase 4).
 
 ## Phase 2: Execution (Context Isolation)
 
@@ -40,7 +40,7 @@ Run the `load-memory` skill to restore session context (read-only).
     2. **Standards Auditor** (a second, separate subagent — do not fold into the first; dispatch it with `auditor_model: small` per `references/auditor-model-tiers.md` and record the tier as `std_tier`): Input: changed-file list + the scoped diff command `git diff <base>...HEAD -- <changed paths>` (pass the command, not pasted diff), coding standards, `.agents/skills/4a-verify-and-ship/references/code-smell-baseline.md`, and the `info:` lines `floor_guard.py` printed in step 0 (it skips and drops per that reference). Guardrail: "Report findings only; no edits, commits, or pushes; return to main; scan slice diff only." Output: findings list (File · Smell/Rule · Hard breach | Judgment · One-line fix), plus `Dismissed` (cap 3): findings it considered and rejected, each `File · Rule · reason ≤ 8 words`.
 
 ### Clean Exit Rule
-If no spec issues (confidence ≥ 80) and no standards violations → proceed directly to Phase 5: Isolated Ship Gate. Output: `[PASS] Slice verified.` plus any `Dismissed` lines and any Watch items (§3 below); Watch items alone never stop the ship.
+If no spec issues (confidence ≥ 80) and no standards violations → in HITL, proceed directly to Phase 4: Unified Ship Verification Gate (`audit-only` stops after Phase 3). Output: `[PASS] Slice verified.` plus any `Dismissed` lines and any Watch items (§3 below); Watch items alone never stop the ship.
 
 ## Phase 3: Output
 If issues exist, output in three separate sections:
@@ -75,7 +75,7 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 
 ```markdown
 ### Unified Ship Verification Gate
-- **Audit Verdict:** [PASS] (0 Spec gaps, 0 hard Standards breaches)
+- **Audit Verdict:** [<PASS|SKIP|UNCOVERED>] (<N> Spec gaps, <M> Standards findings, <W> Watch items)
 - **Test Proof:** Reused passing suite receipt via `pr_body.py suite` (SHA: <sha>; 0 duplicate full test runs)
 - **Branch & PR Target:** <branch> -> PR #<n> (<title>)
 - **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
@@ -84,8 +84,12 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 - **Tool Execution Barrier:** ensure all audit inspections, spec reviews, test verifications, and background tools finish 100% prior to opening the gate turn. Never invoke a question tool in the same turn as background commands or scripts.
 - **Mandatory Visible Markdown Content:** emit the complete `Unified Ship Verification Gate` card directly in visible message `content` (never empty content or hidden inside tool calls).
 - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible verification card.
-- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Confirm & Ship", "Revise in 3d", "Abort"]`. Fallback for non-interactive hosts: output card and options in markdown and halt for user response.
-- **Decision Routing:** on `Confirm & Ship` (or user approval over gaps), proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). On `Revise in 3d` or unresolved gaps without user approval → return to TDD loop in `3d` (no PR).
+- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options branched deterministically by audit verdict and findings:
+  - **Clean `[PASS]` or `[SKIP]` (0 Spec gaps, 0 Standards findings, 0 Watch items):** `["(Recommended) Confirm & Ship", "Defer (Stay Local)"]`.
+  - **Advisory `[PASS]` (0 Spec gaps ≥ 80; Watch 60–79 and/or Standards findings present):** `["(Recommended) Confirm & Ship", "Address Findings in 3d"]`.
+  - **Blocking `[UNCOVERED]` (Spec gaps ≥ 80):** `["(Recommended) Revise in 3d", "Waive Gaps & Ship", "Abort"]` (`Waive Gaps & Ship` passes `--verdict WAIVED` to `pr_body.py build` in Phase 5).
+  - **Fallback (non-interactive hosts):** output card and the matching state-branched options in markdown and halt for user response.
+- **Decision Routing:** `Confirm & Ship` or `Waive Gaps & Ship` (`--verdict WAIVED`) → proceed to Phase 5: Isolated Ship Gate (single confirmation: no second halt in Phase 5). `Address Findings in 3d` or `Revise in 3d` → return to TDD loop in `3d` (no PR). `Defer (Stay Local)` or `Abort` → exit cleanly before Phase 5 (keep commits local, no push/PR).
 
 ## Phase 5: Isolated Ship Gate
 
