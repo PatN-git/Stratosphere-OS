@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.1"
-timestamp: 2026-11-17
+version: "1.8.2"
+timestamp: 2026-11-18
 ---
 
 # Instantiate StratosphereOS
@@ -128,7 +128,7 @@ python <plugin>/scripts/scaffold.py --update
 
 **Record the tracker as a law:** in `.memory/ARCHITECTURE.md`, turn the tracker `[[A-XXX]] [LAW]` placeholder under Known Architectural Constraints into an entry with the next free `A-nnn` ID and the chosen backend (`<github|local>` replaced); keep the placeholder wording otherwise.
 
-**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand.
+**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand. To view the backlog anytime, run `python .agents/scripts/issues.py summary` (markdown table of open issues) or `python .agents/scripts/issues.py board --web --open` (interactive board).
 
 **Upgrades and Updates:** If this is an existing project needing an upgrade or sync, do not use setup. Instead, run `/stratosphere-update` which performs a safe, in-place framework block update.
 
@@ -295,7 +295,7 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
-2. If issues or active tasks exist, seed them through the `create` verb (`.agents/scripts/tracker.py`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
+2. If issues or active tasks exist, seed them through the `create` verb (`.agents/scripts/tracker.py`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-L-<nnn>-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)

@@ -6,7 +6,7 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.10.2"
+version: "2.10.3"
 timestamp: 2026-11-18
 ---
 
@@ -107,7 +107,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - (c) **Per slice, before each mint:** run the step (a) pattern on that slice's body without the exclusion — any hit (an unminted blocker included) → HALT. Substitution is the only permitted edit to an approved draft.
    - **Audit-sourced:** run (a)–(c) against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`; in (a) also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`), and HALT if `BT-<epic>` appears without a `## Epic` section. Only after (a) and the (b) order/cycle check pass, (b0): mint the epic (step 4) and replace every `BT-<epic>` in the proposal with the returned ID, then mint slices in the (b) order.
 4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`.agents/scripts/tracker.py`).
-   - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-LOCAL-<slug>` (the title slug) and stores the body; GitHub is not touched.
+   - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-L-<nnn>-<slug>` (e.g. `BT-L-001-<slug>`) and stores the body; GitHub is not touched.
    - **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs.
    - **Labels:** scope label (`scope:baseline` or `scope:differentiator`) + canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`; Spikes: always `size:medium`) + Priority (`priority:high/medium/low` from the step-2 bucket; Spikes: skip) + **Status: `status:planned` for a Build slice; `status:needs_spec` for a Spike.**
    - **Milestone:** `create` every slice with milestone `<vX.Y.0>` = the parent's (`get(<parent>)` milestone title; 3a created it, so it exists; parent has none → `—`), standalone → `v1.0.0` (audit-sourced: the §8 default). Only for those defaults, `ensure_milestone` lists the open milestones to confirm it is open (local: the field value is the milestone; nothing to list); absent, closed or `—` → create without a milestone, record `—` and surface it (never mint onto a closed release). Audit epic: see its bullet below.

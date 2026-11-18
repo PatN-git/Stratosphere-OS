@@ -93,10 +93,22 @@ def test_the_runtime_halt_rule_lives_in_the_verbs_reference():
 
 def test_the_local_store_is_the_tracker_branch_written_only_by_issues_py():
     text = _section(read_src("references/tracker-verbs.md"), "Runtime rule")
-    for needle in ("`<repo>/issues`", "`tracker_branch:`", "docs/issues/", "archive/", "issues.py", "BT-LOCAL-<slug>"):
+    for needle in ("`<repo>/issues`", "`tracker_branch:`", "docs/issues/", "archive/", "issues.py", "BT-L-<nnn>-<slug>"):
         assert needle in text, needle
     assert re.search(r"never edit", text, re.I) and re.search(r"never check (it )?out", text, re.I)
     assert "BACKLOG" not in read_src("references/tracker-verbs.md")
+
+
+def test_reads_and_local_projection_document_summary_and_short_lookup():
+    master = read_src("references/tracker-verbs.md")
+    reads = _section(master, "Reads")
+    assert re.search(r"^- `summary`: `issues\.py summary \[--milestone <m>\] \[--parent <id>\]`: concise markdown table of open issues\. <!-- local -->$",
+                     reads, re.M), reads
+    gh, local = _project(master)
+    assert "- `summary`:" not in _section(gh, "Reads")
+    assert re.search(r"^- `summary`: `issues\.py summary \[--milestone <m>\] \[--parent <id>\]`: concise markdown table of open issues\.$",
+                     _section(local, "Reads"), re.M), local
+    assert "BT-L-<nnn>-<slug>" in local
 
 
 def test_local_reads_are_issues_py_commands_and_candidates_is_one_command():

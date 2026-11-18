@@ -17,7 +17,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
     <base> = --base, else the remote default branch (origin/HEAD), else origin/main|master, main|master; none
-    resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent and every --close must be BT-<n> or BT-LOCAL-<slug> (a local id gets no Closes line)
+    resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent and every --close must be BT-<n> or BT-L-<nnn>-<slug> / BT-LOCAL-<slug> (a local id gets no Closes line)
     (else exit 2). The block's `features: [BT-n, ...]` lists every epic in the PR (prior block + --parent + the
     parent of each slice row; rows carry `parent: BT-n`); a legacy single `feature:` prior block upgrades on
     rebuild. `Closes #n.` follows the slice lines for each --close epic (--close-parent = close --parent).
@@ -53,7 +53,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _tracker_common import longer_id_globs, resolve_unit
 
-ID = r"BT-(?:\d+|LOCAL-[a-z0-9-]+)"  # a GitHub issue id or a local-backend id
+ID = r"BT-(?:\d+|(?:L|LOCAL)-[a-z0-9-]+)"  # a GitHub issue id or a local-backend id
 SCOPE_RE = re.compile(rf"^[a-z]+\(({ID})\):\s*(.*)")
 RELEASE_RE = re.compile(r"^release: prepare")
 SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -386,15 +386,19 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+def _is_local(bt):
+    return bt.startswith(("BT-L-", "BT-LOCAL-"))
+
+
 def canon(bt):
     """`BT-7` -> `BT-007`: the repo's padded spelling, one per epic so `features:` never lists an epic twice.
-    A local id (`BT-LOCAL-<slug>`) is already canonical."""
-    return bt if bt.startswith("BT-LOCAL-") else f"BT-{int(bt[3:]):03d}"
+    A local id (`BT-L-<nnn>-<slug>` or `BT-LOCAL-<slug>`) is already canonical."""
+    return bt if _is_local(bt) else f"BT-{int(bt[3:]):03d}"
 
 
 def idkey(bt):
     """The dict key of an id: the int of `BT-<n>` (any padding), else the local id string."""
-    return bt if bt.startswith("BT-LOCAL-") else int(bt[3:])
+    return bt if _is_local(bt) else int(bt[3:])
 
 
 def row_key(bt):
@@ -420,7 +424,7 @@ def backlog_rows():
 
 
 def epic_ids():
-    """Keys (`idkey`) of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-x stays a string).
+    """Keys (`idkey`) of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; local BT-L-*/BT-LOCAL-* stays a string).
 
     Fails open to an empty set when the store is absent or unreadable: an epic commit then shows as PENDING.
     """
@@ -493,8 +497,8 @@ def changed_risk_tags(base, risk_paths=None):
 
 
 def render_body(rows, features, closing, rec, tags, lists, notes):
-    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[3] not in ("PENDING", "DROPPED") and not r[0].startswith("BT-LOCAL-")],
-                   [f"Closes #{int(c[3:])}." for c in closing if not c.startswith("BT-LOCAL-")])  # a local issue has no number to close
+    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[3] not in ("PENDING", "DROPPED") and not _is_local(r[0])],
+                   [f"Closes #{int(c[3:])}." for c in closing if not _is_local(c)])  # a local issue has no number to close
     out = [*closes, "", "```stratos-pr", f"features: [{', '.join(features)}]", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
     for i, p, s, v, a in rows:
         parent = "" if p == NO_PARENT else f"parent: {p}, "
@@ -552,12 +556,12 @@ def cmd_build(args):
         print(f"[PR-BODY-ERROR] {e}", file=sys.stderr)
         return 2
     if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
-        print(f"[PR-BODY-ERROR] --parent must look like BT-<n> or BT-LOCAL-<slug>, got {args.parent!r}", file=sys.stderr)
+        print(f"[PR-BODY-ERROR] --parent must look like BT-<n> or BT-L-<nnn>-<slug>, got {args.parent!r}", file=sys.stderr)
         return 2
     for flag, values in (("--epic", args.epic), ("--close", args.close)):
         bad = next((v for v in values if not PARENT_RE.fullmatch(v)), None)
         if bad is not None:
-            print(f"[PR-BODY-ERROR] {flag} must look like BT-<n> or BT-LOCAL-<slug>, got {bad!r}", file=sys.stderr)
+            print(f"[PR-BODY-ERROR] {flag} must look like BT-<n> or BT-L-<nnn>-<slug>, got {bad!r}", file=sys.stderr)
             return 2
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
@@ -597,7 +601,7 @@ def cmd_build(args):
         print(f"[PR-BODY-ERROR] the tracker backend could not tell epics from slices, so the build failed closed: {e}", file=sys.stderr)
         return 2
     if rows is None:
-        print(f"[PR-BODY-ERROR] --slice must look like BT-<n> or BT-LOCAL-<slug>, got {args.slice!r}", file=sys.stderr)
+        print(f"[PR-BODY-ERROR] --slice must look like BT-<n> or BT-L-<nnn>-<slug>, got {args.slice!r}", file=sys.stderr)
         return 2
     features = union(features, [canon(r[1]) for r in rows if r[1] != NO_PARENT]) or [canon(args.slice)]
     closing = union([canon(c) for c in args.close],
@@ -636,7 +640,7 @@ def cmd_unit(args):
             out["branch"] = f"{args.type or 'feat'}/{out['unit']}-{slug}"
         if args.branch is not None:
             names = {args.branch, args.branch.removeprefix("origin/")}
-            longer = longer_id_globs([args.slice, args.parent], backlog_rows()) if args.slice.startswith("BT-LOCAL-") else []
+            longer = longer_id_globs([args.slice, args.parent], backlog_rows()) if _is_local(args.slice) else []
             out["branch_ok"] = (any(fnmatch.fnmatchcase(n, g) for n in names for g in out["globs"])
                                 and not any(fnmatch.fnmatchcase(n, g) for n in names for g in longer))
     except ValueError as e:

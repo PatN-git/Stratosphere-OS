@@ -691,8 +691,8 @@ bootTargets.forEach(({ label, html, stateFrom, isPlanDocument }) => {
   });
 });
 
-// ─── 5. Board blocked-by badge (display only) ───────────────────────────────
-console.log('\n[5] Board blocked-by badge');
+// ─── 5. Board blocked-by badge and card ID (display only) ──────────────────
+console.log('\n[5] Board blocked-by badge and card ID');
 {
   const boardTpl = bootTargets.find((b) => b.label === 'template board.html');
   const state = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
@@ -700,6 +700,11 @@ console.log('\n[5] Board blocked-by badge');
   const res = bootPage(pageScript(boardTpl.html), JSON.stringify(state), { storageThrows: false, readyState: 'complete' });
   assert('Badge: a card with meta.blocked_by shows `blocked by <ids>`', !res.error && res.html.includes('blocked by issue-2,'));
   assert('Badge: the ids are escaped (no raw markup from data)', res.html.includes('&lt;b&gt;x&amp;') && !res.html.includes('<b>x'));
+  assert('Card ID: renders <div class="card-id"> with card id', !res.error && res.html.includes('<div class="card-id">issue-1</div>'));
+  const xssState = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
+  xssState.cards[0].id = 'BT-L-001-<b>x&';
+  const resXss = bootPage(pageScript(boardTpl.html), JSON.stringify(xssState), { storageThrows: false, readyState: 'complete' });
+  assert('Card ID: card id is escaped (no raw markup from data)', !resXss.error && resXss.html.includes('<div class="card-id">BT-L-001-&lt;b&gt;x&amp;</div>'));
   const plain = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
   const res2 = bootPage(pageScript(boardTpl.html), JSON.stringify(plain), { storageThrows: false, readyState: 'complete' });
   assert('Badge: a card without blockers shows none', !res2.error && !res2.html.includes('blocked by'));

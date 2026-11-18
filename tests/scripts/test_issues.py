@@ -110,22 +110,22 @@ def test_create_persists_the_body_and_get_returns_it(repo, tmp_path):
     ok('init')
     bt = ok('create', '--title', 'Login form: email link', '--label', SLICE, '--milestone', 'v1.0.0',
             '--body-file', body(tmp_path, BODY))
-    assert bt == 'BT-LOCAL-login-form-email-link'
+    assert bt == 'BT-L-001-login-form-email-link'
     issue = json.loads(ok('get', bt))
     assert issue['status'] == 'planned' and issue['state'] == 'OPEN'
     assert issue['labels'] == SLICE.split(',') and issue['milestone'] == 'v1.0.0'
     assert '### Acceptance Criteria (Verifiable)\n- [ ] Logs in' in issue['body']
     text = git(repo, 'show', f'shop/issues:docs/issues/{bt}.md')
-    assert text.startswith('---\ntype: issue\nid: BT-LOCAL-login-form-email-link\ntitle: "Login form: email link"\n')
+    assert text.startswith('---\ntype: issue\nid: BT-L-001-login-form-email-link\ntitle: "Login form: email link"\n')
     assert git(repo, 'status', '--porcelain') == ''
 
 
 def test_create_takes_a_status_label_as_the_status_field_and_suffixes_a_clashing_slug(repo):
     ok('init')
-    assert ok('create', '--title', 'Spike', '--label', 'type:research,status:needs_spec') == 'BT-LOCAL-spike'
-    assert json.loads(ok('get', 'BT-LOCAL-spike'))['status'] == 'needs_spec'
-    assert json.loads(ok('get', 'BT-LOCAL-spike'))['labels'] == ['type:research']
-    assert ok('create', '--title', 'Spike!') == 'BT-LOCAL-spike-2'
+    assert ok('create', '--title', 'Spike', '--label', 'type:research,status:needs_spec') == 'BT-L-001-spike'
+    assert json.loads(ok('get', 'BT-L-001-spike'))['status'] == 'needs_spec'
+    assert json.loads(ok('get', 'BT-L-001-spike'))['labels'] == ['type:research']
+    assert ok('create', '--title', 'Spike!') == 'BT-L-002-spike'
 
 
 def test_create_refuses_an_unknown_parent_or_blocker(repo):
@@ -244,11 +244,11 @@ def test_ready_lists_unblocked_candidates_with_ice_on_read(repo, tmp_path):
     ok('init')
     db = ok('create', '--title', 'DB', '--label', SLICE, '--body-file', body(tmp_path, BODY))
     ui = ok('create', '--title', 'UI', '--label', SLICE, '--blocked-by', db)
-    ok('create', '--title', 'Bare', '--label', 'type:feature,tier:slice')
+    bare = ok('create', '--title', 'Bare', '--label', 'type:feature,tier:slice')
     out = ok('ready')
     assert f'{db} | planned | DB | mode:AFK size:medium type:feature | — | ICE 0.8' in out
     assert f'[BLOCKED {ui} <- {db}]' in out
-    assert '[MISSING-LABELS] BT-LOCAL-bare - Bare (mode:, size:)' in out
+    assert f'[MISSING-LABELS] {bare} - Bare (mode:, size:)' in out
     assert f'{ui} |' not in out
     ok('close', db)
     assert f'{ui} | planned | UI' in ok('ready')
@@ -259,13 +259,13 @@ def test_check_reports_label_composition_unknown_labels_and_dangling_ids(repo):
     ok('label', 'area:BE-api')
     good = ok('create', '--title', 'Good', '--label', SLICE + ',area:BE-api')
     assert ok('check') == '[CHECK-OK 1 issue(s)]'
-    ok('create', '--title', 'Bad', '--label', 'type:feature,tier:slice,area:nope')
-    ok('create', '--title', 'Epic', '--label', 'type:feature,tier:epic,mode:AFK')
+    bad = ok('create', '--title', 'Bad', '--label', 'type:feature,tier:slice,area:nope')
+    epic = ok('create', '--title', 'Epic', '--label', 'type:feature,tier:epic,mode:AFK')
     code, text = run('check')
     assert code == 1
-    assert '[CHECK-FAIL BT-LOCAL-bad] unknown label area:nope' in text
-    assert '[CHECK-FAIL BT-LOCAL-bad] a slice needs exactly one type:, mode: and size:' in text
-    assert '[CHECK-FAIL BT-LOCAL-epic] an epic needs one type: and no mode: or size:' in text
+    assert f'[CHECK-FAIL {bad}] unknown label area:nope' in text
+    assert f'[CHECK-FAIL {bad}] a slice needs exactly one type:, mode: and size:' in text
+    assert f'[CHECK-FAIL {epic}] an epic needs one type: and no mode: or size:' in text
     assert good not in text
 
 
@@ -325,7 +325,7 @@ def test_sync_field_merges_divergent_edits(clones, monkeypatch):
     got = json.loads(ok('get', a))
     assert (got['status'], got['milestone']) == ('in progress', 'v1.0.1')
     assert got['comments'] == ['- 2026-10-28: from repo', '- 2026-10-27: from other']
-    assert json.loads(ok('get', 'BT-LOCAL-b'))['title'] == 'B'
+    assert json.loads(ok('get', 'BT-L-002-b'))['title'] == 'B'
     parents = git(repo, 'log', '-1', '--format=%P', 'shop/issues').split()
     assert len(parents) == 2
     assert ok('sync') == '[SYNC-AHEAD] local shop/issues has commits origin lacks; push it with the next ship push'
@@ -477,8 +477,8 @@ def test_self_parent_and_yaml_keyword_titles(repo):
 def test_merged_of_ignores_a_longer_id_sharing_the_prefix(repo):
     ok('init')
     login = ok('create', '--title', 'Login', '--label', SLICE)
-    ok('create', '--title', 'Login form', '--label', SLICE)
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-login-form-x')
+    form = ok('create', '--title', 'Login form', '--label', SLICE)
+    git(repo, 'checkout', '-qb', f'feature/{form}-x')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
@@ -525,9 +525,9 @@ def test_a_write_that_loses_every_attempt_raises_conflict_and_writes_nothing(rep
 def test_merged_of_ignores_a_longer_parent_id_sharing_the_prefix(repo):
     ok('init')
     epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
-    ok('create', '--title', 'Auth v2', '--label', 'type:feature,tier:epic')
+    epic2 = ok('create', '--title', 'Auth v2', '--label', 'type:feature,tier:epic')
     db = ok('create', '--title', 'DB', '--label', SLICE, '--parent', epic)
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-v2-x')
+    git(repo, 'checkout', '-qb', f'feature/{epic2}-x')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
@@ -539,7 +539,7 @@ def test_merged_reports_no_merges_when_branches_unmerged(repo):
     ok('init')
     epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
     ok('set', epic, '--status', 'in review')
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'checkout', '-qb', f'feature/{epic}-work')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
@@ -552,12 +552,12 @@ def test_merged_detects_ancestor_branch_and_closes_with_flag(repo):
     ok('init')
     epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
     ok('set', epic, '--status', 'in review')
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'checkout', '-qb', f'feature/{epic}-work')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', f'feature/{epic}-work')
 
     code, text = run('merged')
     assert code == 0 and f'[MERGED {epic}]' in text
@@ -577,18 +577,18 @@ def test_merged_close_sets_the_full_closed_state_on_a_claimed_epic_and_a_merged_
     ok('claim', epic, '--by', 'feat/auth')
     ok('set', epic, '--status', 'in review')
     assert json.loads(ok('get', epic))['claimed_by'] == 'feat/auth'
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'checkout', '-qb', f'feature/{epic}-work')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', f'feature/{epic}-work')
     slice_id = ok('create', '--title', 'Billing', '--label', SLICE)
     ok('set', slice_id, '--status', 'in review')
-    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
-    ok('comment', slice_id, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    tip = _ship(repo, f'feature/{slice_id}-work', 'b.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', f'feature/{slice_id}-work')
+    git(repo, 'branch', '-D', f'feature/{slice_id}-work')
+    ok('comment', slice_id, '--body', f"Shipped on feature/{slice_id}-work @ {tip}")
 
     code, text = run('merged', '--close')
     assert code == 0 and text.splitlines() == [f'[MERGED {epic}]', f'[MERGED {slice_id}]']
@@ -601,27 +601,27 @@ def test_merged_close_sets_the_full_closed_state_on_a_claimed_epic_and_a_merged_
     for bt in (epic, slice_id):
         assert f'docs/issues/archive/{bt}.md' in files and f'docs/issues/{bt}.md' not in files
     assert git(repo, 'show', f'shop/issues:docs/issues/archive/{epic}.md') == (
-        '---\ntype: issue\nid: BT-LOCAL-auth\ntitle: Auth\nstatus: done\nlabels: [type:feature, tier:epic]\nmilestone: null\n'
+        f'---\ntype: issue\nid: {epic}\ntitle: Auth\nstatus: done\nlabels: [type:feature, tier:epic]\nmilestone: null\n'
         'parent: null\nblocked_by: []\nclaimed_by: null\ncreated: 2026-10-27\nupdated: 2026-10-27T10:00:00+00:00\n'
         'closed: 2026-10-27\nclose_reason: completed\n---\n\n')
     assert git(repo, 'show', f'shop/issues:docs/issues/archive/{slice_id}.md').endswith(
-        f'close_reason: completed\n---\n\n\n<!-- issues.py: comments -->\n## Comments\n- 2026-10-27: Shipped on feature/BT-LOCAL-billing-work @ {tip}\n')
+        f'close_reason: completed\n---\n\n\n<!-- issues.py: comments -->\n## Comments\n- 2026-10-27: Shipped on feature/{slice_id}-work @ {tip}\n')
 
 
 def test_merged_detects_recorded_sha_after_branch_deletion(repo):
     ok('init')
     epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
     ok('set', epic, '--status', 'in review')
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'checkout', '-qb', f'feature/{epic}-work')
     (repo / 'b.txt').write_text('b\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'b')
     tip = git(repo, 'rev-parse', 'HEAD').strip()
     git(repo, 'checkout', '-q', 'main')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', f'feature/{epic}-work')
+    git(repo, 'branch', '-D', f'feature/{epic}-work')
 
-    ok('comment', epic, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    ok('comment', epic, '--body', f"Shipped on feature/{epic}-work @ {tip}")
 
     code, text = run('merged')
     assert code == 0 and f'[MERGED {epic}]' in text
@@ -645,10 +645,10 @@ def test_merged_detects_epic_via_the_closed_child_slices_tip_after_branch_deleti
     epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
     ok('set', epic, '--status', 'in review')
     child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
-    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
-    ok('comment', child, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    tip = _ship(repo, f'feature/{epic}-work', 'b.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', f'feature/{epic}-work')
+    git(repo, 'branch', '-D', f'feature/{epic}-work')
+    ok('comment', child, '--body', f"Shipped on feature/{epic}-work @ {tip}")
     ok('set', child, '--status', 'done')
     ok('close', child)
 
@@ -664,12 +664,12 @@ def test_merged_epic_with_one_unmerged_child_tip_is_not_merged(repo):
     ok('set', epic, '--status', 'in review')
     c1 = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
     c2 = ok('create', '--title', 'Refunds', '--label', SLICE, '--parent', epic)
-    t1 = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b1.txt')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
-    t2 = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b2.txt')  # second slice, not merged
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
-    ok('comment', c1, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {t1}")
-    ok('comment', c2, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {t2}")
+    t1 = _ship(repo, f'feature/{epic}-work', 'b1.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge billing', f'feature/{epic}-work')
+    t2 = _ship(repo, f'feature/{epic}-work', 'b2.txt')  # second slice, not merged
+    git(repo, 'branch', '-D', f'feature/{epic}-work')
+    ok('comment', c1, '--body', f"Shipped on feature/{epic}-work @ {t1}")
+    ok('comment', c2, '--body', f"Shipped on feature/{epic}-work @ {t2}")
 
     code, text = run('merged', '--close')
     assert code == 0 and '[MERGED' not in text
@@ -681,11 +681,11 @@ def test_merged_uses_only_the_newest_tip_a_reshipped_issue_is_not_merged(repo):
     ok('init')
     item = ok('create', '--title', 'Search', '--label', SLICE)
     ok('set', item, '--status', 'in review')
-    t1 = _ship(repo, 'feature/BT-LOCAL-search', 's1.txt')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge search', 'feature/BT-LOCAL-search')
-    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {t1}")
-    t2 = _ship(repo, 'feature/BT-LOCAL-search', 's2.txt')  # re-shipped, not merged, branch alive
-    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {t2}")
+    t1 = _ship(repo, f'feature/{item}-x', 's1.txt')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge search', f'feature/{item}-x')
+    ok('comment', item, '--body', f"Shipped on feature/{item}-x @ {t1}")
+    t2 = _ship(repo, f'feature/{item}-x', 's2.txt')  # re-shipped, not merged, branch alive
+    ok('comment', item, '--body', f"Shipped on feature/{item}-x @ {t2}")
 
     code, text = run('merged')
     assert code == 0 and '[MERGED' not in text and f'[STALE-TIP {item}]' in text
@@ -694,7 +694,7 @@ def test_merged_uses_only_the_newest_tip_a_reshipped_issue_is_not_merged(repo):
     issue = json.loads(ok('get', item))
     assert issue['status'] == 'in review' and not issue['closed']
 
-    git(repo, 'merge', '--no-ff', '-qm', 'merge search again', 'feature/BT-LOCAL-search')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge search again', f'feature/{item}-x')
     code, text = run('merged')
     assert f'[MERGED {item}]' in text and 'STALE-TIP' not in text
 
@@ -723,8 +723,8 @@ def test_merged_squash_advisory_ignores_the_docs_commit_that_names_an_open_epic(
     ok('set', epic, '--status', 'in review')
     child = ok('create', '--title', 'Invoices', '--label', SLICE, '--parent', epic)
     git(repo, 'commit', '--allow-empty', '-qm', f"docs({epic}): PRD")
-    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')  # shipped, branch alive, PR open
-    ok('comment', child, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    tip = _ship(repo, f'feature/{epic}-work', 'b.txt')  # shipped, branch alive, PR open
+    ok('comment', child, '--body', f"Shipped on feature/{epic}-work @ {tip}")
     ok('set', child, '--status', 'done')
     ok('close', child)
     assert run('merged') == (0, '[NO-MERGES]')
@@ -745,13 +745,13 @@ def test_merged_squash_advisory_counts_only_commits_after_the_recorded_ship(repo
     monkeypatch.setenv('GIT_COMMITTER_DATE', '2020-01-01T00:00:00')
     git(repo, 'commit', '--allow-empty', '-qm', f"chore({item}): groundwork, long before the ship")
     monkeypatch.delenv('GIT_COMMITTER_DATE')
-    tip = _ship(repo, 'feature/BT-LOCAL-search', 's.txt')
-    ok('comment', item, '--body', f"Shipped on feature/BT-LOCAL-search @ {tip}")
+    tip = _ship(repo, f'feature/{item}-x', 's.txt')
+    ok('comment', item, '--body', f"Shipped on feature/{item}-x @ {tip}")
     assert run('merged') == (0, '[NO-MERGES]')
 
-    git(repo, 'merge', '--squash', 'feature/BT-LOCAL-search')
+    git(repo, 'merge', '--squash', f'feature/{item}-x')
     git(repo, 'commit', '-qm', f"feat({item}): search")
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-search')
+    git(repo, 'branch', '-D', f'feature/{item}-x')
     code, text = run('merged', '--close')
     assert code == 0 and f'[PROBABLY-MERGED {item}]' in text and '[MERGED' not in text
     assert json.loads(ok('get', item))['status'] == 'in review'
@@ -762,13 +762,13 @@ def _blocker_with_tip_and_deleted_branch(repo, merge):
     ok('init')
     epic = ok('create', '--title', 'Billing', '--label', 'type:feature,tier:epic')
     db = ok('create', '--title', 'DB', '--label', SLICE, '--parent', epic)
-    tip = _ship(repo, 'feature/BT-LOCAL-billing-work', 'b.txt')
-    ok('comment', db, '--body', f"Shipped on feature/BT-LOCAL-billing-work @ {tip}")
+    tip = _ship(repo, f'feature/{epic}-work', 'b.txt')
+    ok('comment', db, '--body', f"Shipped on feature/{epic}-work @ {tip}")
     ok('set', db, '--status', 'done')
     ok('close', db)
     if merge:
-        git(repo, 'merge', '--no-ff', '-qm', 'merge billing', 'feature/BT-LOCAL-billing-work')
-    git(repo, 'branch', '-D', 'feature/BT-LOCAL-billing-work')
+        git(repo, 'merge', '--no-ff', '-qm', 'merge billing', f'feature/{epic}-work')
+    git(repo, 'branch', '-D', f'feature/{epic}-work')
     return epic, db
 
 
@@ -1261,12 +1261,12 @@ def test_apply_moves_in_review_epic_to_done_is_allowed_once_merged_and_other_sta
     merged_epic = ok('create', '--title', 'Auth', '--label', 'type:feature,tier:epic')
     wip_epic = ok('create', '--title', 'Search', '--label', 'type:feature,tier:epic')
     ok('set', merged_epic, '--status', 'in review')
-    git(repo, 'checkout', '-qb', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'checkout', '-qb', f'feature/{merged_epic}-work')
     (repo / 'f.txt').write_text('f\n')
     git(repo, 'add', '.')
     git(repo, 'commit', '-qm', 'f')
     git(repo, 'checkout', '-q', 'main')
-    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', 'feature/BT-LOCAL-auth-work')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge auth', f'feature/{merged_epic}-work')
     ok('set', wip_epic, '--status', 'in progress')
     code, text = run('apply-moves', body(tmp_path, f"{merged_epic} -> done\n{wip_epic} -> done\n", 'm.txt'))
     assert code == 0, text
@@ -1547,4 +1547,116 @@ def test_find_board_template_env_override_beats_src_sibling(repo, tmp_path, monk
     out_html = tmp_path / 'plugin_board.html'
     code, text = run('board', '--web', '--out', str(out_html))
     assert code == 0 and out_html.is_file(), text
+
+
+# --- BT-281: numbered local IDs (`BT-L-<NNN>-<slug>`), shorthand lookup, card IDs on board.html ---------------
+
+def test_create_mints_sequential_bt_l_ids_and_continues_after_closed_and_legacy(repo):
+    ok('init')
+    c1 = ok('create', '--title', 'Order client', '--label', SLICE)
+    assert c1 == 'BT-L-001-order-client'
+    c2 = ok('create', '--title', 'Order client', '--label', SLICE)
+    assert c2 == 'BT-L-002-order-client'
+    ok('close', c1)
+    c3 = ok('create', '--title', 'Risk guard', '--label', SLICE)
+    assert c3 == 'BT-L-003-risk-guard'
+
+
+def test_shorthand_numeric_lookup_across_all_commands(repo, tmp_path):
+    ok('init')
+    epic = ok('create', '--title', 'Order epic', '--label', 'type:feature,tier:epic')
+    s1 = ok('create', '--title', 'Order client', '--label', SLICE, '--parent', '1')
+    s2 = ok('create', '--title', 'Retry loop', '--label', SLICE, '--parent', '#1', '--blocked-by', '002')
+    assert epic == 'BT-L-001-order-epic'
+    assert s1 == 'BT-L-002-order-client'
+    assert s2 == 'BT-L-003-retry-loop'
+    assert json.loads(ok('get', s1))['parent'] == epic
+    assert json.loads(ok('get', s2))['blocked_by'] == [s1]
+
+    # get / set / claim / comment / resume note / close / reopen / children / blockers / list / board / summary
+    for ident in ('2', '002', '#2', 'BT-L-2', 'BT-L-002', 'BT-LOCAL-2', 'BT-LOCAL-002'):
+        assert json.loads(ok('get', ident))['id'] == s1
+
+    assert ok('set', '2', '--status', 'blocked', '--milestone', 'v1.0.0') == s1
+    assert run('set', '2', '--parent', '002') == (1, f'[ERROR] {s1} cannot be its own parent')
+    assert run('set', '2', '--add-blocker', '#2') == (1, f'[ERROR] {s1} cannot block itself')
+    assert run('set', '2', '--add-blocker', '3') == (1, f'[ERROR] blocked-by cycle: {s1} <- {s2} <- {s1}')
+    assert ok('set', '3', '--remove-blocker', '002') == s2
+    assert json.loads(ok('get', s2))['blocked_by'] == []
+    assert ok('set', '3', '--add-blocker', 'BT-L-002') == s2
+
+    assert ok('claim', '#2', '--by', 'feat/order') == s1
+    assert json.loads(ok('get', '2'))['claimed_by'] == 'feat/order'
+
+    assert ok('comment', '002', '--body', 'note via shorthand') == s1
+    assert json.loads(ok('get', s1))['comments'] == ['- 2026-10-27: note via shorthand']
+
+    assert ok('comment', 'BT-L-002', '--body', f'{RESUME}\nBranch: feat/order') == s1
+    resume_file = repo / '.memory' / 'resume' / f'{s1}.md'
+    assert resume_file.is_file() and 'Branch: feat/order' in resume_file.read_text(encoding='utf-8')
+
+    assert [i['id'] for i in json.loads(ok('children', '1'))] == [s1, s2]
+    assert json.loads(ok('blockers', '3')) == [{'id': s1, 'title': 'Order client', 'status': 'in progress'}]
+    assert [i['id'] for i in json.loads(ok('list', '--parent', '#1'))] == [s1, s2]
+    assert s1 in ok('board', '--parent', '001') and epic in ok('board', '--parent', '1')
+    assert f'| {s1} |' in ok('summary', '--parent', 'BT-L-001')
+
+    assert ok('close', '2') == s1
+    assert json.loads(ok('get', s1))['state'] == 'CLOSED'
+    assert ok('reopen', '#2', '--status', 'planned') == s1
+    assert json.loads(ok('get', s1))['state'] == 'OPEN'
+
+    # apply-moves resolves numeric shorthand and records canonical IDs
+    code, text = run('apply-moves', body(tmp_path, '2 -> blocked\n3 -> planned\n', 'shorthand_moves.txt'))
+    assert code == 0 and f'{s1}: planned -> blocked' in text
+    assert json.loads(ok('get', s1))['status'] == 'blocked'
+
+
+def test_shorthand_lookup_ambiguous_collision_and_unknown(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    # Seed a second issue sharing numeric sequence 1 under legacy prefix BT-LOCAL-1-beta
+    store = issues.Tracker().store()
+    b_issue = {k: None for k in issues.FIELDS} | {
+        'type': 'issue', 'id': 'BT-LOCAL-1-beta', 'title': 'Beta', 'status': 'planned',
+        'labels': SLICE.split(','), 'blocked_by': [], 'body': '', 'comments': [],
+    }
+    issues.Tracker().write(lambda s: (s.changes(b_issue), 'ok'), 'seed collision')
+    assert a == 'BT-L-001-alpha'
+
+    # Exact IDs still resolve cleanly
+    assert json.loads(ok('get', a))['id'] == a
+    assert json.loads(ok('get', 'BT-LOCAL-1-beta'))['id'] == 'BT-LOCAL-1-beta'
+
+    # Ambiguous shorthand fails cleanly across commands
+    for argv in (('get', '1'), ('set', '001', '--status', 'blocked'), ('claim', '#1'),
+                 ('close', 'BT-L-1'), ('reopen', 'BT-L-001'), ('comment', '1', '--body', 'x'),
+                 ('children', '1'), ('blockers', '1'), ('list', '--parent', '1'),
+                 ('board', '--parent', '1'), ('summary', '--parent', '1'),
+                 ('create', '--title', 'Child', '--parent', '1')):
+        code, text = run(*argv)
+        assert code == 1 and '[AMBIGUOUS' in text, (argv, code, text)
+
+    code, text = run('apply-moves', body(tmp_path, '1 -> blocked\n', 'ambig.txt'))
+    assert code == 1 and '[AMBIGUOUS' in text
+
+    # Unknown shorthand fails cleanly
+    code, text = run('get', '999')
+    assert code == 1 and '[UNKNOWN 999]' in text
+
+
+def test_board_web_renders_card_id_div(repo, tmp_path, monkeypatch):
+    skills_dir = tmp_path / 'skills'
+    _place_board_template(skills_dir)
+    monkeypatch.setenv('STRATOSPHERE_PLUGIN_SKILLS', str(skills_dir))
+    ok('init')
+    bt = ok('create', '--title', 'Order client', '--label', SLICE)
+    out_html = tmp_path / 'cards.html'
+    ok('board', '--web', '--out', str(out_html))
+    content = out_html.read_text(encoding='utf-8')
+    assert '<div class="card-id">${esc(c.id)}</div>' in content
+    assert '.card-id' in content
+    data = json.loads(_data_block(content).group(1))
+    assert data['cards'][0]['id'] == bt
+
 

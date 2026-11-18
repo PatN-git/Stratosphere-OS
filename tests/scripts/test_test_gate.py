@@ -250,3 +250,14 @@ def test_record_suite_takes_a_local_backend_id_and_pr_body_suite_finds_it(repo):
 def test_record_suite_needs_an_issue_id(repo):
     suite_repo(repo)
     assert gate(repo, "record", "--suite", "oops", "--", *PYTEST_FULL).returncode != 0
+
+
+def test_record_suite_and_slice_accept_bt_l_nnn_local_id(repo):
+    suite_repo(repo)
+    assert gate(repo, "record", "--suite", "BT-L-001-x-y", "--", *PYTEST_FULL).returncode == 0
+    assert suite_record(repo, "BT-L-001-x-y").is_file()
+    pr_body = REPO_ROOT / "src" / "scripts" / "pr_body.py"
+    r = subprocess.run([sys.executable, str(pr_body), "suite"], cwd=repo, capture_output=True, text=True, env=_GIT_ENV)
+    assert r.returncode == 0 and "pytest" in r.stdout, r.stdout + r.stderr
+    assert gate(repo, "record", "--slice", "BT-L-002-z", "--", sys.executable, "-m", "pytest", "test_ok.py").returncode == 0
+    assert suite_record(repo, "BT-L-002-z").is_file()

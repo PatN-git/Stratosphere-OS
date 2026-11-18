@@ -78,20 +78,20 @@ def test_the_local_scenario_runs_end_to_end_on_the_tracker_branch():
                       "--parent", epic, "--body-file", _body(env, "Ruleset parsing"))
         two = _issues(env, "create", "--title", "Flag evaluation", "--label", SLICE, "--milestone", "v1.0.0",
                       "--parent", epic, "--blocked-by", one, "--body-file", _body(env, "Flag evaluation"))
-        assert one == "BT-LOCAL-ruleset-parsing" and two == "BT-LOCAL-flag-evaluation"
+        assert one == "BT-L-002-ruleset-parsing" and two == "BT-L-003-flag-evaluation"
         assert _issues(env, "check").startswith("[CHECK-OK")
 
         # 3c/3z: only the unblocked slice is ready; 3d claims it, a second holder is refused
         assert _ready_ids(env) == {one}
-        _issues(env, "claim", one, "--by", "feature/BT-LOCAL-ruleset-parsing")
+        _issues(env, "claim", one, "--by", f"feature/{one}")
         code, out = _script(env, "issues.py", "claim", one, "--by", "someone-else")
-        assert code == 1 and f"[CLAIMED {one} by feature/BT-LOCAL-ruleset-parsing]" in out, out
+        assert code == 1 and f"[CLAIMED {one} by feature/{one}]" in out, out
         assert [i["id"] for i in json.loads(_issues(env, "wip"))] == [one]
 
         # 4a: the auditor reads the Acceptance Criteria from the store; the ship comments and closes
         got = json.loads(_issues(env, "get", one))
         assert "### Acceptance Criteria" in got["body"] and "- [ ] Ruleset parsing works" in got["body"]
-        _issues(env, "comment", one, "--body", "Shipped on feature/BT-LOCAL-ruleset-parsing")
+        _issues(env, "comment", one, "--body", f"Shipped on feature/{one}")
         _issues(env, "close", one)
         got = json.loads(_issues(env, "get", one))
         assert got["status"] == "done" and any("Shipped on" in c for c in got["comments"])
@@ -101,18 +101,18 @@ def test_the_local_scenario_runs_end_to_end_on_the_tracker_branch():
 
         # one state on every branch: a write from a feature branch is read on main with no merge
         main = _git(env, "branch", "--show-current").strip()  # the seeded default branch
-        _git(env, "checkout", "-q", "-b", "feature/BT-LOCAL-flag-evaluation")
+        _git(env, "checkout", "-q", "-b", f"feature/{two}")
         three = _issues(env, "create", "--title", "Follow-up from the branch", "--label", SLICE,
                         "--body-file", _body(env, "Follow-up from the branch"))
         assert _git(env, "rev-parse", "HEAD") == _git(env, "rev-parse", main), "the write committed to the branch"
-        _git(env, "commit", "-q", "--allow-empty", "-m", "feat(BT-LOCAL-flag-evaluation): evaluate flags")
+        _git(env, "commit", "-q", "--allow-empty", "-m", f"feat({two}): evaluate flags")
         _git(env, "checkout", "-q", main)
         assert three in {i["id"] for i in json.loads(_issues(env, "list"))}
 
         # 0b post-merge-sync: the feature PR merged (a git merge stands in); no merge closes a local issue, so the
         # last slice ships and the epic is closed with `close`, which archives it
-        _git(env, "merge", "-q", "--no-ff", "-m", "Merge the feature", "feature/BT-LOCAL-flag-evaluation")
-        _issues(env, "claim", two, "--by", "feature/BT-LOCAL-flag-evaluation")
+        _git(env, "merge", "-q", "--no-ff", "-m", "Merge the feature", f"feature/{two}")
+        _issues(env, "claim", two, "--by", f"feature/{two}")
         _issues(env, "close", two)
         assert {i["state"] for i in json.loads(_issues(env, "children", epic))} == {"CLOSED"}
         assert epic in {i["id"] for i in json.loads(_issues(env, "list"))}, "the epic is open until post-merge-sync"
@@ -134,10 +134,10 @@ def test_the_local_scenario_runs_end_to_end_on_the_tracker_branch():
         assert _issues(env, "check").startswith("[CHECK-OK")
         assert not list(a.backlog_maps(env.project))
 
-        # tracker_switch dry run (gh shim): one create planned per BT-LOCAL issue, nothing written
+        # tracker_switch dry run (gh shim): one create planned per BT-L issue, nothing written
         code, out = _script(env, "tracker_switch.py")
         assert code == 0, out
-        planned = set(re.findall(r"^\[PLAN create (BT-LOCAL-\S+?):", out, re.M))
+        planned = set(re.findall(r"^\[PLAN create (BT-L-\S+?):", out, re.M))
         assert planned == {epic, one, two, three}, out
         assert "dry run, 4 issue(s) to create" in out, out
         assert _git(env, "status", "--porcelain") == ""

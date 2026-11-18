@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 NONE_TOKENS = frozenset({'', '-', '—'})  # an empty value in a map cell, an argument or a row field
-UNIT_ID_RE = re.compile(r'BT-(\d+|LOCAL-[a-z0-9-]+)')  # a GitHub number or a local-tracker id
+UNIT_ID_RE = re.compile(r'BT-(\d+|(?:L|LOCAL)-[a-z0-9-]+)')  # a GitHub number or a local-tracker id
 MILESTONE_RE = re.compile(r'v(\d+)\.(\d+)\.(\d+)')
 SHIPPED = ('in review', 'done')  # a same-ship-unit blocker in one of these satisfies its edge (D3)
 
@@ -47,16 +47,16 @@ def _milestone(value, flag):
 
 
 def _unit_id(bt):
-    """`BT-<padded>` for a GitHub number, the id itself for a local-tracker `BT-LOCAL-<slug>`."""
+    """`BT-<padded>` for a GitHub number, the id itself for a local-tracker `BT-L-<nnn>-<slug>`."""
     return f"BT-{int(bt[3:]):03d}" if bt[3:].isdigit() else bt
 
 
 def resolve_unit(id, milestone, parent, parent_milestone=None, epic=False):
     """Ship unit of a slice (or of an epic row with epic=True): {unit, kind, globs}. Pure; no I/O."""
     if not UNIT_ID_RE.fullmatch(id):
-        raise ValueError(f"--slice must look like BT-<n> or BT-LOCAL-<slug>, got {id!r}")
+        raise ValueError(f"--slice must look like BT-<n> or BT-L-<nnn>-<slug>, got {id!r}")
     if parent is not None and parent.strip() not in NONE_TOKENS and not UNIT_ID_RE.fullmatch(parent):
-        raise ValueError(f"--parent must look like BT-<n>, BT-LOCAL-<slug> or be none, got {parent!r}")
+        raise ValueError(f"--parent must look like BT-<n>, BT-L-<nnn>-<slug> or be none, got {parent!r}")
     own, inherited = _milestone(milestone, "--milestone"), _milestone(parent_milestone, "--parent-milestone")
     has_parent = parent is not None and parent.strip() not in NONE_TOKENS
     own_glob = f"*/{_unit_id(id)}-*"
@@ -267,7 +267,7 @@ def parse_expect(text):
         field, value = field.strip(), value.strip()
         if value.lower() == 'none' and field in ('labels', 'blocked_by', 'milestone', 'parent'):
             value = '—' if field in ('milestone', 'parent') else ''
-        if not (eq and colon and re.fullmatch(r'BT-(\d+|LOCAL-[\w-]+)', ident.strip())) or field not in EXPECT_FIELDS:
+        if not (eq and colon and re.fullmatch(r'BT-(\d+|(?:L|LOCAL)-[\w-]+)', ident.strip())) or field not in EXPECT_FIELDS:
             raise ValueError(f"bad expectation {item!r}: want BT-<n>:<field>=<value> with field one of {', '.join(EXPECT_FIELDS)}")
         if field in ('labels', 'blocked_by'):
             vals = set(csv_list(value))
@@ -280,7 +280,7 @@ def parse_expect(text):
 
 # --- Local file frontmatter & tracker switch rewrites ----------------------------------------------------------------
 
-LOCAL_ID = re.compile(r'BT-LOCAL-[A-Za-z0-9_-]*[A-Za-z0-9_]')
+LOCAL_ID = re.compile(r'BT-(?:L|LOCAL)-[A-Za-z0-9_-]*[A-Za-z0-9_]')
 REWRITE_ROOTS = ('.memory', 'docs')
 SKIP_DIRS = {'.git', '.tmp', 'node_modules', '.agents', '.claude', 'dist', '__pycache__'}
 
@@ -330,7 +330,7 @@ def write_key(path, key, value):
 
 
 def rewrite_ids(text, numbers):
-    """`BT-LOCAL-x` -> `BT-<padded>` for every id with a number; others stay."""
+    """`BT-L-*` / `BT-LOCAL-*` -> `BT-<padded>` for every id with a number; others stay."""
     return LOCAL_ID.sub(lambda m: padded(numbers[m.group(0)]) if numbers.get(m.group(0)) else m.group(0), text)
 
 

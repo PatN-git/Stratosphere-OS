@@ -1,7 +1,7 @@
 ---
 description: The single write surface for issue state: the runtime halt rule, each write kind as a verb, the misfits and the read forms. Workflows name a verb; this file says how the backend does it.
-version: "1.1.0"
-timestamp: 2026-11-09
+version: "1.1.1"
+timestamp: 2026-11-18
 ---
 
 # Tracker verbs
@@ -11,16 +11,16 @@ This file is the one source. `build/build.py` projects it into `tracker-verbs-gi
 The backend is `tracker: github | local` in `.memory/ARCHITECTURE.md`. `reconcile.py` resolves it: the key; else a tracker branch (or a v5 map still to migrate) means local; else GitHub when `gh` is ready; else halt. Workflows state a write once, as a verb. Labels and milestones: `references/label-taxonomy.md`.
 
 ## Runtime rule
-- GitHub is the only store. Never write a local copy: no issue file, no `BT-LOCAL-*` id, no mirror file. <!-- github -->
+- GitHub is the only store. Never write a local copy: no issue file, no `BT-L-*` / `BT-LOCAL-*` id, no mirror file. <!-- github -->
 - A `gh` failure is retried 3 times with backoff (the scripts do it; by hand, retry the same way). Then halt and say so. Never fall back to a local write. <!-- github -->
 - GitHub is not touched. One file per issue, `docs/issues/<id>.md` (closed: `archive/`), on the `<repo>/issues` branch (`tracker_branch:` in ARCHITECTURE.md), never in the working tree, so every branch sees one state. <!-- local -->
-- Ids are `BT-LOCAL-<slug>`: wherever a workflow or template writes `BT-<padded>` (ids, commit scope, branch, suite file, Parent/Blocked by), local mode uses the full `BT-LOCAL-<slug>`. <!-- local -->
+- Ids are `BT-L-<nnn>-<slug>`: wherever a workflow or template writes `BT-<padded>` (ids, commit scope, branch, suite file, Parent/Blocked by), local mode uses the full `BT-L-<nnn>-<slug>`. Every `issues.py` command (and `tracker.py resume-note`/`set-refs`) also resolves unambiguous numeric shorthands (`1`, `001`, `#1`, `BT-L-1`, `BT-L-001`, `BT-LOCAL-1`). <!-- local -->
 - `python .agents/scripts/issues.py` does every read and write; never edit an issue file, never check out the tracker branch. A refused write exits 1: halt and say so. <!-- local -->
 
 ## Verbs
 | Verb | GitHub form | Local form |
 |:--|:--|:--|
-| `create` | `gh issue create --title … --label … [--milestone …] --body-file .tmp/<name>.md`; the id is the returned number, zero-padded (`BT-007`). Never predict it: GitHub shares numbering with PRs | `issues.py create --title <t> --label <l,l> --body-file .tmp/<name>.md` (`--status`, `--milestone`, `--parent`, `--blocked-by` as needed) prints `BT-LOCAL-<slug>` (`-2` … on a clash) |
+| `create` | `gh issue create --title … --label … [--milestone …] --body-file .tmp/<name>.md`; the id is the returned number, zero-padded (`BT-007`). Never predict it: GitHub shares numbering with PRs | `issues.py create --title <t> --label <l,l> --body-file .tmp/<name>.md` (`--status`, `--milestone`, `--parent`, `--blocked-by` as needed) prints `BT-L-<nnn>-<slug>` (`001`, `002`, …) |
 | `set_status` | `gh issue edit <n> --remove-label "status:<old>" --add-label "status:<new>"`; it owns the Single Status Invariant, so the old label goes first. The board Action moves the card | `issues.py set <id> --status <s>` (one field: the invariant holds in code) |
 | `set_labels` | `gh issue edit <n> --add-label … --remove-label …` | `issues.py set <id> --add-label <l> --remove-label <l>` |
 | `ensure_label` | `gh label create "<name>" --description …` after the user confirms; the live `gh label list` is the registry | `issues.py label area:<slug>` after the user confirms |
@@ -63,6 +63,7 @@ Local reads are the same-named `issues.py` command (JSON). <!-- local -->
 - `wip`: `gh issue list --state open --label "status:in progress" --json number,title,labels` (about 150 tokens) <!-- github -->
 - `wip`: `issues.py wip` <!-- local -->
 - `board`: `issues.py board [--milestone <m>] [--parent <id>] [--md [file]]`: text kanban columns, or a Markdown export; `issues.py board --web [--out <f>] [--open]`: an interactive HTML page (a browser opens only with `--open`) whose copied payload is the `apply_moves` input. <!-- local -->
+- `summary`: `issues.py summary [--milestone <m>] [--parent <id>]`: concise markdown table of open issues. <!-- local -->
 - `resume_note`: the task's latest resume note. `gh issue view <n> --json comments --jq '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'` (PowerShell 5.1: escape the inner quotes as `\"`); it reads every comment page (the REST comments list returns only the first 30). Empty → no note yet. <!-- github -->
 - `resume_note`: the task's latest resume note: `.memory/resume/<id>.md`. Empty → no note yet. <!-- local -->
 - `candidates`: `python .agents/scripts/ice_read.py candidates` on both backends: open leaf issues at `status:planned|needs_spec` (no `concept:*`, no `scope:deferred`), one line each with milestone and ICE computed on read (Impact × Confidence ÷ size weight from the body and the `size:` label; `—` for a Spike or a body without metrics); `[MISSING-LABELS]` lines for leaves lacking a required label.

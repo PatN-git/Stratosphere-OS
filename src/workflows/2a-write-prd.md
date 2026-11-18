@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.9.0"
-timestamp: 2026-11-09
+version: "1.9.1"
+timestamp: 2026-11-18
 ---
 
 # Write PRD
@@ -30,7 +30,7 @@ Run the `load-memory` skill to restore session context (read-only).
 ## Phase 2: Reserve BT-<padded> (Atomic Minting)
 `create` the parent issue (`.agents/scripts/tracker.py`) and capture the id it returns, zero-padded to 3 digits (e.g. `BT-059`).
 > [!IMPORTANT]
-> **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns (local backend: `BT-LOCAL-<slug>`).
+> **ATOMIC MINTING RULE:** Never predict or guess the next issue number by scanning existing ids. GitHub shares numbering across issues/PRs; local guesses collide. `BT-<padded>` is born strictly from the id `create` returns (local backend: `BT-L-<nnn>-<slug>`).
 
 - **Title:** clean feature name (no bracket prefix; bracket IDs are sub-issue-only).
 - **Labels (apply):** `tier:epic`, `area:<x>` (inferred; no registry slug fits → omit it, 3b/the user adds it), `type:feature`, `status:needs_spec`; default priority to `priority:medium` if unknown. Never invent non-registry labels.

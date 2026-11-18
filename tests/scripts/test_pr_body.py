@@ -1199,6 +1199,28 @@ def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatc
     assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err
 
 
+def test_numbered_local_ids_bt_l_nnn_build_unit_and_longer_globs(repo, tmp_path):
+    commit(repo, "feat(BT-L-001-a): first")
+    commit(repo, "fix(BT-L-000-e): touches the epic itself")
+    first = build(repo, "BT-L-001-a", "--epic", "BT-L-000-e", parent="BT-L-000-e")
+    assert field(first, "features") == "[BT-L-000-e]" and "Closes" not in first
+    assert re.findall(r"^  - \{id: (\S+), parent: (\S+), ", block(first), re.M) == [("BT-L-001-a", "BT-L-000-e")]
+    prior = tmp_path / "prior_bt_l.md"
+    prior.write_text(first, encoding="utf-8")
+    commit(repo, "feat(BT-L-002-b): second")
+    second = build(repo, "BT-L-002-b", "--epic", "BT-L-000-e", prior=prior, parent="BT-L-000-e")
+    assert re.findall(r"^  - \{id: (\S+), parent: \S+, summary: \".*?\", verdict: (\w+)", block(second), re.M) == [
+        ("BT-L-001-a", "PASS"), ("BT-L-002-b", "PASS")]
+    assert field(second, "features") == "[BT-L-000-e]"
+
+    write_backlog(repo, ("BT-L-001-login", "tier:slice"), ("BT-L-001-login-form", "tier:slice"))
+    out = unit_ok(repo, "--slice", "BT-L-001-login", "--milestone", NONE, "--branch", "feature/BT-L-001-login-x")
+    assert out["unit"] == "BT-L-001-login" and out["branch_ok"] is True
+    assert unit_ok(repo, "--slice", "BT-L-001-login", "--milestone", NONE,
+                   "--branch", "origin/feature/BT-L-001-login-form-x")["branch_ok"] is False
+
+
+
 def _isolated_env(home: Path, **extra):
     env = {k: v for k, v in os.environ.items() if k != "STRATOSPHERE_PLUGIN_SKILLS"}
     env["HOME"] = str(home)

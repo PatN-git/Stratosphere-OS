@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.2.1"
-timestamp: 2026-11-17
+version: "1.2.2"
+timestamp: 2026-11-18
 ---
 
 # Write Spec (orchestrator)
@@ -29,7 +29,7 @@ timestamp: 2026-11-17
    - Design doc `docs/design/BT-<padded>-interface.md` is `status: stable`, or 2b's skip path already promoted the epic to `planned` → start at Phase 3.
    - PRD `docs/prds/BT-<padded>-*.md` exists → start at Phase 2.
    - Otherwise → Phase 1.
-3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID, then 2z renames it; offline ID `BT-LOCAL-<slug>`; resume checks both names). Append one line per HITL decision; on resume print its last 5 lines. The hand-off reads it too.
+3. **Decision log:** create or reopen `.tmp/2z-BT-<padded>-decisions.md` (`.tmp/2z-<slug>-decisions.md` until 2a mints the ID, then 2z renames it; offline ID `BT-L-<nnn>-<slug>`; resume checks both names). Append one line per HITL decision; on resume print its last 5 lines. The hand-off reads it too.
 4. **Resolve the brief once:** after hydrating: PRD with `discovery:` → use it (`—` = none); no PRD, or PRD without the field → locate: the `docs/discovery/*.md` (excluding `*.work.md` and `*.map.md`) whose frontmatter has `linked-prd: BT-<padded>`; if none, 2a's slug fuzzy-match (2a Phase 1 step 5). Record its path (or `none`) in the decision log; a resumed run reuses it.
 
 ## Phase 1: PRD

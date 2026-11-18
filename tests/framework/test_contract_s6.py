@@ -70,17 +70,17 @@ def test_no_local_tracker_store_is_left_in_memory_or_a_map_file():
 
 
 def test_the_local_backend_has_one_id_rule_everywhere():
-    """tracker-verbs `create`: the local id is `BT-LOCAL-<slug>`; GitHub mode binds `BT-<padded>` from `gh issue create`."""
+    """tracker-verbs `create`: the local id is `BT-L-<nnn>-<slug>`; GitHub mode binds `BT-<padded>` from `gh issue create`."""
     for rel in ("workflows/3b-create-issue.md", "references/tracker-verbs.md", "commands/stratosphere-setup/SKILL.md",
                 "rules/memory-protocol.md"):
         assert "BT-LOCAL-<n>" not in read_src(rel), rel
     create = next(l for l in read_src("references/tracker-verbs.md").splitlines() if l.startswith("| `create`"))
-    assert "`BT-LOCAL-<slug>`" in create and "-2" in create, create
-    assert "BT-LOCAL-<slug>" in read_src("rules/memory-protocol.md")
+    assert "`BT-L-<nnn>-<slug>`" in create, create
+    assert "BT-L-<nnn>-<slug>" in read_src("rules/memory-protocol.md")
     assert "MUST emit BT ids in zero-padded" not in read_src("commands/stratosphere-setup/SKILL.md")
     stale = [f"{p.relative_to(SRC)}:{i}" for p in _sources()
              for i, l in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if "BT-LOCAL-<n>" in l]
-    assert stale == [], f"local ids are `BT-LOCAL-<slug>`: {stale}"
+    assert stale == [], f"local ids are `BT-L-<nnn>-<slug>`: {stale}"
 
 
 def test_the_breaking_v5_release_is_documented_for_consumers():

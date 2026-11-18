@@ -37,7 +37,7 @@ ZERO = "0" * 40
 MARKER = "# stratos-test-gate"
 CHECK_LINE = "python .agents/scripts/test_gate.py check"
 FIX = "python .agents/scripts/test_gate.py record -- <related-tests command>"
-SUITE_ID_RE = re.compile(r"^BT-(\d+|LOCAL-[a-z0-9-]+)$")
+SUITE_ID_RE = re.compile(r"^BT-(\d+|(?:L|LOCAL)-[a-z0-9-]+)$")
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 COUNT_RE = re.compile(r"\d+ (?:passed|failed)")
 # Docs and framework/CI files the project's tests never cover need no test run.

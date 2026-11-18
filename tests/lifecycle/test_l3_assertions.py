@@ -349,7 +349,7 @@ def test_3b_local_fails_when_no_slice_was_created(tmp_path, monkeypatch):
 
 def test_3b_local_fails_when_a_slice_body_has_no_acceptance_criteria(tmp_path, monkeypatch):
     problems = _local_3b(tmp_path, monkeypatch, body="### Overview\nParse.\n")
-    assert any("BT-LOCAL-ruleset-parsing" in p and "Acceptance Criteria" in p for p in problems), problems
+    assert any("BT-L-002-ruleset-parsing" in p and "Acceptance Criteria" in p for p in problems), problems
 
 
 def test_3b_local_fails_when_issues_check_finds_a_bad_label_set(tmp_path, monkeypatch):
@@ -385,12 +385,13 @@ def test_3d_fails_without_a_session_line_or_with_a_retired_field(tmp_path):
 
 
 def test_3d_session_line_accepts_a_local_backend_id(tmp_path):
-    """The local backend's ids are `BT-LOCAL-<slug>`; a session line naming one is a session line."""
-    proj = project(tmp_path)
-    write(proj / ".memory" / "STATUS.md",
-          "# STATUS\n- **Sessions:**\n  - BT-LOCAL-flag-evaluation · feature/v1.0-flags · 2026-10-28\n")
-    problems, _ = a.check("3d", ctx(proj))
-    assert not any("session line" in p for p in problems)
+    """The local backend's ids are `BT-L-<nnn>-<slug>` (or legacy `BT-LOCAL-<slug>`); a session line naming either passes."""
+    for local_id in ("BT-L-001-flag-evaluation", "BT-LOCAL-flag-evaluation"):
+        proj = project(tmp_path / local_id)
+        write(proj / ".memory" / "STATUS.md",
+              f"# STATUS\n- **Sessions:**\n  - {local_id} · feature/v1.0-flags · 2026-10-28\n")
+        problems, _ = a.check("3d", ctx(proj))
+        assert not any("session line" in p for p in problems), local_id
 
 
 def test_3d_passes_with_a_branch_and_a_commit(tmp_path):
