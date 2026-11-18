@@ -281,9 +281,9 @@
       "version": "2.1.0"
     },
     "skills/3b-create-issue/SKILL.md": {
-      "sha256": "28af344ec2821b38ed6d018cefa982ab1cbaf06125d579dae2339642e8339b0e",
-      "timestamp": "2026-11-17",
-      "version": "2.10.1"
+      "sha256": "051c5791036aeaad91851ad416e62f74eaf31b89b3406d7522df8c7d7f6b22af",
+      "timestamp": "2026-11-18",
+      "version": "2.10.2"
     },
     "skills/3b-create-issue/references/audit-to-slices.md": {
       "sha256": "b0f00d75d8330b4add8a012bf640e4b49c738a6cd214de02b5e674feb467c730",

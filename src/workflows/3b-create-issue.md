@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.10.1"
-timestamp: 2026-11-17
+version: "2.10.2"
+timestamp: 2026-11-18
 ---
 
 # Create issue
@@ -103,7 +103,7 @@ Run the `load-memory` skill to restore session context (read-only).
    - `ICE < 0.15` → `priority:low`
 3. **Pre-mint guard (Build slice):**
    - (a) **Whole file, once:** `grep -noE 'BT-<[^>]+>|\[\[[A-Z]+-[xX]+\]\]' .tmp/BT-<padded>-issue-drafts.md | grep -vE ':BT-<slice:[0-9]+>$'` — any output → HALT and list it (only sibling `BT-<slice:N>` refs may remain).
-   - (b) **Mint order:** if drafts cite siblings, extract edges and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
+   - (b) **Mint order:** if drafts cite siblings, extract edges (`BT-<slice:2> <- BT-<slice:1>`, one edge per line) and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
    - (c) **Per slice, before each mint:** run the step (a) pattern on that slice's body without the exclusion — any hit (an unminted blocker included) → HALT. Substitution is the only permitted edit to an approved draft.
    - **Audit-sourced:** run (a)–(c) against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`; in (a) also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`), and HALT if `BT-<epic>` appears without a `## Epic` section. Only after (a) and the (b) order/cycle check pass, (b0): mint the epic (step 4) and replace every `BT-<epic>` in the proposal with the returned ID, then mint slices in the (b) order.
 4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`.agents/scripts/tracker.py`).

@@ -167,8 +167,8 @@ def parse_edges(text: str):
         elif '->' in line:
             preds, target = line.split('->', 1)
             target, blks = target, preds
-        elif ':' in line:
-            target, blks = line.split(':', 1)
+        elif (m := re.match(r'^((?:[^:<]|<[^>]*>)+):(.*)$', line)):
+            target, blks = m.groups()
         else:
             target, blks = line, ''
         target = target.strip()
