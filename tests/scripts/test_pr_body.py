@@ -56,7 +56,7 @@ def build(repo, slice_id, *extra, prior=None, summary="did a thing", verdict="PA
     suite = write_suite(repo, f"3d-suite-{slice_id}.json")
     args = ["build", "--slice", slice_id, "--summary", summary, "--verdict", verdict,
             "--audit-rounds", rounds, "--base", "main", "--risk-paths", RISK_PATHS,
-            "--suite-json", suite, "--parent", parent, *extra]
+            "--suite-json", suite, *(["--parent", parent] if parent else []), *extra]
     if prior:
         args += ["--prior-body-file", prior]
     r = run(repo, *args)
@@ -1290,3 +1290,83 @@ def test_explicit_missing_risk_paths_warns_even_when_plugin_bundle_exists(repo, 
     assert r.returncode == 0, r.stderr
     assert "[PR-BODY-WARN] risk rules not found at" in r.stderr
     assert field(r.stdout, "risk") == "[none]"
+
+
+# --- BT-282: preserve prior standalone and epic-as-slice rows; accumulate standalone features ---------------
+
+def test_two_standalone_slices_keep_both_rows_closes_and_features(repo):
+    commit(repo, "feat(BT-286): first standalone")
+    p1 = repo / ".tmp" / "p1_standalone.md"
+    p1.write_text(build(repo, "BT-286", parent=None, summary="first standalone", verdict="WAIVED", rounds=2),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-285): second standalone")
+    body = build(repo, "BT-285", parent=None, prior=p1, summary="second standalone", verdict="PASS", rounds=1)
+    by_id = {s[0]: s for s in slices(body)}
+    assert set(by_id) == {"BT-285", "BT-286"}
+    assert by_id["BT-286"][1:] == ('"first standalone"', "WAIVED", "2")
+    assert by_id["BT-285"][1:] == ('"second standalone"', "PASS", "1")
+    assert slice_parents(body) == {"BT-285": None, "BT-286": None}
+    assert "Closes #286." in body and "Closes #285." in body
+    assert field(body, "features") == "[BT-286, BT-285]"
+    again = repo / ".tmp" / "p2_standalone.md"
+    again.write_text(body, encoding="utf-8")
+    assert build(repo, "BT-285", parent=None, prior=again, summary="second standalone", verdict="PASS", rounds=1) == body
+
+
+def test_two_local_standalone_slices_accumulate_features(repo):
+    commit(repo, "feat(BT-L-001-alpha): first")
+    p1 = repo / ".tmp" / "p1_local.md"
+    p1.write_text(build(repo, "BT-L-001-alpha", parent=None, summary="first local"), encoding="utf-8")
+    commit(repo, "feat(BT-L-002-beta): second")
+    body = build(repo, "BT-L-002-beta", parent=None, prior=p1, summary="second local")
+    assert field(body, "features") == "[BT-L-001-alpha, BT-L-002-beta]"
+    assert "Closes" not in body
+    assert re.findall(r"^  - \{id: (\S+), summary: \".*?\", verdict: (\w+)", block(body), re.M) == [
+        ("BT-L-001-alpha", "PASS"), ("BT-L-002-beta", "PASS")]
+
+
+def test_standalone_slice_followed_by_epic_slice_preserves_standalone_row_and_filters_epic(repo):
+    commit(repo, "feat(BT-286): standalone first")
+    p1 = repo / ".tmp" / "p1_mix.md"
+    p1.write_text(build(repo, "BT-286", parent=None, summary="solo slice", verdict="PASS", rounds=2),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-11): epic slice")
+    commit(repo, "docs(BT-10): touches epic ten")
+    body = build(repo, "BT-11", prior=p1, parent="BT-10", summary="epic child")
+    by_id = {s[0]: s for s in slices(body)}
+    assert set(by_id) == {"BT-11", "BT-286"}
+    assert by_id["BT-286"][1:] == ('"solo slice"', "PASS", "2")
+    assert slice_parents(body) == {"BT-11": "BT-010", "BT-286": None}
+    assert "Closes #286." in body and "Closes #11." in body and "Closes #10." not in body
+    assert field(body, "features") == "[BT-286, BT-010]"
+
+
+def test_epic_as_slice_followed_by_child_slice_preserves_shipped_epic_row(repo):
+    commit(repo, "feat(BT-20): epic as own slice")
+    p1 = repo / ".tmp" / "p1_epic_slice.md"
+    p1.write_text(build(repo, "BT-20", parent="BT-20", summary="epic self slice", verdict="SKIP", rounds=0),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-22): child slice")
+    commit(repo, "docs(BT-30): unrelated epic commit")
+    write_backlog(repo, ("BT-20", "tier:epic"), ("BT-22", "tier:slice", "BT-20"), ("BT-30", "tier:epic"))
+    body = build(repo, "BT-22", prior=p1, parent="BT-20", summary="child slice")
+    by_id = {s[0]: s for s in slices(body)}
+    assert [s[0] for s in slices(body)] == ["BT-20", "BT-22"]
+    assert by_id["BT-20"][1:] == ('"epic self slice"', "SKIP", "0")
+    assert slice_parents(body) == {"BT-20": "BT-020", "BT-22": "BT-020"}
+    assert "Closes #20." in body and "Closes #22." in body and "Closes #30." not in body
+    assert field(body, "features") == "[BT-020]"
+
+
+def test_prior_pending_row_can_still_be_filtered_as_epic(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-10): epic commit")
+    prior = repo / ".tmp" / "prior_pending.md"
+    prior.write_text("```stratos-pr\nfeatures: [BT-010]\nslices:\n"
+                     '  - {id: BT-10, summary: "docs", verdict: PENDING, audit_rounds: 0}\n'
+                     '  - {id: BT-11, parent: BT-010, summary: "first", verdict: PASS, audit_rounds: 1}\n```\n',
+                     encoding="utf-8")
+    commit(repo, "feat(BT-12): second")
+    body = build(repo, "BT-12", prior=prior, parent="BT-10", summary="second")
+    assert [s[0] for s in slices(body)] == ["BT-11", "BT-12"]
+    assert "Closes #10." not in body

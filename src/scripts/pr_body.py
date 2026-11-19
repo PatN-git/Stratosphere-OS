@@ -458,6 +458,12 @@ def tracker_facts(nums):
     return epics, {n: f"BT-{node['parent']['number']:03d}" for n, node in nodes.items() if node.get("parent")}
 
 
+def _is_prior_standalone(bt, prior):
+    """True when `bt` is already a standalone slice row (parent == NO_PARENT) in `prior`."""
+    key = idkey(bt)
+    return key in prior and prior[key][1] == NO_PARENT
+
+
 def slice_rows(args, prior, features, base):
     """(id, parent, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new (parent from the tracker backend).
@@ -474,7 +480,13 @@ def slice_rows(args, prior, features, base):
     ship_n = idkey(args.slice)
     first_subject.setdefault(ship_n, (args.slice, args.summary))
     epics, parents = tracker_facts(set(first_subject))
-    for epic_n in (epics | {idkey(e) for e in args.epic} | {idkey(f) for f in features}) - {ship_n}:
+    feature_epics = (
+        {idkey(f) for f in features if not _is_prior_standalone(f, prior)}
+        | {idkey(r[1]) for r in prior.values() if r[1] != NO_PARENT}
+        | ({idkey(args.parent)} if args.parent else set())
+    )
+    preserved = {ship_n} | {k for k, r in prior.items() if r[3] != "PENDING"}
+    for epic_n in (epics | {idkey(e) for e in args.epic} | feature_epics) - preserved:
         first_subject.pop(epic_n, None)
 
     rows = []
@@ -603,11 +615,20 @@ def cmd_build(args):
     if rows is None:
         print(f"[PR-BODY-ERROR] --slice must look like BT-<n> or BT-L-<nnn>-<slug>, got {args.slice!r}", file=sys.stderr)
         return 2
-    features = union(features, [canon(r[1]) for r in rows if r[1] != NO_PARENT]) or [canon(args.slice)]
+    features = union(features, [canon(r[1]) for r in rows if r[1] != NO_PARENT])
+    ship_n = idkey(args.slice)
+    ship_row = next(r for r in rows if idkey(r[0]) == ship_n)
+    prior_parent = prior[ship_n][1] if ship_n in prior else NO_PARENT
+    if (not args.parent
+            and ship_row[1] == NO_PARENT
+            and prior_parent == NO_PARENT
+            and all(_is_prior_standalone(f, prior) for f in features)):
+        features = union(features, [canon(args.slice)])
+    features = features or [canon(args.slice)]
     closing = union([canon(c) for c in args.close],
                     [canon(args.parent or (prior_features[0] if prior_features else args.slice))] if args.close_parent else [])
 
-    ship_id = next(r[0] for r in rows if idkey(r[0]) == idkey(args.slice))  # the audit key spells the id as the row does
+    ship_id = ship_row[0]  # the audit key spells the id as the row does
     qa = [f"manual-QA: {args.slice}"] if args.manual_qa else []
     lists = {"post_merge": union(prior_lists["post_merge"], args.post_merge, qa),
              "deviations": union(prior_lists["deviations"], args.deviation),
