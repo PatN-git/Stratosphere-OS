@@ -12,7 +12,7 @@ version: "1.0.0"
 
 # Research: first results of the 4a audit test plan
 
-Runs of [the plan](../plans/4a-audit-eval-strategy.md) on the [corpus](4a-audit-eval/README.md). Earlier replays: [lean replay](4a-audit-lean-replay.md).
+Runs of [[4a-audit-eval-strategy|the plan]] on the [[docs/research/4a-audit-eval/README|corpus]]. Earlier replays: [[4a-audit-lean-replay|lean replay]].
 
 ## Setup
 - 13 real slices (7 StratOS, 6 CleanTechHub), 43 labeled spec gaps taken from the audit-fix commits; 4 clean controls. Snapshots are `git archive` of the state before the fixes.

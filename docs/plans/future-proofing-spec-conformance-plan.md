@@ -12,7 +12,7 @@ generated:
 
 Execution plan. 15 slices, one feature branch, one PR. Read §1–§3 before any slice; §4–§8 (order, spike, verification, abort, risks) follow the slices.
 
-Work list for Slice 9: [workflow-migration-audit.md](workflow-migration-audit.md).
+Work list for Slice 9: [[workflow-migration-audit|workflow-migration-audit.md]].
 
 > Planned in worktree `feat/spec-conformance-v4` off `origin/main` (`c5b9ff9`). All counts re-derived against main on 2026-09-15.
 >
@@ -249,7 +249,7 @@ Plus `<skill>/agents/openai.yaml` → `policy: { allow_implicit_invocation: fals
 
 ## Slice 9 — In-body remediation
 
-Work list: **[workflow-migration-audit.md](workflow-migration-audit.md)**.
+Work list: **[[workflow-migration-audit|workflow-migration-audit.md]]**.
 
 | § | Work |
 |:---|:---|

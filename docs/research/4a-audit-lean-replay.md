@@ -15,7 +15,7 @@ version: "1.0.0"
 Evidence for BT-203's second and third acceptance criteria. Method and caveats first, numbers second, verdict last.
 
 ## Method
-- Four past slices from [4a-audit-yield.md](4a-audit-yield.md): BT-120, BT-139, BT-143 and BT-187, each checked out at its pre-fix commit in a temporary worktree (`da0b40a`, `e1ed8d6`, `f06853c`, `7091e37`). The Spec audit ran as an isolated read-only Sonnet 5.5 subagent in two regimes: **full** (the pre-BT-203 contract: issue, spec docs, implementation and test files in full, `LEARNINGS.md`) and **lean** (the BT-203 packet: issue ACs, the slice diff, test names; files only on demand, see [audit-inputs.md](../../src/references/audit-inputs.md)).
+- Four past slices from [[4a-audit-yield|4a-audit-yield.md]]: BT-120, BT-139, BT-143 and BT-187, each checked out at its pre-fix commit in a temporary worktree (`da0b40a`, `e1ed8d6`, `f06853c`, `7091e37`). The Spec audit ran as an isolated read-only Sonnet 5.5 subagent in two regimes: **full** (the pre-BT-203 contract: issue, spec docs, implementation and test files in full, `LEARNINGS.md`) and **lean** (the BT-203 packet: issue ACs, the slice diff, test names; files only on demand, see [audit-inputs.md](../../src/references/audit-inputs.md)).
 - Round 2 on BT-187: the fix commit `4237cd0` (round-1 fixes) checked out; a **delta** audit (previous coverage map, changed-file list, fix diff) against a **full lean** audit of the same state.
 - Tokens are the `subagent_tokens` totals the harness reported per run (cache reads not itemized). One run per cell unless noted. Gap counts are findings with confidence >= 80.
 

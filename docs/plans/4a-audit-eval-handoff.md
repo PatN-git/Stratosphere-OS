@@ -10,7 +10,7 @@ version: "1.0.0"
 
 # Handoff: 4a audit work (epic BT-201), 2026-10-20
 
-Read this first. Evidence: [replays](../research/4a-audit-lean-replay.md), [first test results](../research/4a-audit-eval-results.md), [test plan](4a-audit-eval-strategy.md), [corpus](../research/4a-audit-eval/README.md).
+Read this first. Evidence: [[4a-audit-lean-replay|replays]], [[4a-audit-eval-results|first test results]], [[4a-audit-eval-strategy|test plan]], [[docs/research/4a-audit-eval/README|corpus]].
 
 ## State
 - **Branch** `improvement/BT-201-4a-audit-yield-log-auditor-findings-cut`, stacked on `feat/BT-190-lifecycle-status-pr-scope` (PR #193). **Draft PR #210** (base = the BT-190 branch), 4 CI checks were green at the last push.

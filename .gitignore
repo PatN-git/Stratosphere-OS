@@ -19,3 +19,7 @@ __pycache__/
 .env.*
 token.json
 docs/okf-view.html
+.obsidian/workspace*.json
+.obsidian/cache/
+.obsidian/graph-cache.json
+.obsidian/appearance.json

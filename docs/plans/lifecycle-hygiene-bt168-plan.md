@@ -9,7 +9,7 @@ version: "1.0.0"
 
 # Plan: BT-168 lifecycle artifact-flow hygiene (H1, H2, H3 rest)
 
-**Status:** planned and halted for the next session, at the user's request. BT-168 sits under standing epic BT-116 and ships in PR #161. Evidence: [`lifecycle-artifact-flow-audit.md`](lifecycle-artifact-flow-audit.md) §5. H4 and three of the H3 sub-items already landed in BT-166/BT-164.
+**Status:** planned and halted for the next session, at the user's request. BT-168 sits under standing epic BT-116 and ships in PR #161. Evidence: [[lifecycle-artifact-flow-audit|`lifecycle-artifact-flow-audit.md`]] §5. H4 and three of the H3 sub-items already landed in BT-166/BT-164.
 
 **User decisions (2026-10-13):**
 - **H1:** 3a owns release close, inside this slice.

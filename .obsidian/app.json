@@ -1,0 +1,24 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "showLineNumber": true,
+  "userIgnoreFilters": [
+    "^\\.git/",
+    "^\\.tmp/",
+    "^node_modules/",
+    "^dist/",
+    "^build/",
+    "^src/",
+    "^tests/",
+    "^docs/.*/\\.archive/",
+    "^docs/archive/",
+    "^\\.agents/",
+    "^\\.claude/",
+    "^\\.claude\\-plugin/",
+    "^\\.github/",
+    "^\\.pytest_cache/",
+    "^Microsoft/",
+    "^experiments/",
+    "^scripts/"
+  ]
+}

@@ -13,7 +13,7 @@ generated:
 **Status:** Open proposal. Not implemented. Self-contained — pick up in any session (incl. mobile / claude.ai/code).
 **Origin:** Two review passes combined —
 - **Part A (defects):** a source audit of the Discover phase (`1a`/`1b`/`1c`) that found five correctness/protocol defects, each verified against source `file:line` and cross-checked against the OKF and memory protocols.
-- **Part B (depth):** a session review of three workflow-quality questions benchmarked against the reference pack's current skills (`/grilling`, `/wayfinder`, `/to-spec`, `/handoff`) via web research on the reference pack's public repo and docs. Prior lineage record: [`docs/research/archive/v1-1-learnings-and-concept-framing-exploration.md`](../research/archive/v1-1-learnings-and-concept-framing-exploration.md).
+- **Part B (depth):** a session review of three workflow-quality questions benchmarked against the reference pack's current skills (`/grilling`, `/wayfinder`, `/to-spec`, `/handoff`) via web research on the reference pack's public repo and docs. Prior lineage record: [[docs/research/archive/v1-1-learnings-and-concept-framing-exploration|`docs/research/archive/v1-1-learnings-and-concept-framing-exploration.md`]].
 
 **Scope:** Edits to StratOS's OWN workflow source under `src/workflows/` (and one shared reference under `src/references/`); governed by the `improve-workflows-skills` discipline (per-file OKF version bump once per PR; rebuild `dist/` after edits). NOT product code.
 

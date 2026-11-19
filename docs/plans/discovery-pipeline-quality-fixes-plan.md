@@ -11,7 +11,7 @@ version: "1.0.0"
 
 **Status:** **IMPLEMENTED on branch** (2026-07-24) — all F1–F12 + Q1–Q4 edited in `src/`, `dist/` rebuilt, `build/validate.py` + reconcile / terminal-sync / 3z-orchestrator tests green. 12 files bumped (OKF once each); plugin **VERSION 3.0.1 → 3.1.0** (minor, derived by `scripts/release.py` — biggest-change-wins over the artifact bumps) + README badge; `bump_guard` green (3.1.0 > released tag v3.0.1). Awaiting review + human merge (workflows never self-merge).
 **Target:** Branch `claude/v3-polish-discovery-pipeline-kn3h6l` (base `main`), v3.0.x line. **One PR, all items** (D5).
-**Source of truth:** [`docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`](../proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md) (v1.1.0) for the *why/evidence*. This file is the *tracker* — state, decisions, and the two designs (Q2 rewrite, Q4 adaptive grill) that were settled after the proposal was written.
+**Source of truth:** [[FEAT-discovery-pipeline-quality-fixes-proposal|`docs/proposals/FEAT-discovery-pipeline-quality-fixes-proposal.md`]] (v1.1.0) for the *why/evidence*. This file is the *tracker* — state, decisions, and the two designs (Q2 rewrite, Q4 adaptive grill) that were settled after the proposal was written.
 
 > **Decisions locked:** D1 `1c` = hard HITL stop like `1b`. · D2 `1b` stop-conditions = **full rewrite** (all 4 fixes). · D3 Q4 = **frontier-batched grilling with inference-collapse** (dependency-driven, no structural tier — §2.1). · D4 = **no** `2a` spec reframe; coverage sufficient once Q1 lands (§2.2). · D5 = one PR + OKF version bumps. · D6 = ship via `improve-workflows-skills` → edit `src/` → rebuild `dist/` → `/4a`. · D7 = fold the wider-audit fixes (F6–F12, §5) into the **same one PR**.
 >
