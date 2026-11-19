@@ -913,9 +913,9 @@ def main():
             default_choice = "1" if is_plugin_host else "2"
             if sys.stdin.isatty():
                 print("Choose StratosphereOS Skill Delivery Mode:")
-                print("  [1] (Recommended) Plugin Mode: Zero repo clutter. 28 lifecycle skills load from Antigravity/Claude plugin.")
+                print("  [1] (Recommended) Plugin Mode: Zero repo clutter. 28 bundled skills load from Antigravity/Claude plugin.")
                 print("      -> Only third-party project skills live in .agents/skills/. Saves ~1,500 prompt tokens/turn.")
-                print("  [2] Multi-Host Mode: Copies all 28 lifecycle skills into .agents/skills/ for Cursor, Codex, Devin, or CLI agents.")
+                print("  [2] Multi-Host Mode: Copies all 28 bundled skills into .agents/skills/ for Cursor, Codex, Devin, or CLI agents.")
                 try:
                     ans = input(f"Select [1/2] (default: {default_choice}): ").strip()
                     if ans == "2":

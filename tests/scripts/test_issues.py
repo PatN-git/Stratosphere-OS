@@ -1645,6 +1645,55 @@ def test_shorthand_lookup_ambiguous_collision_and_unknown(repo, tmp_path):
     assert code == 1 and '[UNKNOWN 999]' in text
 
 
+def test_apply_moves_hash_shorthand_and_comment_skipping(repo, tmp_path):
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    b = ok('create', '--title', 'Beta', '--label', SLICE)
+    moves = (
+        "Please apply these moves:\n"
+        "## Heading to ignore\n"
+        "# comment to ignore\n"
+        "#1 -> blocked\n"
+        "#2: Beta -> in progress\n"
+    )
+    code, text = run('apply-moves', body(tmp_path, moves, 'hash_moves.txt'))
+    assert code == 0, text
+    assert '[APPLY-MOVES] applied 2 move(s)' in text
+    assert f'{a}: planned -> blocked' in text and f'{b}: planned -> in progress' in text
+    assert json.loads(ok('get', a))['status'] == 'blocked'
+    assert json.loads(ok('get', b))['status'] == 'in progress'
+
+    code, text = run('apply-moves', body(tmp_path, '## heading\n# comment\n', 'only_comments.txt'))
+    assert code == 1 and 'no moves' in text
+
+
+def test_ambiguous_issue_error_preserved_by_store_apply_moves_and_remove_blocker(repo, tmp_path):
+    assert issubclass(issues.AmbiguousIssueError, issues.IssuesError)
+    ok('init')
+    a = ok('create', '--title', 'Alpha', '--label', SLICE)
+    dep = ok('create', '--title', 'Dependent', '--label', SLICE, '--blocked-by', a)
+    b_issue = {k: None for k in issues.FIELDS} | {
+        'type': 'issue', 'id': 'BT-LOCAL-1-beta', 'title': 'Beta', 'status': 'planned',
+        'labels': SLICE.split(','), 'blocked_by': [], 'body': '', 'comments': [],
+    }
+    issues.Tracker().write(lambda s: (s.changes(b_issue), 'ok'), 'seed collision')
+
+    store = issues.Tracker().store()
+    with pytest.raises(issues.AmbiguousIssueError, match=r'\[AMBIGUOUS 1\]') as exc_info:
+        store.resolve('1')
+    assert isinstance(exc_info.value, issues.IssuesError)
+    assert a in str(exc_info.value) and 'BT-LOCAL-1-beta' in str(exc_info.value)
+
+    code, text = run('set', dep, '--remove-blocker', '1')
+    assert code == 1 and '[AMBIGUOUS 1]' in text
+    assert json.loads(ok('get', dep))['blocked_by'] == [a]
+
+    code, text = run('apply-moves', body(tmp_path, '1 -> blocked\n#1: Alpha -> blocked\n', 'ambig_moves.txt'))
+    assert code == 1
+    assert 'line 1: [AMBIGUOUS 1]' in text
+    assert 'line 2: [AMBIGUOUS #1]' in text
+
+
 def test_board_web_renders_card_id_div(repo, tmp_path, monkeypatch):
     skills_dir = tmp_path / 'skills'
     _place_board_template(skills_dir)

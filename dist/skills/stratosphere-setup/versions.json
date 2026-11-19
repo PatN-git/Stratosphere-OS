@@ -581,9 +581,9 @@
       "version": "1.1.0"
     },
     "skills/stratosphere-update/SKILL.md": {
-      "sha256": "f145d53b32c2dd286bdecd46399986571873b0a7405ebe267daf7a25e80a4468",
-      "timestamp": "2026-11-18",
-      "version": "1.11.0"
+      "sha256": "30b6bd599ef7879d4c17916a0b047bec85874fbaf81310e335d775d21f1a235c",
+      "timestamp": "2026-11-19",
+      "version": "1.11.1"
     },
     "skills/stratosphere-update/references/update-antigravity-plugin.md": {
       "sha256": "608eb84007e2f0f08608cabd7f291dfcda565392980affe2b8f6f9e176f2ad66",
@@ -606,5 +606,5 @@
       "version": "1.2.0"
     }
   },
-  "plugin_version": "5.4.0"
+  "plugin_version": "5.4.1"
 }

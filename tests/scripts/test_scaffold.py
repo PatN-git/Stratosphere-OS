@@ -1,3 +1,5 @@
+import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -167,3 +169,24 @@ def test_locate_scaffolder_resolves_antigravity_fallback_and_sorted_claude_cache
     s_530.unlink()
     monkeypatch.setattr(delivery.glob, "glob", lambda *a, **k: [str(s_1_9), str(s_1_10)])
     assert delivery2.locate_scaffolder(proj2) == s_1_10
+
+
+def test_tty_delivery_mode_prompt_prints_28_bundled_skills(tmp_path, monkeypatch, capsys):
+    class FakeTTY(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+    src_scaffold = REPO_ROOT / "src" / "scripts" / "scaffold.py"
+    spec = importlib.util.spec_from_file_location("src_scaffold", src_scaffold)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    monkeypatch.setattr(sys, "stdin", FakeTTY())
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "1")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", [str(src_scaffold), "--vault", "none", "--dry-run"])
+
+    mod.main()
+    out = capsys.readouterr().out
+    assert out.count("28 bundled skills") == 2
+    assert "28 lifecycle skills" not in out

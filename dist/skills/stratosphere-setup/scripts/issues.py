@@ -81,6 +81,10 @@ class IssuesError(RuntimeError):
     """A refused read or write; the message is the one line to print."""
 
 
+class AmbiguousIssueError(IssuesError):
+    """A shorthand identifier matched more than one issue."""
+
+
 def today():
     return datetime.date.today().isoformat()
 
@@ -281,7 +285,7 @@ class Store:
             if len(hits) == 1:
                 return hits[0]
             if len(hits) > 1:
-                raise IssuesError(f"[AMBIGUOUS {ident}] matches multiple issues: {', '.join(i['id'] for i in hits)}")
+                raise AmbiguousIssueError(f"[AMBIGUOUS {ident}] matches multiple issues: {', '.join(i['id'] for i in hits)}")
         raise IssuesError(f"[UNKNOWN {ident}]")
 
     def get(self, bt):
@@ -751,9 +755,9 @@ def _resolve_ref(store, ident, what):
     """Resolve an exact id or numeric shorthand to its canonical stored id; preserve [AMBIGUOUS] errors."""
     try:
         return store.resolve(ident)['id']
+    except AmbiguousIssueError:
+        raise
     except IssuesError as e:
-        if str(e).startswith('[AMBIGUOUS'):
-            raise
         raise IssuesError(f"[ERROR] {what} {ident} not found") from e
 
 
@@ -823,9 +827,9 @@ def cmd_set(store, a):
     for b in csv_list(a.remove_blocker):
         try:
             rem.add(store.resolve(b)['id'])
-        except IssuesError as e:
-            if str(e).startswith('[AMBIGUOUS'):
-                raise
+        except AmbiguousIssueError:
+            raise
+        except IssuesError:
             rem.add(b)  # allow removing a dangling literal id when cleaning up broken refs
     issue['blocked_by'] = [b for b in issue['blocked_by'] + [b for b in add if b not in issue['blocked_by']] if b not in rem]
     if add and (cyc := _cycle(store, bt)):
@@ -944,7 +948,7 @@ def cmd_apply_moves(store, a):
     n_moves = 0
     for n, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
-        if not line or line.startswith('#') or line.startswith('Please apply'):
+        if not line or (line.startswith('#') and not re.match(r'^#\d+(?::|\s)', line)) or line.startswith('Please apply'):
             continue
         n_moves += 1
         left, arrow, right = line.rpartition('->')
@@ -955,8 +959,11 @@ def cmd_apply_moves(store, a):
         target = spellings.get(' '.join(right.lower().replace('_', ' ').split()))
         try:
             issue = store.resolve(raw_bt)
-        except IssuesError as e:
-            problems.append(f"line {n}: {e}" if str(e).startswith('[AMBIGUOUS') else f"line {n}: unknown id {raw_bt}")
+        except AmbiguousIssueError as e:
+            problems.append(f"line {n}: {e}")
+            continue
+        except IssuesError:
+            problems.append(f"line {n}: unknown id {raw_bt}")
             continue
         bt = issue['id']
         if target is None:

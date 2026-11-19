@@ -730,4 +730,36 @@ def test_locate_plugin_bundle_sorts_claude_cache_by_semver(tmp_path, monkeypatch
     assert check_suite.locate_plugin_bundle() == v_1_10
 
 
+def test_visibility_agents_detects_numeric_gemini_marketplace_plugin_dir(proj):
+    project, home = proj
+    numeric_skills = home / ".gemini" / "config" / "plugins" / "987654" / "skills"
+    install(numeric_skills)
+    r = visibility(project, home, "agents")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "[VISIBILITY OK]" in r.stdout
+
+
+def test_host_skill_dirs_dedupes_static_and_discovered_gemini_plugins(proj):
+    project, home = proj
+    spec = importlib.util.spec_from_file_location("check_suite_src", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    static_skills = home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills"
+    numeric_skills = home / ".gemini" / "config" / "plugins" / "987654" / "skills"
+    static_skills.mkdir(parents=True)
+    numeric_skills.mkdir(parents=True)
+    dirs = mod.host_skill_dirs("agents", project, home)
+    assert dirs.count(static_skills) == 1
+    assert numeric_skills in dirs
+
+
+def test_check_suite_docstring_reports_24_lifecycle_skills():
+    spec = importlib.util.spec_from_file_location("check_suite_src", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    doc = mod.__doc__ or ""
+    assert "24 lifecycle skills" in doc
+    assert "25 lifecycle" not in doc
+
+
 
