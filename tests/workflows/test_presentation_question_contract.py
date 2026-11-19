@@ -85,3 +85,32 @@ def test_zero_empty_content_or_unshielded_background_tools():
     output_mode = (RULES / "output-mode.md").read_text(encoding="utf-8")
     assert re.search(r"empty|`?Content:\s*None`?", output_mode, re.IGNORECASE)
     assert re.search(r"same turn", output_mode, re.IGNORECASE) and "never invoke a question tool" in output_mode.lower()
+
+
+def test_stratosphere_update_git_pull_and_v5_migration_gates_follow_section_5():
+    text = (SRC / "commands/stratosphere-update/SKILL.md").read_text(encoding="utf-8")
+    gates = [
+        (
+            "Phase 0 In-place Git Checkout",
+            text.split("- **In-place Git Checkout**", 1)[1].split("- **Else / Catch-all", 1)[0],
+            r"notice",
+        ),
+        (
+            "Phase 4 v5 map migration",
+            text.split("5. **v5 map migration (once):**", 1)[1].split("6. **Untrack STATUS:**", 1)[0],
+            r"migration notice",
+        ),
+    ]
+    for gate_name, section, evidence_rx in gates:
+        assert ".agents/rules/output-mode.md" in section and "§5" in section, (
+            f"stratosphere-update {gate_name} must cite .agents/rules/output-mode.md §5"
+        )
+        assert re.search(rf"visible[^\n]*{evidence_rx}", section, re.IGNORECASE), (
+            f"stratosphere-update {gate_name} must require visible {evidence_rx}"
+        )
+        assert "same-turn" in section.lower(), (
+            f"stratosphere-update {gate_name} must require same-turn pairing"
+        )
+        assert "askuserquestion" not in section.lower() and "ask_question" not in section.lower(), (
+            f"stratosphere-update {gate_name} must not inline AskUserQuestion/ask_question"
+        )

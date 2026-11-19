@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic integrity checks run by stratosphere-setup and stratosphere-update.
 
-  check_suite.py suite       [--skills-dir DIR]   all 25 lifecycle skills present + uncorrupted
+  check_suite.py suite       [--skills-dir DIR]   all 24 lifecycle skills present + uncorrupted
   check_suite.py visibility  [--project P] [--host claude|agents|auto]   system pack visible to the host
   check_suite.py legacy      [--project P] [--apply]   stale pre-canonical-bundle paths (incl. skills.sh globals
                                                        in ~/.gemini/antigravity/skills and old-layout plugin roots,
@@ -234,12 +234,14 @@ def host_skill_dirs(host: str, project: Path, home: Path):
             for p in glob.glob(str(claude_cache / "**" / "skills"), recursive=True):
                 dirs.append(Path(p))
         return dirs
-    return [
+    dirs = [
         project / ".agents" / "skills",
         home / ".agents" / "skills",
         home / ".gemini" / "config" / "skills",
         home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills",
+        *sorted(Path(p) for p in glob.glob(str(home / ".gemini" / "config" / "plugins" / "*" / "skills"))),
     ]
+    return list(dict.fromkeys(dirs))
 
 
 def cmd_visibility(args):

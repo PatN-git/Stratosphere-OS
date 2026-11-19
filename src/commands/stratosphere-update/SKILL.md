@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.11.0"
-timestamp: 2026-11-18
+version: "1.11.1"
+timestamp: 2026-11-19
 ---
 
 # StratosphereOS Update Flow
@@ -60,9 +60,7 @@ Verify installed plugin freshness against GitHub before updating workspace scaff
 
 
      - **In-place Git Checkout** (plugin directory contains a `.git` folder):
-       This is a development setup. Ask user for confirmation:
-       `Latest version v<latest_version> is newer than installed v<installed_version>. Pull updates from git?`
-       If confirmed (using `ask_question` or `AskUserQuestion`), run:
+       Development setup — **Gate (`.agents/rules/output-mode.md` §5):** finish version checks first, then emit visible notice `Latest version v<latest_version> is newer than installed v<installed_version>. Pull updates from git?` + same-turn prompt (`["Pull updates (git pull --ff-only)", "Skip pull"]`). On confirm, run:
        `git -C <plugin> pull --ff-only`
        Once updated, re-locate plugin, re-read `<plugin>/versions.json` to get new version, re-read `<plugin>/skills/stratosphere-update/SKILL.md` into context to load updated phase definitions, print `StratOS plugin updated to v<new_version> — proceeding to Phase 0.5.` verbatim, and proceed to **Phase 0.5**.
 
@@ -149,7 +147,7 @@ If `needs_review_constitution` is empty, skip silently. Otherwise, batch all cha
 
 4. **Test gate advisory:** run `python .agents/scripts/test_gate.py status`. Exit 1 → print: `Optional: python .agents/scripts/test_gate.py install adds the pre-commit test gate (see stratosphere-setup Checkpoint 5.3).` Advisory: never install or ask.
 
-5. **v5 map migration (once):** `.memory/BACKLOG_MAP.md` with `tracker: local` or no `tracker:` key → ask once (`AskUserQuestion` / `ask_question`) to migrate it. Yes → set `tracker: local` and `tracker_branch: <repo>/issues` in ARCHITECTURE.md's frontmatter, run `python .agents/scripts/issues.py migrate` (map moves to `.memory/archive/`), commit both. No → next update asks again. Never merge map.
+5. **v5 map migration (once):** `.memory/BACKLOG_MAP.md` with `tracker: local` or no `tracker:` key → **Gate (`.agents/rules/output-mode.md` §5):** finish workspace checks first, then emit visible migration notice for `.memory/BACKLOG_MAP.md` + same-turn prompt (`["Migrate to local tracker", "Keep map (skip for now)"]`). Yes → set `tracker: local` and `tracker_branch: <repo>/issues` in ARCHITECTURE.md's frontmatter, run `python .agents/scripts/issues.py migrate` (map moves to `.memory/archive/`), commit both. No → next update asks again. Never merge map.
 
 6. **Untrack STATUS:** if `.memory/STATUS.md` is tracked: `git rm --cached` it, `git add .gitignore`, plain `git commit`.
 
