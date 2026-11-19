@@ -10,7 +10,7 @@ version: "1.0.0"
 
 # Plan: 4a audit yield (epic)
 
-Evidence and decisions: [4a-audit-yield.md](../research/4a-audit-yield.md). Drafted by Sonnet 5.5, challenged by Opus 5.5 on 2026-10-20 (v3, slices merged); nothing here is implemented. Edit `src/` (workflows, references, scripts), never `.agents/` or `dist/`.
+Evidence and decisions: [[4a-audit-yield|4a-audit-yield.md]]. Drafted by Sonnet 5.5, challenged by Opus 5.5 on 2026-10-20 (v3, slices merged); nothing here is implemented. Edit `src/` (workflows, references, scripts), never `.agents/` or `dist/`.
 
 ## Goal
 Lower the token cost of the 4a audits without losing the spec-gap catches they make, and make future frequency decisions data-driven. No change to audit frequency or to the Spec confidence threshold in this epic.

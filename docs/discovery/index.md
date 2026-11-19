@@ -1,5 +1,6 @@
-# Discovery Briefs
+# discovery
 
-Early problem framing and exploration briefs.
-
-*No entries yet.*
+* [[backlog-map-generated-cache|Discovery: BACKLOG_MAP duplicates GitHub-owned fields and every write site pays for it]] - Frames the BT-189 spike: compare the hand-written map, a generated map and no map in GitHub mode, with tracker verbs so each write is stated once.
+* [[codebase-health-audit|Discovery: Codebase health silently degrades without periodic broad screening]] - Implementation-ready concept brief for workflow 4c — a periodic, read-only health audit across security, reliability, maintainability, correctness, performance, and dependency health.
+* [[docs/discovery/host-agnostic-skill-distribution|Discovery: Host-agnostic skill distribution retiring per-host installers]] - Implementation-ready concept brief for host-agnostic skill distribution — replacing bespoke shell scripts with dual-track distribution via skills.sh, direct GitHub copy-paste, and native marketplaces, backed by a canonical dist/skills bundle.
+* [[obsidian-document-linking|Discovery: Obsidian-compatible document linking and knowledge graph architecture]] - Frames the adoption of Obsidian-compatible wikilinks, OKF v0.2 MOCs, setup/update opt-in scaffolding, and validate_memory.py link reconciliation.

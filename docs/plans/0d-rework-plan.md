@@ -9,7 +9,7 @@ version: "1.0.0"
 
 # Plan: make 0d nightly consolidation impactful and cheap
 
-**Status:** Slice **BT-163** (parent BT-116, blocked by BT-162). Baseline is 0d v1.3.0 (`fix/0d-recommendation-brief`: a chat brief with a quick-fix / new-issue split). Framework fixes that 0d *surfaces* (reconcile bug, ladder, 4a blockers) are in [`nightly-evidence-lifecycle-fixes-plan.md`](nightly-evidence-lifecycle-fixes-plan.md).
+**Status:** Slice **BT-163** (parent BT-116, blocked by BT-162). Baseline is 0d v1.3.0 (`fix/0d-recommendation-brief`: a chat brief with a quick-fix / new-issue split). Framework fixes that 0d *surfaces* (reconcile bug, ladder, 4a blockers) are in [[nightly-evidence-lifecycle-fixes-plan|`nightly-evidence-lifecycle-fixes-plan.md`]].
 
 ## Verdict: evolve, don't rewrite
 The phase skeleton is sound, and Phase 3 (memory crystallization) demonstrably works: L-005, L-006, L-010 and L-012 were promoted, as were G-016…G-027 (CleanTechHub `5ccc9cd`, `1625e8a`, `a68b37e`). What fails is **closing the loop across nights**. Recommendations evaporate, drift repeats, and recurring findings get "existing law" every time. Three mechanisms are missing: memory of what was found, memory of what was decided, and a cheap path from recommendation to fix. Add those, and push the expensive counting into scripts.

@@ -15,7 +15,7 @@ version: "1.0.0"
 - **BT-166**: A1–A9.
 - **BT-167**: B1–B3.
 
-All four ship in PR #161 (`fix/0d-recommendation-brief`) as one release. Gap IDs (L/S/V/H) and evidence come from [`lifecycle-artifact-flow-audit.md`](lifecycle-artifact-flow-audit.md). Its H1–H4 items are deferred to BT-168 (under BT-116). This revises an Antigravity draft (session `0460c303`, `1b_framing_template_enhancement_plan.md`) after review; an independent subagent then reviewed this plan, and its fixes are folded in. Decisions D1–D3 below were settled with the user.
+All four ship in PR #161 (`fix/0d-recommendation-brief`) as one release. Gap IDs (L/S/V/H) and evidence come from [[lifecycle-artifact-flow-audit|`lifecycle-artifact-flow-audit.md`]]. Its H1–H4 items are deferred to BT-168 (under BT-116). This revises an Antigravity draft (session `0460c303`, `1b_framing_template_enhancement_plan.md`) after review; an independent subagent then reviewed this plan, and its fixes are folded in. Decisions D1–D3 below were settled with the user.
 
 ## Evidence (CleanTechHub briefs and sessions)
 | Problem | Data |

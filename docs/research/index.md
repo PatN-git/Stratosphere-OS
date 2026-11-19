@@ -1,5 +1,16 @@
-# Research Documents
+# research
 
-Topic and competitive landscape research.
-
-*No entries yet.*
+* [[4a-audit-eval-results|Research: first results of the 4a audit test plan]] - Recall of the shipped lean Spec audit on 43 labeled gaps from 13 real slices, plus the first verdicts on watch rows, the AC-literal lint and small-model triage.
+* [[4a-audit-lean-replay|Research: lean audit packet and delta re-audit replay (BT-203)]] - Full-file versus lean-packet Spec audits and a delta round-2 audit replayed on four past StratOS slices: tokens saved, gaps found, run-to-run variance.
+* [[4a-audit-scan-prompt|4a audit-yield scan prompt]] - Host-neutral, read-only prompt that extracts per-slice 4a auditor yield from GitHub, git and agent logs; rerun at the audit-policy checkpoint.
+* [[4a-audit-yield|Research: 4a audit yield (Spec and Standards auditors) in StratOS and CleanTechHub]] - How often the two 4a auditors found issues, in which slice scenarios, and what that implies for audit frequency and cost; corrected after an independent challenge.
+* [[antigravity-custom-agents-and-subagents|Cursor Agent Subagents Architecture]] - Comprehensive investigation into Google Antigravity custom agents, cross-host parity (Claude Code, Cursor, Roo Code, Windsurf, Codex), architectural distinctions from slash commands, and progressive enhancement path for StratOS lifecycle subagents.
+* [[frontier-interview-and-wayfinder-analysis|Wayfinder Skill Walkthrough and Multi-Session Tracker Architecture]] - Evaluation of Matt Pocock's grilling and wayfinder skills, community critiques on terminal fatigue and rubber-stamping, silent fact discovery (G2), question budget caps, and mid-flight escalation handovers.
+* [[docs/research/host-agnostic-skill-distribution|Awesome Claude Skills Showcase]] - Comprehensive cross-host investigation into skill discovery, invocation policies, leading digits, and vercel-labs/skills compatibility across Claude Code, Antigravity, Cursor, Codex, Copilot, Devin, OpenClaw, and extended ecosystem.
+* [[host-skill-cache-invalidation|Host Skill Cache Invalidation & In-Process Hot-Reloading]]
+* [[lifecycle-interaction-streamlining-recommendations|CleanTechHub Production Session History (194 sessions)]] - Empirical review of conversational friction across 194 CleanTechHub and StratOS sessions, establishing intelligent defaults and consolidated single-gate interaction patterns across lifecycle skills.
+* [[prompt-report-adversarial-critique|Research: Adversarial Critique of Prompt Report Recommendations]] - Opus 5.5 High challenge assessing arXiv:2406.06608 prompt surveying techniques against the StratosphereOS constitution and token efficiency standards.
+* [[prompt-report-lifecycle-hardening|The Prompt Report: A Systematic Survey of Prompting Techniques]] - Comprehensive evaluation of 58 prompting techniques from arXiv:2406.06608, challenged by dual independent critics (Opus 5.5 High & 4 Argon High) to establish a deterministic, token-minimal lifecycle architecture.
+* [[skill-pack-comparison|pack P (pinned commit 1e5c90a)]] - Every pack O and pack P skill compared against StratOS lifecycle skills 0a-4c; per-stage gaps, new scripts, rejected ideas; filed as BT-169..BT-177.
+* [[targeted-verification-and-subagent-dispatch-scoping|Research: Targeted Test Verification Discipline & Subagent Model Dispatch Scoping]] - Analysis of agent test runner hangs (bare pytest vs targeted execution), verification scoping across StratOS and downstream product repos (cleantechhub, trading), and Antigravity invoke_subagent model enum constraints.
+* [[upstream-watch-2026-10-06|Upstream watch 2026-10-06]] - Baseline upstream-watch run over 8 weeks (2026-08-11 to 2026-10-06), all defined hosts: 14 items, one silent BREAKING (Codex untrusted-project AGENTS.md), two obsolete workarounds.

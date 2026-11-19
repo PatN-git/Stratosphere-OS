@@ -20,7 +20,7 @@ issue: BT-249
 
 ## 1. Executive Summary & Architectural Alignment
 
-BT-249 modernizes StratOS's `1c-concept-map` and `1b-concept-framing` lifecycle skills by integrating Matt Pocock's *Wayfinder* topology, *Frontier Interview* discipline, and *Approach Triangulation*—grounded in [frontier-interview-and-wayfinder-analysis.md](../research/frontier-interview-and-wayfinder-analysis.md)—while maintaining strict conformance with `main` (v5.1.0):
+BT-249 modernizes StratOS's `1c-concept-map` and `1b-concept-framing` lifecycle skills by integrating Matt Pocock's *Wayfinder* topology, *Frontier Interview* discipline, and *Approach Triangulation*—grounded in [[frontier-interview-and-wayfinder-analysis|frontier-interview-and-wayfinder-analysis.md]]—while maintaining strict conformance with `main` (v5.1.0):
 
 1. **v5.0.0+ Dual Tracker Backend Parity (BT-194 / PR #216):** Preserves full parity between GitHub (`references/tracker-verbs-github.md`) and the local Git-branch store (`references/tracker-verbs-local.md` / `issues.py`), with zero references to retired `BACKLOG_MAP.md` or `.map.md` tables.
 2. **Stage 1 Discovery Hardening (BT-223 / BT-225 / PR #254):** Preserves `<external_untrusted_source>` isolation in research subagents, silent `grep`/AST fact discovery and the 10–15 decision question budget in `1b-concept-framing`, and single-pass declarative Mermaid `flowchart TD` generation under `## Dependency Map` in `1c-concept-map`.

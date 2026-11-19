@@ -9,7 +9,7 @@ version: "1.0.0"
 
 # Plan: lifecycle-skill fixes driven by CleanTechHub nightly evidence
 
-**Status:** Slice **BT-162** (parent BT-116). Blocks BT-163. The source is all six CleanTechHub reports (`docs/nightly/nightly-2026-07-25` … `-10-13`), read in full and cross-checked against `src/`. The 0d rework itself is out of scope here and lives in [`0d-rework-plan.md`](0d-rework-plan.md).
+**Status:** Slice **BT-162** (parent BT-116). Blocks BT-163. The source is all six CleanTechHub reports (`docs/nightly/nightly-2026-07-25` … `-10-13`), read in full and cross-checked against `src/`. The 0d rework itself is out of scope here and lives in [[0d-rework-plan|`0d-rework-plan.md`]].
 
 ## Verdict
 Five framework changes are justified. Each has evidence from at least two nights or a confirmed bug. None needs a new skill. One is a deterministic bug fix (F1). The rest are wording or contract changes (F2–F5).

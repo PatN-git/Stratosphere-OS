@@ -16,7 +16,7 @@ version: "1.0.0"
 - `file:line` refers to `src/workflows/` unless a file is named.
 - "unc." marks a finding not yet confirmed.
 
-**Companion:** [`1b-discovery-brief-sections-plan.md`](1b-discovery-brief-sections-plan.md) (BT-164/BT-165) fixes the brief itself. This audit checks whether what the brief carries survives everything after it.
+**Companion:** [[1b-discovery-brief-sections-plan|`1b-discovery-brief-sections-plan.md`]] (BT-164/BT-165) fixes the brief itself. This audit checks whether what the brief carries survives everything after it.
 
 ## 1. Chain at a glance
 
@@ -119,4 +119,4 @@ Every artifact from 2a onwards is keyed by the **parent** ID `BT-<p>`. Research 
 | BT-167 (standing epics + release rerun) | V4, V5 | B1–B3 |
 | BT-168 (backlog, under BT-116, `status:needs_spec`) | H1, H2 (rest), H3 (`directions.html`, blank `description:`) | — |
 
-Implementation detail lives in [`1b-discovery-brief-sections-plan.md`](1b-discovery-brief-sections-plan.md). All four slices ship in PR #161 as one release.
+Implementation detail lives in [[1b-discovery-brief-sections-plan|`1b-discovery-brief-sections-plan.md`]]. All four slices ship in PR #161 as one release.

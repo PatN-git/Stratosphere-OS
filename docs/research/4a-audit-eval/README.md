@@ -10,7 +10,7 @@ version: "1.0.0"
 
 # 4a audit test corpus
 
-Dev-only data for [the test plan](../../plans/4a-audit-eval-strategy.md) and [its first results](../4a-audit-eval-results.md).
+Dev-only data for [[4a-audit-eval-strategy|the test plan]] and [[4a-audit-eval-results|its first results]].
 
 - `cases.json`: 13 real cases (7 StratOS, 6 CleanTechHub) and 4 clean controls: repo, slice, issue, the commit before the audit fixes (`pre`) and the audit-fix commits (`fix`). Paths in the manifest are machine-local.
 - `labels/<case>.json`: the labeled spec gaps, derived by a labeler subagent from the audit-fix commits (not from the auditor's own words), each with a class, key terms for mechanical matching and a label confidence. 43 labels: 19 high, 18 medium, 6 low.

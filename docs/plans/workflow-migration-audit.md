@@ -12,7 +12,7 @@ generated:
 
 > Slice numbers below match plan **v6.0.0** (flat 1–15).
 
-Work list for **Slice 9** of [future-proofing-spec-conformance-plan.md](future-proofing-spec-conformance-plan.md).
+Work list for **Slice 9** of [[future-proofing-spec-conformance-plan|future-proofing-spec-conformance-plan.md]].
 
 > **Provenance.** The first pass ran against branch `feat/2c-reconcile-specs`, which was **34 commits behind `origin/main`** and missing `4c_codebase-health-audit` entirely. Sections **A, C, E** below have been **re-derived mechanically against `origin/main` (`c5b9ff9`)** and carry accurate line numbers. Sections **B, D, F, G, H, J, K** are prose findings from the first pass: the *findings* hold, but their **line numbers must be re-verified** against main before use.
 
