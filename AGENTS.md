@@ -63,7 +63,7 @@ A weightless environment to build full-stack apps via Google Antigravity, where 
 - **Handshake Protocol:** If the user is leaving or the task goal is met, offer to save and close out the session using the correct workflow.
  
 ## 8. Pointer Directory (Offloaded Logic)
-- **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine for cosmetic fixes; Standard Mode with Complex for tradeoffs).
+- **Behavior & Output:** See `.agents/rules/output-mode.md` (Routine/Standard/Complex modes; §5 interactive gate contract).
 - **Memory & State:** See `.agents/rules/memory-protocol.md` (Trust tags, [[ID]] syntax, memory usage protocols).
 - **Open Knowledge Format (OKF):** See `.agents/rules/okf-protocol.md` (Metadata contracts, type registries, bundle constraints).
 - **Host activation.** Canonical body: this file; pointer files (`CLAUDE.md`, `GEMINI.md`) never restate it.

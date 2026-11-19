@@ -42,17 +42,9 @@ Leave next session with context to resume immediately. Ensure new entries are ta
    - If a step-4 learning is now codified by the new `[[A-xxx]]`, propose superseding it (`[[L-xxx]]` → `[[A-xxx]]`); apply on confirmation.
 7. If DB schema or understanding changed, update `.memory/DATABASE_SCHEMA.md` (always `[LAW]`).
 8. Propose UI structural (`[[DR-xxx]]`/immortal component) or brand token changes before updating `DESIGN_RULES.md`/`DESIGN.md`.
-8b. Intermediate session files triage (.tmp/):
-    - **Exemptions & Zero-Candidate Skip:** active framework state files (`.tmp/3d-suite-*.json`, `.tmp/3z-loop.work.md`, `.tmp/3d-plan-*.md`, `.tmp/4a-audit-*.json`) are explicitly exempted from deletion candidates. If `.tmp/` is absent, empty, or holds zero non-exempt files, skip triage silently without prompting and log `Tmp files triaged: none` (if absent/empty) or `Tmp files triaged: none (exempt only)` in the Handoff Note.
-    - **Tool Execution Barrier:** complete all directory inspection, file scanning, and classification before opening the triage gate. Never invoke a question tool in the same turn as file scanning or intermediate commands.
-    - **Mandatory Visible Markdown Content:** emit a visible markdown per-file classification table listing all non-exempt candidate `.tmp/` files and their proposed triage actions directly in visible message `content` (never empty content or hidden behind collapsed tool accordions).
-    - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible markdown triage breakdown.
-    - **Inspect & Triage Proposal:** prompt user via native question tool with multi-select enabled (`is_multi_select: true` on Antigravity; `multiSelect: true` on Claude Code) over combinable options:
-      - `Delete Transient Scratch` — remove listed transient logs and scratch files.
-      - `Relocate Durable Artifacts to docs/ (with OKF frontmatter)` — move listed durable designs/notes.
-      - `Keep in .tmp/ for In-Flight Work` — retain listed files for active follow-on work.
-    - **Fallback (non-interactive hosts):** output the per-file classification table and multi-action triage options (allowing combined actions or per-file selections) in markdown and halt for user response.
-    - **Confirmation Invariant:** require user confirmation before deleting or relocating any file.
+8b. **`.tmp/` triage:**
+    - **Exempt active state:** `.tmp/test-gate.json`, `.tmp/3d-suite-*.json` (current `HEAD`), `.tmp/3z-loop.work.md` (≤14d), `.tmp/3d-plan-*.md` & `.tmp/4a-audit-*.json` (open slice / ≤14d); stale or closed-slice files triage normally. Absent, empty, or 0 non-exempt files → skip silently; log `Tmp files triaged: none` or `Tmp files triaged: none (exempt only)` in the Handoff Note.
+    - **Gate (`.agents/rules/output-mode.md` §5):** finish scanning, then emit a visible per-file classification table + same-turn multi-select prompt: `["Delete Transient Scratch", "Relocate Durable Artifacts to docs/ (with OKF frontmatter)", "Keep in .tmp/ for In-Flight Work"]` (fallback: combinable/per-file markdown options + halt). Require confirmation before deleting or relocating any file.
 9. Verify: `python .agents/scripts/pr_body.py suite` prints reusable suite result (reuse it); else if no tracked file changed outside `.memory/` and `.tmp/`, report `suite: not run (no tracked change)`; otherwise run via `python .agents/scripts/test_gate.py record --suite BT-<padded> -- <cmd>` (no slice: `record -- <cmd>`). Run memory lint: `python .agents/scripts/validate_memory.py`. Report errors and warnings; await confirmation.
 10. Regenerate OKF Visualizer: `python .agents/scripts/okf_view.py` after lint passes.
 11. Ensure the resume note allows resuming without re-discovery.

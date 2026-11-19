@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Contract tests for Presentation & Question Contract (BT-271).
 
-# md-crosscheck: output-mode contract vs lifecycle and command decision gates
+# md-crosscheck: output-mode contract vs lifecycle, command skills, and built dist/ bundle
 
 Enforces:
 1. src/rules/output-mode.md Section 5 defines the 4-part Presentation & Question Contract
-   (Tool Execution Barrier, Mandatory Visible Markdown Content, Synchronous Pairing, Fallback Invariant).
-2. Lifecycle workflows (3b, 0b, 0d, 3a, 3c, 4a) mandate tool execution barrier, visible markdown in content,
-   and synchronous pairing with ask_question / AskUserQuestion.
-3. Command skills (stratosphere-setup, stratosphere-update) mandate tool execution barrier, visible markdown
-   in content, and synchronous pairing with question tools.
-4. Zero interactive decision gates permit empty content or running question tools unshielded with background tools.
+   (Tool Execution Barrier, Visible Markdown Content, Synchronous Pairing, Fallback)
+   plus native question tool names and multi-select flags.
+2. Lifecycle workflows (3b, 0b, 0d, 3a, 3c, 4a) and command skills (stratosphere-setup,
+   stratosphere-update) cite .agents/rules/output-mode.md §5, keep visible-evidence +
+   same-turn cues inline, and do not duplicate the 3-bullet boilerplate.
+3. Zero interactive decision gates permit empty content or running question tools alongside other tools.
 """
 from pathlib import Path
 import re
@@ -19,147 +19,69 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 RULES = SRC / "rules"
-WORKFLOWS = SRC / "workflows"
-COMMANDS = SRC / "commands"
+DIST_SKILLS = ROOT / "dist" / "skills"
 
 
 def test_output_mode_section_5_contract():
     output_mode = (RULES / "output-mode.md").read_text(encoding="utf-8")
-    assert "## 5. Presentation & Question Contract" in output_mode, (
-        "src/rules/output-mode.md must contain '## 5. Presentation & Question Contract'"
-    )
+    assert "## 5. Presentation & Question Contract" in output_mode
     section_5 = output_mode.split("## 5. Presentation & Question Contract", 1)[1]
-    
-    # Tool Execution Barrier
-    assert "Tool Execution Barrier" in section_5, "Section 5 must define 'Tool Execution Barrier'"
-    assert re.search(r"background|barrier|completion", section_5, re.IGNORECASE), (
-        "Section 5 must specify barrier/completion of background tools"
-    )
-    
-    # Mandatory Visible Markdown Content
-    assert re.search(r"Mandatory Visible (Markdown )?Content", section_5), (
-        "Section 5 must define 'Mandatory Visible Content'"
-    )
-    assert re.search(r"content|table|card|evidence", section_5, re.IGNORECASE), (
-        "Section 5 must mandate emission in visible message content"
-    )
-    
-    # Synchronous Pairing
-    assert "Synchronous Pairing" in section_5, "Section 5 must define 'Synchronous Pairing'"
-    assert re.search(r"same turn|synchronous|pair", section_5, re.IGNORECASE), (
-        "Section 5 must mandate synchronous pairing of visible markdown with question tools"
-    )
-    
-    # Non-Interactive Fallback Contract / Fallback Invariant
-    assert re.search(r"Fallback", section_5), "Section 5 must define Fallback contract"
+
+    # 1. Tool Execution Barrier
+    assert "Tool Execution Barrier" in section_5
+    assert re.search(r"background|finish|other tools", section_5, re.IGNORECASE)
+
+    # 2. Visible Markdown Content
+    assert re.search(r"(Mandatory )?Visible (Markdown )?Content", section_5)
+    assert re.search(r"evidence|table|card|content", section_5, re.IGNORECASE)
+
+    # 3. Synchronous Pairing
+    assert "Synchronous Pairing" in section_5
+    assert re.search(r"same turn|synchronous", section_5, re.IGNORECASE)
+
+    # 4. Fallback
+    assert "Fallback" in section_5
+    assert "halt" in section_5.lower()
+
+    # Native question tools + multi-select parameters centralized here
+    assert "ask_question" in section_5 and "AskUserQuestion" in section_5
+    assert "is_multi_select: true" in section_5 and "multiSelect: true" in section_5
 
 
-def test_lifecycle_workflows_presentation_contract():
-    # 3b-create-issue
-    wf_3b = (WORKFLOWS / "3b-create-issue.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_3b), (
-        "3b-create-issue must specify Tool Execution Barrier for minting gate"
-    )
-    assert re.search(r"Visible (Markdown )?Content|visible message `?content`?", wf_3b, re.IGNORECASE), (
-        "3b-create-issue must specify visible markdown content in message content"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_3b, re.IGNORECASE), (
-        "3b-create-issue must specify synchronous pairing with question tool"
-    )
-
-    # 0b-stop-session
-    wf_0b = (WORKFLOWS / "0b-stop-session.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_0b), (
-        "0b-stop-session must specify Tool Execution Barrier for tmp triage gate"
-    )
-    assert re.search(r"visible|content|table", wf_0b, re.IGNORECASE), (
-        "0b-stop-session must mandate visible markdown content for candidate files"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_0b, re.IGNORECASE), (
-        "0b-stop-session must specify synchronous pairing with question tool"
-    )
-
-    # 0d-nightly-consolidation
-    wf_0d = (WORKFLOWS / "0d-nightly-consolidation.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_0d), (
-        "0d-nightly-consolidation must specify Tool Execution Barrier for decision halt"
-    )
-    assert re.search(r"visible|content|summary", wf_0d, re.IGNORECASE), (
-        "0d-nightly-consolidation must mandate visible markdown content"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_0d, re.IGNORECASE), (
-        "0d-nightly-consolidation must specify synchronous pairing with question tool"
-    )
-
-    # 3a-version-planning
-    wf_3a = (WORKFLOWS / "3a-version-planning.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_3a), (
-        "3a-version-planning must specify Tool Execution Barrier for roadmap authorization gate"
-    )
-    assert re.search(r"visible|content", wf_3a, re.IGNORECASE), (
-        "3a-version-planning must mandate visible markdown content"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_3a, re.IGNORECASE), (
-        "3a-version-planning must specify synchronous pairing with question tool"
-    )
-
-    # 3c-sprint-planning
-    wf_3c = (WORKFLOWS / "3c-sprint-planning.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_3c), (
-        "3c-sprint-planning must specify Tool Execution Barrier for sprint authorization gate"
-    )
-    assert re.search(r"visible|content", wf_3c, re.IGNORECASE), (
-        "3c-sprint-planning must mandate visible markdown content"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_3c, re.IGNORECASE), (
-        "3c-sprint-planning must specify synchronous pairing with question tool"
-    )
-
-    # 4a-verify-and-ship
-    wf_4a = (WORKFLOWS / "4a-verify-and-ship.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", wf_4a), (
-        "4a-verify-and-ship must specify Tool Execution Barrier for unified ship gate"
-    )
-    assert re.search(r"visible|content", wf_4a, re.IGNORECASE), (
-        "4a-verify-and-ship must mandate visible markdown content"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", wf_4a, re.IGNORECASE), (
-        "4a-verify-and-ship must specify synchronous pairing with question tool"
-    )
+GATED_SKILLS = [
+    ("workflows/0b-stop-session.md", "0b-stop-session/SKILL.md", r"classification table"),
+    ("workflows/0d-nightly-consolidation.md", "0d-nightly-consolidation/SKILL.md", r"recommendations summary"),
+    ("workflows/3a-version-planning.md", "3a-version-planning/SKILL.md", r"roadmap presentation"),
+    ("workflows/3b-create-issue.md", "3b-create-issue/SKILL.md", r"Slices Proposed for Minting"),
+    ("workflows/3c-sprint-planning.md", "3c-sprint-planning/SKILL.md", r"Topological Sprint Sequence"),
+    ("workflows/4a-verify-and-ship.md", "4a-verify-and-ship/SKILL.md", r"Unified Ship Verification Gate"),
+    ("commands/stratosphere-setup/SKILL.md", "stratosphere-setup/SKILL.md", r"label mapping table"),
+    ("commands/stratosphere-update/SKILL.md", "stratosphere-update/SKILL.md", r"detected legacy paths|consolidated summary"),
+]
 
 
-def test_command_skills_presentation_contract():
-    # stratosphere-setup
-    setup_skill = (COMMANDS / "stratosphere-setup" / "SKILL.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", setup_skill), (
-        "stratosphere-setup must specify Tool Execution Barrier for label mapping presentation"
+@pytest.mark.parametrize("src_rel,dist_rel,evidence_rx", GATED_SKILLS)
+def test_gated_skills_cite_output_mode_section_5_without_boilerplate(src_rel, dist_rel, evidence_rx):
+    text = (SRC / src_rel).read_text(encoding="utf-8")
+    assert ".agents/rules/output-mode.md" in text and "§5" in text, (
+        f"{src_rel} must cite .agents/rules/output-mode.md §5 at its interactive gate"
     )
-    assert re.search(r"visible|content|table", setup_skill, re.IGNORECASE), (
-        "stratosphere-setup must mandate visible markdown emission of label mapping table"
+    assert re.search(rf"visible[^\n]*{evidence_rx}", text, re.IGNORECASE), (
+        f"{src_rel} must keep inline visible-evidence cue ({evidence_rx})"
     )
-    assert re.search(r"Synchronous Pairing|same turn", setup_skill, re.IGNORECASE), (
-        "stratosphere-setup must specify synchronous pairing with question tool"
-    )
+    assert "same-turn" in text.lower(), f"{src_rel} must keep inline same-turn pairing cue"
+    for boilerplate in (
+        "**Tool Execution Barrier:**",
+        "**Mandatory Visible Markdown Content:**",
+        "**Synchronous Pairing:**",
+    ):
+        assert boilerplate not in text, f"{src_rel} must not duplicate {boilerplate} from output-mode.md §5"
 
-    # stratosphere-update
-    update_skill = (COMMANDS / "stratosphere-update" / "SKILL.md").read_text(encoding="utf-8")
-    assert re.search(r"Tool [Ee]xecution [Bb]arrier", update_skill), (
-        "stratosphere-update must specify Tool Execution Barrier"
-    )
-    assert re.search(r"visible|content", update_skill, re.IGNORECASE), (
-        "stratosphere-update must mandate visible markdown emission"
-    )
-    assert re.search(r"Synchronous Pairing|same turn", update_skill, re.IGNORECASE), (
-        "stratosphere-update must specify synchronous pairing with question tool"
-    )
+    dist_text = (DIST_SKILLS / dist_rel).read_text(encoding="utf-8")
+    assert dist_text == text, f"dist drift: {dist_rel} != src/{src_rel}"
 
 
 def test_zero_empty_content_or_unshielded_background_tools():
-    # Check that output-mode explicitly forbids empty content and unshielded background operations
     output_mode = (RULES / "output-mode.md").read_text(encoding="utf-8")
-    assert re.search(r"empty (message )?content|`?Content:\s*None`?", output_mode, re.IGNORECASE), (
-        "output-mode must explicitly forbid question tools with empty content / Content: None"
-    )
-    assert re.search(r"same turn|unshielded|barrier", output_mode, re.IGNORECASE), (
-        "output-mode must explicitly forbid question tools directly following background tools in same turn"
-    )
+    assert re.search(r"empty|`?Content:\s*None`?", output_mode, re.IGNORECASE)
+    assert re.search(r"same turn", output_mode, re.IGNORECASE) and "never invoke a question tool" in output_mode.lower()

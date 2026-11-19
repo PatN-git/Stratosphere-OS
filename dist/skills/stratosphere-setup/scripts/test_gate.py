@@ -143,6 +143,31 @@ def observed_line(tail):
     return "; ".join([*counts, *(lines[-1:] if lines[-1:] != counts[-1:] else [])])[:300]
 
 
+def _prune_suite_records(tmp_dir, keep_sha, keep_path, max_other=3):
+    """Keep keep_path, any other receipt for keep_sha, and at most max_other newest older receipts."""
+    keep_resolved = keep_path.resolve()
+    stale = []
+    for cand in tmp_dir.glob("3d-suite-BT-*.json"):
+        if cand.resolve() == keep_resolved:
+            continue
+        try:
+            sha = json.loads(cand.read_text(encoding="utf-8-sig")).get("head_sha")
+        except (OSError, ValueError, AttributeError):
+            sha = None
+        if sha == keep_sha:
+            continue
+        try:
+            stale.append((cand.stat().st_mtime, cand))
+        except OSError:
+            continue
+    stale.sort(key=lambda item: item[0], reverse=True)
+    for _, old in stale[max_other:]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+
+
 def record_suite(issue, cmd, cwd, allow_scoped=False, base=None):
     try:
         import pr_body  # ships beside this script; reads the same record at reuse time
@@ -185,6 +210,7 @@ def record_suite(issue, cmd, cwd, allow_scoped=False, base=None):
     path.parent.mkdir(exist_ok=True)
     path.write_text(json.dumps({"head_sha": head, "cmd": shlex.join(cmd), "observed": observed_line(tail)}, indent=1),
                     encoding="utf-8")
+    _prune_suite_records(path.parent, head, path)
     print(f"test-gate: wrote {path}")
     return 0
 

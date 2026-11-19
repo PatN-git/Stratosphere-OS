@@ -40,7 +40,7 @@ _Done when:_ orchestrator context synced.
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the queue read (the parent's: one `gh issue view <parent> --json milestone` per distinct parent; local: `get` each slice and parent), as 3d step 1; unit = its `unit` key; a `needs_milestone` slice stays queued, 3d halts it `[NO-RELEASE]` as `stuck` unless a branch is active); order by `(unit in queue order, dependency_order, slice_id)`. Blocker satisfaction comes from `python .agents/scripts/reconcile.py --edges blockers --ids <slices>`, never from status words.
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
-5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
+5. **Decision log:** `.tmp/3z-loop.work.md`, append-only *within* a run (never delete or edit current-run rows): one line per decision `ts | phase | decision | why | evidence pointer | result`. At run start, prune entries older than 14 days (or keep only the newest 500 lines), then append a `start` row.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
 _Done when:_ user authorized slice list and ship mode.
 

@@ -81,10 +81,7 @@ Consolidate audit findings report, test proof summary, PR metadata, and shipping
 - **Post-Ship Status:** BT-<slice> -> status:done (closed), Epic -> in review
 ```
 
-- **Tool Execution Barrier:** ensure all audit inspections, spec reviews, test verifications, and background tools finish 100% prior to opening the gate turn. Never invoke a question tool in the same turn as background commands or scripts.
-- **Mandatory Visible Markdown Content:** emit the complete `Unified Ship Verification Gate` card directly in visible message `content` (never empty content or hidden inside tool calls).
-- **Synchronous Pairing:** call the question tool in the same turn accompanying the visible verification card.
-- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options branched deterministically by audit verdict and findings:
+- **Gate (`.agents/rules/output-mode.md` §5):** finish all audits, spec reviews, and test verifications first, then emit the visible `Unified Ship Verification Gate` card + same-turn prompt branched deterministically by audit verdict and findings:
   - **Clean `[PASS]` or `[SKIP]` (0 Spec gaps, 0 Standards findings, 0 Watch items):** `["(Recommended) Confirm & Ship", "Defer (Stay Local)"]`.
   - **Advisory `[PASS]` (0 Spec gaps ≥ 80; Watch 60–79 and/or Standards findings present):** `["(Recommended) Confirm & Ship", "Address Findings in 3d"]`.
   - **Blocking `[UNCOVERED]` (Spec gaps ≥ 80):** `["(Recommended) Revise in 3d", "Waive Gaps & Ship", "Abort"]` (`Waive Gaps & Ship` passes `--verdict WAIVED` to `pr_body.py build` in Phase 5).

@@ -261,3 +261,38 @@ def test_record_suite_and_slice_accept_bt_l_nnn_local_id(repo):
     assert r.returncode == 0 and "pytest" in r.stdout, r.stdout + r.stderr
     assert gate(repo, "record", "--slice", "BT-L-002-z", "--", sys.executable, "-m", "pytest", "test_ok.py").returncode == 0
     assert suite_record(repo, "BT-L-002-z").is_file()
+
+
+def test_record_suite_prunes_stale_receipts_but_keeps_current_head_and_recent_three(repo):
+    suite_repo(repo)
+    head = git(repo, "rev-parse", "HEAD")
+    tmp_dir = repo / ".tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    same_head = tmp_dir / "3d-suite-BT-100.json"
+    same_head.write_text(json.dumps({"head_sha": head, "cmd": "pytest", "observed": "1 passed"}), encoding="utf-8")
+    os.utime(same_head, (100, 100))
+    stale_specs = [
+        ("3d-suite-BT-101.json", "1" * 40, 1000),
+        ("3d-suite-BT-102.json", "2" * 40, 2000),
+        ("3d-suite-BT-103.json", "3" * 40, 3000),
+        ("3d-suite-BT-104.json", "4" * 40, 4000),
+        ("3d-suite-BT-105.json", "5" * 40, 5000),
+    ]
+    for name, sha, ts in stale_specs:
+        p = tmp_dir / name
+        p.write_text(json.dumps({"head_sha": sha, "cmd": "pytest", "observed": "1 passed"}), encoding="utf-8")
+        os.utime(p, (ts, ts))
+    corrupt = tmp_dir / "3d-suite-BT-106.json"
+    corrupt.write_text("{not json", encoding="utf-8")
+    os.utime(corrupt, (500, 500))
+
+    r = gate(repo, "record", "--suite", "BT-200", "--", *PYTEST_FULL)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert suite_record(repo, "BT-200").is_file()
+    assert same_head.is_file()
+    assert {p.name for p in tmp_dir.glob("3d-suite-BT-10*.json")} == {
+        "3d-suite-BT-100.json",
+        "3d-suite-BT-103.json",
+        "3d-suite-BT-104.json",
+        "3d-suite-BT-105.json",
+    }

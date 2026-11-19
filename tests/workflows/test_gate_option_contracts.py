@@ -38,9 +38,11 @@ def test_0b_resume_cleanup_empty_skip_and_multiselect():
     )
 
     # Multi-select + per-file classification table + fallback + preserved exemptions
-    assert "is_multi_select: true" in step8b and "multiSelect: true" in step8b, (
-        "0b Step 8b must enable native multi-select (is_multi_select: true / multiSelect: true)"
+    output_mode = read_src("rules/output-mode.md")
+    assert "multi-select" in step8b.lower() and ".agents/rules/output-mode.md" in step8b and "§5" in step8b, (
+        "0b Step 8b must enable native multi-select via output-mode.md §5"
     )
+    assert "is_multi_select: true" in output_mode and "multiSelect: true" in output_mode
     assert re.search(r"per-file classification table|classification table", step8b, re.IGNORECASE), (
         "0b Step 8b must emit a per-file classification table"
     )
@@ -50,7 +52,13 @@ def test_0b_resume_cleanup_empty_skip_and_multiselect():
     assert re.search(r"Fallback[^\n]*multi-action|combine|per-file", step8b, re.IGNORECASE), (
         "0b Step 8b fallback must support multi-action selection"
     )
-    for exempt in (".tmp/3d-suite-*.json", ".tmp/3z-loop.work.md", ".tmp/3d-plan-*.md", ".tmp/4a-audit-*.json"):
+    for exempt in (
+        ".tmp/test-gate.json",
+        ".tmp/3d-suite-*.json",
+        ".tmp/3z-loop.work.md",
+        ".tmp/3d-plan-*.md",
+        ".tmp/4a-audit-*.json",
+    ):
         assert exempt in step8b
 
 
@@ -132,9 +140,11 @@ def test_stratosphere_update_batched_constitution_multiselect():
     assert re.search(r"empty[^\n]*skip silently|skip silently[^\n]*empty", sec2, re.IGNORECASE), (
         "stratosphere-update §2 must skip silently when needs_review_constitution is empty"
     )
-    assert "is_multi_select: true" in sec2 and "multiSelect: true" in sec2, (
-        "stratosphere-update §2 must use native multi-select to batch constitution files"
+    output_mode = read_src("rules/output-mode.md")
+    assert "multi-select" in sec2.lower() and ".agents/rules/output-mode.md" in sec2 and "§5" in sec2, (
+        "stratosphere-update §2 must use native multi-select via output-mode.md §5 to batch constitution files"
     )
+    assert "is_multi_select: true" in output_mode and "multiSelect: true" in output_mode
     assert "Keep all current (skip merges)" in sec2, (
         "stratosphere-update §2 must include explicit 'Keep all current (skip merges)' option"
     )

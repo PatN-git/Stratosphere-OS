@@ -62,10 +62,7 @@ Else skip: default to `v1.0.0` and proceed directly to `/3b-create-issue`.
    - **MVP cut-line coherence:** is the current release independently shippable (no dangling dependency on a deferred feature)? → `[BLOCKER]` if not.
 2. **Resolve:** the main agent folds findings into the proposal — every `[BLOCKER]` must be resolved (re-place, re-classify, or explicitly justify and downgrade) before presentation.
 3. **Present and Halt:**
-   - **Tool Execution Barrier:** complete all candidate discovery, dependency checks, release auditing, and finding resolutions 100% before opening the authorization turn. Never invoke a question tool in the same turn as background scripts or subagents.
-   - **Mandatory Visible Markdown Content:** emit the full roadmap presentation directly in visible message `content` (show, per release: `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, auditor findings and resolution, proposed `[NEW-DEP]` edges, and closable releases with open milestones; never empty content).
-   - **Synchronous Pairing:** call the question tool in the same turn accompanying the visible roadmap proposal.
-   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options tailored to active Scale-gate conditions:
+   - **Gate (`.agents/rules/output-mode.md` §5):** finish discovery, dependency checks, release audit, and finding resolutions first, then emit the full visible roadmap presentation (per release: `vX.Y`, parent features, MAJOR/MINOR justification, MVP cut-line rationale, auditor findings/resolutions, proposed `[NEW-DEP]` edges, and closable releases with open milestones) + same-turn prompt tailored to active Scale-gate conditions:
      - **Placement + Closable Releases (Conditions 1/2 AND Condition 3 active):** `["(Recommended) Approve Roadmap & Close Stated Releases", "Adjust Release Placements", "Abort"]`.
      - **Placement only (Conditions 1/2 active, 0 closable releases):** `["(Recommended) Approve Roadmap", "Adjust Release Placements", "Abort"]`.
      - **Close-out only (Condition 3 active alone):** `["(Recommended) Close Stated Releases", "Abort"]`.

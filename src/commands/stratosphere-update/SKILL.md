@@ -90,9 +90,7 @@ Skills refresh from the canonical `dist/skills/` bundle. Before computing scope,
    python <plugin>/scripts/check_suite.py legacy
    ```
    Exit 0 → continue. Exit 1:
-   - **Tool Execution Barrier:** complete the legacy path check 100% before opening the prompt turn. Never invoke a question tool in the same turn as background check scripts.
-   - **Mandatory Visible Markdown Content:** emit the full list of detected legacy paths directly in visible message `content` (never empty content or hidden inside tool calls).
-   - **Synchronous Pairing:** call the question tool (`AskUserQuestion` / `ask_question`) in the same turn accompanying the visible list: delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
+   - **Gate (`.agents/rules/output-mode.md` §5):** finish the legacy path check first, then emit the visible list of detected legacy paths + same-turn prompt: delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
 
 _Completion criterion:_ Suite confirmed whole, legacy paths removed, declined, or absent.
 
@@ -117,9 +115,7 @@ For each block in `preserved_files` flagged with `status: "conflict"`, perform a
 
 ### 2. Constitution Files (`needs_review_constitution`)
 If `needs_review_constitution` is empty, skip silently. Otherwise, batch all changed constitution files:
-- **Tool Execution Barrier:** complete all diff generation before opening the review turn; never invoke a question tool alongside background diff commands.
-- **Mandatory Visible Markdown Content:** emit one consolidated summary + side-by-side diffs vs. `<plugin>/assets/templates/constitution/` in visible message `content` (never empty or hidden in tool calls).
-- **Synchronous Pairing:** call the question tool once in that same turn via native multi-select (`is_multi_select: true` / `multiSelect: true`) listing each changed file plus `"Keep all current (skip merges)"` (fallback: output the summary, diffs, and selectable options in markdown and halt).
+- **Gate (`.agents/rules/output-mode.md` §5):** finish all diff generation first, then emit one visible consolidated summary + side-by-side diffs vs. `<plugin>/assets/templates/constitution/` + same-turn multi-select prompt listing each changed file plus `"Keep all current (skip merges)"` (fallback: summary, diffs, and selectable markdown options + halt).
 - Selected files: merge new rules/sections while keeping user customizations (pointer directory, vision) → `<filepath>.stratosphere-new`.
 - Unselected/declined files (including 0-selection or `"Keep all current (skip merges)"`): copy workspace file verbatim to `<filepath>.stratosphere-new` for Phase 4 invariants.
 

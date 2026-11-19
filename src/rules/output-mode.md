@@ -49,8 +49,8 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.
 
 ## 5. Presentation & Question Contract
-When prompting a user for confirmation, approval, or decision direction at an interactive decision gate using native question tools (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code):
-1. **Tool Execution Barrier:** 100% completion of all background tasks, subagent delegations, file operations, and scripts prior to opening the interactive turn. No background tools or script executions may run in the same turn as the question prompt.
-2. **Mandatory Visible Markdown Content:** The complete evidence table, diff, proposal summary, or decision card must be emitted directly in the user-visible message `content`. Emitting question tools with empty message content (`Content: None` or blank body) or hiding evidence inside tool parameters or folded accordions is strictly prohibited.
-3. **Synchronous Pairing:** The question tool call must accompany the visible markdown in the same presentation turn (never emitted before the content or in a separate follow-up turn without evidence).
-4. **Non-Interactive Fallback Contract:** If running on non-interactive hosts or without native question tool support, output the complete markdown evidence and the decision options directly in visible message text and halt execution awaiting explicit user response.
+At interactive decision gates (`ask_question` / `AskUserQuestion`; multi-select: `is_multi_select: true` / `multiSelect: true`):
+1. **Tool Execution Barrier:** finish all scripts, file ops, subagents, and background tasks before prompting; never invoke a question tool in the same turn as other tools.
+2. **Visible Markdown Content:** emit full evidence (table, diff, summary, or card) in visible message `content`; never empty (`Content: None`) or hidden in tool parameters/accordions.
+3. **Synchronous Pairing:** call the question tool in the same turn as the visible markdown — never before or in a follow-up turn.
+4. **Fallback:** without a native question tool, emit evidence + options in text and halt.

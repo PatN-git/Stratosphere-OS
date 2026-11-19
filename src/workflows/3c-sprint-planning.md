@@ -64,10 +64,7 @@ Output compressed readout matching capacity thresholds, displaying all alerts an
 [BUDGET] Build <b>h | Spike <s>h | total <t>/80h
 ```
 
-- **Tool Execution Barrier:** ensure all backlog issue loading, dependency graphing, and topological sequencing finish 100% before prompting. Never invoke a question tool in the same turn as background scripts.
-- **Mandatory Visible Markdown Content:** emit the complete `Topological Sprint Sequence & Verification Gate` table and `[BUDGET]` summary directly in visible message `content` (never empty content or hidden inside tool calls).
-- **Synchronous Pairing:** call the question tool in the same turn accompanying the visible sprint table.
-- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Activate Sprint Queue", "Edit Queue", "Abort"]`. Fallback for non-interactive hosts: output table and `[Activate Sprint Queue] / [Edit Queue]` in markdown and halt for user response.
+- **Gate (`.agents/rules/output-mode.md` §5):** finish issue loading, dependency graphing, and topological sequencing first, then emit the visible `Topological Sprint Sequence & Verification Gate` table and `[BUDGET]` summary + same-turn prompt: `["(Recommended) Activate Sprint Queue", "Edit Queue", "Abort"]` (fallback: table + `[Activate Sprint Queue] / [Edit Queue]` in markdown and halt).
 - **AFK Advisory (optional):** if all sequenced Build slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 ## Phase 5: Commit & Sync
