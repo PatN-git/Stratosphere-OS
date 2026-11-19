@@ -14,6 +14,8 @@ import _versioning
 SCRIPT = REPO_ROOT / "src" / "scripts" / "test_gate.py"
 PASS = [sys.executable, "-c", "import sys; sys.exit(0)"]
 FAIL = [sys.executable, "-c", "import sys; sys.exit(1)"]
+PYTEST_FULL = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+PYTEST_SCOPED = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "test_ok.py"]
 
 _GIT_ENV = {
     **os.environ,
@@ -45,9 +47,10 @@ def repo(tmp_path):
     d = tmp_path / "repo"
     d.mkdir()
     git(d, "init", "-b", "main")
-    write(d, ".git/info/exclude", ".tmp/\n")
+    write(d, ".git/info/exclude", ".tmp/\n__pycache__/\n.pytest_cache/\n")
     write(d, "README.md", "# Fixture\n")
     write(d, "app.py", "x = 1\n")
+    write(d, "test_ok.py", "def test_ok():\n    pass\n")
     git(d, "add", "-A")
     git(d, "commit", "-m", "init")
     return d
@@ -132,6 +135,99 @@ def test_verify_default_base_resolution(repo):
     assert "verified 1 file(s) against recorded passing test run" in res.stdout
 
 
+def test_record_suite_records_committed_files_for_verify(repo):
+    import json
+
+    git(repo, "checkout", "-b", "parent")
+    write(repo, "parent.py", "p = 1\n")
+    write(repo, "docs/note.md", "# ignored\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "feat: parent commit")
+
+    git(repo, "checkout", "-b", "child")
+    write(repo, "child.py", "c = 2\n")
+    git(repo, "add", "child.py")
+    git(repo, "commit", "-m", "feat: child commit")
+
+    # Fresh worktree / prior session: no .tmp/test-gate.json yet
+    rec_path = repo / ".tmp" / "test-gate.json"
+    assert not rec_path.exists()
+
+    res_suite = gate(repo, "record", "--suite", "BT-286", "--", *PYTEST_FULL)
+    assert res_suite.returncode == 0, res_suite.stdout + res_suite.stderr
+
+    data = json.loads(rec_path.read_text(encoding="utf-8"))
+    assert "parent.py" in data["files"]
+    assert "child.py" in data["files"]
+    assert "docs/note.md" not in data["files"]
+
+    for args in (("verify",), ("verify", "--base", "main"), ("verify", "--base", "parent")):
+        res = gate(repo, *args)
+        assert res.returncode == 0, f"{args}: {res.stderr}"
+
+
+def test_record_suite_with_explicit_base_and_deleted_files(repo):
+    import json
+
+    write(repo, "doomed.py", "d = 1\n")
+    git(repo, "add", "doomed.py")
+    git(repo, "commit", "-m", "feat: add doomed")
+
+    git(repo, "checkout", "-b", "feature")
+    git(repo, "rm", "-q", "doomed.py")
+    git(repo, "commit", "-m", "feat: delete doomed")
+
+    res_suite = gate(repo, "record", "--suite", "BT-286", "--base", "main", "--", *PYTEST_FULL)
+    assert res_suite.returncode == 0, res_suite.stdout + res_suite.stderr
+
+    data = json.loads((repo / ".tmp" / "test-gate.json").read_text(encoding="utf-8"))
+    assert data["files"]["doomed.py"] is None
+
+    res = gate(repo, "verify", "--base", "main")
+    assert res.returncode == 0, res.stderr
+    assert "verified 1 file(s)" in res.stdout
+
+
+def test_record_suite_subsequent_unrecorded_commit_fails_verify(repo):
+    git(repo, "checkout", "-b", "feature")
+    write(repo, "app.py", "x = 10\n")
+    git(repo, "add", "app.py")
+    git(repo, "commit", "-m", "feat: first commit")
+
+    assert gate(repo, "record", "--suite", "BT-286", "--", *PYTEST_FULL).returncode == 0
+    assert gate(repo, "verify").returncode == 0
+
+    write(repo, "app.py", "x = 20\n")
+    write(repo, "new_file.py", "n = 1\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "feat: unrecorded follow-up")
+
+    res = gate(repo, "verify")
+    assert res.returncode == 1
+    assert "app.py" in res.stderr
+    assert "new_file.py" in res.stderr
+
+
+def test_record_slice_does_not_backfill_prior_commits(repo):
+    git(repo, "checkout", "-b", "feature")
+    write(repo, "prior.py", "p = 1\n")
+    git(repo, "add", "prior.py")
+    git(repo, "commit", "-m", "feat: prior unrecorded commit")
+
+    write(repo, "slice_file.py", "s = 1\n")
+    assert gate(repo, "record", "--", *PASS).returncode == 0
+    git(repo, "add", "slice_file.py")
+    git(repo, "commit", "-m", "feat: slice commit")
+
+    res_slice = gate(repo, "record", "--slice", "BT-286", "--", *PYTEST_SCOPED)
+    assert res_slice.returncode == 0, res_slice.stdout + res_slice.stderr
+
+    res = gate(repo, "verify")
+    assert res.returncode == 1
+    assert "prior.py" in res.stderr
+    assert "<unrecorded>" in res.stderr
+
+
 def test_4a_workflow_semantic_ac_mapping_and_verify_gate():
     text = read_src("workflows/4a-verify-and-ship.md")
     assert "test_gate.py verify --base <base>" in text
@@ -139,6 +235,16 @@ def test_4a_workflow_semantic_ac_mapping_and_verify_gate():
     assert "never cite fragile source line numbers or hallucinate line references" in text
     assert "Anti-Hallucination Invariant" in text
     assert "Reject line number hallucination" in text
+
+
+def test_4a_workflow_stacked_pr_base_resolution():
+    text = read_src("workflows/4a-verify-and-ship.md")
+    phase2 = text.split("## Phase 2:", 1)[1].split("## Phase 3:", 1)[0]
+    assert "baseRefName" in phase2 and "stacked" in phase2.lower()
+    assert phase2.index("baseRefName") < phase2.index("merge-base HEAD origin/<default>")
+    phase5 = text.split("## Phase 5:", 1)[1]
+    assert "test_gate.py verify --base <base>" in phase5
+    assert "[--base <base>]" in phase5 and "pr_body.py build" in phase5
 
 
 def test_4b_workflow_negative_invariants_anchoring():
@@ -160,7 +266,7 @@ def test_4c_workflow_decomposed_audit_passes():
 
 def test_stage4_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/4a-verify-and-ship.md", "1.11.2"),
+        ("workflows/4a-verify-and-ship.md", "1.14.0"),
         ("workflows/4b-audit-architecture-drift.md", "1.5.1"),
         ("workflows/4c-codebase-health-audit.md", "1.6.1"),
     ]:

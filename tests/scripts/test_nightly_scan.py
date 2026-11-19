@@ -70,7 +70,7 @@ def step(ts, calls=(), status="DONE", error=None, kind="PLANNER_RESPONSE"):
 
 @pytest.fixture
 def env(tmp_path):
-    project = (tmp_path / "my_proj.x").resolve()
+    project = (tmp_path / "p").resolve()
     project.mkdir()
     return {"project": project, "claude": tmp_path / "claude", "agy": tmp_path / "agy", "tmp": tmp_path,
             "cdir": tmp_path / "claude" / slug_of(project)}

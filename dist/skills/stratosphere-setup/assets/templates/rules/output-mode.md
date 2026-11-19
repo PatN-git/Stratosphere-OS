@@ -2,8 +2,8 @@
 trigger: always_on
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
-timestamp: 2026-10-28
-version: "2.0.1"
+timestamp: 2026-11-12
+version: "2.1.0"
 ---
 
 # Output Mode Protocol
@@ -47,3 +47,10 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **Disclose omissions:** if you cap, sample, truncate, or withhold anything (top-N, "and more", sub-threshold findings, an unread source), state the count and what was dropped. Never present a partial set as complete.
 - **No preamble or recap:** open on content, not by restating the question; don't close with unnecessary summary if answer is short.
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.
+
+## 5. Presentation & Question Contract
+When prompting a user for confirmation, approval, or decision direction at an interactive decision gate using native question tools (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code):
+1. **Tool Execution Barrier:** 100% completion of all background tasks, subagent delegations, file operations, and scripts prior to opening the interactive turn. No background tools or script executions may run in the same turn as the question prompt.
+2. **Mandatory Visible Markdown Content:** The complete evidence table, diff, proposal summary, or decision card must be emitted directly in the user-visible message `content`. Emitting question tools with empty message content (`Content: None` or blank body) or hiding evidence inside tool parameters or folded accordions is strictly prohibited.
+3. **Synchronous Pairing:** The question tool call must accompany the visible markdown in the same presentation turn (never emitted before the content or in a separate follow-up turn without evidence).
+4. **Non-Interactive Fallback Contract:** If running on non-interactive hosts or without native question tool support, output the complete markdown evidence and the decision options directly in visible message text and halt execution awaiting explicit user response.
