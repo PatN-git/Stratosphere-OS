@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.9.0"
-timestamp: 2026-11-10
+version: "2.10.0"
+timestamp: 2026-11-12
 ---
 
 # Sprint planning
@@ -64,7 +64,7 @@ Output compressed readout matching capacity thresholds, displaying all alerts an
 [BUDGET] Build <b>h | Spike <s>h | total <t>/80h
 ```
 
-- **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Activate Sprint Queue", "Edit Queue", "Abort"]`. Fallback for non-interactive hosts: output `[Activate Sprint Queue] / [Edit Queue]` in markdown and halt for user response.
+- **Gate (`.agents/rules/output-mode.md` §5):** finish issue loading, dependency graphing, and topological sequencing first, then emit the visible `Topological Sprint Sequence & Verification Gate` table and `[BUDGET]` summary + same-turn prompt: `["(Recommended) Activate Sprint Queue", "Edit Queue", "Abort"]` (fallback: table + `[Activate Sprint Queue] / [Edit Queue]` in markdown and halt).
 - **AFK Advisory (optional):** if all sequenced Build slices are `mode:AFK`, display: *"Note: This sprint is fully-AFK (autonomous). Ensure proper verification hooks are configured."*
 
 ## Phase 5: Commit & Sync

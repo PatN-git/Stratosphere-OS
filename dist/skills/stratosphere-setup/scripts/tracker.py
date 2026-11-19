@@ -233,6 +233,15 @@ def cmd_comment(a, backend, out=print):
     return gh_run_check(["issue", "comment", to_gh_num(a.id)] + flag, out=out) if backend == "github" else issues.main(["comment", a.id] + flag, out=out)
 
 
+def _resolve_local(arch, ident):
+    """Resolve an id or numeric shorthand against the local store, writing errors to stderr on failure."""
+    try:
+        return issues.Tracker(arch).store().resolve(ident)
+    except issues.IssuesError as e:
+        sys.stderr.write(f"{e}\n")
+        return None
+
+
 def cmd_set_refs(a, backend, out=print):
     if backend == "github":
         num = to_gh_num(a.id)
@@ -242,8 +251,10 @@ def cmd_set_refs(a, backend, out=print):
                 sys.stderr.write(err if err.endswith("\n") else err + "\n")
             return rc
         return gh_run_check(["issue", "edit", num, "--body", update_refs_body(vout, a.refs)], out=out)
-    issue = issues.Tracker(a.arch).store().get(a.id)
-    return cmd_set_body(argparse.Namespace(id=a.id, body=update_refs_body(issue.get("body", ""), a.refs), body_file=None, arch=a.arch), backend, out=out)
+    issue = _resolve_local(a.arch, a.id)
+    if issue is None:
+        return 1
+    return cmd_set_body(argparse.Namespace(id=issue["id"], body=update_refs_body(issue.get("body", ""), a.refs), body_file=None, arch=a.arch), backend, out=out)
 
 
 def cmd_set_body(a, backend, out=print):
@@ -297,7 +308,10 @@ def cmd_resume_note(a, backend, out=print):
     if backend == "github":
         jq = '[.comments[] | select(.body | startswith("<!-- stratos:resume -->"))] | last | .body'
         return gh_run_check(["issue", "view", to_gh_num(a.id), "--json", "comments", "--jq", jq], out=out)
-    note = issues.at_top(".memory/resume") / f"{a.id}.md"
+    issue = _resolve_local(a.arch, a.id)
+    if issue is None:
+        return 1
+    note = issues.at_top(".memory/resume") / f"{issue['id']}.md"
     if note.is_file():
         out(note.read_text(encoding="utf-8").strip())
     return 0

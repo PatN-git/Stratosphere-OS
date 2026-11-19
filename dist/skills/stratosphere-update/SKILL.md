@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.9.0"
-timestamp: 2026-11-09
+version: "1.11.0"
+timestamp: 2026-11-18
 ---
 
 # StratosphereOS Update Flow
@@ -89,7 +89,8 @@ Skills refresh from the canonical `dist/skills/` bundle. Before computing scope,
    ```bash
    python <plugin>/scripts/check_suite.py legacy
    ```
-   Exit 0 → continue. Exit 1 → show listed paths and ask once (`AskUserQuestion` / `ask_question`): delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
+   Exit 0 → continue. Exit 1:
+   - **Gate (`.agents/rules/output-mode.md` §5):** finish the legacy path check first, then emit the visible list of detected legacy paths + same-turn prompt: delete them? On yes, run `python <plugin>/scripts/check_suite.py legacy --apply`; on no, continue noting they remain (may shadow new skills).
 
 _Completion criterion:_ Suite confirmed whole, legacy paths removed, declined, or absent.
 
@@ -97,11 +98,8 @@ _Completion criterion:_ Suite confirmed whole, legacy paths removed, declined, o
 
 ## Phase 1: Compute Update Scope
 
-1. **Preview dry-run:**
-   Run `python <plugin>/scripts/scaffold.py --update --dry-run` (using `<plugin>` located in Phase 0) from project root to inspect workspace, match versions, and write `.tmp/stratosphere-update-worklist.json`.
-
-2. **Read worklist:**
-   Load and parse `.tmp/stratosphere-update-worklist.json`.
+1. **Preview dry-run:** Run `python <plugin>/scripts/scaffold.py --update --dry-run` (using `<plugin>` from Phase 0) from project root to inspect workspace, match versions, and write `.tmp/stratosphere-update-worklist.json`.
+2. **Read worklist:** Load and parse `.tmp/stratosphere-update-worklist.json`.
 
 ---
 
@@ -116,11 +114,10 @@ For each block in `preserved_files` flagged with `status: "conflict"`, perform a
 - **Frontmatter:** Copy project file's frontmatter verbatim; never adopt template's (a changed frontmatter, e.g. `timestamp:` → `generated:`, aborts update).
 
 ### 2. Constitution Files (`needs_review_constitution`)
-For each constitution file that has changed:
-- Show side-by-side diff comparing workspace file against new template under `<plugin>/assets/templates/constitution/`.
-- Ask user for confirmation: *"Found updates to constitution file `<filename>`. Merge them?"*
-- If confirmed, merge new rules/sections while keeping user customizations (pointer directory, vision) and write to `<filepath>.stratosphere-new`.
-- If declined, copy existing workspace file verbatim to `<filepath>.stratosphere-new` to ensure it passes Phase 4 invariants during commit.
+If `needs_review_constitution` is empty, skip silently. Otherwise, batch all changed constitution files:
+- **Gate (`.agents/rules/output-mode.md` §5):** finish all diff generation first, then emit one visible consolidated summary + side-by-side diffs vs. `<plugin>/assets/templates/constitution/` + same-turn multi-select prompt listing each changed file plus `"Keep all current (skip merges)"` (fallback: summary, diffs, and selectable markdown options + halt).
+- Selected files: merge new rules/sections while keeping user customizations (pointer directory, vision) → `<filepath>.stratosphere-new`.
+- Unselected/declined files (including 0-selection or `"Keep all current (skip merges)"`): copy workspace file verbatim to `<filepath>.stratosphere-new` for Phase 4 invariants.
 
 ### 3. Unmarked Preserved Files (`status: "unmarked"`)
 - If file has no `SOS:BLOCK` markers, do **NOT** overwrite or merge.
@@ -168,10 +165,7 @@ For each constitution file that has changed:
 
 ## Phase 6: Skill Synchronization (Advisory)
 
-1. **Verify and synchronize domain skills:**
-   Domain skills are third-party, gitignored, and fetched on-demand. Remind user to run, or offer to run:
-   `/sync-skills`
-   to ensure local skill definitions are synchronized with upstreams.
+1. **Verify and synchronize domain skills:** Domain skills are third-party, gitignored, and fetched on-demand. Remind or offer `/sync-skills` to sync local definitions with upstreams.
 
 2. **Host-visibility check (also after a sync):** ensure system pack (`code-simplifier`, `skill-creator`) is visible to running host (`--host claude` on Claude Code, `--host agents` otherwise):
    ```bash
@@ -183,20 +177,7 @@ For each constitution file that has changed:
 
 ## Phase 7: Host Cache Invalidation
 
-Refresh host-cached slash commands and tool registries without terminating conversation or restarting host. Subprocesses and `AGENTS.md` §8 disk fallbacks are already live.
-
-1. **Detect Host Environment:**
-   Check running host (`CLAUDECODE` env or `--host claude` → Claude Code; else Antigravity).
-
-2. **Emit Host Reload Snippet:**
-   - **Antigravity:** Output reload command:
-     ```
-     /skills reload
-     ```
-     *(If MCP schemas changed, reload window instead).*
-   - **Claude Code:** Output reload command:
-     ```
-     /reload-plugins
-     ```
+Refresh host-cached slash commands and tool registries without restarting host (`AGENTS.md` §8 disk fallbacks are already live):
+1. **Detect Host:** `CLAUDECODE` env or `--host claude` → Claude Code (`/reload-plugins`); else Antigravity (`/skills reload`). *(If MCP schemas changed, reload window instead).*
 
 _Completion criterion:_ Project framework files updated, suite intact, host invalidation directive emitted.

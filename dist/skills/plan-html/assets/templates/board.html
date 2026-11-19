@@ -68,6 +68,7 @@ button:hover, select:hover{background:var(--card)}
 .board-card.dragging { opacity: 0.4; }
 .board-card.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
 .board-card.filtered-out { display: none; }
+.card-id { font-family: monospace; font-size: 0.72rem; opacity: 0.6; margin-bottom: 0.2rem; }
 .card-label { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.25rem; }
 .card-meta { font-size: 0.75rem; opacity: 0.6; }
 .card-blocked { font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-top: 0.25rem; }
@@ -452,6 +453,7 @@ function renderBody(data) {
         <div class="cards-container">
           ${colCards.map(c => `
             <div class="board-card ${selectedCardId === String(c.id) ? 'selected' : ''}" id="card-${esc(c.id)}" data-card-id="${esc(c.id)}" data-column="${esc(c.column)}" draggable="true">
+              <div class="card-id">${esc(c.id)}</div>
               <div class="card-label">${esc(c.label)}</div>
               ${c.labels && c.labels.length > 0 ? `
                 <div class="card-labels-container" style="display:flex;gap:0.25rem;flex-wrap:wrap;margin:0.25rem 0;">

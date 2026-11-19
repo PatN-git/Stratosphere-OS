@@ -344,6 +344,28 @@ GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.work.md", "*.stratosphere-new",
                      ".memory/STATUS.md", ".memory/resume/"]
 
+OBSIDIAN_GITIGNORE_ENTRIES = [
+    ".obsidian/workspace*.json",
+    ".obsidian/cache/",
+    ".obsidian/graph-cache.json",
+]
+
+_VAULT_KEEP_DIRS = {"docs", ".memory", ".obsidian"}
+
+
+def template_dir(kind: str) -> Path:
+    """Resolve template subfolder in bundle ASSETS, falling back to src/ layout when run from source."""
+    candidate = ASSETS / kind
+    if candidate.is_dir():
+        return candidate
+    source_fallbacks = {
+        "constitution": PLUGIN_ROOT / "constitution",
+        "memory": PLUGIN_ROOT / "memory-templates",
+        "rules": PLUGIN_ROOT / "rules",
+        "github": PLUGIN_ROOT / "github",
+    }
+    return source_fallbacks.get(kind, candidate)
+
 FRAMEWORK_GITHUB_FILES = {"sync-labels-to-project.yml"}
 
 def skips_map(proj_path):
@@ -382,6 +404,7 @@ def map_bundled_to_project(rel_path: str):
         elif sub == "memory": return f".memory/{name}"
         elif sub == "rules": return f".agents/rules/{name}"
         elif sub == "github": return f".github/workflows/{name}"
+        elif sub == "obsidian": return f".obsidian/{name}"
     elif parts[0] == "skills":
         # skills/<name>/SKILL.md and skills/<name>/references/<file>
         return ".agents/skills/" + "/".join(parts[1:])
@@ -524,31 +547,96 @@ def prune_empty_parents(file_path: Path, project_root: Path, dry: bool = False, 
                 break
     return pruned_dirs
 
-def reconcile_gitignore(project_dir, dry_run):
+def reconcile_gitignore(project_dir, dry_run, entries=None):
+    target_entries = entries if entries is not None else GITIGNORE_ENTRIES
     gi = project_dir / ".gitignore"
-    if not gi.exists():
+    new_p = project_dir / (gi.name + ".stratosphere-new")
+    source_file = new_p if (dry_run and new_p.exists()) else gi
+
+    if not source_file.exists():
         if dry_run:
-            new_p = project_dir / ".gitignore.stratosphere-new"
-            new_p.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
-            return GITIGNORE_ENTRIES
-        gi.write_text("\n".join(GITIGNORE_ENTRIES) + "\n", encoding="utf-8")
-        return GITIGNORE_ENTRIES
-        
-    content = gi.read_text(encoding="utf-8")
+            new_p.write_text("\n".join(target_entries) + "\n", encoding="utf-8", newline="\n")
+            return target_entries
+        gi.write_text("\n".join(target_entries) + "\n", encoding="utf-8", newline="\n")
+        return target_entries
+
+    content = source_file.read_text(encoding="utf-8")
     lines = [line.strip() for line in content.splitlines()]
-    missing = [entry for entry in GITIGNORE_ENTRIES if entry.strip() not in lines]
-    
+    missing = [entry for entry in target_entries if entry.strip() not in lines]
+
     if missing:
         new_content = content
         if new_content and not new_content.endswith("\n"):
             new_content += "\n"
         new_content += "\n".join(missing) + "\n"
         if dry_run:
-            new_p = project_dir / (gi.name + ".stratosphere-new")
-            new_p.write_text(new_content, encoding="utf-8")
+            new_p.write_text(new_content, encoding="utf-8", newline="\n")
         else:
-            gi.write_text(new_content, encoding="utf-8")
+            gi.write_text(new_content, encoding="utf-8", newline="\n")
     return missing
+
+
+def get_dynamic_ignore_filters(project_root: Path) -> list[str]:
+    """Scan project_root top-level directories; return Obsidian ignore regexes for dirs outside docs/.memory/.obsidian."""
+    if not project_root.is_dir():
+        return []
+    filters = []
+    for entry in sorted(project_root.iterdir(), key=lambda p: p.name):
+        if entry.is_dir() and entry.name not in _VAULT_KEEP_DIRS:
+            filters.append(f"^{re.escape(entry.name)}/")
+    return filters
+
+
+def scaffold_obsidian_vault(project_root: Path, res: dict, dry: bool, update: bool = False) -> None:
+    """Place .obsidian/ assets with tier='preserved', merge dynamic ignores on fresh app.json, and reconcile .gitignore."""
+    obs_src = template_dir("obsidian")
+    obs_dst = project_root / ".obsidian"
+    for name in ("app.json", "graph.json", "core-plugins.json"):
+        place(obs_src / name, obs_dst / name, res, dry, update=update, tier="preserved")
+
+    app_dst = obs_dst / "app.json"
+    if not dry and app_dst in res["created"]:
+        app_cfg = json.loads(app_dst.read_text(encoding="utf-8"))
+        existing = list(app_cfg.get("userIgnoreFilters", []))
+        for pattern in get_dynamic_ignore_filters(project_root):
+            if pattern not in existing:
+                existing.append(pattern)
+        app_cfg["userIgnoreFilters"] = existing
+        app_dst.write_text(json.dumps(app_cfg, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+    gi_added = reconcile_gitignore(project_root, dry, entries=OBSIDIAN_GITIGNORE_ENTRIES)
+    if gi_added:
+        verb = "WOULD RECONCILE" if dry else "RECONCILED"
+        print(f"{verb} .gitignore (obsidian): added {', '.join(gi_added)}")
+        if not dry and Path(".gitignore") not in res["refreshed"]:
+            res["refreshed"].append(Path(".gitignore"))
+    status_verb = "would configure" if dry else "configured"
+    print(f"Obsidian vault: {status_verb} ({obs_dst})")
+
+
+def resolve_vault_mode(args_vault: str | None, lock_data: dict, project: Path, update: bool) -> str:
+    """Resolve knowledge vault mode from CLI flag, lockfile/disk state on --update, or TTY prompt."""
+    if args_vault:
+        return args_vault
+    existing_vault = lock_data.get("vault")
+    if update and existing_vault:
+        return existing_vault
+    if update and (project / ".obsidian").is_dir():
+        return "obsidian"
+    if not update and sys.stdin.isatty():
+        print("Choose Knowledge Vault Mode:")
+        print("  [1] (Recommended) None: Pure plain Markdown (zero .obsidian/ overhead).")
+        print("  [2] Obsidian Vault: Scaffolds .obsidian/ graph & wikilink config + .gitignore caches.")
+        print("  [3] OKF HTML Viewer: Legacy static HTML graph viewer.")
+        try:
+            ans = input("Select [1/2/3] (default: 1): ").strip()
+            if ans == "2":
+                return "obsidian"
+            if ans == "3":
+                return "okf-html"
+        except (EOFError, KeyboardInterrupt):
+            return "none"
+    return "none"
 
 def reconcile_gitattributes(project_dir, dry_run):
     ga = project_dir / ".gitattributes"
@@ -639,14 +727,23 @@ def get_bundled_project_scripts(project: Path):
     design_dir = PLUGIN_ROOT / "scripts" / "design"
     if design_dir.is_dir():
         for src in sorted(design_dir.rglob("*")):
-            if src.is_file() and "test" not in src.parts:
+            if (
+                src.is_file()
+                and "test" not in src.parts
+                and "__pycache__" not in src.parts
+                and src.suffix not in (".pyc", ".pyo")
+            ):
                 rel = src.relative_to(design_dir).as_posix()
                 dst = project / ".agents" / "scripts" / "design" / rel
                 scripts.append((src, dst, f".agents/scripts/design/{rel}"))
     viewer_dir = PLUGIN_ROOT / "scripts" / "okf_viewer"
     if viewer_dir.is_dir():
         for src in sorted(viewer_dir.rglob("*")):
-            if src.is_file():
+            if (
+                src.is_file()
+                and "__pycache__" not in src.parts
+                and src.suffix not in (".pyc", ".pyo")
+            ):
                 rel = src.relative_to(viewer_dir).as_posix()
                 dst = project / ".agents" / "scripts" / "okf_viewer" / rel
                 scripts.append((src, dst, f".agents/scripts/okf_viewer/{rel}"))
@@ -781,6 +878,7 @@ def main():
     ap.add_argument("--verify", action="store_true", help="run invariants verification on proposed updates")
     ap.add_argument("--delivery", choices=("plugin", "in-repo"), help="skill delivery mode: 'plugin' (host delivers bundled skills; zero repo clutter) or 'in-repo' (bundled skills copied to .agents/skills/ for non-plugin hosts)")
     ap.add_argument("--tracker", choices=("github", "local"), help="fresh install: the issue-tracker backend, recorded as `tracker:` in ARCHITECTURE.md; local also records `tracker_branch:` and creates that branch")
+    ap.add_argument("--vault", choices=("none", "obsidian", "okf-html"), help="knowledge vault configuration: 'none' (plain markdown), 'obsidian' (.obsidian/ config), or 'okf-html' (legacy static HTML viewer)")
     args = ap.parse_args()
 
     project = Path.cwd()
@@ -831,6 +929,8 @@ def main():
             else:
                 delivery_mode = "plugin" if is_plugin_host else "in-repo"
 
+    vault_mode = resolve_vault_mode(args.vault, lock_data, project, update)
+
     if not ASSETS.exists():
         raise SystemExit(f"Cannot find bundled templates at {ASSETS}. Run from a project root with the plugin installed.")
 
@@ -840,6 +940,7 @@ def main():
         
         lock_data["plugin_id"] = "stratosphere-os"
         lock_data["skill_delivery"] = delivery_mode
+        lock_data["vault"] = vault_mode
 
         try:
             versions = json.loads((PLUGIN_ROOT / "versions.json").read_text(encoding="utf-8"))
@@ -941,11 +1042,15 @@ def main():
         return
 
     if update:
-        # Load versions.json
+        # Load versions.json (when run directly from source tree src/, allow fallback if unbuilt)
         versions_file = PLUGIN_ROOT / "versions.json"
         if not versions_file.exists():
-            raise SystemExit(f"Missing versions.json in {PLUGIN_ROOT}")
-        versions_data = json.loads(versions_file.read_text(encoding="utf-8"))
+            if (PLUGIN_ROOT / "constitution").is_dir():
+                versions_data = {"plugin_version": "unknown", "artifacts": {}}
+            else:
+                raise SystemExit(f"Missing versions.json in {PLUGIN_ROOT}")
+        else:
+            versions_data = json.loads(versions_file.read_text(encoding="utf-8"))
         bundled_manifest = versions_data.get("artifacts", {})
         plugin_version = versions_data.get("plugin_version", "unknown")
         
@@ -1410,7 +1515,7 @@ def main():
                     failures.append(f"Validation failed for '{proj_path}': {e}")
                     verification_failed = True
             elif proj_path == "AGENTS.md":
-                tpl = ASSETS / "constitution" / "AGENTS.md"
+                tpl = template_dir("constitution") / "AGENTS.md"
                 placeholder = vision(tpl.read_text(encoding="utf-8")) if tpl.is_file() else ""
                 orig_v, prop_v = vision(orig_text), vision(prop_text)
                 if orig_v and orig_v != placeholder and prop_v in ("", placeholder):
@@ -1587,6 +1692,9 @@ def main():
         if ga_added:
             verb = "WOULD RECONCILE" if dry else "RECONCILED"
             print(f"{verb} .gitattributes: added {', '.join(ga_added)}")
+
+        if vault_mode == "obsidian":
+            scaffold_obsidian_vault(project, res, dry, update=True)
                 
         for proj_path in worklist.get("refreshed_scripts", []) + worklist.get("created_scripts", []) + worklist.get("unchanged_scripts", []):
             p = project / proj_path
@@ -1603,6 +1711,7 @@ def main():
         sync_skill_delivery(project, delivery_mode, lock_data, dry, res, update=True)
         lock_data["installed_plugin_version"] = plugin_version
         lock_data["skill_delivery"] = delivery_mode
+        lock_data["vault"] = vault_mode
         lock_data["plugin_id"] = "stratosphere-os"
         if not dry:
             lock_file.write_text(json.dumps(lock_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1624,10 +1733,10 @@ def main():
 
     # 2. Constitution -> project root
     for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
-        place(ASSETS / "constitution" / name, project / name, res, dry, update=update, tier="constitution")
+        place(template_dir("constitution") / name, project / name, res, dry, update=update, tier="constitution")
 
     # 3. Memory templates -> .memory/
-    for src in sorted((ASSETS / "memory").glob("*.md")):
+    for src in sorted(template_dir("memory").glob("*.md")):
         if skips_map(f".memory/{src.name}"):
             continue
         place(src, project / ".memory" / src.name, res, dry, update=update, tier="preserved")
@@ -1643,7 +1752,7 @@ def main():
     #    always_on/model_decision rules stay pointer-referenced on Claude (AGENTS.md
     #    §8) to preserve token efficiency — not duplicated. Host-agnostic: always dual
     #    -place glob rules regardless of which host ran the installer.
-    for src in sorted((ASSETS / "rules").glob("*.md")):
+    for src in sorted(template_dir("rules").glob("*.md")):
         place(src, project / ".agents" / "rules" / src.name, res, dry, update=update, tier="managed")
         if re.search(r'^trigger:\s*glob\b', src.read_text(encoding="utf-8"), re.M):
             place(src, project / ".claude" / "rules" / src.name, res, dry, update=update, tier="managed")
@@ -1673,6 +1782,10 @@ def main():
             res["refreshed"].append(Path(".gitattributes"))
     else:
         res["exists"].append(Path(".gitattributes"))
+
+    # 8b. Knowledge Vault Configuration
+    if vault_mode == "obsidian":
+        scaffold_obsidian_vault(project, res, dry, update=update)
 
     # 8c. Update Lockfile
     count = generate_lockfile(dry, repair=False)

@@ -2,8 +2,8 @@
 trigger: always_on
 title: Output Mode Protocol
 description: Guidelines to maximize information density and minimize token waste in agent responses.
-timestamp: 2026-10-28
-version: "2.0.1"
+timestamp: 2026-11-12
+version: "2.1.0"
 ---
 
 # Output Mode Protocol
@@ -47,3 +47,10 @@ Maximize information density while minimizing token waste. Focus on *what was do
 - **Disclose omissions:** if you cap, sample, truncate, or withhold anything (top-N, "and more", sub-threshold findings, an unread source), state the count and what was dropped. Never present a partial set as complete.
 - **No preamble or recap:** open on content, not by restating the question; don't close with unnecessary summary if answer is short.
 - **Memory discipline:** follow `.agents/rules/memory-protocol.md` and `.agents/rules/okf-protocol.md` for all memory and document operations.
+
+## 5. Presentation & Question Contract
+At interactive decision gates (`ask_question` / `AskUserQuestion`; multi-select: `is_multi_select: true` / `multiSelect: true`):
+1. **Tool Execution Barrier:** finish all scripts, file ops, subagents, and background tasks before prompting; never invoke a question tool in the same turn as other tools.
+2. **Visible Markdown Content:** emit full evidence (table, diff, summary, or card) in visible message `content`; never empty (`Content: None`) or hidden in tool parameters/accordions.
+3. **Synchronous Pairing:** call the question tool in the same turn as the visible markdown — never before or in a follow-up turn.
+4. **Fallback:** without a native question tool, emit evidence + options in text and halt.

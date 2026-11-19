@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "1.8.0"
-timestamp: 2026-11-09
+version: "1.9.0"
+timestamp: 2026-11-18
 ---
 
 # Instantiate StratosphereOS
@@ -23,7 +23,7 @@ If invoked with `--re-reconcile-labels`:
 3. Exit immediately after Checkpoint 6.
 - `.agents/rules/memory-protocol.md` — trust tags, supersession, cross-references, lint
 - `.memory/DESIGN.md` — spec-compliant brand tokens (Google Labs DESIGN.md spec)
-- `.agents/skills/<name>/references/` — each skill's own templates and guides
+- `<skill-dir>/references/` (plugin bundle, or `.agents/skills/<name>/references/` in `in-repo` mode) — each skill's own templates and guides
 - `.memory/DESIGN_RULES.md` — project structural rules: design principles, design system governance, immortal components
 
 ## Why this exists
@@ -37,10 +37,10 @@ All templates ship **bundled inside this skill** under its `assets/templates/` d
 - `assets/templates/memory/` → `STATUS.md`, `LEARNINGS.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `DESIGN.md`, `DESIGN_RULES.md`
 - `assets/templates/references/` → PRD and discovery-brief templates
 
-All 22 bundled skills (`0a`–`4c` and the three drivers) are **copied into the project's `.agents/skills/<name>/`** by the scaffolder (Checkpoint 0), each carrying its own `references/`.
-- One shape serves every host: Antigravity, Cursor, Codex, Devin and OpenClaw read `.agents/skills/`; Claude Code reads the same tree from `.claude/skills/`.
-- All are invocable as `/<name>`, and the in-project copies are live on every host — none are inert.
-- Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 and ignored per-directory by a generated `.agents/skills/.gitignore`.
+All **28** bundled skills (**24** lifecycle skills `0a`–`4c` plus the three drivers, and **4** execution skills), each carrying its own `references/`, are delivered via one of two Checkpoint 0 modes (`skill_delivery` in `.agents/.stratosphere-lock.json`):
+- **`plugin` delivery (default for plugin hosts):** the host serves all 28 bundled skills directly from its plugin bundle (zero workspace clutter, lower token overhead); `.agents/skills/` holds only `.gitkeep` and on-demand third-party packs.
+- **`in-repo` delivery (fallback for non-plugin hosts):** `scaffold.py --delivery in-repo` (or `delivery.py --restore-skills`) copies all 28 bundled skills into the project's `.agents/skills/<name>/` (`.agents/skills/` for Cursor, Codex, Devin, OpenClaw, Antigravity; Claude Code without the marketplace plugin reads `.claude/skills/`).
+- All 28 are invocable as `/<name>` on every host. Third-party domain packs are **not** bundled; they are fetched on demand in Checkpoint 9 into `.agents/skills/` and ignored per-directory by a generated `.agents/skills/.gitignore`.
 
 ## Existing Installation Detection
 
@@ -91,7 +91,7 @@ Find `<plugin>` by checking these locations in order and using the first that co
 
 If none match (e.g. a custom path), search for `stratosphere-setup/scripts/scaffold.py` under the roots above.
 
-**Suite integrity check (before scaffolding):** assert the 25 lifecycle skills are present and uncorrupted (HITL sidecars, cited `references/` files). It checks the skills directory that holds this `stratosphere-setup` — no argument needed:
+**Suite integrity check (before scaffolding):** assert the **24** lifecycle skills (plus bundled execution skill assets) are present and uncorrupted (HITL sidecars, cited `references/` files). Inside an existing project locked to `plugin` mode, it checks the host plugin bundle and verifies zero duplicate bundled skills in `.agents/skills/`; otherwise it checks the skills directory that holds this `stratosphere-setup` — no argument needed:
 
 ```bash
 python <plugin>/scripts/check_suite.py suite
@@ -105,6 +105,9 @@ Then run the scaffolder from the project root — it creates the full folder str
 # <plugin> = the path you found above; <tracker> = the backend chosen in Version Control Setup step 2 (github | local)
 python <plugin>/scripts/scaffold.py --tracker <tracker>
 
+# Optional delivery override: 'plugin' (default for plugin hosts) or 'in-repo' (copies bundled skills to .agents/skills/)
+python <plugin>/scripts/scaffold.py --tracker <tracker> --delivery <plugin|in-repo>
+
 # Add --dry-run to preview what would be created without writing any files:
 python <plugin>/scripts/scaffold.py --dry-run
 
@@ -114,17 +117,18 @@ python <plugin>/scripts/scaffold.py --update
 ```
 
 **What it creates** (skips anything already present):
-- Folders: `.memory/`, `.agents/rules/`, `.agents/skills/`, `.agents/scripts/`, `docs/discovery/`, `docs/prds/`, `.tmp/`
+- Folders: `.memory/`, `.agents/rules/`, `.agents/skills/` (`.gitkeep` in `plugin` mode; bundled skills in `in-repo` mode), `.agents/scripts/`, `docs/discovery/`, `docs/prds/`, `.tmp/`
 - Constitution → project root: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`
 - Memory: `.memory/{STATUS,LEARNINGS,GLOSSARY,ARCHITECTURE,DATABASE_SCHEMA,DESIGN,DESIGN_RULES}.md` (`tracker:` is written into ARCHITECTURE.md's frontmatter)
 - Rules: `.agents/rules/{output-mode,memory-protocol}.md`
-- All 22 bundled skills (`0a`–`4c`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`) + each skill's `references/` → `.agents/skills/<name>/`
-- `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`)
+- `.agents/.stratosphere-lock.json` recording `skill_delivery` (`plugin` or `in-repo`) and tracked framework hashes
+- All **28** bundled skills (**24** lifecycle `0a`–`4c`, `stratosphere-setup`, `stratosphere-update`, `sync-skills`, plus **4** execution skills `concept-brainstorm`, `load-memory`, `micro-tdd`, `plan-html`) + each skill's `references/`: served from the host plugin bundle under `plugin` delivery (default for plugin hosts; pristine duplicates in `.agents/skills/` are unlinked and modified copies quarantined to `.agents/custom-skills/`), or copied into `.agents/skills/<name>/` under `in-repo` delivery (for non-plugin hosts)
+- `.agents/scripts/validate_memory.py` (memory lint, run by `/0b-stop-session`) and `.agents/scripts/delivery.py` (`--status`, `--set-mode`, `--restore-skills`)
 - `.gitignore` (only if missing)
 
 **Record the tracker as a law:** in `.memory/ARCHITECTURE.md`, turn the tracker `[[A-XXX]] [LAW]` placeholder under Known Architectural Constraints into an entry with the next free `A-nnn` ID and the chosen backend (`<github|local>` replaced); keep the placeholder wording otherwise.
 
-**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand.
+**Local tracker only:** add `tracker_branch: <repo>/issues` to ARCHITECTURE.md's frontmatter (`<repo>` = the `origin` URL's last segment without `.git`, else the top-level folder name), then run `python .agents/scripts/issues.py init` (creates the branch with `docs/issues/README.md`; idempotent). Issue files live only on that branch: never check it out or edit its files by hand. To view the backlog anytime, run `python .agents/scripts/issues.py summary` (markdown table of open issues) or `python .agents/scripts/issues.py board --web --open` (interactive board).
 
 **Upgrades and Updates:** If this is an existing project needing an upgrade or sync, do not use setup. Instead, run `/stratosphere-update` which performs a safe, in-place framework block update.
 
@@ -211,7 +215,7 @@ This step has TWO outputs: brand tokens go to `DESIGN.md` (spec format); structu
 
 ### Checkpoint 5.2: Secret hygiene
 
-- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — that would silently untrack all 23 bundled skills; on-demand packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit).
+- Verify `.gitignore` contains `.tmp/`, `.env`, `.env.*`, `token.json`, `.memory/STATUS.md`, and common credential files. It must **not** contain `.agents/skills/` — in `in-repo` mode that would silently untrack all 28 bundled skills, and in `plugin` mode `.agents/skills/.gitkeep` stays tracked while on-demand third-party packs are ignored instead by the generated `.agents/skills/.gitignore`. If entries are missing, **propose** adding them (don't silently edit).
 - Rationale: `.memory/STATUS.md` is the churny folder-state file (session lines) — keep it local so it never causes diff/merge noise, while the durable memory files (`LEARNINGS/GLOSSARY/ARCHITECTURE/DATABASE_SCHEMA/DESIGN/DESIGN_RULES`) stay tracked and backed up.
 
 ### Checkpoint 5.3: Test gate (opt-in)
@@ -263,8 +267,7 @@ GitHub labels already exist and may differ from the registry.
    - **ADD** — in registry but not yet in GitHub. Create it.
 
 4. **Present the custom table** to the user.
-   - `KEEP` and `ADD` are auto-approved.
-   - `MAP` and `DROP` require explicit user confirmation. Use the native `AskUserQuestion` tool (on Claude Code) or `ask_question` tool (on Google Antigravity) to obtain the user's confirmation — do not ask in prose.
+   - **Gate (`.agents/rules/output-mode.md` §5):** finish GitHub label inspection and mapping first, then emit the visible label mapping table + same-turn prompt to confirm `MAP` and `DROP` (`KEEP` and `ADD` are auto-approved; never ask in prose).
 
 5. **Execute** confirmed changes in GitHub.
 
@@ -291,7 +294,7 @@ GitHub labels already exist and may differ from the registry.
 ## Checkpoint 7: Session & Backlog Sync (both paths)
 
 1. Record folder facts (framework version, build state) in `.memory/STATUS.md` `Repo notes`; STATUS is folder state only, never a next step or issue state.
-2. If issues or active tasks exist, seed them through the `create` verb (`.agents/scripts/tracker.py`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-LOCAL-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
+2. If issues or active tasks exist, seed them through the `create` verb (`.agents/scripts/tracker.py`): `python .agents/scripts/issues.py create --title T --label L --body-file F` under `tracker: local` (prints the new `BT-L-<nnn>-<slug>` id), `gh issue create` under `github` (the zero-padded `BT-007`). Use registry labels only.
 4. When a step seeds real content into a memory file, delete ONLY that file's dummy active items (e.g., `BT-XXX`, `[[L-XXX]] Example placeholder`, `[[G-XXX]] Example Term`, `[[A-XXX]] Example placeholder`). NEVER delete structural headings, guideline comments, operational bullet points, or format example lines under `## Superseded`.
 
 ## Checkpoint 8: Design Context (interactive)
@@ -315,7 +318,7 @@ GitHub labels already exist and may differ from the registry.
 
 ## Checkpoint 9: Skill setup (interactive)
 
-Domain skills are **not bundled** — they are fetched on demand into `.agents/skills/` from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
+Domain skills are **not bundled** — in both `plugin` and `in-repo` delivery, they are fetched on demand into `.agents/skills/` (never touching the plugin bundle) from the registry at the plugin's `external-skills.json` via the `sync_skills.py` script.
 
 1. **Always sync `system` pack** without asking — it contains `skill-creator` and `code-simplifier` which every project needs. Do not present it as a choice.
 2. **Ask one question using `AskUserQuestion` (multiSelect: true) on Claude Code, or `ask_question` (is_multi_select: true) on Antigravity:**
@@ -342,7 +345,7 @@ Domain skills are **not bundled** — they are fetched on demand into `.agents/s
    ```
    (Where `<plugin>` is the installed `stratosphere-setup` directory located in Checkpoint 0 — including the Claude Code marketplace cache `~/.claude/plugins/cache/*/stratosphere-os/*/dist/skills/stratosphere-setup/`.)
 
-5. **Host-visibility check (after the sync):** the `system` pack must be visible to the *running host*, not just present on disk — Claude Code reads `.claude/skills/` (not `.agents/skills/`), `.agents/skills` hosts read `.agents/skills/`. Run (pass `--host claude` on Claude Code, `--host agents` otherwise):
+5. **Host-visibility check (after the sync):** the `system` pack (and any synced third-party pack) must be visible to the *running host*, not just present on disk — in both `plugin` and `in-repo` delivery, Claude Code reads `.claude/skills/` (not `.agents/skills/`, while bundled skills come from its marketplace plugin cache when installed), whereas Antigravity and `.agents/skills` hosts read `.agents/skills/` (plus `~/.gemini/config/skills/` globally, while bundled skills come from the plugin bundle in `plugin` mode). Run (pass `--host claude` on Claude Code, `--host agents` otherwise):
    ```bash
    python <plugin>/scripts/check_suite.py visibility --host <claude|agents>
    ```

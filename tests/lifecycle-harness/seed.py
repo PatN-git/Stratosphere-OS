@@ -35,7 +35,7 @@ def seed_upstream(project: Path, child: dict, shim_dir: Path, tracker: str = "lo
 
     Under `tracker: github` the parent epic is minted THROUGH the shim rather than
     written into its store by hand, so the store's shape has one author. Under the
-    local backend GitHub is not touched: the epic is one `BT-LOCAL-<slug>` issue on the tracker branch, created
+    local backend GitHub is not touched: the epic is one `BT-L-<nnn>-<slug>` issue on the tracker branch, created
     with the installed `issues.py` (`references/tracker-verbs.md`), and the shim's store stays empty.
     """
     shutil.copytree(UPSTREAM, project, dirs_exist_ok=True)
@@ -99,7 +99,7 @@ def _mint_epic(child: dict, shim_dir: Path) -> str:
     return r.stdout.strip()
 
 
-LOCAL_EPIC_ID = "BT-LOCAL-local-feature-flag-evaluation"
+LOCAL_EPIC_ID = "BT-L-001-local-feature-flag-evaluation"
 EPIC_BODY = "Parent feature. Sliced by /3b-create-issue.\n\nPRD: docs/prds/BT-001-local-feature-flag-evaluation.md\n"
 
 

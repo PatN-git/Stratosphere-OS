@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: AFK
-version: "1.11.0"
-timestamp: 2026-11-09
+version: "1.11.2"
+timestamp: 2026-11-18
 ---
 
 # AFK END-TO-END LOOP
@@ -40,7 +40,7 @@ _Done when:_ orchestrator context synced.
      - Neither `mode:AFK` nor `mode:HITL` (missing mode) → `[SKIP] BT-<padded> no execution mode — excluded` and drop (if named single issue → HALT with guidance: "requires execution mode mode:AFK or mode:HITL to be run").
 3. **Group** slices by ship unit (`pr_body.py unit` per slice: Milestone, Parent and the parent's Milestone (`--parent-milestone`) from the queue read (the parent's: one `gh issue view <parent> --json milestone` per distinct parent; local: `get` each slice and parent), as 3d step 1; unit = its `unit` key; a `needs_milestone` slice stays queued, 3d halts it `[NO-RELEASE]` as `stuck` unless a branch is active); order by `(unit in queue order, dependency_order, slice_id)`. Blocker satisfaction comes from `python .agents/scripts/reconcile.py --edges blockers --ids <slices>`, never from status words.
 4. Detect `gh auth status` → set ship mode: `auto-PR` (connected) | `local-only`.
-5. **Decision log:** `.tmp/3z-loop.work.md`, append-only, on every run: one line per decision `ts | phase | decision | why | evidence pointer | result`. Each run appends a `start` row first and never deletes or edits earlier rows.
+5. **Decision log:** `.tmp/3z-loop.work.md`, append-only *within* a run (never delete or edit current-run rows): one line per decision `ts | phase | decision | why | evidence pointer | result`. At run start, prune entries older than 14 days (or keep only the newest 500 lines), then append a `start` row.
 6. Present ordered queue + count + ship mode; **halt for confirmation** before execution.
 _Done when:_ user authorized slice list and ship mode.
 
@@ -60,9 +60,9 @@ For each confirmed slice `BT-<padded>`; `attempt = 1`, max 3:
 _Done when:_ subagent returns valid JSON and git status is clean. Then the Orchestrator (never the implementer) upserts the slice's session line in `.memory/STATUS.md` (`BT-<padded> · <branch> · <date>`, `branch` from the JSON; own line only), then runs `python .agents/scripts/floor_guard.py`; exit 1 or 2 (could not run) is not passing → skip Step 2B; go to Step 2C. `stuck` set → skip Step 2B; go to Step 2C.
 
 ### Step 2B: Verify (Subagent)
-1. **Dispatch** (`<parentId>` = the slice's Parent as `get` returns it, from the queue read else `get` the slice; `BT-012` or `BT-LOCAL-<slug>`):
+1. **Dispatch** (`<parentId>` = the slice's Parent as `get` returns it, from the queue read else `get` the slice; `BT-012` or `BT-L-<nnn>-<slug>`):
    > "Run `/4a-verify-and-ship` gate **`audit-only`** (its Phase 0 self-hydrates via `load-memory` — no `/0a` prefix) with input issue ID `BT-<padded>` and design-doc path `docs/design/<parentId>-interface.md` (no PRD/design doc at that path (standalone slice) → omit the path).
-   > Keep the auditor independent (fresh context) and give it the lean packet per `.agents/skills/4a-verify-and-ship/references/audit-inputs.md` (inline diff, ACs, named tests; no broad re-reads). When this slice already has an earlier Step 2B return, also pass its `coverage_map`, its `gaps` (each with its stated `bar`) and the diff since the head that audit saw: the auditor applies that reference's frozen-gap delta rule. An attempt that skipped 2B left no audit; the first audit is a full one.
+   > Keep the auditor independent (fresh context) and give it the lean packet per `<skill-dir>/references/audit-inputs.md` (parent resolves `<skill-dir>` to an absolute path for the auditor; inline diff, ACs, named tests; no broad re-reads). When this slice already has an earlier Step 2B return, also pass its `coverage_map`, its `gaps` (each with its stated `bar`) and the diff since the head that audit saw: the auditor applies that reference's frozen-gap delta rule. An attempt that skipped 2B left no audit; the first audit is a full one.
    > Run the Standards auditor with `auditor_model: small` (`references/auditor-model-tiers.md`); the Spec auditor stays on the default. Return the tier as `std_tier`.
    > Produce coverage map only; do NOT edit code/tests, do NOT commit/push, do NOT run the `ship-only` gate.
    > Return JSON: `{\"verdict\": \"[PASS]\" | \"[UNCOVERED]\" | \"[SKIP]\", \"coverage_map\": {}, \"docs_read\": [], \"needs_manual_qa\": false, \"counts\": {\"spec\": 0, \"std_hard\": 0, \"std_judg\": 0, \"watch\": 0}, \"gaps\": [], \"watch\": [], \"standards\": {\"hard\": [], \"judgment\": [], \"dismissed\": []}, \"phase1\": \"PASS|FAIL\", \"std_tier\": \"small|default\", \"input\": \"lean\"}` (`docs_read` = the reference docs opened to audit — issue/PRD, design doc, tests, impl; confidence ≥ 80; `counts.spec` = Spec gaps ≥ 80 this round; `gaps` = those gaps, `{ac, confidence, bar}` each, `bar` = the suggested fix that would close it; add `phase1`, `std_tier`, `input` per `references/pr-body-and-ship.md` § Audit findings only when known; omit, never empty)."

@@ -20,8 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 HOSTS = ["dist"]  # one canonical bundle: dist/skills
 NAME_RE = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 
-# a citation is either skill-relative or, at a subagent boundary, absolute
-REL_CITE = re.compile(r'(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+# a citation is either skill-relative (bare or <skill-dir>/) or, at a subagent boundary, absolute
+REL_CITE = re.compile(r'(?:(?<![\w/.>])|<skill-dir>/)references/([A-Za-z0-9_.-]+\.md)')
 ABS_CITE = re.compile(r'\.agents/skills/([a-z0-9-]+)/references/([A-Za-z0-9_.-]+\.md)')
 
 
@@ -84,6 +84,71 @@ def test_every_cited_reference_ships(host):
                 if not (d / "references" / fname).exists():
                     broken.append(f"{d.name}/references/{ref.name} -> {fname}")
     assert not broken, "dangling reference citations:\n  " + "\n  ".join(broken)
+
+
+def test_rel_cite_recognizes_skill_dir_without_double_match():
+    sample = (
+        "Read <skill-dir>/references/alpha.md, "
+        ".agents/skills/other/references/beta.md, "
+        "and references/gamma.md (ignore custom/references/delta.md)."
+    )
+    assert REL_CITE.findall(sample) == ["alpha.md", "gamma.md"]
+
+
+def test_every_cited_reference_ships_validates_skill_dir_in_skill_and_references(tmp_path, monkeypatch):
+    demo = tmp_path / "dist" / "skills" / "demo"
+    refs = demo / "references"
+    refs.mkdir(parents=True)
+    (demo / "SKILL.md").write_text(
+        "---\nname: demo\ndescription: demo\nversion: \"1.0.0\"\n---\n"
+        "See <skill-dir>/references/parent.md and <skill-dir>/references/missing-from-skill.md\n",
+        encoding="utf-8",
+    )
+    (refs / "parent.md").write_text(
+        "---\nversion: \"1.0.0\"\n---\n"
+        "See <skill-dir>/references/missing-from-ref.md\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys.modules[__name__], "REPO_ROOT", tmp_path)
+
+    with pytest.raises(AssertionError) as exc:
+        test_every_cited_reference_ships("dist")
+    msg = str(exc.value)
+    assert "demo -> references/missing-from-skill.md" in msg
+    assert "demo/references/parent.md -> missing-from-ref.md" in msg
+
+    (refs / "missing-from-skill.md").write_text("---\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+    (refs / "missing-from-ref.md").write_text("---\nversion: \"1.0.0\"\n---\n", encoding="utf-8")
+    test_every_cited_reference_ships("dist")
+
+
+@pytest.mark.parametrize("host", HOSTS)
+def test_self_contained_execution_skills_anchor_paths_to_skill_dir(host):
+    """plan-html and concept-brainstorm must anchor assets/ and references/ to <skill-dir>,
+    never bare relative paths or <workspace>/skills/... that fail in plugin mode (BT-275)."""
+    skills = {d.name: d for d in skill_dirs(host)}
+    plan_dir = skills["plan-html"]
+    plan_skill = (plan_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/assets/templates/index.md`" in plan_skill
+    assert "`<skill-dir>/assets/templates/`" in plan_skill
+    assert "`<skill-dir>/references/html-patterns.md`" in plan_skill
+    assert "directory containing this `SKILL.md`" in plan_skill
+    assert "never the workspace root" in plan_skill
+    assert "<workspace>/skills/" not in plan_skill
+    assert (plan_dir / "assets" / "templates" / "index.md").is_file()
+    assert (plan_dir / "references" / "html-patterns.md").is_file()
+
+    plan_index = (plan_dir / "assets" / "templates" / "index.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/references/html-patterns.md`" in plan_index
+    assert "never the workspace root" in plan_index
+
+    brainstorm_dir = skills["concept-brainstorm"]
+    brainstorm = (brainstorm_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "`<skill-dir>/references/techniques.md`" in brainstorm
+    assert "directory containing this `SKILL.md`" in brainstorm
+    assert "never the workspace root" in brainstorm
+    assert "<workspace>/skills/" not in brainstorm
+    assert (brainstorm_dir / "references" / "techniques.md").is_file()
 
 
 @pytest.mark.parametrize("host", HOSTS)

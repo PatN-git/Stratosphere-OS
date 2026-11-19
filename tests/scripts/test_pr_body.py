@@ -41,8 +41,8 @@ def develop_repo(tmp_path):
     return init_repo(tmp_path, "develop")
 
 
-def run(repo, *args):
-    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)], cwd=repo, capture_output=True, text=True)
+def run(repo, *args, env=None):
+    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)], cwd=repo, capture_output=True, text=True, env=env)
 
 
 def write_suite(repo, name="3d-suite-BT-1.json", sha=None, cmd="pytest -q", observed="5 passed"):
@@ -56,7 +56,7 @@ def build(repo, slice_id, *extra, prior=None, summary="did a thing", verdict="PA
     suite = write_suite(repo, f"3d-suite-{slice_id}.json")
     args = ["build", "--slice", slice_id, "--summary", summary, "--verdict", verdict,
             "--audit-rounds", rounds, "--base", "main", "--risk-paths", RISK_PATHS,
-            "--suite-json", suite, "--parent", parent, *extra]
+            "--suite-json", suite, *(["--parent", parent] if parent else []), *extra]
     if prior:
         args += ["--prior-body-file", prior]
     r = run(repo, *args)
@@ -1197,3 +1197,176 @@ def test_an_unknown_tracker_value_is_an_error_not_a_local_guess(repo, monkeypatc
     monkeypatch.chdir(repo)
     code, out, err = _build_in_process(mod, repo, capsys, "BT-11")
     assert code == 2 and out == "" and "[PR-BODY-ERROR]" in err and "tracker: gitlab" in err
+
+
+def test_numbered_local_ids_bt_l_nnn_build_unit_and_longer_globs(repo, tmp_path):
+    commit(repo, "feat(BT-L-001-a): first")
+    commit(repo, "fix(BT-L-000-e): touches the epic itself")
+    first = build(repo, "BT-L-001-a", "--epic", "BT-L-000-e", parent="BT-L-000-e")
+    assert field(first, "features") == "[BT-L-000-e]" and "Closes" not in first
+    assert re.findall(r"^  - \{id: (\S+), parent: (\S+), ", block(first), re.M) == [("BT-L-001-a", "BT-L-000-e")]
+    prior = tmp_path / "prior_bt_l.md"
+    prior.write_text(first, encoding="utf-8")
+    commit(repo, "feat(BT-L-002-b): second")
+    second = build(repo, "BT-L-002-b", "--epic", "BT-L-000-e", prior=prior, parent="BT-L-000-e")
+    assert re.findall(r"^  - \{id: (\S+), parent: \S+, summary: \".*?\", verdict: (\w+)", block(second), re.M) == [
+        ("BT-L-001-a", "PASS"), ("BT-L-002-b", "PASS")]
+    assert field(second, "features") == "[BT-L-000-e]"
+
+    write_backlog(repo, ("BT-L-001-login", "tier:slice"), ("BT-L-001-login-form", "tier:slice"))
+    out = unit_ok(repo, "--slice", "BT-L-001-login", "--milestone", NONE, "--branch", "feature/BT-L-001-login-x")
+    assert out["unit"] == "BT-L-001-login" and out["branch_ok"] is True
+    assert unit_ok(repo, "--slice", "BT-L-001-login", "--milestone", NONE,
+                   "--branch", "origin/feature/BT-L-001-login-form-x")["branch_ok"] is False
+
+
+
+def _isolated_env(home: Path, **extra):
+    env = {k: v for k, v in os.environ.items() if k != "STRATOSPHERE_PLUGIN_SKILLS"}
+    env["HOME"] = str(home)
+    env["USERPROFILE"] = str(home)
+    env.update(extra)
+    return env
+
+
+def test_omitted_risk_paths_resolves_plugin_bundle_and_src_references_without_warn(repo, tmp_path):
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    suite = write_suite(repo, "3d-suite-BT-11.json")
+    home = tmp_path / "home"
+    home.mkdir()
+
+    # 1. STRATOSPHERE_PLUGIN_SKILLS fallback
+    plugin_skills = tmp_path / "env_skills"
+    ref_dst = plugin_skills / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    ref_dst.parent.mkdir(parents=True)
+    ref_dst.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+
+    base_args = ["build", "--slice", "BT-11", "--summary", "did a thing", "--verdict", "PASS",
+                 "--audit-rounds", "1", "--base", "main", "--suite-json", str(suite), "--parent", "BT-10"]
+    r_env = run(repo, *base_args, env=_isolated_env(home, STRATOSPHERE_PLUGIN_SKILLS=str(plugin_skills)))
+    assert r_env.returncode == 0, r_env.stderr
+    assert "[PR-BODY-WARN]" not in r_env.stderr
+    assert field(r_env.stdout, "risk") == "[db-migration]"
+
+    # 2. Installed plugin bundle fallback (~/.gemini/config/plugins/<id>/skills)
+    mk_ref = home / ".gemini" / "config" / "plugins" / "12345" / "skills" / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    mk_ref.parent.mkdir(parents=True)
+    mk_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+    r_mk = run(repo, *base_args, env=_isolated_env(home))
+    assert r_mk.returncode == 0, r_mk.stderr
+    assert "[PR-BODY-WARN]" not in r_mk.stderr
+    assert field(r_mk.stdout, "risk") == "[db-migration]"
+
+    # 3. src/references/ fallback in dev repo
+    empty_home = tmp_path / "empty_home"
+    empty_home.mkdir()
+    src_ref = repo / "src" / "references" / "merge-risk-paths.md"
+    src_ref.parent.mkdir(parents=True)
+    src_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+    r_src = run(repo, *base_args, env=_isolated_env(empty_home))
+    assert r_src.returncode == 0, r_src.stderr
+    assert "[PR-BODY-WARN]" not in r_src.stderr
+    assert field(r_src.stdout, "risk") == "[db-migration]"
+
+    # 4. When no rules file exists anywhere and --risk-paths is omitted, warns with DEFAULT_RISK_PATHS
+    src_ref.unlink()
+    r_none = run(repo, *base_args, env=_isolated_env(empty_home))
+    assert r_none.returncode == 0, r_none.stderr
+    assert "[PR-BODY-WARN] risk rules not found at .agents/skills/4a-verify-and-ship/references/merge-risk-paths.md" in r_none.stderr
+    assert field(r_none.stdout, "risk") == "[none]"
+
+
+def test_explicit_missing_risk_paths_warns_even_when_plugin_bundle_exists(repo, tmp_path):
+    commit(repo, "feat(BT-11): migration", ["db/migrations/001_init.sql"])
+    suite = write_suite(repo, "3d-suite-BT-11.json")
+    home = tmp_path / "home"
+    mk_ref = home / ".gemini" / "config" / "plugins" / "12345" / "skills" / "4a-verify-and-ship" / "references" / "merge-risk-paths.md"
+    mk_ref.parent.mkdir(parents=True)
+    mk_ref.write_text(RISK_PATHS.read_text(encoding="utf-8"), encoding="utf-8")
+
+    r = run(repo, "build", "--slice", "BT-11", "--summary", "s", "--verdict", "PASS", "--audit-rounds", "1",
+            "--base", "main", "--risk-paths", str(repo / "missing.md"), "--suite-json", str(suite),
+            env=_isolated_env(home, STRATOSPHERE_PLUGIN_SKILLS=str(mk_ref.parents[2])))
+    assert r.returncode == 0, r.stderr
+    assert "[PR-BODY-WARN] risk rules not found at" in r.stderr
+    assert field(r.stdout, "risk") == "[none]"
+
+
+# --- BT-282: preserve prior standalone and epic-as-slice rows; accumulate standalone features ---------------
+
+def test_two_standalone_slices_keep_both_rows_closes_and_features(repo):
+    commit(repo, "feat(BT-286): first standalone")
+    p1 = repo / ".tmp" / "p1_standalone.md"
+    p1.write_text(build(repo, "BT-286", parent=None, summary="first standalone", verdict="WAIVED", rounds=2),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-285): second standalone")
+    body = build(repo, "BT-285", parent=None, prior=p1, summary="second standalone", verdict="PASS", rounds=1)
+    by_id = {s[0]: s for s in slices(body)}
+    assert set(by_id) == {"BT-285", "BT-286"}
+    assert by_id["BT-286"][1:] == ('"first standalone"', "WAIVED", "2")
+    assert by_id["BT-285"][1:] == ('"second standalone"', "PASS", "1")
+    assert slice_parents(body) == {"BT-285": None, "BT-286": None}
+    assert "Closes #286." in body and "Closes #285." in body
+    assert field(body, "features") == "[BT-286, BT-285]"
+    again = repo / ".tmp" / "p2_standalone.md"
+    again.write_text(body, encoding="utf-8")
+    assert build(repo, "BT-285", parent=None, prior=again, summary="second standalone", verdict="PASS", rounds=1) == body
+
+
+def test_two_local_standalone_slices_accumulate_features(repo):
+    commit(repo, "feat(BT-L-001-alpha): first")
+    p1 = repo / ".tmp" / "p1_local.md"
+    p1.write_text(build(repo, "BT-L-001-alpha", parent=None, summary="first local"), encoding="utf-8")
+    commit(repo, "feat(BT-L-002-beta): second")
+    body = build(repo, "BT-L-002-beta", parent=None, prior=p1, summary="second local")
+    assert field(body, "features") == "[BT-L-001-alpha, BT-L-002-beta]"
+    assert "Closes" not in body
+    assert re.findall(r"^  - \{id: (\S+), summary: \".*?\", verdict: (\w+)", block(body), re.M) == [
+        ("BT-L-001-alpha", "PASS"), ("BT-L-002-beta", "PASS")]
+
+
+def test_standalone_slice_followed_by_epic_slice_preserves_standalone_row_and_filters_epic(repo):
+    commit(repo, "feat(BT-286): standalone first")
+    p1 = repo / ".tmp" / "p1_mix.md"
+    p1.write_text(build(repo, "BT-286", parent=None, summary="solo slice", verdict="PASS", rounds=2),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-11): epic slice")
+    commit(repo, "docs(BT-10): touches epic ten")
+    body = build(repo, "BT-11", prior=p1, parent="BT-10", summary="epic child")
+    by_id = {s[0]: s for s in slices(body)}
+    assert set(by_id) == {"BT-11", "BT-286"}
+    assert by_id["BT-286"][1:] == ('"solo slice"', "PASS", "2")
+    assert slice_parents(body) == {"BT-11": "BT-010", "BT-286": None}
+    assert "Closes #286." in body and "Closes #11." in body and "Closes #10." not in body
+    assert field(body, "features") == "[BT-286, BT-010]"
+
+
+def test_epic_as_slice_followed_by_child_slice_preserves_shipped_epic_row(repo):
+    commit(repo, "feat(BT-20): epic as own slice")
+    p1 = repo / ".tmp" / "p1_epic_slice.md"
+    p1.write_text(build(repo, "BT-20", parent="BT-20", summary="epic self slice", verdict="SKIP", rounds=0),
+                  encoding="utf-8")
+    commit(repo, "feat(BT-22): child slice")
+    commit(repo, "docs(BT-30): unrelated epic commit")
+    write_backlog(repo, ("BT-20", "tier:epic"), ("BT-22", "tier:slice", "BT-20"), ("BT-30", "tier:epic"))
+    body = build(repo, "BT-22", prior=p1, parent="BT-20", summary="child slice")
+    by_id = {s[0]: s for s in slices(body)}
+    assert [s[0] for s in slices(body)] == ["BT-20", "BT-22"]
+    assert by_id["BT-20"][1:] == ('"epic self slice"', "SKIP", "0")
+    assert slice_parents(body) == {"BT-20": "BT-020", "BT-22": "BT-020"}
+    assert "Closes #20." in body and "Closes #22." in body and "Closes #30." not in body
+    assert field(body, "features") == "[BT-020]"
+
+
+def test_prior_pending_row_can_still_be_filtered_as_epic(repo):
+    commit(repo, "feat(BT-11): first")
+    commit(repo, "docs(BT-10): epic commit")
+    prior = repo / ".tmp" / "prior_pending.md"
+    prior.write_text("```stratos-pr\nfeatures: [BT-010]\nslices:\n"
+                     '  - {id: BT-10, summary: "docs", verdict: PENDING, audit_rounds: 0}\n'
+                     '  - {id: BT-11, parent: BT-010, summary: "first", verdict: PASS, audit_rounds: 1}\n```\n',
+                     encoding="utf-8")
+    commit(repo, "feat(BT-12): second")
+    body = build(repo, "BT-12", prior=prior, parent="BT-10", summary="second")
+    assert [s[0] for s in slices(body)] == ["BT-11", "BT-12"]
+    assert "Closes #10." not in body

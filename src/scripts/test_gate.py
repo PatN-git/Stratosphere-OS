@@ -2,9 +2,10 @@
 """Pre-commit test gate: refuse a commit whose staged code was not in a recorded passing test run.
 
   test_gate.py record -- <test command...>   run the tests; on a pass, record every changed file's content
-  test_gate.py record --suite BT-<n> -- <whole-suite command...>
+  test_gate.py record --suite BT-<n> [--base <base>] -- <whole-suite command...>
                                              the one full run per slice: refuses a dirty tree or a scoped command
-                                             (exit 2), records like `record`, then writes .tmp/3d-suite-BT-<NNN>.json
+                                             (exit 2), records dirty files plus committed non-UNGATED files across
+                                             <base>..HEAD (default merge-base), then writes .tmp/3d-suite-BT-<NNN>.json
                                              {head_sha, cmd, observed} only if the tree and HEAD are unchanged
                                              (else exit 3). Chain commands with `bash -c "a && b"`.
   test_gate.py record --slice BT-<n> -- <scoped command...>
@@ -37,7 +38,7 @@ ZERO = "0" * 40
 MARKER = "# stratos-test-gate"
 CHECK_LINE = "python .agents/scripts/test_gate.py check"
 FIX = "python .agents/scripts/test_gate.py record -- <related-tests command>"
-SUITE_ID_RE = re.compile(r"^BT-(\d+|LOCAL-[a-z0-9-]+)$")
+SUITE_ID_RE = re.compile(r"^BT-(\d+|(?:L|LOCAL)-[a-z0-9-]+)$")
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 COUNT_RE = re.compile(r"\d+ (?:passed|failed)")
 # Docs and framework/CI files the project's tests never cover need no test run.
@@ -81,21 +82,36 @@ def record(cmd, cwd):
     return save_record(cmd)
 
 
+def write_record(cmd, files):
+    RECORD.parent.mkdir(exist_ok=True)
+    RECORD.write_text(json.dumps({"cmd": " ".join(cmd), "at": datetime.datetime.now().isoformat(timespec="seconds"),
+                                  "files": files}, indent=1), encoding="utf-8")
+
+
 def save_record(cmd):
     # Hash after the run, so files the suite generated are covered too.
     entries = git("status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames").stdout
     paths = [e[3:] for e in entries.split("\0") if len(e) > 3]
     present = [p for p in paths if os.path.isfile(p) and not os.path.islink(p)]
     blobs = git("hash-object", "--stdin-paths", input="\n".join(present) + "\n").stdout.split() if present else []
-    data = load_record()
-    files = data.get("files", {})
+    files = load_record().get("files", {})
     files.update({p: None for p in paths if not os.path.lexists(p)})
     files.update(dict(zip(present, blobs)))
-    RECORD.parent.mkdir(exist_ok=True)
-    RECORD.write_text(json.dumps({"cmd": " ".join(cmd), "at": datetime.datetime.now().isoformat(timespec="seconds"),
-                                  "files": files}, indent=1), encoding="utf-8")
+    write_record(cmd, files)
     print(f"test-gate: recorded {len(files)} file(s) from a passing run")
     return 0
+
+
+def diff_blobs(*diff_args):
+    """Yield (path, blob_sha_or_None) for non-ungated entries in a raw git diff."""
+    raw = git("diff", *diff_args, "--raw", "-z", "--no-renames", "--no-abbrev").stdout.split("\0")
+    for header, path in zip(raw[0::2], raw[1::2]):
+        if not header:
+            continue
+        _, new_mode, _, new_sha, status = header.lstrip(":").split()
+        if ungated(path) or new_mode in SKIP_MODES:
+            continue
+        yield path, (None if status == "D" or new_sha == ZERO else new_sha)
 
 
 def tee(cmd, cwd):
@@ -127,11 +143,39 @@ def observed_line(tail):
     return "; ".join([*counts, *(lines[-1:] if lines[-1:] != counts[-1:] else [])])[:300]
 
 
-def record_suite(issue, cmd, cwd, allow_scoped=False):
+def _prune_suite_records(tmp_dir, keep_sha, keep_path, max_other=3):
+    """Keep keep_path, any other receipt for keep_sha, and at most max_other newest older receipts."""
+    keep_resolved = keep_path.resolve()
+    stale = []
+    for cand in tmp_dir.glob("3d-suite-BT-*.json"):
+        if cand.resolve() == keep_resolved:
+            continue
+        try:
+            sha = json.loads(cand.read_text(encoding="utf-8-sig")).get("head_sha")
+        except (OSError, ValueError, AttributeError):
+            sha = None
+        if sha == keep_sha:
+            continue
+        try:
+            stale.append((cand.stat().st_mtime, cand))
+        except OSError:
+            continue
+    stale.sort(key=lambda item: item[0], reverse=True)
+    for _, old in stale[max_other:]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+
+
+def record_suite(issue, cmd, cwd, allow_scoped=False, base=None):
     try:
         import pr_body  # ships beside this script; reads the same record at reuse time
     except ImportError:
         print("test-gate: pr_body.py is missing beside test_gate.py; run /stratosphere-update", file=sys.stderr)
+        return 2
+    if base is not None and git("rev-parse", "--verify", "--quiet", f"{base}^{{commit}}", check=False).returncode != 0:
+        print(f"test-gate: invalid --base ref {base!r}", file=sys.stderr)
         return 2
     if not pr_body.tree_is_clean():
         print("test-gate: uncommitted changes outside .memory/, docs/, .tmp/: commit first, a suite record is only "
@@ -152,28 +196,30 @@ def record_suite(issue, cmd, cwd, allow_scoped=False):
         print("test-gate: tests passed but no suite record was written: the tree or HEAD changed during the run",
               file=sys.stderr)
         return 3
+    if not allow_scoped:
+        ref = base if base else default_base()
+        committed = dict(diff_blobs(ref, head))
+        if committed:
+            files = load_record().get("files", {})
+            files.update(committed)
+            write_record(cmd, files)
+            print(f"test-gate: recorded {len(committed)} committed file(s) across {ref}..HEAD")
     sid = SUITE_ID_RE.match(issue).group(1)
     name = f"{int(sid):03d}" if sid.isdigit() else sid
     path = Path(".tmp") / f"3d-suite-BT-{name}.json"
     path.parent.mkdir(exist_ok=True)
     path.write_text(json.dumps({"head_sha": head, "cmd": shlex.join(cmd), "observed": observed_line(tail)}, indent=1),
                     encoding="utf-8")
+    _prune_suite_records(path.parent, head, path)
     print(f"test-gate: wrote {path}")
     return 0
 
 
 def check():
     base = "HEAD" if git("rev-parse", "--verify", "-q", "HEAD", check=False).returncode == 0 else EMPTY_TREE
-    raw = git("diff", "--cached", "--raw", "-z", "--no-renames", "--no-abbrev", base).stdout.split("\0")
     files = load_record().get("files", {})
-    untested = []
-    for header, path in zip(raw[0::2], raw[1::2]):
-        _, new_mode, _, new_sha, status = header.lstrip(":").split()
-        if ungated(path) or new_mode in SKIP_MODES:
-            continue
-        staged = None if status == "D" or new_sha == ZERO else new_sha
-        if path not in files or files[path] != staged:
-            untested.append(path)
+    untested = [path for path, staged in diff_blobs("--cached", base)
+                if path not in files or files[path] != staged]
     if not untested:
         return 0
     print("test-gate: commit blocked: staged code was not in a passing test run:", file=sys.stderr)
@@ -205,18 +251,11 @@ def verify(base=None):
         print("test-gate: verified 0 file(s) against recorded passing test run")
         return 0
     ref = base if base else default_base()
-    raw = git("diff", "--raw", "-z", "--no-renames", "--no-abbrev", ref, "HEAD").stdout.split("\0")
     files = load_record().get("files", {})
     mismatched = []
     checked = 0
-    for header, path in zip(raw[0::2], raw[1::2]):
-        if not header:
-            continue
-        _, new_mode, _, new_sha, status = header.lstrip(":").split()
-        if ungated(path) or new_mode in SKIP_MODES:
-            continue
+    for path, committed in diff_blobs(ref, "HEAD"):
         checked += 1
-        committed = None if status == "D" or new_sha == ZERO else new_sha
         rec = files.get(path)
         if path not in files or rec != committed:
             mismatched.append((path, committed, rec))
@@ -277,6 +316,19 @@ def status():
     return 0 if on else 1
 
 
+def _parse_base_flag(tokens, usage):
+    """Consume an optional `--base <ref>` or `--base=<ref>` prefix from `tokens`; return (base, rest)."""
+    if not tokens:
+        return None, tokens
+    if tokens[0] == "--base":
+        if len(tokens) < 2:
+            sys.exit(usage)
+        return tokens[1], tokens[2:]
+    if tokens[0].startswith("--base="):
+        return tokens[0].split("=", 1)[1], tokens[1:]
+    return None, tokens
+
+
 def main(argv):
     top = git("rev-parse", "--show-toplevel", check=False)
     if top.returncode != 0:
@@ -288,20 +340,21 @@ def main(argv):
         rest = argv[1:]
         if rest[:1] in (["--suite"], ["--slice"]):
             flag = rest[0]
-            if len(rest) < 4 or not SUITE_ID_RE.match(rest[1]) or rest[2] != "--":
-                sys.exit(f"usage: test_gate.py record {flag} BT-<n> -- <command...>")
-            return record_suite(rest[1], rest[3:], cwd, allow_scoped=(flag == "--slice"))
+            usage = (f"usage: test_gate.py record {flag} BT-<n> [--base <base>] -- <command...>"
+                     if flag == "--suite" else f"usage: test_gate.py record {flag} BT-<n> -- <command...>")
+            if len(rest) < 4 or not SUITE_ID_RE.match(rest[1]):
+                sys.exit(usage)
+            issue, tail = rest[1], rest[2:]
+            base, tail = _parse_base_flag(tail, usage) if flag == "--suite" else (None, tail)
+            if len(tail) < 2 or tail[0] != "--":
+                sys.exit(usage)
+            return record_suite(issue, tail[1:], cwd, allow_scoped=(flag == "--slice"), base=base)
         return record(rest[1:] if rest[:1] == ["--"] else rest, cwd)
     if cmd == "verify":
-        rest = argv[1:]
-        base = None
-        if rest:
-            if len(rest) == 2 and rest[0] == "--base":
-                base = rest[1]
-            elif len(rest) == 1 and rest[0].startswith("--base="):
-                base = rest[0].split("=", 1)[1]
-            else:
-                sys.exit("usage: test_gate.py verify [--base <base>]")
+        usage = "usage: test_gate.py verify [--base <base>]"
+        base, tail = _parse_base_flag(argv[1:], usage)
+        if tail:
+            sys.exit(usage)
         return verify(base)
     handlers = {"check": check, "install": install, "status": status}
     if cmd not in handlers or len(argv) != 1:

@@ -44,7 +44,7 @@ SETUP_SKILL = BUNDLE / "stratosphere-setup"
 # scripts/release.py during the release process, and validate.py
 # asserts that they remain in exact synchronization.
 # ----------------------------------------------------------------------------
-VERSION = "5.3.0"
+VERSION = "5.4.0"
 DESCRIPTION = (
     "StratosphereOS: a weightless 3-layer agentic OS. Ships lifecycle workflows, "
     "a setup skill that scaffolds your project, and on-demand external skills."
@@ -146,12 +146,11 @@ def command_name(stem: str) -> str:
     return stem
 
 
-# Two citation forms: the relative `references/<file>.md` a skill uses for itself,
-# and the absolute `.agents/skills/<name>/references/<file>.md` required wherever a
-# path is handed to an isolated subagent (whose cwd is the repo root, not the skill).
+# Two citation forms: the skill-relative `references/<file>.md` or `<skill-dir>/references/<file>.md`,
+# and the `.agents/skills/<name>/references/<file>.md` form used at subagent boundaries.
 REF_CITE = re.compile(
-    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
-    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+    r'(?:\.agents/skills/[a-z0-9-]+|<skill-dir>)/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.>])references/([A-Za-z0-9_.-]+\.md)')
 
 
 def cited_refs(text):
@@ -242,22 +241,31 @@ def emit_skill(src_md, name, skills_dir, ref_dir):
         write_lf(dst / "agents" / "openai.yaml", CODEX_SIDECAR)
 
     refs = closure_for(body, ref_dir)
+    ref_dst = dst / "references"
+    if ref_dst.exists():
+        for existing_ref in ref_dst.glob("*.md"):
+            if existing_ref.name not in refs:
+                try:
+                    existing_ref.unlink()
+                except OSError:
+                    pass
     for rname in sorted(refs):
-        (dst / "references").mkdir(exist_ok=True)
-        shutil.copy2(ref_dir / rname, dst / "references" / rname)
+        ref_dst.mkdir(exist_ok=True)
+        shutil.copy2(ref_dir / rname, ref_dst / rname)
     return len(refs)
 
 
 # --- bundle assembly --------------------------------------------------------
 
 def build_bundle():
-    force_rmtree(BUNDLE)
     BUNDLE.mkdir(parents=True, exist_ok=True)
+    built_skills = set()
     ref_dir = SRC / "references"
 
     # 1. Execution skills (self-containment enforced below)
     for skill in (SRC / "skills").iterdir():
         if skill.is_dir():
+            built_skills.add(skill.name)
             dst = BUNDLE / skill.name
             copytree(skill, dst)
             sk = dst / "SKILL.md"
@@ -273,11 +281,18 @@ def build_bundle():
     #    every host: <skills dir>/<name>/SKILL.md, invocable as /<name>.
     total_refs = 0
     for wf in sorted((SRC / "workflows").glob("*.md")):
+        built_skills.add(wf.stem)
         total_refs += emit_skill(wf, wf.stem, BUNDLE, ref_dir)
 
     # 3. Install/upgrade/sync drivers - skills like everything else
     for name in ("stratosphere-setup", "stratosphere-update", "sync-skills"):
+        built_skills.add(name)
         total_refs += emit_skill(SRC / "commands" / name / "SKILL.md", name, BUNDLE, ref_dir)
+
+    for item in BUNDLE.iterdir():
+        if item.is_dir() and item.name not in built_skills:
+            force_rmtree(item)
+
     print(f"  {len(list(BUNDLE.iterdir()))} skills, {total_refs} reference copies")
 
     # 4. Scaffolder payload rides inside stratosphere-setup: skill installers place only
@@ -290,6 +305,8 @@ def build_bundle():
     copytree(SRC / "rules", assets / "rules")
     copytree(SRC / "memory-templates", assets / "memory")
     copytree(SRC / "github", assets / "github")
+    if (SRC / "assets" / "templates" / "obsidian").is_dir():
+        copytree(SRC / "assets" / "templates" / "obsidian", assets / "obsidian")
 
     # 5. Post-copy pass to stamp version into asset templates
     for path in assets.rglob("*.md"):
@@ -408,7 +425,12 @@ def main():
         build_bundle()
         print(f"[built] {BUNDLE.relative_to(ROOT)}")
         if (SRC / "assets").exists():
-            copytree(SRC / "assets", DIST / "assets")
+            shutil.copytree(
+                SRC / "assets",
+                DIST / "assets",
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "test", "templates"),
+            )
             print("[built] dist/assets")
         write_plugin_manifest()
         print("[built] dist/plugin.json")

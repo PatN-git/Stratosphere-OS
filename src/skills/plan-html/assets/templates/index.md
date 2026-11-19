@@ -1,8 +1,8 @@
 ---
 name: index
 description: index of plan-html templates
-version: "1.3.4"
-timestamp: 2026-11-02
+version: "1.3.5"
+timestamp: 2026-11-17
 ---
 
 # Template Index
@@ -24,6 +24,6 @@ Load ONLY the single template file matching the scenario. Never load all files.
 - **Inline Read-Only vs Spoke Interactive**: Read-only components (trade-offs, timeline, status, decision, steps, diagrams) MUST render inline as sections. Genuinely interactive components (e.g., a draggable board, config sliders/forms) MUST render a read-only summary inline and link out to a separate interactive spoke file.
 
 If content doesn't fit any template, use `custom-composition` mode:
-- Select ≥1 components from `references/html-patterns.md` (accordion, tabs, progress bar)
+- Select ≥1 components from `<skill-dir>/references/html-patterns.md` (accordion, tabs, progress bar; resolve relative to `<skill-dir>`, never the workspace root)
 - Compose inline; do NOT force-fit a wrong template
 - Still requires all Four-Scenario Gate conditions to pass

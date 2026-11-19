@@ -49,6 +49,13 @@ FIELDS = ('type', 'id', 'title', 'status', 'labels', 'milestone', 'parent', 'blo
 STATUSES = ('needs_spec', 'planned', 'in progress', 'in review', 'blocked', 'done')
 GUARDED = ('in progress', 'in review', 'done')   # apply-moves refuses a move into these while a blocker is open
 REASONS = ('completed', 'not planned')
+LOCAL_NUM_RE = re.compile(r'^BT-(?:L|LOCAL)-0*(\d+)(?:-|$)')
+SHORT_NUM_RE = re.compile(r'^(?:#|BT-(?:L|LOCAL)-)?0*(\d+)$')
+
+
+def _local_number(bt):
+    m = LOCAL_NUM_RE.match(bt or '')
+    return int(m.group(1)) if m else None
 # The canonical label vocabulary of references/label-taxonomy.md (a test pins the two equal); `area:*` slugs are the
 # project's own and live in the store's README.
 CANONICAL = {
@@ -263,11 +270,22 @@ class Store:
                 self.issues[issue['id']] = issue
         self.areas = re.findall(r'^- (area:\S+)\s*$', files.get(README, ''), re.M)
 
+    def resolve(self, ident):
+        """Resolve an exact id or unambiguous numeric shorthand to its issue dict."""
+        if ident in self.issues:
+            return self.issues[ident]
+        m = SHORT_NUM_RE.fullmatch(ident) if isinstance(ident, str) else None
+        if m:
+            n = int(m.group(1))
+            hits = [self.issues[k] for k in sorted(self.issues) if _local_number(k) == n]
+            if len(hits) == 1:
+                return hits[0]
+            if len(hits) > 1:
+                raise IssuesError(f"[AMBIGUOUS {ident}] matches multiple issues: {', '.join(i['id'] for i in hits)}")
+        raise IssuesError(f"[UNKNOWN {ident}]")
+
     def get(self, bt):
-        issue = self.issues.get(bt)
-        if issue is None:
-            raise IssuesError(f"[NOT-FOUND {bt}]")
-        return issue
+        return self.resolve(bt)
 
     def changes(self, issue):
         """{path: text | None} that writes `issue` and drops its old path when close/reopen moved it."""
@@ -505,17 +523,55 @@ def cmd_merged(store, a):
     return changes, out_text
 
 
+def _parse_version_key(v_str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip('v')
+    return tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r'[-.+_]', cleaned))
+
+
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a path inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if 'stratosphere-os' in rel:
+        idx = rel.index('stratosphere-os')
+        if idx + 1 < len(rel):
+            return _parse_version_key(rel[idx + 1])
+    if 'skills' in rel:
+        idx = rel.index('skills')
+        if idx >= 2 and rel[idx - 1] == 'dist':
+            return _parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    return _parse_version_key('')
+
+
 def _find_board_template():
+    rel_tpl = Path('plan-html') / 'assets' / 'templates' / 'board.html'
     candidates = [
-        at_top('.agents/skills/plan-html/assets/templates/board.html'),
-        at_top('src/skills/plan-html/assets/templates/board.html'),
-        at_top('dist/skills/plan-html/assets/templates/board.html'),
-        Path(__file__).resolve().parent.parent / 'skills/plan-html/assets/templates/board.html'
+        at_top(f'.agents/skills/{rel_tpl.as_posix()}'),
+        at_top(f'src/skills/{rel_tpl.as_posix()}'),
+        at_top(f'dist/skills/{rel_tpl.as_posix()}'),
     ]
+    env_skills = os.environ.get('STRATOSPHERE_PLUGIN_SKILLS')
+    if env_skills:
+        candidates.append(Path(env_skills) / rel_tpl)
+    home = Path.home()
+    candidates.extend([
+        *sorted((home / '.gemini' / 'config' / 'plugins').glob(f'*/skills/{rel_tpl.as_posix()}'), reverse=True),
+        home / '.gemini' / 'config' / 'plugins' / 'stratosphere-os' / 'skills' / rel_tpl,
+        home / '.gemini' / 'antigravity' / 'plugins' / 'stratosphere-os' / 'skills' / rel_tpl,
+        home / '.gemini' / 'config' / 'skills' / rel_tpl,
+        home / '.claude' / 'skills' / rel_tpl,
+    ])
+    claude_cache = home / '.claude' / 'plugins' / 'cache'
+    if claude_cache.is_dir():
+        hits = list(claude_cache.glob(f'**/{rel_tpl.as_posix()}'))
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
+    candidates.append(Path(__file__).resolve().parent.parent / 'skills' / rel_tpl)
     for p in candidates:
         if p.is_file():
             return p
-    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, or dist/skills")
+    raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, dist/skills, or installed plugin bundles")
 
 
 def _render_board_html(store, issues_list, a):
@@ -591,14 +647,20 @@ def _render_board_html(store, issues_list, a):
     return f"[BOARD] wrote {out_file} ({len(cards)} card(s))"
 
 
+def _filter_issues(store, items, a):
+    """Filter issues by optional `--milestone` and resolved `--parent` (matching parent or itself)."""
+    if a.milestone:
+        items = [i for i in items if i['milestone'] == a.milestone]
+    if a.parent:
+        parent_id = store.resolve(a.parent)['id']
+        items = [i for i in items if i['parent'] == parent_id or i['id'] == parent_id]
+    return items
+
+
 def cmd_board(store, a):
     if getattr(a, 'open', False):
         a.web = True
-    issues_list = list(store.issues.values())
-    if a.milestone:
-        issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
-    if a.parent:
-        issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+    issues_list = _filter_issues(store, list(store.issues.values()), a)
 
     if a.web:
         return _render_board_html(store, issues_list, a)
@@ -637,11 +699,7 @@ def cmd_board(store, a):
 
 
 def cmd_summary(store, a):
-    issues_list = [i for i in store.issues.values() if effective_status(i) != 'done']
-    if a.milestone:
-        issues_list = [i for i in issues_list if i['milestone'] == a.milestone]
-    if a.parent:
-        issues_list = [i for i in issues_list if i['parent'] == a.parent or i['id'] == a.parent]
+    issues_list = _filter_issues(store, [i for i in store.issues.values() if effective_status(i) != 'done'], a)
     if not issues_list:
         return "[NO-ISSUES] no open issues match"
     rows = ["| ID | Title | Status | Milestone | Blocked By | Claimed By |",
@@ -672,12 +730,8 @@ def slug(title):
 
 
 def new_id(store, title):
-    base = f"BT-LOCAL-{slug(title)}"
-    n, bt = 1, base
-    while bt in store.issues:
-        n += 1
-        bt = f"{base}-{n}"
-    return bt
+    nxt = max((_local_number(k) or 0 for k in store.issues), default=0) + 1
+    return f"BT-L-{nxt:03d}-{slug(title)}"
 
 
 def _status(value):
@@ -693,10 +747,14 @@ def _labels(values):
     return out
 
 
-def _require(store, ids, what):
-    for bt in ids:
-        if bt not in store.issues:
-            raise IssuesError(f"[ERROR] {what} {bt} not found")
+def _resolve_ref(store, ident, what):
+    """Resolve an exact id or numeric shorthand to its canonical stored id; preserve [AMBIGUOUS] errors."""
+    try:
+        return store.resolve(ident)['id']
+    except IssuesError as e:
+        if str(e).startswith('[AMBIGUOUS'):
+            raise
+        raise IssuesError(f"[ERROR] {what} {ident} not found") from e
 
 
 def _cycle(store, start):
@@ -721,9 +779,9 @@ def cmd_create(store, a):
     labels = _labels(a.label)
     status = next((l[7:] for l in labels if l.startswith('status:')), None)
     labels = [l for l in labels if not l.startswith('status:')]
-    parent = None if (a.parent or '—') in NONE_TOKENS else a.parent
-    blockers = csv_list(a.blocked_by)
-    _require(store, ([parent] if parent else []) + blockers, 'parent or blocker')
+    raw_parent = None if (a.parent or '—') in NONE_TOKENS else a.parent
+    parent = _resolve_ref(store, raw_parent, 'parent or blocker') if raw_parent else None
+    blockers = list(dict.fromkeys(_resolve_ref(store, b, 'parent or blocker') for b in csv_list(a.blocked_by)))
     bt = new_id(store, a.title)
     issue = {'type': 'issue', 'id': bt, 'title': a.title, 'status': _status(a.status or status or 'planned'),
              'labels': labels, 'milestone': None if (a.milestone or '—') in NONE_TOKENS else a.milestone,
@@ -735,9 +793,10 @@ def cmd_create(store, a):
 
 def cmd_set(store, a):
     issue = store.get(a.id)
+    bt = issue['id']
     if a.status:
         if issue['closed'] and a.status != 'done':
-            raise IssuesError(f"[ERROR] {a.id} is closed: `reopen` it first")
+            raise IssuesError(f"[ERROR] {bt} is closed: `reopen` it first")
         issue['status'] = _status(a.status)
         if a.status == 'done' and not issue['closed']:  # done == closed, as on GitHub: archive it now
             issue.update(closed=today(), close_reason='completed', claimed_by=None)
@@ -750,24 +809,33 @@ def cmd_set(store, a):
     if a.milestone is not None:
         issue['milestone'] = None if a.milestone in NONE_TOKENS else a.milestone
     if a.parent is not None:
-        issue['parent'] = None if a.parent in NONE_TOKENS else a.parent
-        if issue['parent'] == a.id:
-            raise IssuesError(f"[ERROR] {a.id} cannot be its own parent")
-        _require(store, [issue['parent']] if issue['parent'] else [], 'parent')
-    add = csv_list(a.add_blocker)
-    _require(store, add, 'blocker')
-    if a.id in add:
-        raise IssuesError(f"[ERROR] {a.id} cannot block itself")
-    issue['blocked_by'] = [b for b in issue['blocked_by'] + [b for b in add if b not in issue['blocked_by']]
-                           if b not in csv_list(a.remove_blocker)]
-    if add and (cyc := _cycle(store, a.id)):
+        if a.parent in NONE_TOKENS:
+            issue['parent'] = None
+        else:
+            parent = _resolve_ref(store, a.parent, 'parent')
+            if parent == bt:
+                raise IssuesError(f"[ERROR] {bt} cannot be its own parent")
+            issue['parent'] = parent
+    add = [_resolve_ref(store, b, 'blocker') for b in csv_list(a.add_blocker)]
+    if bt in add:
+        raise IssuesError(f"[ERROR] {bt} cannot block itself")
+    rem = set()
+    for b in csv_list(a.remove_blocker):
+        try:
+            rem.add(store.resolve(b)['id'])
+        except IssuesError as e:
+            if str(e).startswith('[AMBIGUOUS'):
+                raise
+            rem.add(b)  # allow removing a dangling literal id when cleaning up broken refs
+    issue['blocked_by'] = [b for b in issue['blocked_by'] + [b for b in add if b not in issue['blocked_by']] if b not in rem]
+    if add and (cyc := _cycle(store, bt)):
         raise IssuesError(f"[ERROR] blocked-by cycle: {' <- '.join(cyc)}")
     if a.title:
         issue['title'] = a.title
     if a.body_file:
         issue['body'] = _body(a.body_file)
     issue['updated'] = now()
-    return store.changes(issue), a.id
+    return store.changes(issue), bt
 
 
 def _comment_entry(text):
@@ -777,16 +845,17 @@ def _comment_entry(text):
 
 def cmd_comment(store, a):
     issue = store.get(a.id)
+    bt = issue['id']
     text = a.body if a.body is not None else _body(a.body_file)
     if text.lstrip().startswith('<!-- stratos:resume -->'):
         # A resume note is folder state: one gitignored file per issue, replaced whole (tracker-verbs-local.md).
-        note = at_top('.memory/resume') / f"{a.id}.md"
+        note = at_top('.memory/resume') / f"{bt}.md"
         note.parent.mkdir(parents=True, exist_ok=True)
         note.write_text(text, encoding='utf-8')
-        return {}, a.id
+        return {}, bt
     issue['comments'].append(_comment_entry(text))
     issue['updated'] = now()
-    return store.changes(issue), a.id
+    return store.changes(issue), bt
 
 
 def current_branch():
@@ -796,15 +865,16 @@ def current_branch():
 
 def cmd_claim(store, a):
     issue = store.get(a.id)
+    bt = issue['id']
     who = a.by or current_branch()
     if issue['closed'] or issue['status'] == 'done':
-        raise IssuesError(f"[ERROR] {a.id} is done")
+        raise IssuesError(f"[ERROR] {bt} is done")
     if issue['claimed_by'] not in (None, who):
-        raise IssuesError(f"[CLAIMED {a.id} by {issue['claimed_by']}]")
+        raise IssuesError(f"[CLAIMED {bt} by {issue['claimed_by']}]")
     if issue['status'] == 'in progress' and issue['claimed_by'] == who:
-        return {}, a.id
+        return {}, bt
     issue.update(status='in progress', claimed_by=who, updated=now())
-    return store.changes(issue), a.id
+    return store.changes(issue), bt
 
 
 def _close_issue(issue, reason):
@@ -817,18 +887,20 @@ def _reopen_issue(issue, status):
 
 def cmd_close(store, a):
     issue = store.get(a.id)
+    bt = issue['id']
     if a.reason not in REASONS:
         raise IssuesError(f"[ERROR] --reason must be one of {', '.join(REASONS)}")
     if issue['closed'] and issue['close_reason'] == a.reason:
-        return {}, a.id
+        return {}, bt
     _close_issue(issue, a.reason)
-    return store.changes(issue), a.id
+    return store.changes(issue), bt
 
 
 def cmd_reopen(store, a):
     issue = store.get(a.id)
+    bt = issue['id']
     _reopen_issue(issue, a.status or 'planned')
-    return store.changes(issue), a.id
+    return store.changes(issue), bt
 
 
 def cmd_label(store, a):
@@ -879,15 +951,17 @@ def cmd_apply_moves(store, a):
         if not arrow or not left.strip():
             problems.append(f"line {n}: not a move (expected `<id> ... -> <status>`): {line}")
             continue
-        bt = left.split(None, 1)[0].rstrip(':')
+        raw_bt = left.split(None, 1)[0].rstrip(':')
         target = spellings.get(' '.join(right.lower().replace('_', ' ').split()))
-        if bt not in store.issues:
-            problems.append(f"line {n}: unknown id {bt}")
+        try:
+            issue = store.resolve(raw_bt)
+        except IssuesError as e:
+            problems.append(f"line {n}: {e}" if str(e).startswith('[AMBIGUOUS') else f"line {n}: unknown id {raw_bt}")
             continue
+        bt = issue['id']
         if target is None:
             problems.append(f"line {n}: unknown status {right.strip()!r} (one of: {', '.join(STATUSES)})")
             continue
-        issue = store.issues[bt]
         old = effective_status(issue)
         if old == target:
             continue
@@ -1059,7 +1133,7 @@ def _row_cells(line):
     if len(raw) < 11:  # leading + trailing empty cells around 9 columns
         return None
     bt = raw[1].strip()
-    if not re.match(r'^BT-(LOCAL-)?\S+$', bt) or bt == 'BT-XXX':
+    if not re.match(r'^BT-((?:L|LOCAL)-)?\S+$', bt) or bt == 'BT-XXX':
         return None
     return bt, raw
 
@@ -1216,13 +1290,14 @@ def run(a, out):
         if a.cmd == 'get':
             out(_dump(full(store.get(a.id))))
         elif a.cmd == 'list':
-            out(_dump(select(store, status=a.status, labels=a.label or (), milestone=a.milestone, parent=a.parent,
+            parent = store.resolve(a.parent)['id'] if a.parent else None
+            out(_dump(select(store, status=a.status, labels=a.label or (), milestone=a.milestone, parent=parent,
                              include_closed=a.all)))
         elif a.cmd == 'wip':
             out(_dump(select(store, status='in progress')))
         elif a.cmd == 'children':
-            store.get(a.id)
-            out(_dump(select(store, parent=a.id, include_closed=True)))
+            bt = store.get(a.id)['id']
+            out(_dump(select(store, parent=bt, include_closed=True)))
         elif a.cmd == 'blockers':
             rows = store.rows()
             out(_dump([{'id': b, 'title': store.issues[b]['title'] if b in rows else None,

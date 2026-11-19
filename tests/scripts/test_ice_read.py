@@ -43,6 +43,26 @@ def test_parse_metrics_reads_the_formats_3b_writes(impact, confidence, want):
     assert (got["impact"], got["confidence"]) == want
 
 
+@pytest.mark.parametrize("impact,confidence,want", [
+    ("`1.0 (med)`", "`80%`", (1.0, 0.8)),
+    ("`2.0` (high)", "`100 %`", (2.0, 1.0)),
+    ("`tbd`", "`tbd`", (None, None)),
+])
+def test_parse_metrics_reads_backtick_wrapped_formats(impact, confidence, want):
+    got = _ice.parse_metrics(_body(impact, confidence))
+    assert (got["impact"], got["confidence"]) == want
+
+
+def test_ice_from_body_reads_backtick_metrics():
+    body = "- **Impact:** `1.0 (med)`\n- **Confidence:** `80%`"
+    assert _ice.ice_from_body(body, ["tier:slice", "size:medium"]) == 0.4
+
+
+def test_number_handles_backtick_non_numeric_and_none():
+    assert _ice._number("`tbd`") is None
+    assert _ice._number(None) is None
+
+
 @pytest.mark.parametrize("label,weight", [("size:small", 1), ("size:medium", 2), ("size:large", 3)])
 def test_effort_weight_comes_from_the_size_label(label, weight):
     assert _ice.ice_from_body(_body("3", "100%"), ["tier:slice", label]) == pytest.approx(3 / weight, abs=0.01)

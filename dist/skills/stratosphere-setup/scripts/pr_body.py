@@ -17,7 +17,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
     risk = tags fired by ALL files in `<base>...HEAD` against merge-risk-paths.md (+ `## One-way paths` in
     .memory/ARCHITECTURE.md); [none] when no rule fires. Exit 2 [NO-SUITE] when no suite result is reusable.
     <base> = --base, else the remote default branch (origin/HEAD), else origin/main|master, main|master; none
-    resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent and every --close must be BT-<n> or BT-LOCAL-<slug> (a local id gets no Closes line)
+    resolves -> exit 2 [PR-BODY-ERROR] (pass --base <default-branch>). --parent and every --close must be BT-<n> or BT-L-<nnn>-<slug> / BT-LOCAL-<slug> (a local id gets no Closes line)
     (else exit 2). The block's `features: [BT-n, ...]` lists every epic in the PR (prior block + --parent + the
     parent of each slice row; rows carry `parent: BT-n`); a legacy single `feature:` prior block upgrades on
     rebuild. `Closes #n.` follows the slice lines for each --close epic (--close-parent = close --parent).
@@ -43,6 +43,7 @@ Used by 4a Phase 5 (and 0b for suite reuse), 3d/4a for the ship unit; the prior 
 import argparse
 import fnmatch
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -52,7 +53,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _tracker_common import longer_id_globs, resolve_unit
 
-ID = r"BT-(?:\d+|LOCAL-[a-z0-9-]+)"  # a GitHub issue id or a local-backend id
+ID = r"BT-(?:\d+|(?:L|LOCAL)-[a-z0-9-]+)"  # a GitHub issue id or a local-backend id
 SCOPE_RE = re.compile(rf"^[a-z]+\(({ID})\):\s*(.*)")
 RELEASE_RE = re.compile(r"^release: prepare")
 SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -117,11 +118,64 @@ def glob_rx(glob):
     return re.compile(rf"^{rx}$")
 
 
-def risk_rules(risk_paths):
+def _parse_version_key(v_str):
+    """Sort key for semantic version directories like 1.0.0, 1.10.0, v1.8.0."""
+    cleaned = v_str.lstrip("v")
+    return tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r"[-.+_]", cleaned))
+
+
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a path inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if "stratosphere-os" in rel:
+        idx = rel.index("stratosphere-os")
+        if idx + 1 < len(rel):
+            return _parse_version_key(rel[idx + 1])
+    if "skills" in rel:
+        idx = rel.index("skills")
+        if idx >= 2 and rel[idx - 1] == "dist":
+            return _parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return _parse_version_key(rel[idx - 1])
+    return _parse_version_key("")
+
+
+def _resolve_risk_paths(risk_paths):
+    """Resolve merge-risk-paths.md; explicit --risk-paths never falls back."""
+    if risk_paths is not None:
+        p = Path(risk_paths)
+        return p if p.is_file() else None
+    rel_ref = Path("4a-verify-and-ship") / "references" / "merge-risk-paths.md"
+    top = git("rev-parse", "--show-toplevel")
+    candidates = []
+    for rel in (DEFAULT_RISK_PATHS, "src/references/merge-risk-paths.md", f"dist/skills/{rel_ref.as_posix()}"):
+        candidates.append(Path(rel))
+        if top:
+            candidates.append(Path(top) / rel)
+    env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
+    if env_skills:
+        candidates.append(Path(env_skills) / rel_ref)
+    home = Path.home()
+    candidates.extend([
+        *sorted((home / ".gemini" / "config" / "plugins").glob(f"*/skills/{rel_ref.as_posix()}"), reverse=True),
+        home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills" / rel_ref,
+        home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills" / rel_ref,
+        home / ".gemini" / "config" / "skills" / rel_ref,
+        home / ".claude" / "skills" / rel_ref,
+    ])
+    claude_cache = home / ".claude" / "plugins" / "cache"
+    if claude_cache.is_dir():
+        hits = list(claude_cache.glob(f"**/{rel_ref.as_posix()}"))
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
+    return next((c for c in candidates if c.is_file()), None)
+
+
+def risk_rules(risk_paths=None):
     rules = []
-    p = Path(risk_paths)
-    if not p.is_file():
-        print(f"[PR-BODY-WARN] risk rules not found at {risk_paths}; risk: [none] is unverified", file=sys.stderr)
+    p = _resolve_risk_paths(risk_paths)
+    if p is None:
+        shown = DEFAULT_RISK_PATHS if risk_paths is None else risk_paths
+        print(f"[PR-BODY-WARN] risk rules not found at {shown}; risk: [none] is unverified", file=sys.stderr)
     else:
         for cell, tag in TABLE_RULE_RE.findall(p.read_text(encoding="utf-8-sig")):
             rules += [(glob_rx(g), tag) for g in re.findall(r"`([^`]+)`", cell)]
@@ -332,15 +386,19 @@ def dumps(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+def _is_local(bt):
+    return bt.startswith(("BT-L-", "BT-LOCAL-"))
+
+
 def canon(bt):
     """`BT-7` -> `BT-007`: the repo's padded spelling, one per epic so `features:` never lists an epic twice.
-    A local id (`BT-LOCAL-<slug>`) is already canonical."""
-    return bt if bt.startswith("BT-LOCAL-") else f"BT-{int(bt[3:]):03d}"
+    A local id (`BT-L-<nnn>-<slug>` or `BT-LOCAL-<slug>`) is already canonical."""
+    return bt if _is_local(bt) else f"BT-{int(bt[3:]):03d}"
 
 
 def idkey(bt):
     """The dict key of an id: the int of `BT-<n>` (any padding), else the local id string."""
-    return bt if bt.startswith("BT-LOCAL-") else int(bt[3:])
+    return bt if _is_local(bt) else int(bt[3:])
 
 
 def row_key(bt):
@@ -366,7 +424,7 @@ def backlog_rows():
 
 
 def epic_ids():
-    """Keys (`idkey`) of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; BT-LOCAL-x stays a string).
+    """Keys (`idkey`) of the local-tracker issues labelled exactly `tier:epic` (BT-007 -> 7; local BT-L-*/BT-LOCAL-* stays a string).
 
     Fails open to an empty set when the store is absent or unreadable: an epic commit then shows as PENDING.
     """
@@ -400,6 +458,12 @@ def tracker_facts(nums):
     return epics, {n: f"BT-{node['parent']['number']:03d}" for n, node in nodes.items() if node.get("parent")}
 
 
+def _is_prior_standalone(bt, prior):
+    """True when `bt` is already a standalone slice row (parent == NO_PARENT) in `prior`."""
+    key = idkey(bt)
+    return key in prior and prior[key][1] == NO_PARENT
+
+
 def slice_rows(args, prior, features, base):
     """(id, parent, summary_json, verdict, rounds) per slice: BT scopes of `<base>..HEAD` commits plus the shipped slice.
     Fresh values for the shipped slice, prior-block values for others, PENDING when new (parent from the tracker backend).
@@ -416,7 +480,13 @@ def slice_rows(args, prior, features, base):
     ship_n = idkey(args.slice)
     first_subject.setdefault(ship_n, (args.slice, args.summary))
     epics, parents = tracker_facts(set(first_subject))
-    for epic_n in (epics | {idkey(e) for e in args.epic} | {idkey(f) for f in features}) - {ship_n}:
+    feature_epics = (
+        {idkey(f) for f in features if not _is_prior_standalone(f, prior)}
+        | {idkey(r[1]) for r in prior.values() if r[1] != NO_PARENT}
+        | ({idkey(args.parent)} if args.parent else set())
+    )
+    preserved = {ship_n} | {k for k, r in prior.items() if r[3] != "PENDING"}
+    for epic_n in (epics | {idkey(e) for e in args.epic} | feature_epics) - preserved:
         first_subject.pop(epic_n, None)
 
     rows = []
@@ -432,15 +502,15 @@ def slice_rows(args, prior, features, base):
     return rows
 
 
-def changed_risk_tags(base, risk_paths):
+def changed_risk_tags(base, risk_paths=None):
     files = (git("diff", "--name-only", f"{base}...HEAD") or "").splitlines()
     rules = risk_rules(risk_paths)
     return sorted({tag for f in files for rx, tag in rules if rx.match(f.replace("\\", "/"))})
 
 
 def render_body(rows, features, closing, rec, tags, lists, notes):
-    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[3] not in ("PENDING", "DROPPED") and not r[0].startswith("BT-LOCAL-")],
-                   [f"Closes #{int(c[3:])}." for c in closing if not c.startswith("BT-LOCAL-")])  # a local issue has no number to close
+    closes = union([f"Closes #{int(r[0][3:])}." for r in rows if r[3] not in ("PENDING", "DROPPED") and not _is_local(r[0])],
+                   [f"Closes #{int(c[3:])}." for c in closing if not _is_local(c)])  # a local issue has no number to close
     out = [*closes, "", "```stratos-pr", f"features: [{', '.join(features)}]", f"head: {git('rev-parse', 'HEAD')}", "slices:"]
     for i, p, s, v, a in rows:
         parent = "" if p == NO_PARENT else f"parent: {p}, "
@@ -498,12 +568,12 @@ def cmd_build(args):
         print(f"[PR-BODY-ERROR] {e}", file=sys.stderr)
         return 2
     if args.parent is not None and not PARENT_RE.fullmatch(args.parent):
-        print(f"[PR-BODY-ERROR] --parent must look like BT-<n> or BT-LOCAL-<slug>, got {args.parent!r}", file=sys.stderr)
+        print(f"[PR-BODY-ERROR] --parent must look like BT-<n> or BT-L-<nnn>-<slug>, got {args.parent!r}", file=sys.stderr)
         return 2
     for flag, values in (("--epic", args.epic), ("--close", args.close)):
         bad = next((v for v in values if not PARENT_RE.fullmatch(v)), None)
         if bad is not None:
-            print(f"[PR-BODY-ERROR] {flag} must look like BT-<n> or BT-LOCAL-<slug>, got {bad!r}", file=sys.stderr)
+            print(f"[PR-BODY-ERROR] {flag} must look like BT-<n> or BT-L-<nnn>-<slug>, got {bad!r}", file=sys.stderr)
             return 2
     try:
         prior_text = Path(args.prior_body_file).read_text(encoding="utf-8-sig") if args.prior_body_file else ""
@@ -543,13 +613,22 @@ def cmd_build(args):
         print(f"[PR-BODY-ERROR] the tracker backend could not tell epics from slices, so the build failed closed: {e}", file=sys.stderr)
         return 2
     if rows is None:
-        print(f"[PR-BODY-ERROR] --slice must look like BT-<n> or BT-LOCAL-<slug>, got {args.slice!r}", file=sys.stderr)
+        print(f"[PR-BODY-ERROR] --slice must look like BT-<n> or BT-L-<nnn>-<slug>, got {args.slice!r}", file=sys.stderr)
         return 2
-    features = union(features, [canon(r[1]) for r in rows if r[1] != NO_PARENT]) or [canon(args.slice)]
+    features = union(features, [canon(r[1]) for r in rows if r[1] != NO_PARENT])
+    ship_n = idkey(args.slice)
+    ship_row = next(r for r in rows if idkey(r[0]) == ship_n)
+    prior_parent = prior[ship_n][1] if ship_n in prior else NO_PARENT
+    if (not args.parent
+            and ship_row[1] == NO_PARENT
+            and prior_parent == NO_PARENT
+            and all(_is_prior_standalone(f, prior) for f in features)):
+        features = union(features, [canon(args.slice)])
+    features = features or [canon(args.slice)]
     closing = union([canon(c) for c in args.close],
                     [canon(args.parent or (prior_features[0] if prior_features else args.slice))] if args.close_parent else [])
 
-    ship_id = next(r[0] for r in rows if idkey(r[0]) == idkey(args.slice))  # the audit key spells the id as the row does
+    ship_id = ship_row[0]  # the audit key spells the id as the row does
     qa = [f"manual-QA: {args.slice}"] if args.manual_qa else []
     lists = {"post_merge": union(prior_lists["post_merge"], args.post_merge, qa),
              "deviations": union(prior_lists["deviations"], args.deviation),
@@ -582,7 +661,7 @@ def cmd_unit(args):
             out["branch"] = f"{args.type or 'feat'}/{out['unit']}-{slug}"
         if args.branch is not None:
             names = {args.branch, args.branch.removeprefix("origin/")}
-            longer = longer_id_globs([args.slice, args.parent], backlog_rows()) if args.slice.startswith("BT-LOCAL-") else []
+            longer = longer_id_globs([args.slice, args.parent], backlog_rows()) if _is_local(args.slice) else []
             out["branch_ok"] = (any(fnmatch.fnmatchcase(n, g) for n in names for g in out["globs"])
                                 and not any(fnmatch.fnmatchcase(n, g) for n in names for g in longer))
     except ValueError as e:
@@ -610,7 +689,7 @@ def build_parser():
     b.add_argument("--prior-body-file")
     b.add_argument("--base", help="base ref; default: merge-base with origin/HEAD's branch, then origin/main|master, "
                                   "main|master; none resolves -> exit 2")
-    b.add_argument("--risk-paths", default=DEFAULT_RISK_PATHS)
+    b.add_argument("--risk-paths", default=None)
     b.add_argument("--suite-json", help="suite record; default: the reusable one in .tmp")
     b.add_argument("--parent")
     b.add_argument("--epic", action="append", default=[],

@@ -3,6 +3,7 @@
 Seam: the `check_suite.py` CLI (stdout + exit code). Fixtures copy the committed
 `dist/skills` bundle into tmp_path so every case starts from a known-good suite.
 """
+import importlib.util
 import json
 import os
 import re
@@ -432,6 +433,14 @@ def test_constitution_states_skill_locations_and_disk_resolution_rule():
     assert ".claude/skills" in text and ".agents/skills" in text
     assert "code-simplifier" in text
     assert "read `<skills-dir>/<name>/SKILL.md` on disk" in text and "before calling it unavailable" in text
+    assert "plugin bundle" in text
+    assert "`references/` & `assets/` resolve from `<skill-dir>`" in text
+    assert "Without plugin support: `python .agents/scripts/delivery.py --restore-skills`" in text
+    assert "In plugin mode, restore skills" not in text
+    sec1 = text[text.index("## 1."):text.index("## 2.")]
+    sec2 = text[text.index("## 2."):text.index("## 3.")]
+    assert "`<skills-dir>/`" in sec1 and "(.agents/skills/" not in sec1
+    assert "resolve to `<skills-dir>/`" in sec2
 
 
 def test_start_session_without_memory_gives_one_line_setup_guidance():
@@ -469,6 +478,44 @@ def test_ref_cite_pattern_matches_build_py():
     build_src = (REPO_ROOT / "build" / "build.py").read_text(encoding="utf-8")
     m = re.search(r"REF_CITE = re\.compile\(\s*r'(.*?)'\s*r'(.*?)'\)", build_src, re.S)
     assert m and check_suite.REF_CITE.pattern == m.group(1) + m.group(2)
+
+
+def test_ref_cite_closure_and_cited_refs_support_skill_dir_without_double_match(tmp_path):
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    spec = importlib.util.spec_from_file_location("build_mod", REPO_ROOT / "build" / "build.py")
+    build_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(build_mod)
+
+    sample = (
+        "Read <skill-dir>/references/alpha.md, "
+        ".agents/skills/other/references/beta.md, "
+        "and references/gamma.md (ignore custom/references/ignored.md)."
+    )
+    expected_matches = [("alpha.md", ""), ("beta.md", ""), ("", "gamma.md")]
+    assert build_mod.REF_CITE.findall(sample) == expected_matches
+    assert check_suite.REF_CITE.findall(sample) == expected_matches
+    assert build_mod.cited_refs(sample) == {"alpha.md", "beta.md", "gamma.md"}
+    assert check_suite.cited_refs(sample) == {"alpha.md", "beta.md", "gamma.md"}
+
+    ref_dir = tmp_path / "references"
+    ref_dir.mkdir()
+    (ref_dir / "alpha.md").write_text("See <skill-dir>/references/delta.md\n", encoding="utf-8")
+    (ref_dir / "delta.md").write_text("Leaf\n", encoding="utf-8")
+    assert build_mod.closure_for("Read <skill-dir>/references/alpha.md", ref_dir) == {"alpha.md", "delta.md"}
+
+
+def test_suite_detects_missing_skill_dir_cited_reference(suite):
+    md = suite / "4a-verify-and-ship" / "SKILL.md"
+    md.write_text(md.read_text(encoding="utf-8") + "\nSee <skill-dir>/references/missing-skill-dir.md\n", encoding="utf-8")
+    ref_dir = suite / "3b-create-issue" / "references"
+    first_ref = sorted(ref_dir.glob("*.md"))[0]
+    first_ref.write_text(first_ref.read_text(encoding="utf-8") + "\nSee <skill-dir>/references/missing-nested.md\n", encoding="utf-8")
+
+    r = run("suite", "--skills-dir", suite)
+    assert r.returncode == 1
+    assert "4a-verify-and-ship" in r.stdout and "missing-skill-dir.md" in r.stdout
+    assert "3b-create-issue" in r.stdout and "missing-nested.md" in r.stdout
 
 
 def test_setup_and_update_halt_cleanly_when_installed_plugin_predates_check_suite():
@@ -636,5 +683,51 @@ def test_suite_plugin_mode_allows_third_party_skills(tmp_path):
     r = run("suite", "--project", tmp_path)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "Delivery mode: plugin" in r.stdout
+
+
+def _isolated_check_suite(tmp_path, monkeypatch):
+    sys.path.insert(0, str(SCRIPT.parent))
+    import check_suite
+    fake_script = tmp_path / "consumer" / ".agents" / "scripts" / "check_suite.py"
+    home = tmp_path / "home"
+    home.mkdir(exist_ok=True)
+    monkeypatch.setattr(check_suite, "__file__", str(fake_script))
+    monkeypatch.setattr(check_suite, "PLUGIN_ROOT", fake_script.parent.parent)
+    monkeypatch.delenv("STRATOSPHERE_PLUGIN_SKILLS", raising=False)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    return check_suite, home
+
+
+def test_locate_plugin_bundle_resolves_gemini_marketplace_newest(tmp_path, monkeypatch):
+    check_suite, home = _isolated_check_suite(tmp_path, monkeypatch)
+    older = home / ".gemini" / "config" / "plugins" / "100" / "skills"
+    newer = home / ".gemini" / "config" / "plugins" / "200" / "skills"
+    for d in (older, newer):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+
+    assert check_suite.locate_plugin_bundle() == newer
+
+
+def test_locate_plugin_bundle_sorts_claude_cache_by_semver(tmp_path, monkeypatch):
+    check_suite, home = _isolated_check_suite(tmp_path, monkeypatch)
+    mkt = home / ".claude" / "plugins" / "cache" / "stratosphere-marketplace" / "stratosphere-os"
+    v_low = mkt / "5.2.1" / "dist" / "skills"
+    v_high = mkt / "5.3.0" / "dist" / "skills"
+    for d in (v_low, v_high):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+
+    assert check_suite.locate_plugin_bundle() == v_high
+
+    # Also verify multi-digit minor version (1.10.0 > 1.9.0) regardless of glob return order.
+    v_1_9 = mkt / "1.9.0" / "dist" / "skills"
+    v_1_10 = mkt / "1.10.0" / "dist" / "skills"
+    for d in (v_low, v_high):
+        shutil.rmtree(d.parent.parent)
+    for d in (v_1_9, v_1_10):
+        touch(d / "stratosphere-setup" / "SKILL.md")
+    monkeypatch.setattr(check_suite.glob, "glob", lambda *a, **k: [str(v_1_9), str(v_1_10)])
+    assert check_suite.locate_plugin_bundle() == v_1_10
+
 
 

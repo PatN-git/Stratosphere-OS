@@ -41,8 +41,8 @@ SUITE_REMEDIATION = "npx skills add PatN-git/Stratosphere-OS/dist/skills -a <age
 
 # Mirrors build/build.py REF_CITE: relative and absolute reference citations.
 REF_CITE = re.compile(
-    r'\.agents/skills/[a-z0-9-]+/references/([A-Za-z0-9_.-]+\.md)'
-    r'|(?<![\w/.])references/([A-Za-z0-9_.-]+\.md)')
+    r'(?:\.agents/skills/[a-z0-9-]+|<skill-dir>)/references/([A-Za-z0-9_.-]+\.md)'
+    r'|(?<![\w/.>])references/([A-Za-z0-9_.-]+\.md)')
 
 
 def cited_refs(text):
@@ -116,6 +116,22 @@ def check_suite(skills_dir: Path):
     return missing, corrupt
 
 
+def _claude_cache_version(path: Path, cache_root: Path):
+    """Extract version sort key from a skills directory inside ~/.claude/plugins/cache."""
+    rel = path.relative_to(cache_root).parts
+    if "stratosphere-os" in rel:
+        idx = rel.index("stratosphere-os")
+        if idx + 1 < len(rel):
+            return parse_version_key(rel[idx + 1])
+    if "skills" in rel:
+        idx = rel.index("skills")
+        if idx >= 2 and rel[idx - 1] == "dist":
+            return parse_version_key(rel[idx - 2])
+        if idx >= 1:
+            return parse_version_key(rel[idx - 1])
+    return parse_version_key(path.parent.name)
+
+
 def locate_plugin_bundle() -> Path | None:
     # 1. Explicit override via environment variable
     env_skills = os.environ.get("STRATOSPHERE_PLUGIN_SKILLS")
@@ -136,14 +152,15 @@ def locate_plugin_bundle() -> Path | None:
     # 4. Standard host plugin directories
     home = Path.home()
     candidates = [
+        *sorted((home / ".gemini" / "config" / "plugins").glob("*/skills"), reverse=True),
         home / ".gemini" / "config" / "plugins" / "stratosphere-os" / "skills",
         home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills",
         home / ".gemini" / "config" / "skills",
     ]
     claude_cache = home / ".claude" / "plugins" / "cache"
     if claude_cache.is_dir():
-        for p in glob.glob(str(claude_cache / "**" / "skills"), recursive=True):
-            candidates.append(Path(p))
+        hits = [Path(p) for p in glob.glob(str(claude_cache / "**" / "skills"), recursive=True)]
+        candidates.extend(sorted(hits, key=lambda p: (_claude_cache_version(p, claude_cache), str(p)), reverse=True))
     for c in candidates:
         if c.is_dir() and (c / "stratosphere-setup" / "SKILL.md").is_file():
             return c

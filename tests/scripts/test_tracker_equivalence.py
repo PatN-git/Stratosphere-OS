@@ -411,9 +411,9 @@ def test_layer1_local_equivalence(tmp_path):
         [sys.executable, str(TRACKER_PY), "create", "--title", "DB Slice", "--label", "type:feature,tier:slice,size:small,status:planned", "--milestone", "v1.0.0", "--body-file", str(bf_cli)],
     )
 
-    epic_id = "BT-LOCAL-auth-epic"
-    s1_id = "BT-LOCAL-login-slice"
-    s2_id = "BT-LOCAL-db-slice"
+    epic_id = "BT-L-001-auth-epic"
+    s1_id = "BT-L-002-login-slice"
+    s2_id = "BT-L-003-db-slice"
 
     # 6. set_parent
     assert_local_step(
@@ -762,3 +762,29 @@ def test_layer3_downstream_gate_compatibility_local(tmp_path):
     assert rc_ice == 0 and rc_trk == 0
     assert normalize_stdout(out_trk) == normalize_stdout(out_ice)
     assert slice_id in out_trk
+
+
+def test_tracker_resume_note_resolves_shorthand_and_handles_missing_cleanly(tmp_path):
+    root = tmp_path / "resume_local"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
+    subprocess.run(["git", "config", "user.name", "T"], cwd=str(root), check=True)
+    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=str(root), check=True)
+    (root / ".memory").mkdir()
+    (root / ".memory" / "ARCHITECTURE.md").write_text(
+        "---\ntype: architecture\ntracker: local\ntracker_branch: test-res/issues\n---\n", encoding="utf-8")
+    subprocess.run([sys.executable, str(SCRIPTS / "issues.py"), "init"], cwd=str(root), check=True)
+
+    rc, out, _ = run_cmd([sys.executable, str(TRACKER_PY), "create", "--title", "Order client"], root)
+    assert rc == 0 and out.strip() == "BT-L-001-order-client"
+    note_body = "<!-- stratos:resume -->\nBranch: feat/order / Next step: test"
+    rc, out, _ = run_cmd([sys.executable, str(TRACKER_PY), "comment", "1", "--body", note_body], root)
+    assert rc == 0 and out.strip() == "BT-L-001-order-client"
+    assert (root / ".memory" / "resume" / "BT-L-001-order-client.md").is_file()
+
+    for ident in ("1", "001", "#1", "BT-L-001", "BT-L-001-order-client"):
+        rc, out, err = run_cmd([sys.executable, str(TRACKER_PY), "resume-note", ident], root)
+        assert rc == 0 and out.strip() == note_body and err == "", (ident, rc, out, err)
+
+    rc, out, err = run_cmd([sys.executable, str(TRACKER_PY), "resume-note", "999"], root)
+    assert rc == 1 and out == "" and "[UNKNOWN 999]" in err and "Traceback" not in err

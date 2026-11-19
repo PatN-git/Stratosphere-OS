@@ -6,8 +6,8 @@ triggers: ["user"]
 metadata:
   stratos.layer: lifecycle
   stratos.mode: HITL
-version: "2.10.0"
-timestamp: 2026-11-10
+version: "2.11.0"
+timestamp: 2026-11-18
 ---
 
 # Create issue
@@ -82,7 +82,7 @@ Run the `load-memory` skill to restore session context (read-only).
      - **Research-only finding** (a requirement/constraint present in research but absent from PRD + interface) → flag `[RESEARCH-GAP]` for HITL before implementing; never fold it into the draft unilaterally.
      - **Brief-only finding** (a constraint or settled decision present in the brief but absent from PRD + interface; Established Facts used as Current-state evidence are expected, not a gap) → flag `[BRIEF-GAP]` the same way.
    - **No PRD:** restate intent as a requirement list; map slices; the brief (if located) is the top source, so `[BRIEF-GAP]` and the precedence clause do not apply, and every Success State item and settled decision maps to a draft AC or constraint; check each draft body against the spec bar, a missing element is a finding; gaps → `[UNCOVERED?]` (soft) for user confirmation; no §-refs.
-   - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `.agents/skills/3b-create-issue/references/audit-to-slices.md`; the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
+   - **Audit-sourced:** reads (fresh from disk) the proposal `.tmp/refactor-proposal-<stem>.md` and the report on its line 1, per `<skill-dir>/references/audit-to-slices.md` (parent resolves `<skill-dir>` to an absolute path for the subagent); the PRD/research precedence clause does not apply. **Breadth:** every F-xx in the report maps to a slice or a §5 token, else `[UNCOVERED]`. **Depth:** each slice is a complete Build slice per §4 — `Resolves:` line with full report paths, evidence inline, one no-longer-reproduces AC per resolved F-xx; a slice over the ceiling → split finding.
 5. **Single Final Verification Gate:** present a high-density compact summary table before the full draft bodies:
 
    ```markdown
@@ -92,7 +92,7 @@ Run the `load-memory` skill to restore session context (read-only).
    | BT-<padded> | feature | 1.0 (med) | 80% | med (2) | 0.40 | priority:medium |
    ```
 
-   - **Authorization:** prompt user via native question tool (`ask_question` on Antigravity; `AskUserQuestion` on Claude Code) with options `["(Recommended) Approve & Mint Slices", "Adjust Metrics / Slices", "Abort"]`. To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`). Fallback for non-interactive hosts: output `[Approve & Mint via gh issue create]` and halt for user response.
+   - **Gate (`.agents/rules/output-mode.md` §5):** finish analysis, scripts, and `.tmp/` generation first, then emit the visible `### Slices Proposed for Minting` table + same-turn prompt: `["(Recommended) Approve & Mint Slices", "Adjust Metrics / Slices", "Abort"]`. To adjust metrics or fields: reply with `set <field>=<value>` (e.g. `set impact=2.0` or `set size=small`). Fallback: output `[Approve & Mint via gh issue create]` and halt.
    - **Verification Checks:** confirm requirements & end-state covered (no `[UNCOVERED]`); granularity; dependencies; modes (`mode:HITL`/`mode:AFK`); ICE scores. Audit-sourced: also confirm epic (title, area, milestone per `references/audit-to-slices.md` §8) or its absence (§7). Single approval authorizes minting.
 
 ## Phase 3: Implementation & Memory Sync
@@ -103,11 +103,11 @@ Run the `load-memory` skill to restore session context (read-only).
    - `ICE < 0.15` → `priority:low`
 3. **Pre-mint guard (Build slice):**
    - (a) **Whole file, once:** `grep -noE 'BT-<[^>]+>|\[\[[A-Z]+-[xX]+\]\]' .tmp/BT-<padded>-issue-drafts.md | grep -vE ':BT-<slice:[0-9]+>$'` — any output → HALT and list it (only sibling `BT-<slice:N>` refs may remain).
-   - (b) **Mint order:** if drafts cite siblings, extract edges and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
+   - (b) **Mint order:** if drafts cite siblings, extract edges (`BT-<slice:2> <- BT-<slice:1>`, one edge per line) and validate topological order via `python .agents/scripts/reconcile.py --topo-sort --edges-file <file>` (blockers first; any cycle `[CYCLE-DETECTED ...]` → HALT immediately — Blocked-by must be acyclic) and mint in that order; after each mint, replace that slice's `BT-<slice:N>` with the returned `BT-<padded>` in every remaining draft.
    - (c) **Per slice, before each mint:** run the step (a) pattern on that slice's body without the exclusion — any hit (an unminted blocker included) → HALT. Substitution is the only permitted edit to an approved draft.
    - **Audit-sourced:** run (a)–(c) against the proposal path instead of `.tmp/BT-<padded>-issue-drafts.md`; in (a) also exclude `BT-<epic>` (`grep -vE ':BT-<(slice:[0-9]+|epic)>$'`), and HALT if `BT-<epic>` appears without a `## Epic` section. Only after (a) and the (b) order/cycle check pass, (b0): mint the epic (step 4) and replace every `BT-<epic>` in the proposal with the returned ID, then mint slices in the (b) order.
 4. **Generate (Atomic Minting):** `create` each issue (slice or epic) with its body written to the one scratch file `.tmp/3b-issue-body.md`, overwritten per mint (`.agents/scripts/tracker.py`).
-   - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-LOCAL-<slug>` (the title slug) and stores the body; GitHub is not touched.
+   - **Body source:** Build slice → the approved `.tmp/BT-<padded>-issue-drafts.md` draft **verbatim** (never regenerate), with raw ICE metrics in the issue body; Spike → compose the Spike body. The body's `Refs:` line carries the memory IDs the draft cites (`set_refs`). Local backend: `create` assigns `BT-L-<nnn>-<slug>` (e.g. `BT-L-001-<slug>`) and stores the body; GitHub is not touched.
    - **CRITICAL:** Capture exact returned issue number and zero-pad to 3 digits (e.g. `BT-059`). Never guess issue number; GitHub shares IDs across Issues and PRs.
    - **Labels:** scope label (`scope:baseline` or `scope:differentiator`) + canonical labels: Primary Type (e.g. `type:feature`) + Execution Mode (`mode:HITL` or `mode:AFK`) + Tier (`tier:slice`) + Size (`size:small/medium/large`; Spikes: always `size:medium`) + Priority (`priority:high/medium/low` from the step-2 bucket; Spikes: skip) + **Status: `status:planned` for a Build slice; `status:needs_spec` for a Spike.**
    - **Milestone:** `create` every slice with milestone `<vX.Y.0>` = the parent's (`get(<parent>)` milestone title; 3a created it, so it exists; parent has none → `—`), standalone → `v1.0.0` (audit-sourced: the §8 default). Only for those defaults, `ensure_milestone` lists the open milestones to confirm it is open (local: the field value is the milestone; nothing to list); absent, closed or `—` → create without a milestone, record `—` and surface it (never mint onto a closed release). Audit epic: see its bullet below.

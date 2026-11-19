@@ -3,8 +3,8 @@ name: concept-brainstorm
 description: Frame vague concepts via 4-phase execution loop (Constraints → Diverge → Triage → Validate).
 metadata:
   stratos.layer: execution
-version: "1.5.0"
-timestamp: 2026-07-24
+version: "1.5.1"
+timestamp: 2026-11-17
 ---
 
 # Concept Brainstorming Skill
@@ -26,7 +26,7 @@ Execute the 4-phase loop. Never output a bare list and halt.
 - **Action:** Confirm Context, Outcomes, Boundaries, and Non-goals. Await sign-off.
 
 ### Phase 2: Generation (Diverge)
-Read `references/techniques.md` to load the Selection Guide.
+Read `<skill-dir>/references/techniques.md` (relative to `<skill-dir>`, the directory containing this `SKILL.md`, never the workspace root) to load the Selection Guide.
 - **Action:** Recommend Path A (high complexity) or Path B (standard); await confirmation.
   - **Path A (Subagent Swarm):** Spawn PM, Designer, and Engineer subagents. Inject Phase 1 constraints explicitly (no discovery). Assign each ONE specific technique from the Selection Guide fitting their persona. Synthesize outputs into one table.
   - **Path B (Single-Agent):** Execute ONE technique from the Selection Guide.

@@ -109,3 +109,61 @@ def test_delivery_cli_status_and_switch(tmp_path):
     # Check status again
     r_status2 = subprocess.run([sys.executable, str(delivery_script), "--status"], cwd=str(tmp_path), capture_output=True, text=True, env=env)
     assert "in-repo" in r_status2.stdout
+
+
+def _isolated_delivery(tmp_path, monkeypatch):
+    sys.path.insert(0, str(DELIVERY_SCRIPT.parent))
+    import delivery
+    proj = tmp_path / "proj"
+    home = tmp_path / "home"
+    proj.mkdir(parents=True, exist_ok=True)
+    home.mkdir(parents=True, exist_ok=True)
+    monkeypatch.chdir(proj)
+    monkeypatch.delenv("STRATOSPHERE_SCAFFOLD_SCRIPT", raising=False)
+    monkeypatch.delenv("STRATOSPHERE_PLUGIN_SKILLS", raising=False)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    return delivery, proj, home
+
+
+def _touch_scaffold(skills_dir: Path) -> Path:
+    p = skills_dir / "stratosphere-setup" / "scripts" / "scaffold.py"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("# scaffold\n", encoding="utf-8")
+    return p
+
+
+def test_locate_scaffolder_resolves_env_and_gemini_plugins(tmp_path, monkeypatch):
+    delivery, proj, home = _isolated_delivery(tmp_path, monkeypatch)
+
+    env_skills = tmp_path / "env_skills"
+    env_scaffold = _touch_scaffold(env_skills)
+    monkeypatch.setenv("STRATOSPHERE_PLUGIN_SKILLS", str(env_skills))
+    assert delivery.locate_scaffolder(proj) == env_scaffold
+
+    monkeypatch.delenv("STRATOSPHERE_PLUGIN_SKILLS", raising=False)
+    older = _touch_scaffold(home / ".gemini" / "config" / "plugins" / "100" / "skills")
+    newer = _touch_scaffold(home / ".gemini" / "config" / "plugins" / "200" / "skills")
+    assert older.is_file()
+    assert delivery.locate_scaffolder(proj) == newer
+
+
+def test_locate_scaffolder_resolves_antigravity_fallback_and_sorted_claude_cache(tmp_path, monkeypatch):
+    delivery, proj, home = _isolated_delivery(tmp_path, monkeypatch)
+
+    ag_scaffold = _touch_scaffold(home / ".gemini" / "antigravity" / "plugins" / "stratosphere-os" / "skills")
+    assert delivery.locate_scaffolder(proj) == ag_scaffold
+
+    delivery2, proj2, home2 = _isolated_delivery(tmp_path / "sub", monkeypatch)
+    mkt = home2 / ".claude" / "plugins" / "cache" / "stratosphere-marketplace" / "stratosphere-os"
+    s_521 = _touch_scaffold(mkt / "5.2.1" / "dist" / "skills")
+    s_530 = _touch_scaffold(mkt / "5.3.0" / "dist" / "skills")
+    assert s_521.is_file()
+    assert delivery2.locate_scaffolder(proj2) == s_530
+
+    s_1_9 = _touch_scaffold(mkt / "1.9.0" / "dist" / "skills")
+    s_1_10 = _touch_scaffold(mkt / "1.10.0" / "dist" / "skills")
+    s_521.unlink()
+    s_530.unlink()
+    monkeypatch.setattr(delivery.glob, "glob", lambda *a, **k: [str(s_1_9), str(s_1_10)])
+    assert delivery2.locate_scaffolder(proj2) == s_1_10

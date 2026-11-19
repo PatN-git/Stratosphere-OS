@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # md-crosscheck: Stage 3 backlog and planning workflows against BT-255 interaction streamlining plan
 """Tests for Stage 3 Backlog & Planning Pipeline Streamlining (BT-253 / Epic BT-255)."""
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -43,17 +44,21 @@ def test_3c_inline_topological_warnings_and_single_activation_gate():
 
 def test_stage3_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/3b-create-issue.md", "2.10.0"),
-        ("workflows/3c-sprint-planning.md", "2.9.0"),
+        ("workflows/3b-create-issue.md", "2.11.0"),
+        ("workflows/3c-sprint-planning.md", "2.10.0"),
     ]:
         content = read_src(rel_path)
         v, _ = _versioning.read_version(content, rel_path)
         assert v == expected_v, f"{rel_path} version mismatch: expected {expected_v}, got {v}"
 
 
-def test_build_and_validate_clean():
-    res_build = subprocess.run([sys.executable, str(REPO_ROOT / "build" / "build.py")], capture_output=True, text=True)
+def test_build_and_validate_clean(tmp_path):
+    shutil.copytree(REPO_ROOT / "build", tmp_path / "build", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(REPO_ROOT / "src", tmp_path / "src", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copy2(REPO_ROOT / "README.md", tmp_path / "README.md")
+
+    res_build = subprocess.run([sys.executable, str(tmp_path / "build" / "build.py")], capture_output=True, text=True)
     assert res_build.returncode == 0, f"build.py failed: {res_build.stdout}\n{res_build.stderr}"
     
-    res_val = subprocess.run([sys.executable, str(REPO_ROOT / "build" / "validate.py")], capture_output=True, text=True)
+    res_val = subprocess.run([sys.executable, str(tmp_path / "build" / "validate.py"), str(tmp_path)], capture_output=True, text=True)
     assert res_val.returncode == 0, f"validate.py failed: {res_val.stdout}\n{res_val.stderr}"

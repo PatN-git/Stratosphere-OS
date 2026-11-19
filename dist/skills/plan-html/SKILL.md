@@ -3,8 +3,8 @@ name: plan-html
 description: Use when presenting a complex or spatial plan to a human — roadmap, trade-off matrix, status dashboard, multi-section plan document, decision record, side-by-side comparison. Generates one self-contained interactive HTML file; fires on ≥~100-line or spatial human-facing output. Defaults to markdown for agent-loop content, repo docs, model input, and short/simple output.
 metadata:
   stratos.layer: execution
-version: "1.2.2"
-timestamp: 2026-11-02
+version: "1.2.4"
+timestamp: 2026-11-18
 ---
 
 # Decision Gate (Four-Scenario)
@@ -28,15 +28,15 @@ A lone diagram/flowchart does NOT trigger HTML. A request for just a flow resolv
 If any check fails → generate Markdown, prepend: `<!-- plan-html: bypassed (reason: <reason>) -->`
 
 # Template Selection & Composition Rules
-1. Read `assets/templates/index.md` (lean — ~20 lines).
-2. Load ONLY the single matching `.html` template file from `assets/templates/`.
+1. Read `<skill-dir>/assets/templates/index.md` (lean — ~20 lines; `<skill-dir>` is the directory containing this `SKILL.md` — resolve `assets/` and `references/` relative to `<skill-dir>`, never the workspace root).
+2. Load ONLY the single matching `.html` template file from `<skill-dir>/assets/templates/`.
 3. Adapt slots: fill `{{placeholders}}` with actual content; never load unused templates.
 
 ## Hard Composition Guardrails
 - **Keep nesting flat**: Use one primary component per section. Never nest a widget inside another widget (e.g., no diagram/widget inside a collapsible details/accordion).
 - **Inline Read-Only vs Spoke Interactive**: Read-only components (trade-offs, timeline, status, decision, steps, diagrams) MUST render inline as sections. Genuinely interactive components (e.g., a draggable board, config sliders/forms) MUST render a read-only summary inline and link out to a separate interactive spoke file.
 
-If no template fits → **custom-composition mode**: compose using primitives from `references/html-patterns.md` (accordion, tabs, progress bar). Gate still applies.
+If no template fits → **custom-composition mode**: compose using primitives from `<skill-dir>/references/html-patterns.md` (accordion, tabs, progress bar). Gate still applies.
 
 # Output Rules
 - Write to a standalone `.html` file at the path the caller specifies.

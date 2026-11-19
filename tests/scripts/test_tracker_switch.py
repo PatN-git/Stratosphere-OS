@@ -353,3 +353,42 @@ def test_tracker_switch_cli_dry_run_vs_apply_characterization(project, capsys):
     assert reconcile.read_tracker(arch) == "local"
     assert len(gh_state(store)["issues"]) == 3  # only initial filler issues exist
 
+
+def test_tracker_switch_rewrites_bt_l_nnn_ids(tmp_path, monkeypatch, capsys):
+    store = tmp_path / "gh-store-btl.json"
+    monkeypatch.setenv("L3_GH_STORE", str(store))
+    for var in ("GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN"):
+        monkeypatch.delenv(var, raising=False)
+
+    def shim(args):
+        r = subprocess.run([sys.executable, str(SHIM), *args], capture_output=True, text=True, encoding="utf-8")
+        return r.returncode, r.stdout, r.stderr
+    monkeypatch.setattr(reconcile, "_gh_run", shim)
+
+    root = tmp_path / "proj_btl"
+    (root / ".memory").mkdir(parents=True)
+    (root / "docs" / "prds").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True)
+    for k, v in (("user.email", "t@example.com"), ("user.name", "T")):
+        subprocess.run(["git", "-C", str(root), "config", k, v], check=True)
+    (root / ".memory" / "ARCHITECTURE.md").write_text("---\ntype: architecture\ntracker: local\n---\n# ARCH\n", encoding="utf-8")
+    monkeypatch.chdir(root)
+    monkeypatch.setattr(issues, "today", lambda: "2026-11-18")
+    assert issues.main(["init"], out=lambda s: None) == 0
+
+    created = []
+    assert issues.main(["create", "--title", "Auth epic", "--label", "type:feature,tier:epic"], out=created.append) == 0
+    assert issues.main(["create", "--title", "Order client", "--label", "type:feature,tier:slice,mode:AFK,size:small",
+                        "--parent", "1"], out=created.append) == 0
+    epic_id, slice_id = created
+    assert epic_id == "BT-L-001-auth-epic" and slice_id == "BT-L-002-order-client"
+    (root / "docs" / "prds" / "auth.md").write_text(f"Build {slice_id} under {epic_id}.\n", encoding="utf-8")
+    (root / ".memory" / "LEARNINGS.md").write_text(f"Lesson from {epic_id}.\n", encoding="utf-8")
+
+    assert ts.main(["--apply"]) == 0
+    out = capsys.readouterr().out
+    assert f"[CREATED {epic_id} -> BT-001]" in out
+    assert f"[CREATED {slice_id} -> BT-002]" in out
+    assert (root / "docs" / "prds" / "auth.md").read_text(encoding="utf-8") == "Build BT-002 under BT-001.\n"
+    assert (root / ".memory" / "LEARNINGS.md").read_text(encoding="utf-8") == "Lesson from BT-001.\n"
+

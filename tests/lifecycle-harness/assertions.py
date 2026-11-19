@@ -144,7 +144,7 @@ def store_state(ctx: Context) -> dict:
 
 RETIRED_STATUS_FIELDS = ("Current Branch", "Active Issue", "Current Focus", "Completed This Session",
                          "Open/Active Task Brief", "Next Immediate Step")
-SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-(?:\d+|LOCAL-[\w-]+) · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
+SESSION_LINE = re.compile(r"^\s*(?:-\s*)?BT-(?:\d+|(?:L|LOCAL)-[\w-]+) · \S+ · \d{4}-\d{2}-\d{2}\s*$", re.M)
 LAST_SYNC = re.compile(r"\*\*Last Sync:\*\*\s*\d{4}-\d{2}-\d{2}")
 # 0b step 2: a skipped merge sync leaves `Last Sync` unchanged and says so in `Repo notes`.
 SYNC_SKIPPED = re.compile(r"\*\*Repo notes:\*\*[^\n]*\bsync\b[^\n]*\bskipped\b", re.I)

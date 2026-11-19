@@ -14,8 +14,8 @@ REQUIRED = ('type:', 'mode:', 'tier:slice', 'size:')
 
 
 def _number(text):
-    """First number of a metric value: `2.0`, `100%`, `80 %`, `0.8 (reason)`. A percent is a fraction. None if absent."""
-    m = re.match(r'\s*([0-9]*\.?[0-9]+)\s*(%?)', text)
+    """First number of a metric value: `2.0`, `100%`, `80 %`, `0.8 (reason)`, `` `1.0 (med)` ``. A percent is a fraction. None if absent."""
+    m = re.match(r'[\s`]*([0-9]*\.?[0-9]+)\s*(%?)', text or '')
     return None if not m else float(m.group(1)) / (100 if m.group(2) else 1)
 
 

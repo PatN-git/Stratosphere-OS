@@ -116,6 +116,7 @@ def test_topological_sort_performance_under_5ms():
 
     # Warmup
     reconcile.topological_sort({"B": {"A"}, "A": set()})
+    reconcile.topological_sort(graph)
 
     start = time.perf_counter()
     order, cycle = reconcile.topological_sort(graph)
@@ -165,6 +166,36 @@ BT-003: BT-001
     assert "BT-001" in r.stdout
 
 
+def test_parse_edges_placeholder_colons():
+    import reconcile
+    graph = reconcile.parse_edges(
+        "BT-<slice:2>: BT-<slice:1>\n"
+        "BT-<slice:1>:\n"
+        "BT-<slice:3>: BT-<slice:1>, BT-<slice:2>\n"
+        "BT-<slice:4>\n"
+    )
+    assert graph == {
+        "BT-<slice:2>": {"BT-<slice:1>"},
+        "BT-<slice:1>": set(),
+        "BT-<slice:3>": {"BT-<slice:1>", "BT-<slice:2>"},
+        "BT-<slice:4>": set(),
+    }
+
+
+def test_reconcile_cli_topo_sort_placeholder_colon_edges(tmp_path):
+    edges_file = tmp_path / "edges-placeholders.txt"
+    edges_file.write_text("BT-<slice:2>: BT-<slice:1>\nBT-<slice:1>:\n", encoding="utf-8")
+
+    cmd = [
+        sys.executable, str(SCRIPT),
+        "--topo-sort",
+        "--edges-file", str(edges_file),
+    ]
+    r = subprocess.run(cmd, cwd=tmp_path, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert "[TOPO-ORDER BT-<slice:1>,BT-<slice:2>]" in r.stdout
+
+
 def test_stage3_workflow_markdown_assertions():
     text_3a = read_src("workflows/3a-version-planning.md")
     text_3b = read_src("workflows/3b-create-issue.md")
@@ -176,6 +207,7 @@ def test_stage3_workflow_markdown_assertions():
     # 3a & 3c assertions (deterministic topological sorter; rejection of voting)
     assert "reconcile.py --topo-sort" in text_3a
     assert "reconcile.py --topo-sort" in text_3b
+    assert "BT-<slice:2> <- BT-<slice:1>" in text_3b
     assert "reconcile.py --topo-sort" in text_3c
 
     # 3d & micro-tdd assertions (Silent execution, Gated Reflexion, Stuck Protocol)
@@ -191,12 +223,12 @@ def test_stage3_workflow_markdown_assertions():
 
 def test_stage3_frontmatter_version_bumps():
     for rel_path, expected_v in [
-        ("workflows/3a-version-planning.md", "1.7.0"),
-        ("workflows/3b-create-issue.md", "2.10.0"),
-        ("workflows/3c-sprint-planning.md", "2.9.0"),
-        ("workflows/3d-implement-issue.md", "2.10.0"),
+        ("workflows/3a-version-planning.md", "1.9.0"),
+        ("workflows/3b-create-issue.md", "2.11.0"),
+        ("workflows/3c-sprint-planning.md", "2.10.0"),
+        ("workflows/3d-implement-issue.md", "2.10.1"),
         ("skills/micro-tdd/SKILL.md", "1.7.0"),
-        ("workflows/3z-afk-loop.md", "1.11.0"),
+        ("workflows/3z-afk-loop.md", "1.11.2"),
     ]:
         content = read_src(rel_path)
         v, _ = _versioning.read_version(content, rel_path)
