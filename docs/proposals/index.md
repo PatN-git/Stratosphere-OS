@@ -4,6 +4,7 @@
 * [[FEAT-discovery-pipeline-quality-fixes-proposal|Workflow Proposal: discovery→design pipeline quality fixes (1a / 1b / 1c / 2a / 2b)]]
 * [[FEAT-planning-soundness-and-impact-check-proposal|Workflow Proposal: planning soundness via upstream scaffolding (+ an impact check)]]
 * [[NEW-5a-distribution-and-growth|Workflow Proposal: 5a_distribution-and-growth]]
+* [[local-tracker-working-tree-views|Proposal: Local Tracker Working-Tree Views (BOARD.md + board.html)]] - Auto-generate gitignored .memory/BOARD.md and .memory/board.html views from the <repo>/issues store on every tracker mutation.
 * [[obsidian-vault-and-agent-linking-proposal|Proposal: Obsidian-Compatible Knowledge Vault & Backlink Graph for Agent-First Workflows]] - Architectural proposal to replace IDE-coupled graph visualization with an optional, zero-overhead Obsidian vault configuration over docs/ and .memory/, harmonizing OKF v0.2 index.md MOCs, hybrid memory atomicity, and link validator reconciliation for v5.0.0+.
 * [[plugin-aware-host-delivery-modes|Proposal: Plugin-Aware Host Delivery Modes and Setup/Update Optimization]] - Architectural proposal for configurable skill delivery modes (plugin vs in-repo), eliminating prompt token waste and git repo churn while maintaining bulletproof multi-host compatibility for v5.2.1+.
 * [[upstream-watch-2026-10-adjustments|Proposal: StratOS adjustments after the Aug-Oct 2026 upstream review]]
