@@ -105,7 +105,7 @@ def _is_ignored_doc_path(rel_posix: str) -> bool:
     parts = rel_posix.split('/')
     if any(seg in _IGNORED_DOC_SEGMENTS for seg in parts[:-1]):
         return True
-    if parts[0] == '.memory' and (len(parts) > 2 and parts[1] == 'resume' or parts[-1] == 'STATUS.md'):
+    if parts[0] == '.memory' and (len(parts) > 2 and parts[1] == 'resume' or parts[-1] in ('STATUS.md', 'BOARD.md')):
         return True
     return False
 
@@ -439,6 +439,22 @@ def main():
         if tracked_status:
             warnings.append("STATUS.md is tracked by git: run `git rm --cached .memory/STATUS.md` and add `.memory/STATUS.md` to .gitignore.")
 
+    # BOARD.md / board.html are generated working-tree views (gitignored).
+    for generated_name in ('BOARD.md', 'board.html'):
+        if (memory_dir / generated_name).is_file():
+            try:
+                is_tracked = subprocess.run(
+                    ['git', '-C', str(memory_dir), 'ls-files', '--error-unmatch', generated_name],
+                    capture_output=True
+                ).returncode == 0
+            except OSError:
+                is_tracked = False
+            if is_tracked:
+                warnings.append(
+                    f"{generated_name} is tracked by git: run `git rm --cached .memory/{generated_name}` "
+                    f"and add `.memory/{generated_name}` to .gitignore."
+                )
+
     # Files to parse for IDs and protocol compliance
     target_files = [
         'LEARNINGS.md',
@@ -632,8 +648,8 @@ def main():
     okf_files_to_check = []
     if memory_dir.exists() and memory_dir.is_dir():
         for path in memory_dir.glob('**/*.md'):
-            if path.name == "index.md" or 'resume' in path.relative_to(memory_dir).parts[:-1]:
-                continue  # resume/ holds per-task resume notes, local scratch with no frontmatter
+            if path.name in ("index.md", "BOARD.md") or 'resume' in path.relative_to(memory_dir).parts[:-1]:
+                continue  # resume/ holds per-task resume notes, BOARD.md is a generated tracker view; neither has frontmatter
             okf_files_to_check.append(path)
 
     if docs_present:

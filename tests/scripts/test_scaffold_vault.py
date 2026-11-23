@@ -213,3 +213,12 @@ def test_get_bundled_project_scripts_skips_pycache_and_pyc(tmp_path: Path, monke
     assert ".agents/scripts/okf_viewer/__init__.py" in rels
     assert ".agents/scripts/design/design_theme.py" in rels
     assert not any("__pycache__" in rel or rel.endswith(".pyc") for rel in rels), rels
+
+
+def test_gitignore_entries_include_local_tracker_board_views(tmp_path: Path):
+    assert ".memory/BOARD.md" in scaffold.GITIGNORE_ENTRIES
+    assert ".memory/board.html" in scaffold.GITIGNORE_ENTRIES
+    (tmp_path / ".gitignore").write_text(".tmp/\n", encoding="utf-8")
+    scaffold.reconcile_gitignore(tmp_path, dry_run=False)
+    lines = (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert ".memory/BOARD.md" in lines and ".memory/board.html" in lines

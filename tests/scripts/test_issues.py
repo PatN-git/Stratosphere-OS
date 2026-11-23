@@ -1709,3 +1709,247 @@ def test_board_web_renders_card_id_div(repo, tmp_path, monkeypatch):
     assert data['cards'][0]['id'] == bt
 
 
+# --- BT-293: working-tree views (.memory/BOARD.md + .memory/board.html), refresh, and HTML board enrichments ------
+
+def test_board_web_emits_ready_blocked_pills_meta_and_open_only_details(repo, tmp_path):
+    ok('init')
+    epic = ok('create', '--title', 'Auth Epic', '--label', 'type:feature,tier:epic', '--milestone', 'v1.0.0')
+    a = ok('create', '--title', 'Login', '--label', f'{SLICE},scope:baseline', '--milestone', 'v1.0.0',
+           '--parent', epic, '--body-file', body(tmp_path, BODY, 'a.md'))
+    ok('comment', a, '--body', 'First note')
+    b = ok('create', '--title', 'Sessions', '--label', SLICE, '--milestone', 'v1.0.0',
+           '--parent', epic, '--blocked-by', a, '--body-file', body(tmp_path, '### Overview\nBlocked slice.\n', 'b.md'))
+    c = ok('create', '--title', 'Audit', '--label', SLICE, '--milestone', 'v1.0.0', '--parent', epic)
+    ok('claim', c, '--by', 'feat/audit')
+    d = ok('create', '--title', 'Done slice', '--label', SLICE, '--milestone', 'v1.0.0',
+           '--parent', epic, '--body-file', body(tmp_path, 'Secret archived body', 'd.md'))
+    ok('close', d)
+
+    out_html = tmp_path / 'enriched.html'
+    out_text = ok('board', '--web', '--out', str(out_html))
+    assert out_html.resolve().as_uri() in out_text
+
+    content = out_html.read_text(encoding='utf-8')
+    data = json.loads(_data_block(content).group(1))
+    cards = {card['id']: card for card in data['cards']}
+
+    assert 'ready' in cards[a]['labels'] and 'blocked' not in cards[a]['labels']
+    assert cards[a]['meta']['milestone'] == 'v1.0.0'
+    assert cards[a]['meta']['ice'] == '0.8'
+    assert 'Login.' in cards[a]['details'] and 'First note' in cards[a]['details']
+
+    assert 'blocked' in cards[b]['labels'] and 'ready' not in cards[b]['labels']
+    assert cards[b]['meta']['blocked_by'] == a
+    assert 'Blocked slice.' in cards[b]['details']
+
+    assert cards[c]['meta']['claimed_by'] == 'feat/audit'
+    assert 'ready' not in cards[c]['labels'] and 'blocked' not in cards[c]['labels']
+
+    assert 'details' not in cards[d]
+    assert 'Secret archived body' not in content
+
+
+def test_board_web_escapes_nasty_details_and_preserves_drawer_invariants(repo, tmp_path, monkeypatch):
+    monkeypatch.setenv('STRATOSPHERE_PLUGIN_SKILLS', str(REPO_ROOT / 'src' / 'skills'))
+    ok('init')
+    nasty_body = "Evil </script><img src=x onerror=alert(1)> & \u2028 \u2029"
+    bt = ok('create', '--title', 'XSS test', '--label', SLICE, '--milestone', 'v1.0.0',
+            '--body-file', body(tmp_path, nasty_body, 'nasty.md'))
+    ok('comment', bt, '--body', '<b>comment</b>')
+    out_html = tmp_path / 'xss.html'
+    ok('board', '--web', '--out', str(out_html))
+    content = out_html.read_text(encoding='utf-8')
+
+    m = _data_block(content)
+    block = m.group(1)
+    assert '<' not in block and '>' not in block and '&' not in block
+    assert '\u2028' not in block and '\u2029' not in block
+    outside = content[:m.start()] + content[m.end():]
+    assert content.count('</script>') == content.count('<script')
+    assert not re.search(r'\son[a-z]+\s*=', outside, re.I)
+    assert content.count('.board-card:not(.filtered-out)') == 3
+    assert 'id="card-drawer"' in content
+    assert 'data-action="show-details"' in content
+    assert 'meta.milestone' in content and 'meta.ice' in content and 'meta.claimed_by' in content
+
+
+def test_render_board_md_and_refresh_command(repo, tmp_path):
+    ok('init')
+    epic = ok('create', '--title', 'Core Auth', '--label', 'type:feature,tier:epic', '--milestone', 'v1.0.0')
+    done_s = ok('create', '--title', 'Done task', '--label', SLICE, '--milestone', 'v1.0.0', '--parent', epic)
+    ok('close', done_s)
+    wip_s = ok('create', '--title', 'WIP task', '--label', SLICE, '--milestone', 'v1.0.0', '--parent', epic)
+    ok('claim', wip_s, '--by', 'feat/wip')
+    rev_s = ok('create', '--title', 'Review task', '--label', SLICE, '--milestone', 'v1.0.0', '--parent', epic, '--status', 'in review')
+
+    base_low = ok('create', '--title', 'Base low', '--label', 'type:feature,mode:AFK,tier:slice,size:large,scope:baseline',
+                  '--milestone', 'v1.0.0', '--parent', epic,
+                  '--body-file', body(tmp_path, "- **Impact:** 0.6\n- **Confidence:** 100%\n", 'bl.md'))
+    base_high = ok('create', '--title', 'Base high', '--label', 'type:feature,mode:AFK,tier:slice,size:small,scope:baseline',
+                   '--milestone', 'v1.0.0', '--parent', epic,
+                   '--body-file', body(tmp_path, "- **Impact:** 0.9\n- **Confidence:** 100%\n", 'bh.md'))
+    diff_s = ok('create', '--title', 'Diff slice', '--label', 'type:feature,mode:AFK,tier:slice,size:small,scope:differentiator',
+                '--milestone', 'v1.0.0', '--parent', epic,
+                '--body-file', body(tmp_path, "- **Impact:** 0.8\n- **Confidence:** 100%\n", 'df.md'))
+    unlbl_s = ok('create', '--title', 'Unlabelled slice', '--label', 'type:feature,mode:AFK,tier:slice,size:small',
+                 '--milestone', 'v1.0.0', '--parent', epic,
+                 '--body-file', body(tmp_path, "- **Impact:** 1.0\n- **Confidence:** 100%\n", 'un.md'))
+    spike_s = ok('create', '--title', 'Spike task', '--label', f'{SLICE},scope:baseline', '--status', 'needs_spec',
+                 '--milestone', 'v1.0.0', '--parent', epic)
+    blk_edge = ok('create', '--title', 'Edge blocked', '--label', SLICE, '--milestone', 'v1.0.0', '--parent', epic,
+                  '--blocked-by', base_high)
+    blk_hold = ok('create', '--title', 'On hold', '--label', SLICE, '--status', 'blocked', '--milestone', 'v1.0.0', '--parent', epic)
+
+    out_text = ok('refresh')
+    board_md = repo / '.memory' / 'BOARD.md'
+    board_html = repo / '.memory' / 'board.html'
+    assert board_md.is_file() and board_html.is_file()
+    assert str(board_md) in out_text and str(board_html) in out_text
+    assert board_html.resolve().as_uri() in out_text
+
+    md_text = board_md.read_text(encoding='utf-8')
+    assert md_text.startswith('<!-- GENERATED BY issues.py — DO NOT EDIT -->')
+    assert '- **Branch:** shop/issues' in md_text
+    assert '- **Ref:** shop/issues@' in md_text
+    assert board_html.resolve().as_uri() in md_text
+
+    # Ready / Next ordering: scope:baseline (high -> low -> spike) -> scope:differentiator -> unlabelled
+    ready_sec = md_text.split('## Ready / Next', 1)[1].split('\n## ', 1)[0]
+    assert ready_sec.index(base_high) < ready_sec.index(base_low) < ready_sec.index(diff_s) < ready_sec.index(unlbl_s)
+    assert f'{spike_s}' in ready_sec and '[SPIKE]' in ready_sec
+    assert blk_edge not in ready_sec and blk_hold not in ready_sec
+
+    in_prog_sec = md_text.split('## In Progress', 1)[1].split('\n## ', 1)[0]
+    assert wip_s in in_prog_sec and 'feat/wip' in in_prog_sec
+
+    in_rev_sec = md_text.split('## In Review', 1)[1].split('\n## ', 1)[0]
+    assert rev_s in in_rev_sec
+
+    blocked_sec = md_text.split('## Blocked', 1)[1].split('\n## ', 1)[0]
+    assert blk_hold in blocked_sec and 'on hold' in blocked_sec.lower()
+    assert blk_edge in blocked_sec and base_high in blocked_sec
+
+    epics_sec = md_text.split('## Open Epics / Milestones', 1)[1]
+    assert epic in epics_sec and '1/' in epics_sec and 'v1.0.0' in epics_sec
+
+
+def test_auto_refresh_on_mutations_and_bare_repo_purity(repo, tmp_path):
+    # 1. Bare repo without .gitignore: mutations never touch working tree
+    ok('init')
+    s1 = ok('create', '--title', 'Bare one', '--label', SLICE)
+    ok('set', s1, '--milestone', 'v1.0.0')
+    ok('claim', s1, '--by', 'feat/s1')
+    ok('comment', s1, '--body', 'note')
+    ok('close', s1)
+    ok('reopen', s1)
+    ok('label', 'area:api')
+    assert git(repo, 'status', '--porcelain') == ''
+    assert not (repo / '.memory' / 'BOARD.md').exists()
+    assert not (repo / '.memory' / 'board.html').exists()
+
+    # 2. Gitignored repo: mutating commands regenerate views without altering stdout
+    (repo / '.gitignore').write_text('.memory/BOARD.md\n.memory/board.html\n', encoding='utf-8')
+    git(repo, 'add', '.gitignore')
+    git(repo, 'commit', '-qm', 'ignore board views')
+
+    board_md = repo / '.memory' / 'BOARD.md'
+    board_html = repo / '.memory' / 'board.html'
+
+    created = ok('create', '--title', 'Tracked view', '--label', SLICE)
+    assert created.startswith('BT-L-') and '\n' not in created
+    assert board_md.is_file() and board_html.is_file()
+    assert created in board_md.read_text(encoding='utf-8')
+
+    # Pure read does not recreate deleted view
+    board_md.unlink()
+    ok('list')
+    ok('summary')
+    assert not board_md.exists()
+
+    # Resume-note comment does not refresh store views
+    ok('comment', created, '--body', '<!-- stratos:resume -->\nBranch: feat/x\nNext step: y\n')
+    assert not board_md.exists()
+
+    # Normal comment refreshes views
+    assert ok('comment', created, '--body', 'real update') == created
+    assert board_md.is_file()
+
+    # apply-moves refreshes views without changing stdout
+    board_md.unlink()
+    moves_out = ok('apply-moves', body(tmp_path, f'{created} -> in progress\n', 'mv.txt'))
+    assert moves_out == f'{created}: planned -> in progress\n[APPLY-MOVES] applied 1 move(s)'
+    assert board_md.is_file() and created in board_md.read_text(encoding='utf-8').split('## In Progress', 1)[1].split('\n## ', 1)[0]
+
+
+def test_auto_refresh_init_migrate_sync_merged_and_missing_template(repo, tmp_path, monkeypatch):
+    # Fresh repo with .gitignore for init, migrate, sync, merged --close
+    (repo / '.gitignore').write_text('.memory/BOARD.md\n.memory/board.html\n', encoding='utf-8')
+    git(repo, 'add', '.gitignore')
+    git(repo, 'commit', '-qm', 'gi')
+
+    # migrate
+    bm = repo / '.memory' / 'BACKLOG_MAP.md'
+    bm.parent.mkdir(parents=True, exist_ok=True)
+    bm.write_text(
+        "| ID | Title | Status | Labels | Milestone | Parent | Blocked by | ICE | Ref |\n"
+        "|:---|:---|:---|:---|:---|:---|:---|:---|:---|\n"
+        "| BT-L-001-mig | Migrated item | planned | type:feature,tier:slice,mode:AFK,size:small | v1.0.0 | — | — | — | — |\n",
+        encoding='utf-8',
+    )
+    mig_out = ok('migrate')
+    assert mig_out.startswith('[MIGRATED]')
+    assert (repo / '.memory' / 'BOARD.md').is_file()
+    assert 'BT-L-001-mig' in (repo / '.memory' / 'BOARD.md').read_text(encoding='utf-8')
+
+    # merged --close
+    git(repo, 'checkout', '-qb', 'feat/mig')
+    (repo / 'f.txt').write_text('hi\n', encoding='utf-8')
+    git(repo, 'add', 'f.txt')
+    git(repo, 'commit', '-qm', 'feat')
+    tip = git(repo, 'rev-parse', 'HEAD').strip()
+    git(repo, 'checkout', '-q', 'main')
+    git(repo, 'merge', '--no-ff', '-qm', 'merge feat', 'feat/mig')
+    ok('set', 'BT-L-001-mig', '--status', 'in review')
+    ok('comment', 'BT-L-001-mig', '--body', f'Shipped on feat/mig @ {tip}')
+    (repo / '.memory' / 'BOARD.md').unlink()
+    assert ok('merged', '--close') == '[MERGED BT-L-001-mig]'
+    assert (repo / '.memory' / 'BOARD.md').is_file()
+
+    # Missing board.html template must not abort a write during auto-refresh
+    monkeypatch.setattr(issues, '_find_board_template', lambda: (_ for _ in ()).throw(issues.IssuesError('[ERROR] missing')))
+    s2 = ok('create', '--title', 'No tpl', '--label', SLICE)
+    assert s2 in (repo / '.memory' / 'BOARD.md').read_text(encoding='utf-8')
+
+
+def test_auto_refresh_sync_fast_forward_and_init(tmp_path, monkeypatch):
+    # Upstream bare remote + two clones for sync FF test + init test
+    remote = tmp_path / 'remote.git'
+    git(tmp_path, 'init', '--bare', '-b', 'main', '-q', str(remote))
+    a_dir = tmp_path / 'a'
+    b_dir = tmp_path / 'b'
+    git(tmp_path, 'clone', '-q', str(remote), str(a_dir))
+    git(a_dir, 'checkout', '-qb', 'main')
+    git(a_dir, 'config', 'user.email', 't@example.com')
+    git(a_dir, 'config', 'user.name', 'T')
+    (a_dir / '.gitignore').write_text('.memory/BOARD.md\n.memory/board.html\n', encoding='utf-8')
+    git(a_dir, 'add', '.gitignore')
+    git(a_dir, 'commit', '-qm', 'init')
+    git(a_dir, 'push', '-q', '-u', 'origin', 'main')
+
+    git(tmp_path, 'clone', '-q', str(remote), str(b_dir))
+    git(b_dir, 'config', 'user.email', 't@example.com')
+    git(b_dir, 'config', 'user.name', 'T')
+
+    monkeypatch.chdir(a_dir)
+    assert ok('init') == '[INIT remote/issues]'
+    assert (a_dir / '.memory' / 'BOARD.md').is_file()
+    s1 = ok('create', '--title', 'Synced item', '--label', SLICE)
+    git(a_dir, 'push', '-q', 'origin', 'remote/issues')
+
+    monkeypatch.chdir(b_dir)
+    assert ok('sync') == '[SYNC-FF]'
+    assert (b_dir / '.memory' / 'BOARD.md').is_file()
+    assert s1 in (b_dir / '.memory' / 'BOARD.md').read_text(encoding='utf-8')
+
+
+

@@ -342,7 +342,8 @@ SKILL_TARGETS = [".agents/skills"]
 GITIGNORE_ENTRIES = [".tmp/", "node_modules/", ".DS_Store", "Thumbs.db",
                      "*.log", ".env", ".env.*", "token.json",
                      "*.work.md", "*.stratosphere-new",
-                     ".memory/STATUS.md", ".memory/resume/"]
+                     ".memory/STATUS.md", ".memory/resume/",
+                     ".memory/BOARD.md", ".memory/board.html"]
 
 OBSIDIAN_GITIGNORE_ENTRIES = [
     ".obsidian/workspace*.json",

@@ -708,6 +708,22 @@ console.log('\n[5] Board blocked-by badge and card ID');
   const plain = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
   const res2 = bootPage(pageScript(boardTpl.html), JSON.stringify(plain), { storageThrows: false, readyState: 'complete' });
   assert('Badge: a card without blockers shows none', !res2.error && !res2.html.includes('blocked by'));
+
+  // Meta chips, details, and toMarkdown export
+  const rich = JSON.parse(planDataRegex.exec(fs.readFileSync(boardTpl.stateFrom, 'utf-8'))[1]);
+  rich.cards[0].meta = { ...rich.cards[0].meta, milestone: 'v5.4.2', ice: '0.8', claimed_by: 'feat/views' };
+  rich.cards[0].details = 'Card body & <b>notes</b>';
+  const richRes = bootPage(pageScript(boardTpl.html), JSON.stringify(rich), { storageThrows: false, readyState: 'complete' });
+  assert('Card meta chips: renders milestone, ice, and claimed_by',
+    !richRes.error && richRes.html.includes('Milestone: v5.4.2') && richRes.html.includes('ICE: 0.8') && richRes.html.includes('Claimed: feat/views'));
+  assert('Details button: rendered when card.details is present',
+    richRes.html.includes('class="card-details-btn"') && richRes.html.includes('Details'));
+  const mdCtx = { document: { readyState: 'complete', addEventListener: () => {} } };
+  vm.createContext(mdCtx);
+  vm.runInContext(pageScript(boardTpl.html).replace('else{bootPlan();}', 'else{}'), mdCtx);
+  const richMd = mdCtx.toMarkdown(rich);
+  assert('toMarkdown: exports milestone, ice, claimed_by, and details',
+    richMd.includes('Milestone: v5.4.2') && richMd.includes('ICE: 0.8') && richMd.includes('Claimed: feat/views') && richMd.includes('Card body & <b>notes</b>'));
 }
 
 if (failed) {

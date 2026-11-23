@@ -1,6 +1,8 @@
 .tmp/
 .memory/STATUS.md
 .memory/resume/
+.memory/BOARD.md
+.memory/board.html
 .agents/
 .claude/*
 !.claude/skills/
