@@ -30,12 +30,15 @@ import re
 import fnmatch
 import subprocess
 import sys
+import tempfile
+import threading
+import time
 import uuid
 from html import escape as html_escape
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _ice import candidates
+from _ice import candidates, ice_from_body
 from _tracker_common import (NONE_TOKENS, csv_list, edge_verdict, effective_blockers, longer_id_globs, make_row,
                              resolve_unit)
 
@@ -329,6 +332,7 @@ class Tracker:
             if not changes:
                 return result
             if update_ref(self.ref, commit([old] if old else [], old, changes, message), old):
+                _refresh_views(self)
                 return result
         raise IssuesError(f"[CONFLICT] {self.branch} moved {MAX_RETRIES + 1} times during the write; nothing written")
 
@@ -578,9 +582,65 @@ def _find_board_template():
     raise IssuesError("[ERROR] board.html template not found in .agents/skills, src/skills, dist/skills, or installed plugin bundles")
 
 
-def _render_board_html(store, issues_list, a):
+_WRITE_LOCK = threading.Lock()
+
+
+def _atomic_write(path: Path, text: str):
+    """Write UTF-8 LF text via same-directory temp file + os.replace to avoid partial reads or Windows locks."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f'.{path.name}.', suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(text)
+        with _WRITE_LOCK:
+            for attempt in range(5):
+                try:
+                    os.replace(tmp_name, path)
+                    return
+                except PermissionError:
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.02 * (attempt + 1))
+    except Exception:
+        Path(tmp_name).unlink(missing_ok=True)
+        raise
+
+
+def _is_gitignored(rel_path: str) -> bool:
+    top = at_top('.')
+    rc, _ = _git('-C', str(top), 'check-ignore', '-q', rel_path, check=False)
+    return rc == 0
+
+
+def _unmet_blockers_fn(store):
+    rows = store.rows()
+    merged_of = None
+
+    def unmet(bt):
+        nonlocal merged_of
+        blks = sorted(effective_blockers(bt, rows))
+        if not blks:
+            return []
+        if merged_of is None:
+            merged_of = make_merged_of(store)
+        return [blk for blk in blks if edge_verdict(bt, blk, rows, merged_of)[0] != 'OK']
+
+    return unmet
+
+
+def _issue_details(issue):
+    parts = []
+    if issue.get('body'):
+        parts.append(issue['body'])
+    if issue.get('comments'):
+        parts.append("## Comments\n" + '\n'.join(issue['comments']))
+    return '\n\n'.join(parts)
+
+
+def _build_board_html(store, issues_list):
     tpl_path = _find_board_template()
     tpl_text = tpl_path.read_text(encoding='utf-8')
+    unmet_for = _unmet_blockers_fn(store)
 
     STATUS_LABELS = {
         'needs_spec': 'Needs Spec',
@@ -596,6 +656,10 @@ def _render_board_html(store, issues_list, a):
     for issue in sorted(issues_list, key=lambda x: x['id']):
         st = effective_status(issue)
         labels = [l for l in issue.get('labels', []) if not l.startswith('status:')]
+        if st == 'planned':
+            pill = 'blocked' if unmet_for(issue['id']) else 'ready'
+            if pill not in labels:
+                labels.append(pill)
         priority = next((l.split(':')[1] for l in labels if l.startswith('priority:')), None)
         tier = next((l.split(':')[1] for l in labels if l.startswith('tier:')), None)
         meta = {}
@@ -607,14 +671,26 @@ def _render_board_html(store, issues_list, a):
             meta['tier'] = tier
         if issue.get('blocked_by'):
             meta['blocked_by'] = ','.join(sorted(issue['blocked_by']))
+        if issue.get('milestone'):
+            meta['milestone'] = issue['milestone']
+        ice = ice_from_body(issue.get('body') or '', issue.get('labels') or [])
+        if ice is not None:
+            meta['ice'] = f"{ice:g}"
+        if issue.get('claimed_by'):
+            meta['claimed_by'] = issue['claimed_by']
 
-        cards.append({
+        card = {
             'id': issue['id'],
             'label': issue['title'],
             'column': st,
             'labels': labels,
             'meta': meta
-        })
+        }
+        if st != 'done':
+            details = _issue_details(issue)
+            if details:
+                card['details'] = details
+        cards.append(card)
 
     title = f"{repo_name()} Backlog Board"
     data = {
@@ -635,10 +711,13 @@ def _render_board_html(store, issues_list, a):
     if placeholder not in tpl_text:
         raise IssuesError("[ERROR] board.html template has no empty plan-data block")
     html = tpl_text.replace('{{title}}', html_escape(title)).replace(placeholder, f'{block}\n{data_json}\n</script>', 1)
+    return html, len(cards)
 
+
+def _render_board_html(store, issues_list, a):
+    html, count = _build_board_html(store, issues_list)
     out_file = at_top(a.out or '.tmp/render/board.html')
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(html, encoding='utf-8')
+    _atomic_write(out_file, html)
 
     # a browser is launched only on request: an agent run must never pop a window
     if a.open:
@@ -648,7 +727,145 @@ def _render_board_html(store, issues_list, a):
         except Exception:
             pass
 
-    return f"[BOARD] wrote {out_file} ({len(cards)} card(s))"
+    return f"[BOARD] wrote {out_file} ({count} card(s)) — {out_file.resolve().as_uri()}"
+
+
+def _format_board_item_meta(issue):
+    parts = []
+    if issue.get('claimed_by'):
+        parts.append(f"claimed: `{issue['claimed_by']}`")
+    if issue.get('milestone'):
+        parts.append(f"milestone: `{issue['milestone']}`")
+    if issue.get('parent'):
+        parts.append(f"parent: `{issue['parent']}`")
+    return f" ({', '.join(parts)})" if parts else ""
+
+
+def render_board_md(store, branch, sha, board_uri=None):
+    """Render `.memory/BOARD.md` from `store` at `branch`@`sha`."""
+    unmet_for = _unmet_blockers_fn(store)
+    short_sha = sha[:7] if sha else '—'
+    lines = [
+        "<!-- GENERATED BY issues.py — DO NOT EDIT -->",
+        "# Backlog Board",
+        "",
+        f"- **Branch:** {branch}",
+        f"- **Ref:** {branch}@{short_sha}",
+        f"- **Updated:** {now()}",
+    ]
+    if board_uri:
+        lines.append(f"- **Board:** <{board_uri}>")
+    lines.append("")
+
+    open_issues = [i for i in store.issues.values() if not i.get('closed') and effective_status(i) != 'done']
+    unmet = {i['id']: unmet_for(i['id']) for i in open_issues}
+
+    in_progress = sorted((i for i in open_issues if effective_status(i) == 'in progress'), key=lambda x: x['id'])
+    lines.append("## In Progress")
+    if in_progress:
+        for i in in_progress:
+            lines.append(f"- **{i['id']}** {i['title']}{_format_board_item_meta(i)}")
+    else:
+        lines.append("_None_")
+    lines.append("")
+
+    ready_items = []
+    for i in open_issues:
+        st = effective_status(i)
+        lbls = i.get('labels', [])
+        if (st in ('planned', 'needs_spec') and 'tier:epic' not in lbls and 'scope:deferred' not in lbls
+                and not any(l.startswith('concept:') for l in lbls) and not unmet[i['id']]):
+            scope_rank = 0 if 'scope:baseline' in lbls else 1 if 'scope:differentiator' in lbls else 2
+            is_spike = 0 if st == 'planned' else 1
+            ice = ice_from_body(i.get('body') or '', lbls) if st == 'planned' else None
+            ready_items.append(((scope_rank, is_spike, 0 if ice is not None else 1, -(ice or 0.0), i['id']), i, st, ice))
+    ready_items.sort(key=lambda item: item[0])
+
+    lines.append("## Ready / Next")
+    if ready_items:
+        for _, i, st, ice in ready_items:
+            spike_tag = " [SPIKE]" if st == 'needs_spec' else ""
+            ice_tag = f" (ICE {ice:g})" if ice is not None else ""
+            lines.append(f"- **{i['id']}** {i['title']}{spike_tag}{ice_tag}{_format_board_item_meta(i)}")
+    else:
+        lines.append("_None_")
+    lines.append("")
+
+    in_review = sorted((i for i in open_issues if effective_status(i) == 'in review'), key=lambda x: x['id'])
+    lines.append("## In Review")
+    if in_review:
+        for i in in_review:
+            lines.append(f"- **{i['id']}** {i['title']}{_format_board_item_meta(i)}")
+    else:
+        lines.append("_None_")
+    lines.append("")
+
+    blocked_items = sorted(
+        (i for i in open_issues
+         if effective_status(i) == 'blocked' or (effective_status(i) in ('planned', 'needs_spec') and unmet[i['id']])),
+        key=lambda x: x['id'],
+    )
+    lines.append("## Blocked")
+    if blocked_items:
+        for i in blocked_items:
+            st = effective_status(i)
+            blks = unmet[i['id']]
+            if st == 'blocked':
+                extra = f" (blocked by {', '.join(blks)})" if blks else ""
+                lines.append(f"- **{i['id']}** {i['title']} — on hold{extra}{_format_board_item_meta(i)}")
+            else:
+                spike_tag = " [SPIKE]" if st == 'needs_spec' else ""
+                lines.append(f"- **{i['id']}** {i['title']}{spike_tag} — blocked by {', '.join(blks)}{_format_board_item_meta(i)}")
+    else:
+        lines.append("_None_")
+    lines.append("")
+
+    open_epics = sorted((i for i in open_issues if 'tier:epic' in i.get('labels', [])), key=lambda x: x['id'])
+    open_milestones = sorted({i['milestone'] for i in open_issues if i.get('milestone')})
+    lines.append("## Open Epics / Milestones")
+    if open_epics or open_milestones:
+        for ep in open_epics:
+            children = [c for c in store.issues.values() if c.get('parent') == ep['id']]
+            done_n = sum(1 for c in children if effective_status(c) == 'done')
+            ms_txt = f" (`{ep['milestone']}`)" if ep.get('milestone') else ""
+            lines.append(f"- **{ep['id']}** {ep['title']} — {done_n}/{len(children)} slices done{ms_txt}")
+        for ms in open_milestones:
+            ms_all = [x for x in store.issues.values() if x.get('milestone') == ms]
+            done_n = sum(1 for x in ms_all if effective_status(x) == 'done')
+            lines.append(f"- **Milestone `{ms}`** — {done_n}/{len(ms_all)} done")
+    else:
+        lines.append("_None_")
+
+    return '\n'.join(lines).rstrip() + '\n'
+
+
+def _refresh_views(tracker, force=False):
+    """Project gitignored `.memory/BOARD.md` and `.memory/board.html` from post-CAS `head(tracker.ref)`."""
+    sha = head(tracker.ref)
+    if sha is None:
+        if force:
+            tracker.store()
+        return None
+    write_md = force or _is_gitignored('.memory/BOARD.md')
+    write_html = force or _is_gitignored('.memory/board.html')
+    if not write_md and not write_html:
+        return None
+
+    store = Store(read_tree(sha))
+    board_md = at_top('.memory/BOARD.md')
+    board_html = at_top('.memory/board.html')
+    board_uri = board_html.resolve().as_uri()
+
+    if write_md:
+        _atomic_write(board_md, render_board_md(store, tracker.branch, sha, board_uri))
+    if write_html:
+        try:
+            html, _ = _build_board_html(store, list(store.issues.values()))
+            _atomic_write(board_html, html)
+        except IssuesError:
+            if force:
+                raise
+    return board_md, board_html, board_uri
 
 
 def _filter_issues(store, items, a):
@@ -1112,6 +1329,7 @@ def cmd_sync(tracker, remote):
             return "[SYNC-UP-TO-DATE]"
         if ours is None or _git('merge-base', '--is-ancestor', ours, theirs, check=False)[0] == 0:
             if update_ref(tracker.ref, theirs, ours):
+                _refresh_views(tracker)
                 return "[SYNC-FF]"
             continue
         if _git('merge-base', '--is-ancestor', theirs, ours, check=False)[0] == 0:
@@ -1121,6 +1339,7 @@ def cmd_sync(tracker, remote):
         changes = merge_stores(Store(read_tree(base)), o, Store(read_tree(theirs)))
         new = commit([ours, theirs], ours, changes, f"issues: merge {remote}/{tracker.branch}")
         if update_ref(tracker.ref, new, ours):
+            _refresh_views(tracker)
             return f"[SYNC-MERGED] {len(changes)} file(s) field-merged"
     raise IssuesError(f"[CONFLICT] {tracker.branch} kept moving during sync; nothing written")
 
@@ -1204,6 +1423,7 @@ def cmd_migrate(tracker, map_path):
     dest = src.parent / 'archive' / f"BACKLOG_MAP.{today()}.md"
     dest.parent.mkdir(parents=True, exist_ok=True)
     src.replace(dest)
+    _refresh_views(tracker)
     return f"[MIGRATED] {len(files) - 1} issue(s) to {tracker.branch}; map moved to {dest.relative_to(at_top('.')).as_posix()}"
 
 
@@ -1238,6 +1458,7 @@ def parser():
     p = sub.add_parser('label'); p.add_argument('name')
     sub.add_parser('init')
     sub.add_parser('check')
+    sub.add_parser('refresh', help='regenerate .memory/BOARD.md and .memory/board.html')
     p = sub.add_parser('sync'); p.add_argument('--remote', default='origin')
     p = sub.add_parser('migrate'); p.add_argument('--map', default=MAP_DEFAULT)
     p = sub.add_parser('merged'); p.add_argument('--close', action='store_true')
@@ -1288,6 +1509,9 @@ def run(a, out):
             out(text)
     elif a.cmd == 'board':
         out(cmd_board(tracker.store(), a))
+    elif a.cmd == 'refresh':
+        board_md, board_html, board_uri = _refresh_views(tracker, force=True)
+        out(f"[REFRESH] wrote {board_md} and {board_html} ({board_uri})")
     elif a.cmd == 'summary':
         out(cmd_summary(tracker.store(), a))
     elif a.cmd in WRITES:

@@ -148,7 +148,7 @@ def rebuild_indices(project_root: Path) -> int:
                 lines.append(f"* [{bundle.name}](/{rel}/{bundle.name}/index.md)")
         else:
             for md in sorted(directory.glob("*.md")):
-                if md.name == "index.md":
+                if md.name == "index.md" or (rel == ".memory" and md.name == "BOARD.md"):
                     continue
                 title, description = _title_description(md)
                 lines.append(f"* [{title}](/{rel}/{md.name})" + (f" - {description}" if description else ""))
@@ -193,6 +193,8 @@ def main():
     memory_dir = project_root / ".memory"
     if memory_dir.is_dir():
         for p in memory_dir.rglob("*.md"):
+            if p.relative_to(memory_dir).as_posix() == "BOARD.md":
+                continue
             rel_path = p.relative_to(project_root)
             items_to_copy.append((str(rel_path), p))
 
